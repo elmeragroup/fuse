@@ -1,5 +1,5 @@
 /**
- * How the build sizes and spaces a box from its flex and limit declarations: `flex: none`, logical padding, percentage limits, auto margins between two layers and a row's stretch. The unit under test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
+ * How the build sizes and spaces a box from its flex and limit declarations: `flex: none`, logical padding, percentage limits, auto margins between two layers or after a row's first of three and a row's stretch. The unit under test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
  * (`test/capture-fixtures.ts`). Each case names its oracle: the CSS specification that says what the
  * browser draws, or the Figma plugin typings that say what Figma draws, under the coverage contract,
  * where a declaration that does not reach Figma is `unmapped` and one with nothing to draw is
@@ -28,6 +28,7 @@ import type { FixtureOptions } from "../../test/capture-fixtures";
 import type { MeasuredFacts } from "../capture/capture-format";
 import type { SetManifest } from "../capture/manifest";
 import { makeVariableIndex } from "./css-values";
+import type { BoxSpec } from "./kit-spec";
 
 /** A build whose `font-sans` binds the synced family, as every kit label's does. */
 const FONT_SANS: FixtureOptions = {
@@ -184,6 +185,173 @@ describe("an auto margin between two layers", () => {
     const { variant, coverage } = await buildTwo(classes, a, b, {});
     expect(variant?.root.primaryAlign).not.toBe("SPACE_BETWEEN");
     expect(notesOf(coverage, margin).map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+  });
+});
+
+// Oracle: CSS Flexbox 1 §8.1 and the capture's `freeAlongMain` fact, which the capture measures with
+// the row's items packed at its start. On the first of three items, an auto end margin takes the
+// row's free space before `justify-content` places them, so in a 200px row of three 20px items 8px
+// apart the first sits at x 0 and the others at x 152 and x 180, with `justify-end` set or not, as
+// Tour's footer sets Skip, Back and Next. A Figma row packed at its start, holding the first layer
+// and a frame that fills the rest (172px) and packs the other two at its end 8px apart, draws them at
+// the same x. Without the measurement the margin may take nothing, so it stays unmapped and the row
+// holds its three layers.
+describe("an auto end margin on the first of a row's three layers", () => {
+  const THREE: Partial<SetManifest> = {
+    parts: [part({ key: "a", slot: "a" }), part({ key: "b", slot: "b" }), part({ key: "c", slot: "c" })],
+  };
+
+  /**
+   * Build a chip whose row holds three parts, `me-auto` on the first, with the root's facts: 20px
+   * squares unless the parts' classes say otherwise.
+   */
+  function buildThree(
+    classes: string,
+    measured: MeasuredFacts,
+    parts: readonly [string, string, string] = ["size-[20px] me-auto", "size-[20px]", "size-[20px]"]
+  ) {
+    const [a, b, c] = parts;
+    return buildCaptured(
+      chip(THREE),
+      rest({
+        slot: "chip",
+        classes,
+        measured,
+        children: [
+          { slot: "a", classes: a },
+          { slot: "b", classes: b },
+          { slot: "c", classes: c },
+        ],
+      })
+    );
+  }
+
+  /** A row's layout and its layers by key, each frame that holds layers with its own layout. */
+  type RowLayout = {
+    readonly primaryAlign: string | undefined;
+    readonly itemSpacing: unknown;
+    readonly layers: readonly (
+      | string
+      | (RowLayout & { readonly key: string; readonly horizontal: unknown })
+    )[];
+  };
+
+  /** The row's layout and its layers by key, as {@link RowLayout} reads them. */
+  function layoutOf(box: BoxSpec | undefined): RowLayout {
+    return {
+      primaryAlign: box?.primaryAlign,
+      itemSpacing: box?.itemSpacing,
+      layers: (box?.children ?? []).map((child) =>
+        child.kind === "frame" && child.children.length > 0
+          ? { key: child.key, horizontal: child.sizing.horizontal, ...layoutOf(child) }
+          : child.key
+      ),
+    };
+  }
+
+  it.each([
+    ["sets no justify-content", "flex w-[200px] items-center gap-[8px]"],
+    ["sets justify-end", "flex w-[200px] items-center justify-end gap-[8px]"],
+  ])(
+    "draws the others at the row's end in a frame that fills the rest where the row %s",
+    async (_, classes) => {
+      const { variant, coverage } = await buildThree(classes, { freeAlongMain: true });
+      expect(layoutOf(variant?.root)).toEqual({
+        primaryAlign: "MIN",
+        itemSpacing: literal(8),
+        layers: [
+          "a",
+          {
+            key: "a end",
+            horizontal: FILL,
+            primaryAlign: "MAX",
+            itemSpacing: literal(8),
+            layers: ["b", "c"],
+          },
+        ],
+      });
+      expect(notesOf(coverage, "me-auto").map(([property, outcome]) => [property, outcome])).toEqual([
+        ["margin-right", "literal"],
+      ]);
+      expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+    }
+  );
+
+  // Oracle: CSS Flexbox 1 §9.4 step 15. A row 100px tall has one line 100px tall, so a `self-stretch`
+  // item with no height of its own is 100px tall while a 20px item centres in the line, as Chromium
+  // lays out the row. A Figma layer that fills a hugging frame's height takes only the frame's, so
+  // the frame fills the row's height, and its centred alignment places the 20px layer as the row did.
+  it("fills the row's height with the frame where a layer it holds stretches", async () => {
+    const { variant, coverage } = await buildThree(
+      "flex w-[200px] h-[100px] items-center gap-[8px]",
+      { freeAlongMain: true },
+      ["size-[20px] me-auto", "w-[20px] self-stretch", "size-[20px]"]
+    );
+    const frame = variant?.root.children.find((child) => child.key === "a end");
+    expect(frame?.kind === "frame" ? [frame.sizing, frame.counterAlign] : undefined).toEqual([
+      { horizontal: FILL, vertical: FILL },
+      "CENTER",
+    ]);
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  /** The root's facts: none, or the room the capture measured for the margin. */
+  const NONE: MeasuredFacts = {};
+  const FREE: MeasuredFacts = { freeAlongMain: true };
+
+  // Oracle: CSS Flexbox 1 §8.1 and §9.4. Without the measurement the margin may take nothing. An
+  // auto start margin on the last part shares the free space with the first's, so CSS sets the
+  // second part in the middle of the row, at x 90 in Chromium, where no frame that packs the parts at
+  // its end draws it. In a row that hugs its height, a `self-stretch` part beside a 40px first part
+  // and a 20px last part stretches to 40px, the line's height, as Chromium lays it out, while the
+  // frame that hugs the two parts after the first is 20px tall and the part fills only that. Each
+  // leaves the margin unmapped and the row's three layers as they are.
+  it.each([
+    ["without the measurement", "flex w-[200px] items-center justify-end gap-[8px]", NONE, undefined],
+    [
+      "where a later part sets an auto start margin",
+      "flex w-[200px] items-center gap-[8px]",
+      FREE,
+      ["size-[20px] me-auto", "size-[20px]", "size-[20px] ms-auto"] as const,
+    ],
+    [
+      "where a part stretches across a row that hugs its height",
+      "flex w-[200px] items-center gap-[8px]",
+      FREE,
+      ["w-[20px] h-[40px] me-auto", "w-[20px] self-stretch", "size-[20px]"] as const,
+    ],
+  ])("leaves the margin unmapped and the three layers in the row %s", async (_, classes, measured, parts) => {
+    const { variant, coverage } = await buildThree(classes, measured, parts);
+    expect(variant?.root.children.map((child) => child.key)).toEqual(["a", "b", "c"]);
+    expect(notesOf(coverage, "me-auto").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+  });
+
+  // Oracle: CSS Flexbox 1 §8.1 and §9.4. A first part a BOOLEAN property hides takes its auto margin
+  // out of the row, so the others follow `justify-content`: with none set, Chromium lays them out at
+  // x 0 and x 28, where a frame that packs them at its end keeps them at x 152 and x 180. The margin
+  // stays unmapped and the row holds its three layers.
+  it("leaves the margin unmapped and the three layers in the row where the first part is optional", async () => {
+    const { variant, coverage } = await buildCaptured(
+      chip({
+        parts: [
+          part({ key: "a", slot: "a", optional: { name: "First", defaultValue: true } }),
+          part({ key: "b", slot: "b" }),
+          part({ key: "c", slot: "c" }),
+        ],
+      }),
+      rest({
+        slot: "chip",
+        classes: "flex w-[200px] items-center gap-[8px]",
+        measured: FREE,
+        children: [
+          { slot: "a", classes: "size-[20px] me-auto" },
+          { slot: "b", classes: "size-[20px]" },
+          { slot: "c", classes: "size-[20px]" },
+        ],
+      })
+    );
+    expect(variant?.root.children.map((child) => child.key)).toEqual(["a", "b", "c"]);
+    expect(notesOf(coverage, "me-auto").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
   });
 });
 

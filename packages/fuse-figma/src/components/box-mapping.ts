@@ -66,6 +66,7 @@ import {
 } from "./css-values";
 import type { Viewport } from "./css-values";
 import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
+import { drawRestAtEnd } from "./end-frame";
 import { drawsAtRoom, fitsRowEnd } from "./fitting-part";
 import type { BesideLayer } from "./fitting-part";
 import { fixedPlace, placeCentredFixed, refuseFixedPlace } from "./fixed-placement";
@@ -608,6 +609,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         sizing: sizingOf(part.kind === "instance" ? part.visit.part : part.child, cascade.path),
         editable: holdsEditableText(part.kind === "instance" ? part.visit.part : part.child),
         onlyText: part.kind === "frame" && part.pseudo !== true && showsOnlyText(part.child, cell),
+        optional: (part.kind === "instance" ? part.visit.part : part.child).optional !== undefined,
       })),
       others,
       // The flow ends with the last part after the label, else the last end icon, else the label, else
@@ -1039,13 +1041,18 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     ...after,
     ...placement.layers.slice(drawnBefore.length),
   ];
-  const children = joinFlushLayers(
+  const joined = joinFlushLayers(
     reader,
     layout,
     flowing.map((part) => ({ key: part.key, style: part.cascade.style })),
     laid,
     counterAlign
   );
+  // A row whose first part's auto margin ends the others draws them in a frame of their own.
+  const children =
+    layout.restAtEnd === true
+      ? drawRestAtEnd(reader, joined, { itemSpacing, counterAlign }, sizing.vertical)
+      : joined;
   const unspaced = spacesNothingOut(layout, placement.primaryAlign, children);
   if (layout.spaceBetweenUnread === true) {
     readSpaceBetween(reader, unspaced);

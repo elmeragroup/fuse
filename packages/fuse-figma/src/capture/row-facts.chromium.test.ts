@@ -36,7 +36,7 @@ afterAll(async () => {
 /** Measure the root `#root` of the markup: each element's facts, by its path from the root. */
 async function factsOf(markup: string): Promise<ReadonlyMap<string, MeasuredFacts>> {
   await page.setContent(
-    `<style>body{margin:0;font:16px/20px sans-serif} .item{display:inline;flex:none;width:40px} :root[data-density="comfortable"] .narrows{width:60px!important} :root[data-density="comfortable"] .blocks{display:block!important} :root[data-density="comfortable"] .lifts{position:absolute!important} :root[data-density="comfortable"] .widens{width:300px!important}</style><main data-compare-cell>${markup}</main>`
+    `<style>body{margin:0;font:16px/20px sans-serif} .item{display:inline;flex:none;width:40px} :root[data-density="comfortable"] .narrows{width:60px!important} :root[data-density="comfortable"] .blocks{display:block!important} :root[data-density="comfortable"] .lifts{position:absolute!important} :root[data-density="comfortable"] .widens{width:300px!important} :root[data-density="comfortable"] .wraps{width:120px!important;flex-wrap:wrap!important}</style><main data-compare-cell>${markup}</main>`
   );
   const cdp = await page.context().newCDPSession(page);
   const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
@@ -92,13 +92,16 @@ describe("a flex row's inline items the capture measures on one line", () => {
  * leaves 12px, so they fit with less than 24px free. A 100px row overflows them, and a row 200px wide
  * dense and 60px comfortable fits in one density and overflows in the other, so neither records
  * either fact. The row exactly as wide as its items and gap, 148px, leaves no whole pixel and
- * records neither.
+ * records neither, and so does a row 200px wide dense that wraps 120px wide comfortable, since its
+ * auto margin takes the room of its own line there (CSS Flexbox 1 §9.5). A row that packs its items at its end or spaces them out leaves the same room for
+ * the margin, since the margin takes the free space before `justify-content` does, so a 200px row
+ * that sets either records both facts and a 160px one only `fitsAlongMain`.
  */
 describe("a flex line the capture measures as fitting its items", () => {
   /** Which of the two facts the row of the given width records. */
-  async function facts(width: string, className = "") {
+  async function facts(width: string, className = "", justify = "normal") {
     const measured = await factsOf(
-      `<div id="root" class="${className}" style="display:flex;gap:8px;width:${width}"><div style="width:100px;flex:none"></div><div style="width:40px;flex:none;margin-left:auto"></div></div>`
+      `<div id="root" class="${className}" style="display:flex;gap:8px;width:${width};justify-content:${justify}"><div style="width:100px;flex:none"></div><div style="width:40px;flex:none;margin-left:auto"></div></div>`
     );
     const root = measured.get("");
     return { fits: root?.fitsAlongMain === true, free: root?.freeAlongMain === true };
@@ -110,8 +113,17 @@ describe("a flex line the capture measures as fitting its items", () => {
     ["100px", "", { fits: false, free: false }],
     ["148px", "", { fits: false, free: false }],
     ["200px", "narrows", { fits: false, free: false }],
+    ["200px", "wraps", { fits: false, free: false }],
   ])("in a %s row %s: %o", async (width, className, expected) => {
     expect(await facts(width, className)).toEqual(expected);
+  });
+
+  it.each([
+    ["200px", "flex-end", { fits: true, free: true }],
+    ["200px", "space-between", { fits: true, free: true }],
+    ["160px", "flex-end", { fits: true, free: false }],
+  ])("in a %s row that sets justify-content: %s: %o", async (width, justify, expected) => {
+    expect(await facts(width, "", justify)).toEqual(expected);
   });
 });
 
