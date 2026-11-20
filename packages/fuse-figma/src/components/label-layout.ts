@@ -783,6 +783,12 @@ const CAPPED: Refusal = {
  * SPACE_BETWEEN beside a filling text: the text took the whole room and met the caret (PV). The
  * builder measures no text, so a label whose longest word is wider than that room draws wrapped in
  * Figma, where CSS keeps the word whole and pushes the other layer out (CSS Flexbox 1 §4.5).
+ *
+ * A label a TEXT property sets fills here whatever its sample's word count, since a designer types
+ * longer labels into it. A one-word sample that fits draws the same filling or hugging, and a longer
+ * label of several words wraps between them inside the room in CSS and Figma, as Chromium showed for the
+ * Dropdown menu sub trigger on 2026-11-19, where `shrink-0` keeps the caret at its width. One word
+ * wider than the room is the known limit above.
  */
 function spacedFirst(holder: Holder, label: LabelDefinition, across: Across): boolean {
   const { layout, layers, shares } = holder;
@@ -898,7 +904,8 @@ const NARROW_ELLIPSIS =
  * @param characters - The text the label shows in the cell, and the text its own set's variant shows
  *   where a composite's TEXT property value gives it this one in place. A text with no break
  *   opportunity keeps its own width only where the variant's does too, so it takes the variant's
- *   filling layout otherwise. A variant that keeps its text at its own width, given a text that can
+ *   filling layout otherwise. In a row {@link spacedFirst} reads, a label a TEXT property sets fills
+ *   whatever its text. A variant that keeps its text at its own width, given a text that can
  *   wrap, lays out another way, which the instance diff leaves unmapped.
  * @param variant - The variant's key, for the error.
  * @throws When a box around a wrapping label caps its width at a length that is no literal, which
@@ -958,16 +965,17 @@ function readLabelLayout(
     definite && wrapping && item !== undefined ? refuseItem(holder, item, label, across) : undefined;
   // The item never shrinks below its one line, so it sits at its own width, which a hugging text draws.
   // In place, a one-word text keeps its own width only where its variant's text does too, and takes
-  // the variant's filling layout otherwise, which draws it as CSS does.
+  // the variant's filling layout otherwise, which draws it as CSS does. A label a TEXT property sets
+  // in a spaced row fills instead, as `spacedFirst` says, since a designer may type several words.
+  const spacedRow = !capped && placed !== undefined && item === "flex" && spacedFirst(holder, label, across);
   const ownWidth =
     placed !== undefined &&
     item === "flex" &&
+    !(spacedRow && label.textProperty !== undefined) &&
     neverWraps(style, characters.shown) &&
     (characters.built === undefined || neverWraps(style, characters.built));
   const beforeMargin = definite && !capped && item === "flex" && fillsBeforeMargin(holder, label, across);
-  const spaced =
-    beforeMargin ||
-    (!capped && placed !== undefined && !ownWidth && item === "flex" && spacedFirst(holder, label, across));
+  const spaced = beforeMargin || (spacedRow && !ownWidth);
   const refusal = capped ? CAPPED : ownWidth || spaced ? undefined : placed;
   if (spaced) {
     style.read(
