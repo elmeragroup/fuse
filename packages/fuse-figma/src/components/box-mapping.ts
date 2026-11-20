@@ -981,7 +981,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const shared =
     layout.direction === "VERTICAL" && sections === undefined && endInFlow === undefined
       ? sharedTranslate(
-          flowing.map((part) => ({ style: part.cascade.style, instance: part.kind === "instance" })),
+          flowing.map((part) => part.cascade.style),
           scope.translates
         )
       : undefined;
@@ -1398,7 +1398,7 @@ function elementOf(child: PartDefinition): PartElement {
  * @param scope - The cell, the build context, the parts that scale and the instance parts.
  * @param collapses - Whether a vertical margin of the part adjoins another margin in a block box, as
  *   {@link adjoinsMargin} says.
- * @param parent - The box's style, which a fixed instance part's place reads.
+ * @param parent - The box's style, which a fixed instance part's place and its margins read.
  * @param first - Whether the part is the box's first part.
  * @param keepsRoom - Whether the box keeps its size with the part hidden, as {@link readHidden} needs.
  * @returns The part as mapped.
@@ -1435,6 +1435,7 @@ function mapPart(
     const { layer, instance } = wrapInstanceMargins(
       part.cascade.style,
       drawn,
+      parent,
       layout,
       scope.context.variables,
       collapses,

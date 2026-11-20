@@ -158,9 +158,10 @@ export type SpecField =
   | "instance"
   /**
    * What a composite draws around an instance part, which the composite owns: the frame around it
-   * for a margin of a length, or its place in the holding row for an auto margin or an `align-self`.
-   * Where an inner root built in place draws that row, the row's own fields carry
-   * the declaration in that root, as `readPlacing` feeds them.
+   * for a margin of a length, its place in the holding row for an auto margin or an `align-self`, or
+   * the paddings of the column that holds it for a translate. Where an inner root built in place is
+   * the box that draws it, the box's own fields carry the declaration in that root, as
+   * `readPlacing` feeds them.
    */
   | "around";
 
@@ -171,7 +172,11 @@ export type SpecField =
  */
 export type InPlace = {
   readonly inner: Origin;
-  readonly composite: (row: RecordedRow, origin: Origin) => void;
+  /**
+   * Take the row of a composite's declaration on an in-place layer. A row a read gives names `read`,
+   * the fields that one read fills, so the instance classifies each read of a declaration apart.
+   */
+  readonly composite: (row: RecordedRow, origin: Origin, read?: CompositeRead) => void;
   readonly fed: (declaration: Declaration, feed: Feed) => void;
   /**
    * Move each field the reads filled to where the mapping draws it instead. `move` gives a feed's new
@@ -180,6 +185,12 @@ export type InPlace = {
    */
   readonly relocate: (move: (feed: FeedTarget) => readonly FeedTarget[]) => void;
 };
+
+/**
+ * The fields one read of a composite's declaration fills: on the in-place layers, and on the box that
+ * holds the instance, as `LayerStyle.readPlacing` feeds them, empty where the read fills none there.
+ */
+export type CompositeRead = { readonly feed: Feed; readonly placing: Feed };
 
 /**
  * Where a declaration comes from: the layer it applies to, the part and class that set it, and the
@@ -335,10 +346,11 @@ export class CellLedger {
    *
    * @param source - The declaration.
    * @param reader - The layer that reads it, or the layer that declares it where no layer read it.
+   * @param read - The fields the read fills, for a row a read gives.
    * @returns The recorder of its row.
    */
-  recordFor(source: Provenance, reader: Layer): Recorder {
-    return routed(reader.inPlace, source.origin);
+  recordFor(source: Provenance, reader: Layer, read?: CompositeRead): Recorder {
+    return routed(reader.inPlace, source.origin, read);
   }
 
   /**
@@ -403,15 +415,12 @@ export class CellLedger {
   /**
    * Record a read of a declaration, under the part and class that set it, where {@link recordFor}
    * says, and the fields the read fills, where an instance part built in place holds the reading
-   * layer.
+   * layer. `placing` names the fields the read fills on the box that holds the reading instance.
    */
-  noteRead(source: Provenance, note: CoverageNote, feed: Feed, reader: Layer): void {
+  noteRead(source: Provenance, note: CoverageNote, feed: Feed, reader: Layer, placing: Feed = []): void {
     this.#layers[source.layer]?.read.add(source.property);
     reader.inPlace?.fed(source, feed);
-    this.recordFor(
-      source,
-      reader
-    )({
+    this.recordFor(source, reader, { feed, placing })({
       part: source.part,
       className: source.className,
       property: source.property,
@@ -780,8 +789,10 @@ export class LayerStyle {
 
   /**
    * Read a property of a layer this box places, whose value fills fields of this box, as an auto
-   * margin or an `align-self` on the layer sets the box's alignment. On a frame or an icon the read
-   * fills `feed`, which names fields in this box's coordinates.
+   * margin or an `align-self` on the layer sets the box's alignment, a margin of a length on an
+   * instance part pads the frame around it in the box, and a translate across the column's rows sets
+   * the column's paddings. On a frame or an icon the read fills `feed`, which names fields in this
+   * box's coordinates.
    *
    * An instance part's root has an `inPlace` of its own, which differs from this box's. There the
    * read fills `around` on the instance's root, since the instance's fields name paths from its inner
@@ -832,7 +843,7 @@ export class LayerStyle {
         : describe(mapped);
     for (const source of [...sourcesOf(this.#layer, entry, read), ...consumed]) {
       holder?.layer.inPlace?.fed(source, holder.feed);
-      this.#ledger.noteRead(source, note, feed, this.#layer);
+      this.#ledger.noteRead(source, note, feed, this.#layer, holder?.feed);
     }
     return mapped;
   }

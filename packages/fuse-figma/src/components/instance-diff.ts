@@ -328,7 +328,7 @@ function diffStroke(
 }
 
 /** The kind and key of each layer, which the two boxes must share for the diff to compare their layers. */
-function kindsAndKeys(layers: readonly ChildLayerSpec[]): readonly string[] {
+export function kindsAndKeys(layers: readonly ChildLayerSpec[]): readonly string[] {
   return layers.map((layer) => `${layer.kind} ${layer.key}`);
 }
 

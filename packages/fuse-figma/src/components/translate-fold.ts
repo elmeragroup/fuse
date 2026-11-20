@@ -15,11 +15,8 @@ import type { NumberSpec } from "./kit-spec";
  */
 import type { LayerStyle } from "./layer-style";
 
-/** A box whose `translate` moves it: its style, and whether it is an instance's root built in place. */
-type Carrier = { readonly style: LayerStyle; readonly instance: boolean };
-
-/** A translate across in pixels, and the boxes whose `translate` declares it. */
-export type CarriedTranslate = { readonly x: number; readonly carriers: readonly Carrier[] };
+/** A translate across in pixels, and the styles of the boxes whose `translate` declares it. */
+export type CarriedTranslate = { readonly x: number; readonly carriers: readonly LayerStyle[] };
 
 /** The translate each box that paints and pads nothing carries from the rows it holds, by its style. */
 export type CarriedTranslates = WeakMap<LayerStyle, CarriedTranslate>;
@@ -28,8 +25,7 @@ export type CarriedTranslates = WeakMap<LayerStyle, CarriedTranslate>;
 const OTHER_TRANSFORMS = ["transform", "rotate", "scale"] as const;
 
 /** The translate across a box's own `translate` declares, alone and in flow. */
-function ownTranslate(carrier: Carrier): CarriedTranslate | undefined {
-  const { style } = carrier;
+function ownTranslate(style: LayerStyle): CarriedTranslate | undefined {
   const value = style.resolved("translate");
   const position = normalizeCss(style.raw("position") ?? "static");
   const transformed = OTHER_TRANSFORMS.some((property) => {
@@ -44,22 +40,22 @@ function ownTranslate(carrier: Carrier): CarriedTranslate | undefined {
   const moved = evaluateLength(x);
   return z.length > 0 || evaluateLength(y) !== 0 || moved === undefined || moved === 0
     ? undefined
-    : { x: moved, carriers: [carrier] };
+    : { x: moved, carriers: [style] };
 }
 
 /**
  * The translate across every row of a box shares, each through its own `translate` or through what a
  * wrapper carries.
  *
- * @param rows - The box's parts in flow, each with whether it is an instance.
+ * @param rows - The styles of the box's parts in flow.
  * @param carried - What each wrapper carries.
  * @returns The shared translate, or undefined where a row sets none, sets another, or the box has no row.
  */
 export function sharedTranslate(
-  rows: readonly Carrier[],
+  rows: readonly LayerStyle[],
   carried: CarriedTranslates
 ): CarriedTranslate | undefined {
-  const each = rows.map((row) => ownTranslate(row) ?? carried.get(row.style));
+  const each = rows.map((row) => ownTranslate(row) ?? carried.get(row));
   const [first] = each;
   if (first === undefined || each.some((moved) => moved?.x !== first.x)) {
     return undefined;
@@ -112,15 +108,14 @@ export function foldTranslate(
   }
   const [more, fewer] = shared.x < 0 ? ["less", "more"] : ["more", "less"];
   const detail = `the rows of its column all move ${amount} ${way}, which the column's paddings draw, ${amount} ${more} on the left and ${amount} ${fewer} on the right`;
-  for (const { style: carrier, instance } of shared.carriers) {
-    carrier.read(
+  for (const carrier of shared.carriers) {
+    // The column's paddings draw the move, around an instance's root as around a frame.
+    style.readPlacing(
+      carrier,
       "translate",
       (value) => value,
       () => ({ outcome: "literal", detail }),
-      // An instance's root moves inside the frame around it, which the column's paddings draw.
-      instance
-        ? carrier.feed("around")
-        : [...carrier.feed("paddingLeft", style.path), ...carrier.feed("paddingRight", style.path)]
+      [...style.feed("paddingLeft"), ...style.feed("paddingRight")]
     );
   }
   return folded;
