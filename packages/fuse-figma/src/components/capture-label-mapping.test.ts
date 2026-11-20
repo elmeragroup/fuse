@@ -470,6 +470,30 @@ describe("a label below a root that sets its text layout", () => {
   });
 });
 
+// Oracle: CSS Text Decoration 4 §2.1 and §2.4, and Figma's `STRIKETHROUGH`, which takes no thickness
+// or color of its own and draws in the text's fill at a thickness Figma chooses. A `line-through` in the
+// text's own color at `auto` thickness draws as that line; in another color or thickness it has no
+// Figma form, so neither the line nor its color draws.
+describe("a line through a label's text", () => {
+  it("draws where its color is the text's own", async () => {
+    const { variant, coverage } = await buildLabelled("block w-[100px] line-through");
+    expect(textOf(variant?.root)?.strikethrough).toBe(true);
+    expect(textOf(variant?.root)?.underline).toBeUndefined();
+    expect(notesOf(coverage, "line-through")).toEqual([
+      ["text-decoration-line", "literal", "a line through the text"],
+    ]);
+  });
+
+  it.each(["decoration-[#ff0000]", "decoration-2"])("stays unmapped beside %s", async (decoration) => {
+    const { variant, coverage } = await buildLabelled(`block w-[100px] line-through ${decoration}`);
+    expect(textOf(variant?.root)?.strikethrough).toBeUndefined();
+    expect(notesOf(coverage, "line-through")).toEqual([
+      ["text-decoration-line", "unmapped", "no Figma field reads line-through"],
+    ]);
+    expect(notesOf(coverage, decoration).map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+  });
+});
+
 // Oracle: HTML's rendering of a text `<input>`, which draws its value on one line across its content
 // box from the start, whatever the box's `display` or `white-space` say, so the label fills the width
 // and ends in an ellipsis after one line (`DECISIONS.md` round 2), and of a `<textarea>`, which wraps

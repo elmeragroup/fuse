@@ -432,7 +432,7 @@ export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope):
       message: `${scope.variant}: the label's weight binds ${fontWeight.variable.name}, whose weights name no upright face the kit knows`,
     });
   }
-  const underline = readUnderline(style, fontSize, variables, path);
+  const decoration = readDecoration(style, fontSize, variables, path);
   if (fontFamily === undefined || fontSize === undefined || lineHeight === undefined || color === undefined) {
     throw new KitUnmappable({
       message: `${scope.variant}: the label needs a font family, size, line height and color`,
@@ -484,7 +484,7 @@ export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope):
     fontSize,
     lineHeight,
     color,
-    underline,
+    ...decoration,
     sizing: layout.sizing,
     align: readTextAlign(style, fills ? label.placement : undefined, path),
     truncation: layout.truncation,
@@ -727,26 +727,45 @@ function describeDecorationColor(read: DecorationColor): CoverageNote {
       };
 }
 
-function readUnderline(
+/** The line a label's `text-decoration-line` draws: under its text, through it, or none. */
+type Decoration = Pick<TextLayerSpec, "underline" | "strikethrough">;
+
+/**
+ * Read the line a label's `text-decoration-line` draws. An underline keeps its offset, thickness
+ * and color. A Figma text drawn `STRIKETHROUGH` takes neither a thickness nor a color of its own,
+ * since Figma holds those only while a text is underlined, and draws its line in the text's own
+ * fill at a thickness Figma chooses. So `line-through` maps only where its color is the text's own
+ * and its thickness is `auto`, which leaves the thickness to the browser (CSS Text Decoration 4
+ * §2.4), as an unset underline thickness keeps Figma's automatic one. Any other line, or two lines
+ * at once, stays unmapped.
+ */
+function readDecoration(
   style: LayerStyle,
   fontSize: NumberSpec | undefined,
   variables: VariableIndex,
   path: readonly string[]
-): TextLayerSpec["underline"] {
-  const underlined = style.read(
+): Decoration {
+  // A line through the text draws only where its color and thickness do, so they read first, and
+  // the line stays unmapped where either does not map.
+  const through =
+    DECORATION_LINES.get(normalizeCss(style.resolved("text-decoration-line") ?? "")) === "line-through";
+  const drawsThrough = through && strikes(style, variables, path);
+  const line = style.read(
     "text-decoration-line",
     (value) => {
-      const line = normalizeCss(value);
-      return line === "underline" ? true : line === "none" ? false : undefined;
+      const read = DECORATION_LINES.get(normalizeCss(value));
+      return read === "line-through" && !drawsThrough ? undefined : read;
     },
-    (drawn) => ({ outcome: "literal", detail: drawn ? "an underline" : "no decoration" }),
-    style.feed("underline", path)
+    (drawn) => ({ outcome: "literal", detail: DRAWN_LINE[drawn] }),
+    style.feed(through ? "strikethrough" : "underline", path)
   );
-  if (underlined !== true) {
+  if (line !== "underline") {
     for (const property of ["text-underline-offset", "text-decoration-thickness", "text-decoration-color"]) {
-      style.mark(property, "dropped", "the cell draws no underline", []);
+      if (!through || property === "text-underline-offset") {
+        style.mark(property, "dropped", "the cell draws no underline", []);
+      }
     }
-    return undefined;
+    return drawsThrough ? { underline: undefined, strikethrough: true } : { underline: undefined };
   }
   // An `em` length takes the label's font size, which only a literal size gives in pixels.
   const inPixels = (value: string) =>
@@ -759,20 +778,71 @@ function readUnderline(
     style.feed("underline", path)
   );
   return {
-    offset: style.read(
-      "text-underline-offset",
-      inPixels,
-      (offset) => ({ outcome: "literal", detail: `an underline offset of ${offset}px` }),
-      style.feed("underline", path)
-    ),
-    thickness: style.read(
-      "text-decoration-thickness",
-      inPixels,
-      (thickness) => ({ outcome: "literal", detail: `an underline ${thickness}px thick` }),
-      style.feed("underline", path)
-    ),
-    color: underlineColor?.kind === "paint" ? underlineColor.color : undefined,
+    underline: {
+      offset: style.read(
+        "text-underline-offset",
+        inPixels,
+        (offset) => ({ outcome: "literal", detail: `an underline offset of ${offset}px` }),
+        style.feed("underline", path)
+      ),
+      thickness: style.read(
+        "text-decoration-thickness",
+        inPixels,
+        (thickness) => ({ outcome: "literal", detail: `an underline ${thickness}px thick` }),
+        style.feed("underline", path)
+      ),
+      color: underlineColor?.kind === "paint" ? underlineColor.color : undefined,
+    },
   };
+}
+
+/** The `text-decoration-line` values a label draws, as the kit names them. */
+const DECORATION_LINES: ReadonlyMap<string, DecorationLine> = new Map([
+  ["none", "none"],
+  ["underline", "underline"],
+  ["line-through", "line-through"],
+]);
+
+/** A line a label draws. */
+type DecorationLine = "none" | "underline" | "line-through";
+
+/** How each line a label draws reads in a coverage detail. */
+const DRAWN_LINE = {
+  none: "no decoration",
+  underline: "an underline",
+  "line-through": "a line through the text",
+} as const satisfies Record<DecorationLine, string>;
+
+/**
+ * Read a line through a label's text: whether its color is the text's own and its thickness `auto`.
+ * Where either is not, it stays unmapped.
+ */
+function strikes(style: LayerStyle, variables: VariableIndex, path: readonly string[]): boolean {
+  const textColor = style.resolved("color");
+  const color = style.read(
+    "text-decoration-color",
+    (value) => {
+      const read = readDecorationColor(value, textColor, variables);
+      return read?.kind === "text" ? read : undefined;
+    },
+    () => ({
+      outcome: "literal",
+      detail: "a line in the text's own color, as Figma draws a line through a text",
+    }),
+    style.feed("strikethrough", path)
+  );
+  const thickness = style.read(
+    "text-decoration-thickness",
+    (value) => (normalizeCss(value) === "auto" ? value : undefined),
+    () => ({
+      outcome: "literal",
+      detail: "the thickness the renderer chooses, as Figma draws a line through a text",
+    }),
+    style.feed("strikethrough", path)
+  );
+  const colorOwn = color !== undefined || !style.has("text-decoration-color");
+  const thicknessOwn = thickness !== undefined || !style.has("text-decoration-thickness");
+  return colorOwn && thicknessOwn;
 }
 
 /**
