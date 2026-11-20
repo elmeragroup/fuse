@@ -41,22 +41,20 @@ const CARET: IconManifest = {
 const isGrouped = (cell: Cell): boolean => cell.content === "grouped";
 
 /**
- * `Command.Shortcut`, a Kbd group after the row's text, exposed so a designer retypes its caps, in a
- * row that is highlighted or not. Each face is its own instance; both keep the layer name
- * `kbd-group`, so Figma maps a designer's overrides across the variant switch.
+ * `Command.Shortcut`, a Kbd group after the row's text, exposed so a designer retypes its caps. One
+ * layer serves the row at rest and highlighted, whose colors the build carries as the highlighted
+ * cells' overrides.
  */
-function shortcutManifest(highlighted: boolean): InstanceManifest {
-  return {
-    kind: "instance",
-    key: highlighted ? "shortcut-highlighted" : "shortcut",
-    of: KBD_GROUP_MANIFEST,
-    cell: () => ({ keys: "2" }),
-    slot: "command-shortcut",
-    shownIn: (cell) => cell.trailing === "shortcut" && (cell.state === "highlighted") === highlighted,
-    after: "label",
-    exposed: true,
-  };
-}
+const SHORTCUT: InstanceManifest = {
+  kind: "instance",
+  key: "shortcut",
+  of: KBD_GROUP_MANIFEST,
+  cell: () => ({ keys: "2" }),
+  slot: "command-shortcut",
+  shownIn: (cell) => cell.trailing === "shortcut",
+  after: "label",
+  exposed: true,
+};
 
 /**
  * The row's manifest, which the capture-backed build reads with `captures/command-item.json`:
@@ -84,7 +82,7 @@ export const COMMAND_ITEM_MANIFEST: SetManifest = {
     shownIn: always,
   },
   iconsFor: (cell: Cell) => (cell.trailing === "caret" ? [CARET] : []),
-  parts: [shortcutManifest(false), shortcutManifest(true)],
+  parts: [SHORTCUT],
   swapProperties: [],
 };
 

@@ -22,7 +22,7 @@
  */
 import type { InstanceManifest, SetManifest } from "../capture/manifest";
 import type { Cell } from "./component-spec";
-import { frameDescriptionsManifest, frameErrorManifest } from "./field-frame-kit";
+import { frameDescriptionManifest, frameErrorManifest } from "./field-frame-kit";
 import { FIELD_LEGEND_MANIFEST } from "./field-text-kit";
 import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { always } from "./popup-facts";
@@ -90,7 +90,7 @@ function rowManifest(label: string, index: number): InstanceManifest {
  * The radio group's manifest, which the capture-backed build reads with `captures/radio-group.json`,
  * as `<RadioGroup label description orientation defaultValue>` around three `<Radio>` rows renders
  * it, disabled, or invalid with an error message: the fieldset around the legend row, the
- * descriptions, the group primitive and the error.
+ * description, the group primitive and the error.
  */
 export const RADIO_GROUP_MANIFEST: SetManifest = {
   key: "radio-group",
@@ -132,8 +132,8 @@ export const RADIO_GROUP_MANIFEST: SetManifest = {
             },
           ],
         },
-        // The descriptions sit under the legend, and the error after the group.
-        ...frameDescriptionsManifest(RADIO_GROUP_DESCRIPTION),
+        // The description sits under the legend, and the error after the group.
+        frameDescriptionManifest(RADIO_GROUP_DESCRIPTION),
         {
           key: "group",
           slot: "radio-group",

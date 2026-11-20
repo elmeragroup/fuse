@@ -9,8 +9,9 @@
  * - The last button, `Delete`, is disabled. Base UI's toolbar button marks it `aria-disabled="true"`
  *   and `data-disabled`, and Fuse's Button disables it natively, so the instance is the Button set's
  *   disabled variant.
- * - Base UI stamps `data-orientation` on the root, the group and each button, so each orientation
- *   holds its own button instances.
+ * - Base UI stamps `data-orientation` on the root, the group and each button. Each button is one
+ *   instance layer in both orientations, and the vertical variant carries what it draws differently
+ *   as overrides.
  */
 import type { InstanceManifest, SetManifest } from "../capture/manifest";
 import { BUTTON_MANIFEST } from "./button-kit";
@@ -29,40 +30,21 @@ export const TOOLBAR_GROUP_ACTIONS: readonly ToolbarAction[] = [
 /** The disabled button after the separator: the docs Basic demo's. */
 export const TOOLBAR_DISABLED_ACTION: ToolbarAction = { key: "delete", label: "Delete", icon: "Trash" };
 
-/** A bar's orientation, as Base UI stamps it on the bar and each of its buttons. */
-type Orientation = "horizontal" | "vertical";
-
 /**
  * A ghost small `Button` with a start icon, as `<Toolbar.Button render={<Button variant="ghost" size="sm" />}>`,
- * in a bar of one orientation: the horizontal bar's under the action's key, the vertical bar's under
- * that key and `-vertical`.
+ * one layer in both orientations, which the build carries in each bar as that cell's overrides.
  */
-function toolbarButtonManifest(
-  action: ToolbarAction,
-  state: "rest" | "disabled",
-  orientation: Orientation
-): InstanceManifest {
+function toolbarButtonManifest(action: ToolbarAction, state: "rest" | "disabled"): InstanceManifest {
   return {
     kind: "instance",
-    key: orientation === "horizontal" ? action.key : `${action.key}-vertical`,
+    key: action.key,
     of: BUTTON_MANIFEST,
     slot: "toolbar-button",
     cell: () => ({ variant: "ghost", size: "sm", state, icon: "start" }),
     properties: () => ({ text: { Label: action.label }, swap: { "Start icon": action.icon } }),
-    shownIn: (cell) => (cell.orientation ?? "horizontal") === orientation,
+    shownIn: always,
     exposed: true,
   };
-}
-
-/** The bar's buttons in both orientations, each shown in its own. */
-function toolbarButtonManifests(
-  action: ToolbarAction,
-  state: "rest" | "disabled"
-): readonly InstanceManifest[] {
-  return [
-    toolbarButtonManifest(action, state, "horizontal"),
-    toolbarButtonManifest(action, state, "vertical"),
-  ];
 }
 
 /**
@@ -87,7 +69,7 @@ export const TOOLBAR_MANIFEST: SetManifest = {
       shownIn: always,
       label: undefined,
       iconsFor: () => [],
-      parts: TOOLBAR_GROUP_ACTIONS.flatMap((action) => toolbarButtonManifests(action, "rest")),
+      parts: TOOLBAR_GROUP_ACTIONS.map((action) => toolbarButtonManifest(action, "rest")),
     },
     {
       kind: "instance",
@@ -98,7 +80,7 @@ export const TOOLBAR_MANIFEST: SetManifest = {
       properties: () => ({}),
       shownIn: always,
     },
-    ...toolbarButtonManifests(TOOLBAR_DISABLED_ACTION, "disabled"),
+    toolbarButtonManifest(TOOLBAR_DISABLED_ACTION, "disabled"),
   ],
   swapProperties: [],
 };
