@@ -3,7 +3,7 @@
  * declaration, unless an instance part built in place holds the layer that reads it and the inner
  * component does not own it, which leaves the row for the instance's diff to settle.
  */
-import type { InPlace, Recorder } from "./layer-style";
+import type { CompositeRead, InPlace, Recorder } from "./layer-style";
 
 /**
  * Who owns the coverage rows of a declaration: the set whose box holds its class, or, for an instance
@@ -20,12 +20,13 @@ export type Origin = { readonly record: Recorder };
  * @param inPlace - The instance part built in place that holds the layer that reads the declaration,
  *   undefined for a layer of the set's own boxes.
  * @param origin - The declaration's owner.
+ * @param read - The fields the read fills, for a row a read gives, which the instance's diff reads.
  * @returns The recorder of the row.
  */
-export function routed(inPlace: InPlace | undefined, origin: Origin): Recorder {
+export function routed(inPlace: InPlace | undefined, origin: Origin, read?: CompositeRead): Recorder {
   return inPlace === undefined || origin === inPlace.inner
     ? origin.record
     : (row) => {
-        inPlace.composite(row, origin);
+        inPlace.composite(row, origin, read);
       };
 }

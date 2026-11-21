@@ -7,13 +7,15 @@
  * known, and gets back the icon's layer and the width it takes along a row. `placement.ts` reads the
  * margins of a root.
  */
+import { isDeepStrictEqual } from "node:util";
+
 import { outOfFlow, UNREAD_SHARE } from "./box-sizing";
 import type { RowShare } from "./box-sizing";
 import { describeNumber, evaluateLength, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { NO_LIMITS, ZERO } from "./kit-spec";
 import type { FrameLayerSpec, IconLayerSpec, InstanceLayerSpec, NumberSpec } from "./kit-spec";
-import type { LayerStyle, SpecField } from "./layer-style";
+import type { CoverageNote, LayerStyle, SpecField } from "./layer-style";
 import type { Layout } from "./placement";
 
 /**
@@ -88,7 +90,7 @@ export function wrapFrameMargins(
   collapses: boolean,
   clipped: boolean
 ): FrameLayerSpec {
-  const frame = drawMargins(style, layer, parent, variables, collapses, clipped);
+  const frame = drawMargins(style, paddedBy(style), layer, parent, variables, collapses, clipped);
   if (frame === undefined) {
     return layer;
   }
@@ -99,10 +101,15 @@ export function wrapFrameMargins(
 /**
  * Draw an instance part's margins, as {@link drawMargins} says. An instance has no margin box of its
  * own, so the frame is the composite's own layer around it, the instance then carries only its own
- * sizing, and the reads of the margins fill the frame `around` it.
+ * sizing, and the reads of the margins fill the frame `around` it. The frame is a layer of the box
+ * that holds the instance, so the reads fill the kind of the box's layer at the part's key and the
+ * frame's padding there too, as `readPlacing` in `layer-style.ts` feeds them, which an inner root
+ * built in place that is the box must carry. The instance then sits in the frame as `box`, so what
+ * the reads below it fill on the instance as a whole moves there.
  *
  * @param style - The inner root's style, built in place.
  * @param layer - The instance layer.
+ * @param holder - The style of the box that holds the instance.
  * @param parent - The part's parent's layout.
  * @param variables - The synced variables a margin can bind.
  * @param collapses - Whether a vertical margin of the part adjoins another margin in a block parent.
@@ -112,15 +119,27 @@ export function wrapFrameMargins(
 export function wrapInstanceMargins(
   style: LayerStyle,
   layer: InstanceLayerSpec,
+  holder: LayerStyle,
   parent: Pick<Layout, "flex" | "blocks" | "direction">,
   variables: VariableIndex,
   collapses: boolean,
   clipped: boolean
 ): InstanceMarginBox {
-  const frame = drawMargins(style, layer, parent, variables, collapses, clipped);
+  const at = [...holder.path, layer.key];
+  const read: MarginRead = (property, map, describe) =>
+    holder.readPlacing(style, property, map, describe, [
+      ...holder.feed("kind", at),
+      ...holder.feed(PADDING_OF[property], at),
+    ]);
+  const frame = drawMargins(style, read, layer, parent, variables, collapses, clipped);
   if (frame === undefined) {
     return { layer, instance: layer };
   }
+  holder.moveFeeds((feed) =>
+    feed.field === "instance" && isDeepStrictEqual(feed.path, at)
+      ? [{ path: [...at, "box"], field: "instance" }]
+      : [feed]
+  );
   const { visibleProperty: _shown, ...rest } = layer;
   const instance: InstanceLayerSpec = { ...rest, key: "box", name: "box" };
   return { layer: { ...frame, children: [instance] }, instance };
@@ -157,6 +176,7 @@ export function wrapIconMargins(
   const fixed = { kind: "fixed", length: icon.size } as const;
   const frame = drawMargins(
     style,
+    paddedBy(style),
     { ...icon, sizing: { horizontal: fixed, vertical: fixed } },
     { ...parent, blocks: false },
     variables,
@@ -176,6 +196,21 @@ export function wrapIconMargins(
   }
   const { visibleProperty: _shown, ...box } = icon;
   return { layer: { ...frame, children: [{ ...box, key: "box", name: "box" }] }, share };
+}
+
+/**
+ * Read a margin of a part, which `map` maps to the padding of the frame around the part, filling the
+ * fields the margin draws.
+ */
+type MarginRead = (
+  property: (typeof MARGINS)[number],
+  map: (value: string) => NumberSpec | undefined,
+  describe: (spec: NumberSpec) => CoverageNote
+) => NumberSpec | undefined;
+
+/** Read a frame part's or an icon's margins as the padding of the frame around it. */
+function paddedBy(style: LayerStyle): MarginRead {
+  return (property, map, describe) => style.read(property, map, describe, style.feed(PADDING_OF[property]));
 }
 
 /**
@@ -224,6 +259,7 @@ type MarginedLayer =
  */
 function drawMargins(
   style: LayerStyle,
+  read: MarginRead,
   layer: MarginedLayer,
   parent: Pick<Layout, "flex" | "blocks" | "direction">,
   variables: VariableIndex,
@@ -295,22 +331,18 @@ function drawMargins(
   }
   const margin = (property: (typeof MARGINS)[number]): NumberSpec =>
     (set.includes(property)
-      ? style.read(
-          property,
-          length,
-          (spec) =>
-            spec.kind !== "literal"
-              ? describeNumber(spec)
-              : overshoots && property === "margin-left"
-                ? {
-                    outcome: "literal",
-                    detail: `${spec.value}px of padding at the start of a frame around the part, which keeps its 100% width past the margin, so its column's clip cuts its end`,
-                  }
-                : {
-                    outcome: "literal",
-                    detail: `${spec.value}px of padding on a frame around the part, the space the margin adds`,
-                  },
-          layer.kind === "instance" ? style.feed("around") : style.feed(PADDING_OF[property])
+      ? read(property, length, (spec) =>
+          spec.kind !== "literal"
+            ? describeNumber(spec)
+            : overshoots && property === "margin-left"
+              ? {
+                  outcome: "literal",
+                  detail: `${spec.value}px of padding at the start of a frame around the part, which keeps its 100% width past the margin, so its column's clip cuts its end`,
+                }
+              : {
+                  outcome: "literal",
+                  detail: `${spec.value}px of padding on a frame around the part, the space the margin adds`,
+                }
         )
       : undefined) ?? ZERO;
   const frame: FrameLayerSpec = {

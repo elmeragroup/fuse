@@ -37,9 +37,11 @@ import type {
 import type { RecordedRow } from "./coverage";
 import type { Origin } from "./coverage-log";
 import { instancePartsOf, instanceRootSlotOf } from "./definition-parts";
-import { diffInstance } from "./instance-diff";
+import { diffInstance, kindsAndKeys } from "./instance-diff";
 import type { InstanceDiff, InstanceDifference } from "./instance-diff";
+import { layerAt } from "./kit-spec";
 import type {
+  BoxSpec,
   ComponentRootSpec,
   ComponentSetSpec,
   FrameLayerSpec,
@@ -72,19 +74,29 @@ type PartRecord = {
  * The spec fields the reads of each declaration fill on an inner root built in place, by
  * {@link declarationKey}, and, for a part nested in another inner root built in place, that root's
  * sink and the instance layer's path there, where a read below the instance fills the instance.
+ * `reads` holds the fields of each read a row names, which a relocation moves with the rest.
  */
 type FeedSink = {
   readonly feeds: Map<string, FeedTarget[]>;
+  readonly reads: FedRead[];
   readonly within: { readonly sink: FeedSink; readonly path: readonly string[] } | undefined;
 };
 
+/** The fields one read fills on one inner root built in place, which a relocation moves. */
+type FedRead = { targets: readonly FeedTarget[] };
+
+/** The inner root built in place that holds a set of instance parts: its feeds and its part. */
+type Holder = { readonly sink: FeedSink; readonly visit: () => Visit };
+
 /**
- * The inner root built in place that holds a set of instance parts: its feeds, and where a row of a
- * composite's declaration it must classify in turn goes, beside its own.
+ * The row of a composite's declaration on the in-place layers, with its origin. A row a read gives
+ * names the fields the read fills there, and those it fills on the inner root built in place that
+ * holds the instance, if any, as `placing`.
  */
-type Holder = {
-  readonly sink: FeedSink;
-  readonly hold: (row: Row, origin: Origin) => void;
+type CompositeRow = {
+  readonly row: Row;
+  readonly origin: Origin;
+  readonly read: { readonly fed: FedRead; readonly placing: FedRead | undefined } | undefined;
 };
 
 /** One instance part in one outer cell, from its cascade to its coverage. */
@@ -102,12 +114,19 @@ type Visit = {
   readonly booleans: Readonly<Record<string, boolean>>;
   /** The rows of the inner component's own declarations, which wait for the cell to settle. */
   readonly innerRows: Row[];
-  /** The rows of the composite's declarations on the in-place layers, each with its origin. */
-  readonly compositeRows: { readonly row: Row; readonly origin: Origin }[];
+  /** The rows of the composite's declarations on the in-place layers, which wait for the cell to settle. */
+  readonly compositeRows: CompositeRow[];
+  /** Adds a row to the coverage table of the set or inner component that holds the part. */
+  readonly emit: Recorder;
   /** The spec fields the reads of each declaration fill on the in-place layers. */
   readonly sink: FeedSink;
-  /** The diff of the root built in place, once it maps. */
-  readonly diffs: InstanceDiff[];
+  /**
+   * The part built in place whose inner root holds this one, if any, and the fields this instance
+   * fills there as a whole.
+   */
+  readonly holder: { readonly visit: () => Visit; readonly whole: FedRead } | undefined;
+  /** The root built in place and its diff, once it maps. */
+  readonly mapped: { readonly root: ComponentRootSpec; readonly diff: InstanceDiff }[];
   /** The instance parts the inner component holds, built in place too. */
   readonly nested: InstanceParts;
 };
@@ -209,19 +228,18 @@ export class InstanceParts {
     const values = withGiven(part.properties?.(outer) ?? {}, this.#given, part.key);
     checkNested(values.nested ?? [], part.of, part.key);
     const innerRows: Row[] = [];
-    const compositeRows: Visit["compositeRows"] = [];
-    const composite = (row: Row, origin: Origin): void => {
-      compositeRows.push({ row, origin });
-    };
+    const compositeRows: CompositeRow[] = [];
     const inner: Origin = {
       record: (row) => {
         innerRows.push(row);
       },
     };
+    const owner = this.#owner;
+    const path = [...parent.path, part.key];
     const sink: FeedSink = {
       feeds: new Map(),
-      within:
-        this.#owner === undefined ? undefined : { sink: this.#owner.sink, path: [...parent.path, part.key] },
+      reads: [],
+      within: owner === undefined ? undefined : { sink: owner.sink, path },
     };
     const visit: Visit = {
       part,
@@ -232,25 +250,45 @@ export class InstanceParts {
       booleans: booleansOf(values, set, part.key),
       innerRows,
       compositeRows,
+      emit: this.#emit,
       sink,
-      diffs: [],
+      holder:
+        owner === undefined
+          ? undefined
+          : { visit: owner.visit, whole: fedRead(owner.sink, [{ path, field: "instance" }]) },
+      mapped: [],
       nested: new InstanceParts(
         this.#context,
         this.#sets,
         this.#captureOf,
         inner.record,
-        { sink, hold: composite },
+        { sink, visit: () => visit },
         values.nested
       ),
     };
     const inPlace: InPlace = {
       inner,
-      composite,
+      composite: (row, origin, read) => {
+        compositeRows.push({
+          row,
+          origin,
+          read:
+            read === undefined
+              ? undefined
+              : {
+                  fed: fedRead(sink, read.feed),
+                  placing:
+                    owner === undefined || read.placing.length === 0
+                      ? undefined
+                      : fedRead(owner.sink, read.placing),
+                },
+        });
+      },
       fed: (declaration, feed) => {
         fedInto(sink, declaration, feed);
       },
       relocate: (move) => {
-        relocate(sink.feeds, move);
+        relocate(sink, move);
       },
     };
     this.#visits.push(visit);
@@ -292,7 +330,7 @@ export class InstanceParts {
       clips: variant.root.clips,
     };
     const diff = diffInstance(root, variant.root);
-    visit.diffs.push(diff);
+    visit.mapped.push({ root, diff });
     const properties = propertiesOf(diff, visit.booleans);
     const plain: InstanceLayerSpec = {
       kind: "instance",
@@ -316,31 +354,47 @@ export class InstanceParts {
   }
 
   /**
-   * Give the coverage rows of the parts the cell built in place, once the cell has settled. Each row
-   * of a composite's declaration goes to its origin as {@link classified} says, unless the inner root
-   * that holds the part draws it in fields of its own, as {@link drawnByHolder} says, which hands the
-   * row to that root's own classification, after the parts below it settle. The inner component's
-   * own rows that map belong to the inner set's coverage, and each that does not map, and each
-   * difference no instance field carries, goes to the set or inner component that holds the part.
-   * Call it after each cell settles.
+   * Give the coverage rows of the parts the cell built in place, at every depth, once the cell has
+   * settled. Each read of a composite's declaration gets one decision, as {@link decided} says, and
+   * each declaration's rows then follow its worst read, as {@link merged} says. A row goes to its
+   * origin before the part that owns the origin gives its own rows, so a declaration of an inner
+   * component whose read an outer instance decides lands with that component's rows. The inner
+   * component's own rows that map belong to the inner set's coverage, and each that does not map,
+   * and each difference no instance field carries, goes to the set or inner component that holds the
+   * part. Call it on a set's own parts after each cell settles.
    */
   settle(): void {
-    for (const visit of this.#visits.splice(0)) {
-      visit.nested.settle();
-      for (const { row, origin } of visit.compositeRows) {
-        if (this.#owner !== undefined && drawnByHolder(row, visit)) {
-          this.#owner.hold(row, origin);
-        } else {
-          origin.record(classified(row, visit));
+    const visits = this.#drained();
+    const reads = new Map(
+      visits.map((visit) => [
+        visit,
+        visit.compositeRows.map(({ row, origin, read }) => ({
+          row,
+          origin,
+          decision: decided(
+            row,
+            visit,
+            read?.fed.targets ?? visit.sink.feeds.get(declarationKey(row)) ?? [],
+            read?.placing
+          ),
+        })),
+      ])
+    );
+    const rows = merged([...reads.values()].flat());
+    for (const visit of visits) {
+      for (const read of reads.get(visit) ?? []) {
+        const row = rows.get(read);
+        if (row !== undefined) {
+          read.origin.record(row);
         }
       }
       for (const row of visit.innerRows) {
         if (row.outcome === "unmapped") {
-          this.#emit({ ...row, detail: `in the ${visit.part.key} instance, ${row.detail}` });
+          visit.emit({ ...row, detail: `in the ${visit.part.key} instance, ${row.detail}` });
         }
       }
-      for (const difference of visit.diffs.flatMap((diff) => diff.unmapped)) {
-        this.#emit({
+      for (const difference of visit.mapped.flatMap(({ diff }) => diff.unmapped)) {
+        visit.emit({
           part: visit.part.of.slot,
           className: "",
           property: difference.field,
@@ -350,6 +404,11 @@ export class InstanceParts {
         });
       }
     }
+  }
+
+  /** Take the parts the cell built in place, each after the parts its inner root holds. */
+  #drained(): Visit[] {
+    return this.#visits.splice(0).flatMap((visit) => [...visit.nested.#drained(), visit]);
   }
 
   #recordOf(part: InstanceDefinition): PartRecord {
@@ -390,10 +449,20 @@ function fedInto(sink: FeedSink, declaration: Declaration, feed: Feed): void {
 }
 
 /** Move each feed to the targets `move` gives it, where the mapping draws its field instead. */
-function relocate(feeds: Map<string, FeedTarget[]>, move: (feed: FeedTarget) => readonly FeedTarget[]): void {
-  for (const [key, fed] of feeds) {
-    feeds.set(key, fed.flatMap(move));
+function relocate(sink: FeedSink, move: (feed: FeedTarget) => readonly FeedTarget[]): void {
+  for (const [key, fed] of sink.feeds) {
+    sink.feeds.set(key, fed.flatMap(move));
   }
+  for (const read of sink.reads) {
+    read.targets = read.targets.flatMap(move);
+  }
+}
+
+/** Keep the fields one read fills on an inner root built in place, where relocations move them. */
+function fedRead(sink: FeedSink, targets: Feed): FedRead {
+  const read: FedRead = { targets };
+  sink.reads.push(read);
+  return read;
 }
 
 /** The spec field each instance override carries, as a read's feed names it. */
@@ -414,66 +483,158 @@ function fills(feed: FeedTarget, path: readonly string[], field: string): boolea
 }
 
 /**
- * A row of a composite's declaration on the in-place layers, by what the instance does with the
- * fields the declaration's reads fill. A read that fills a field the instance draws another way than
- * the variant, where no instance field carries it, is unmapped with that difference. One that fills a
- * field an override or the instance's own sizing carries keeps its outcome, bound or literal, and so
- * does one the composite draws around the instance, as a frame for its margins or the holding row's
- * alignment for an auto margin or an `align-self`, though the inner root that draws that row, if
- * any, classifies the latter in turn, as `drawnByHolder` says. One that turns a glyph the instance
- * swaps to its half-turn mirror keeps its outcome, its detail naming the mirror. One whose fields the variant draws the
- * same repeats it and drops. A row that is no read keeps its outcome.
+ * What the instances do with one read of a composite's declaration: keep its row, with another
+ * detail where the instance swaps a glyph to its mirror, leave it unmapped, or drop it as repeating
+ * the variant. A row that is no read the instances decide settles `asIs`.
  */
-function classified(row: Row, visit: Visit): Row {
-  const [diff] = visit.diffs;
-  if (diff === undefined || (row.outcome !== "bound" && row.outcome !== "literal")) {
-    return row;
+type Decision =
+  | { readonly _tag: "asIs" }
+  | { readonly _tag: "kept"; readonly row: Row }
+  | { readonly _tag: "unmapped"; readonly row: Row }
+  | { readonly _tag: "dropped"; readonly row: Row };
+
+/** A read of a composite's declaration, its row as the read gave it, and its decision. */
+type DecidedRead = { readonly row: Row; readonly origin: Origin; readonly decision: Decision };
+
+/**
+ * Decide a read of a composite's declaration that fills `fed` on the inner root built in place of
+ * `visit`, and `placing` on the inner root that holds it, if any. A row the mapper already left
+ * unmapped stays so. Where the composite draws the read around the instance, as a frame for its
+ * margins, the holding row's alignment for an auto margin or an `align-self`, or the column's
+ * paddings for a translate, the read keeps its outcome, bound or literal, unless an inner root built
+ * in place draws that, whose diff decides the `placing` fields in turn. Where the read fills a field
+ * the instance draws another way than the variant and no instance field carries, it is unmapped with
+ * that difference. Where an override, the instance's own sizing or a swap to a glyph's half-turn
+ * mirror carries the read, the inner root built in place that holds the instance, if any, must carry
+ * the instance as a whole, so its diff decides in turn. A read the mirror carries keeps its outcome
+ * with a detail that names the mirror. One whose fields the variant draws the same drops.
+ */
+function decided(row: Row, visit: Visit, fed: readonly FeedTarget[], placing: FedRead | undefined): Decision {
+  const [mapped] = visit.mapped;
+  if (row.outcome === "unmapped") {
+    return { _tag: "unmapped", row };
   }
-  const fed = visit.sink.feeds.get(declarationKey(row)) ?? [];
+  if (mapped === undefined || (row.outcome !== "bound" && row.outcome !== "literal")) {
+    return { _tag: "asIs" };
+  }
+  const { holder } = visit;
+  const { diff, root } = mapped;
   if (fed.some((feed) => feed.field === "around")) {
-    return row;
+    return placing === undefined || holder === undefined
+      ? { _tag: "kept", row }
+      : decided(row, holder.visit(), placing.targets, undefined);
   }
   const unmapped = diff.unmapped.find((difference) =>
-    fed.some((feed) => fills(feed, difference.path, difference.field))
+    fed.some((feed) => differs(feed, difference, root, visit.variant.root))
   );
   if (unmapped !== undefined) {
-    return { ...row, outcome: "unmapped", detail: differenceDetail(visit, unmapped) };
-  }
-  const mirrored = diff.mirrored.find(({ path }) => fed.some((feed) => fills(feed, path, "rotation")));
-  if (mirrored !== undefined) {
     return {
-      ...row,
-      detail: `the instance swaps the glyph to ${mirrored.icon}, its half-turn mirror, since Figma turns no layer inside an instance (PT)`,
+      _tag: "unmapped",
+      row: { ...row, outcome: "unmapped", detail: differenceDetail(visit, unmapped) },
     };
   }
+  const mirrored = diff.mirrored.find(({ path }) => fed.some((feed) => fills(feed, path, "rotation")));
   const carried = [
     ...diff.overrides.map((override) => ({ path: override.path, field: OVERRIDDEN_FIELD[override.field] })),
     ...(isDeepStrictEqual(diff.sizing, visit.variant.root.sizing) ? [] : [{ path: [], field: "sizing" }]),
   ];
-  if (fed.some((feed) => carried.some(({ path, field }) => fills(feed, path, field)))) {
-    return row;
+  if (
+    mirrored !== undefined ||
+    fed.some((feed) => carried.some(({ path, field }) => fills(feed, path, field)))
+  ) {
+    const kept =
+      mirrored === undefined
+        ? row
+        : {
+            ...row,
+            detail: `the instance swaps the glyph to ${mirrored.icon}, its half-turn mirror, since Figma turns no layer inside an instance (PT)`,
+          };
+    return holder === undefined
+      ? { _tag: "kept", row: kept }
+      : decided(kept, holder.visit(), holder.whole.targets, undefined);
   }
   return {
-    ...row,
-    outcome: "dropped",
-    detail: `the instance's variant ${visit.variant.key} draws the same, so the class repeats it`,
+    _tag: "dropped",
+    row: {
+      ...row,
+      outcome: "dropped",
+      detail: `the instance's variant ${visit.variant.key} draws the same, so the class repeats it`,
+    },
   };
 }
 
 /**
- * Whether the inner root built in place that holds the instance draws a row the instance keeps as
- * drawn around it, in fields of its own, as an auto margin or an `align-self` on the instance fills
- * the holding row's alignment there, which `readPlacing` in `layer-style.ts` feeds. The holder's
- * diff then decides the row. The holder's other feed of the declaration, the instance as a whole at its path, says nothing
- * of the row, since the instance itself draws the same.
+ * Whether a feed fills a field a difference names. Where a box's layers differ, the diff compares
+ * none of the layers below it, so a feed below that box fills the difference where its own field of
+ * the layer at its key path differs, the whole layer for a nested instance. A frame the variant
+ * draws the same then says nothing of a frame beside it that the variant lacks.
  */
-function drawnByHolder(row: Row, visit: Visit): boolean {
-  const { within } = visit.sink;
-  const key = declarationKey(row);
-  return (
-    within !== undefined &&
-    (visit.sink.feeds.get(key) ?? []).some((feed) => feed.field === "around") &&
-    (within.sink.feeds.get(key) ?? []).some((feed) => !fills(feed, within.path, "instance"))
+function differs(
+  feed: FeedTarget,
+  difference: InstanceDifference,
+  inPlace: ComponentRootSpec,
+  variant: ComponentRootSpec
+): boolean {
+  const below =
+    difference.field === "layers" &&
+    feed.path.length > difference.path.length &&
+    difference.path.every((key, index) => feed.path[index] === key);
+  return below ? !drawSame(inPlace, variant, feed) : fills(feed, difference.path, difference.field);
+}
+
+/**
+ * Whether two boxes draw the same for a feed: the feed's field of the layer at its path, the whole
+ * nested instance there, or, for `layers`, the kinds and keys of the layers it holds, as the diff
+ * compares them. A box that holds no such layer draws nothing.
+ */
+function drawSame(inPlace: BoxSpec, variant: BoxSpec, feed: FeedTarget): boolean {
+  const drawn = (box: BoxSpec) => {
+    const layer = layerAt(box, feed.path);
+    if (feed.field === "instance" || layer === undefined) {
+      return layer;
+    }
+    if (feed.field === "layers") {
+      return "children" in layer ? kindsAndKeys(layer.children) : [];
+    }
+    return new Map<string, unknown>(Object.entries(layer)).get(feed.field);
+  };
+  return isDeepStrictEqual(drawn(inPlace), drawn(variant));
+}
+
+/**
+ * The row each read of a composite's declaration gives, by its read. The reads of one declaration
+ * share its origin, its row's names and the captured declarations the row accounts for, so two
+ * captured declarations of one class stay apart. A declaration reaches Figma only where the
+ * instances carry each of its reads, so its rows follow its worst read: one with an unmapped read
+ * gives one unmapped row, at its first read, and one with a read an instance keeps keeps every
+ * read's own outcome, so it drops only where every read drops. A read that settles `asIs` gives its
+ * row as it is, unless another read of its declaration is unmapped.
+ */
+function merged(reads: readonly DecidedRead[]): ReadonlyMap<DecidedRead, Row | undefined> {
+  const groups = new Map<Origin, Map<string, DecidedRead[]>>();
+  for (const read of reads) {
+    const byKey = groups.get(read.origin) ?? new Map<string, DecidedRead[]>();
+    groups.set(read.origin, byKey);
+    const key = JSON.stringify([declarationKey(read.row), read.row.at ?? []]);
+    byKey.set(key, [...(byKey.get(key) ?? []), read]);
+  }
+  return new Map(
+    [...groups.values()].flatMap((byKey) =>
+      [...byKey.values()].flatMap((group) => {
+        const unmapped = group.find((read) => read.decision._tag === "unmapped");
+        const keeps = group.some((read) => read.decision._tag === "kept");
+        return group.map((read): [DecidedRead, Row | undefined] => {
+          const { decision } = read;
+          if (unmapped?.decision._tag === "unmapped") {
+            return [read, group[0] === read ? unmapped.decision.row : undefined];
+          }
+          if (decision._tag === "asIs" || (decision._tag === "dropped" && keeps)) {
+            return [read, read.row];
+          }
+          return [read, decision.row];
+        });
+      })
+    )
   );
 }
 
