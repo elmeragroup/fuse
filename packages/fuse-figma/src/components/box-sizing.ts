@@ -26,6 +26,7 @@ import type {
   GridSpec,
   LimitsSpec,
   NumberSpec,
+  RotationSpec,
   SizeSpec,
   SizingSpec,
   TextLayerSpec,
@@ -1355,24 +1356,51 @@ export function leastWidth(layer: ChildLayerSpec, variables: VariableIndex): num
   if (layer.kind === "instance") {
     return undefined;
   }
-  if (layer.grid !== undefined || (layer.rotation !== undefined && layer.rotation % 180 !== 0)) {
+  const flowing = layer.children.filter((child) => !outOfLayout(child));
+  return widthAround(
+    layer,
+    layer.limits.minWidth,
+    flowing.map((child) => leastWidth(child, variables)),
+    greatest
+  );
+}
+
+/**
+ * The width an auto layout frame draws around the widths of its layers in flow: their sum and the
+ * gaps between them in a row, the widest in a column, with its horizontal padding and the room its
+ * stroke takes on each side, held at its minimum. `leastWidth` reads it at each length's greatest
+ * value, and `figma:probe` at the probe page's density.
+ *
+ * @param frame - The frame.
+ * @param minWidth - The least width the frame takes: its own, or an instance's in place of its root's.
+ * @param widths - The width of each layer in flow, undefined where it is unknown.
+ * @param pixels - A length's pixels, undefined where they are unknown.
+ * @returns The width in pixels, or undefined for a grid, whose layers sit in tracks, a quarter-turned
+ *   frame, or where a width or a length is unknown.
+ */
+export function widthAround(
+  frame: BoxSpec & { readonly rotation?: RotationSpec },
+  minWidth: NumberSpec | undefined,
+  widths: readonly (number | undefined)[],
+  pixels: (length: NumberSpec) => number | undefined
+): number | undefined {
+  if (frame.grid !== undefined || (frame.rotation !== undefined && frame.rotation % 180 !== 0)) {
     return undefined;
   }
-  const flowing = layer.children.filter((child) => !outOfLayout(child));
-  const widths = flowing.map((child) => leastWidth(child, variables));
-  const gap = greatest(layer.itemSpacing);
+  // Figma puts the gap between a row's layers only, so a column's or a lone layer's width needs none.
+  const gap = frame.direction === "HORIZONTAL" && widths.length >= 2 ? pixels(frame.itemSpacing) : 0;
   const around = [
-    greatest(layer.paddingLeft),
-    greatest(layer.paddingRight),
-    greatest(strokeRoom(layer.stroke, "left")),
-    greatest(strokeRoom(layer.stroke, "right")),
+    pixels(frame.paddingLeft),
+    pixels(frame.paddingRight),
+    pixels(strokeRoom(frame.stroke, "left")),
+    pixels(strokeRoom(frame.stroke, "right")),
   ];
-  const minimum = layer.limits.minWidth === undefined ? 0 : greatest(layer.limits.minWidth);
+  const minimum = minWidth === undefined ? 0 : pixels(minWidth);
   if (!allKnown(widths) || !allKnown(around) || gap === undefined || minimum === undefined) {
     return undefined;
   }
   const layers =
-    layer.direction === "HORIZONTAL"
+    frame.direction === "HORIZONTAL"
       ? total(widths) + Math.max(0, widths.length - 1) * gap
       : Math.max(0, ...widths);
   return Math.max(minimum, layers + total(around));

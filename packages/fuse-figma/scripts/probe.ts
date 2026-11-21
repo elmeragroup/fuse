@@ -15,8 +15,9 @@ import { parseArgs } from "node:util";
 
 import { setTargets } from "../src/capture/capture-targets.ts";
 import type { InstanceManifest, PartManifest } from "../src/capture/manifest.ts";
-import { contradictions, probeCells } from "../src/capture/perturbation.ts";
+import { probeCells } from "../src/capture/perturbation.ts";
 import type { ProbedCell } from "../src/capture/perturbation.ts";
+import { contradictions, sizingReadsOf } from "../src/capture/probe-sizing.ts";
 import { CAPTURE_THEME, requestOf } from "../src/capture/run-capture.ts";
 import { CompareBrowser } from "../src/compare/browser-render.ts";
 import { loadRenderers } from "../src/compare/cell-renderers.ts";
@@ -65,7 +66,10 @@ const main = Effect.fn("probe.main")(function* () {
   const browser = yield* CompareBrowser.launch(yield* readPageAssets(build, renderers));
   const sets = new Map((yield* buildComponentSets()).map((set) => [set.componentSet.key, set.componentSet]));
   // The probe's page renders at the capture's density, so a bound length draws that mode's value.
-  const lengthOf = yield* Effect.fromResult(densityLengths(CAPTURE_THEME.density));
+  const reads = sizingReadsOf(
+    [...sets.values()],
+    yield* Effect.fromResult(densityLengths(CAPTURE_THEME.density))
+  );
   let failed = false;
   let compared = 0;
   const kinds = new Map<string, number>();
@@ -105,7 +109,7 @@ const main = Effect.fn("probe.main")(function* () {
       found,
       compared: here,
       inferred,
-    } = contradictions(set, probed, keysBySlot(target.parts ?? []), lengthOf);
+    } = contradictions(set, probed, keysBySlot(target.parts ?? []), reads);
     for (const [kind, count] of inferred) {
       kinds.set(kind, (kinds.get(kind) ?? 0) + count);
     }
