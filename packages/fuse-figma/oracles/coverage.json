@@ -64,6 +64,20 @@
       "reason": "The panel instance's left border is `--border`, which the neutral dark theme sets to white at 10%, so the panel's fill shows through it in Figma, where CSS clips the fill at the border and shows the scrim behind it. The other themes draw an opaque border, which hides the fill under it either way."
     },
     {
+      "set": "list-detail-sheet",
+      "part": "list-detail-detail",
+      "className": "bg-clip-padding",
+      "property": "background-clip",
+      "reason": "The Sheet's left border is `--border`, which the neutral dark theme sets to white at 10%, so the panel's fill shows through it in Figma, where CSS clips the fill at the border and shows the scrim behind it. The other themes draw an opaque border, which hides the fill under it either way."
+    },
+    {
+      "set": "list-detail-open",
+      "part": "list-detail-detail",
+      "className": "bg-clip-padding",
+      "property": "background-clip",
+      "reason": "The Sheet instance's left border is `--border`, which the neutral dark theme sets to white at 10%, so the panel's fill shows through it in Figma, where CSS clips the fill at the border and shows the scrim behind it. The other themes draw an opaque border, which hides the fill under it either way."
+    },
+    {
       "set": "calendar",
       "part": "calendar",
       "className": "bg-clip-padding",
@@ -4382,6 +4396,76 @@
         "part": "toast-root",
         "className": "sm:data-[placement^=top]:top-0"
       }
+    ],
+    "list-detail-sheet": [
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=bottom]:[transform:translateY(var(--drawer-swipe-movement-y,0px))]"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=bottom]:border-t"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=bottom]:bottom-0"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=bottom]:h-auto"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=bottom]:inset-x-0"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=left]:[transform:translateX(var(--drawer-swipe-movement-x,0px))]"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=left]:border-r"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=left]:h-full"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=left]:inset-y-0"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=left]:left-0"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=left]:sm:max-w-(--overlay-width)"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=left]:w-full"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=top]:[transform:translateY(var(--drawer-swipe-movement-y,0px))]"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=top]:border-b"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=top]:h-auto"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=top]:inset-x-0"
+      },
+      {
+        "part": "list-detail-detail",
+        "className": "data-[side=top]:top-0"
+      }
     ]
   },
   "unreached": [
@@ -7285,6 +7369,118 @@
       "property": "box-sizing",
       "reason": "The Drawer viewport has no border or padding, so the base layer's `border-box` sizes it as `content-box` would.",
       "at": ["sheet-open/side=right 1/around/3"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "div",
+      "className": "tailwind preflight",
+      "property": "box-sizing",
+      "reason": "The React mount wrapper and the `[data-compare-viewport]` host, whose `contain: layout` makes it the fixed containing block of the scrim and the panel, have no border or padding, so preflight's `border-box` sizes them as `content-box` would.",
+      "at": ["list-detail-open/content=value 1/around/0", "list-detail-open/content=value 1/around/1"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "div",
+      "className": "tailwind preflight",
+      "property": "border",
+      "reason": "The React mount wrapper and the `[data-compare-viewport]` host, whose `contain: layout` makes it the fixed containing block of the scrim and the panel, draw no border, so preflight's zero-width `0 solid` border draws nothing on them.",
+      "at": ["list-detail-open/content=value 1/around/0", "list-detail-open/content=value 1/around/1"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "div",
+      "className": "fuse.css base layer",
+      "property": "border-color",
+      "reason": "The React mount wrapper and the `[data-compare-viewport]` host, whose `contain: layout` makes it the fixed containing block of the scrim and the panel, have zero-width borders, so the base layer's `--border` color paints nothing on them.",
+      "at": ["list-detail-open/content=value 1/around/0", "list-detail-open/content=value 1/around/1"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "sheet-portal",
+      "className": "fuse.css base layer",
+      "property": "border-color",
+      "reason": "Base UI's portal holds the scrim and the viewport and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
+      "at": ["list-detail-open/content=value 1/around/2"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "sheet-portal",
+      "className": "fuse.css base layer",
+      "property": "box-sizing",
+      "reason": "Base UI's portal holds the scrim and the viewport and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
+      "at": ["list-detail-open/content=value 1/around/2"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "sheet-portal",
+      "className": "fuse.css base layer",
+      "property": "border-style",
+      "reason": "Base UI's portal holds the scrim and the viewport and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
+      "at": ["list-detail-open/content=value 1/around/2"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "sheet-viewport",
+      "className": "fixed",
+      "property": "position",
+      "reason": "Base UI's Drawer viewport is fixed but sets no transform, filter or containment, so the panel's containing block stays the viewport, against whose right edge the composite places the panel by the placement rule.",
+      "at": ["list-detail-open/content=value 1/around/3"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "sheet-viewport",
+      "className": "inset-0",
+      "property": "inset",
+      "reason": "The Drawer viewport's `inset-0` stretches it over the viewport host, where it paints nothing, so the kit draws no layer for it and the panel sits directly in the scrim.",
+      "at": ["list-detail-open/content=value 1/around/3"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "sheet-viewport",
+      "className": "pointer-events-none",
+      "property": "pointer-events",
+      "reason": "The Drawer viewport's `pointer-events-none` changes only which element takes a pointer, which a frame does not draw.",
+      "at": ["list-detail-open/content=value 1/around/3"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "sheet-viewport",
+      "className": "z-50",
+      "property": "z-index",
+      "reason": "The Drawer viewport's `z-50` stacks it over the page, and the composite already draws the panel over the scrim in layer order.",
+      "at": ["list-detail-open/content=value 1/around/3"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "sheet-viewport",
+      "className": "inline style",
+      "property": "--drawer-keyboard-inset",
+      "reason": "Base UI sets `--drawer-keyboard-inset`, its software keyboard inset, to `0px` on the Drawer viewport, and no Fuse class reads it.",
+      "at": ["list-detail-open/content=value 1/around/3"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "sheet-viewport",
+      "className": "fuse.css base layer",
+      "property": "border-color",
+      "reason": "The Drawer viewport has zero-width borders, so the base layer's `--border` color paints nothing on it.",
+      "at": ["list-detail-open/content=value 1/around/3"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "sheet-viewport",
+      "className": "fuse.css base layer",
+      "property": "border-style",
+      "reason": "The Drawer viewport has zero-width borders, so the base layer's solid border style draws nothing on it.",
+      "at": ["list-detail-open/content=value 1/around/3"]
+    },
+    {
+      "set": "list-detail-open",
+      "part": "sheet-viewport",
+      "className": "fuse.css base layer",
+      "property": "box-sizing",
+      "reason": "The Drawer viewport has no border or padding, so the base layer's `border-box` sizes it as `content-box` would.",
+      "at": ["list-detail-open/content=value 1/around/3"]
     },
     {
       "set": "dialog-open",

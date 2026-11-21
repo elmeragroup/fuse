@@ -1,6 +1,6 @@
 /**
- * List detail, as one component set on a page of its own: the detail pane of the docs default demo
- * in its split layout, `ListDetail.Detail`'s `<aside data-slot="list-detail-detail">`, 352px wide
+ * List detail, as four component sets on a page of their own. `List detail pane` is the detail pane
+ * of the docs default demo in its split layout, `ListDetail.Detail`'s `<aside data-slot="list-detail-detail">`, 352px wide
  * beside the list. 2 variants by `content`:
  *
  * - `empty`: nothing selected, the demo's muted `Select a customer.` in a padded `<p>` that its
@@ -15,26 +15,25 @@
  * The `List detail` set draws the whole demo: the root, its list of ghost Button rows, and the pane
  * as an instance of `List detail pane`, so a designer switches the pane's content from the root and
  * can place the pane alone where a layout holds it.
+ *
+ * Below the root's `split` width the detail shows in a Sheet over the list. `List detail sheet` is
+ * that Sheet's panel, `Sheet.Content`'s popup with the pane's `list-detail-detail` slot, fixed on the
+ * right in Sheet's 640×448 viewport around the same `value` detail, whose header row holds
+ * `ListDetail.Close` after the title, the ghost `icon-sm` Icon button that its `ml-auto` ends the
+ * row with. The demo passes `showCloseButton={false}`, so the panel holds no corner close: 1 cell.
+ * `List detail (open)` is that panel over the scrim, which `fixed-placement.ts` places against the
+ * scrim's right edge, as `Sheet (open)` places Sheet's panel: 1 cell.
  */
 import type { InstanceManifest, LabelManifest, PartManifest, SetManifest } from "../capture/manifest";
-import { BUTTON_MANIFEST } from "./button-kit";
+import { BUTTON_MANIFEST, ICON_BUTTON_MANIFEST } from "./button-kit";
 import type { Cell } from "./component-spec";
-
-/** The width of the docs default demo's `w-3xl` row, from which its `split="3xl"` root splits. */
-export const LIST_DETAIL_HOST_WIDTH = 768;
-
-/** The height of the docs default demo's `h-80` row, which the root and its pane stretch to. */
-export const LIST_DETAIL_HOST_HEIGHT = 320;
-
-/** The docs default demo's customers: each name and product. */
-export const LIST_DETAIL_CUSTOMERS = [
-  { name: "Henrik Aasen", product: "Spot price" },
-  { name: "Ingrid Lund", product: "Fixed price, 12 months" },
-  { name: "Siri Haugen", product: "Spot price with solar" },
-] as const;
-
-/** The pane's text while nothing is selected, the docs default demo's. */
-export const LIST_DETAIL_EMPTY = "Select a customer.";
+import {
+  LIST_DETAIL_CUSTOMERS,
+  LIST_DETAIL_EMPTY,
+  LIST_DETAIL_HOST_HEIGHT,
+  LIST_DETAIL_HOST_WIDTH,
+} from "./list-detail-text";
+import { SHEET_VIEWPORT } from "./sheet-text";
 
 /** Whether the cell shows a selected customer. */
 const selected = (cell: Cell): boolean => cell.content === "value";
@@ -49,42 +48,64 @@ function text(characters: string, textProperty: string, shownIn: (cell: Cell) =>
 
 const [FIRST] = LIST_DETAIL_CUSTOMERS;
 
-/** The selected customer's detail: the header row around the title, over the product. */
-const ITEM: PartManifest = {
-  key: "item",
-  slot: undefined,
-  place: "list-detail-detail/0",
+/**
+ * `ListDetail.Close` in the Sheet: `Sheet.Close` rendering the demo's ghost `icon-sm` Button with X,
+ * which its `ml-auto` puts at the end of the header row.
+ */
+const CLOSE: InstanceManifest = {
+  kind: "instance",
+  key: "close",
+  of: ICON_BUTTON_MANIFEST,
+  slot: "sheet-close",
+  cell: () => ({ variant: "ghost", size: "icon-sm", state: "rest" }),
+  properties: () => ({ swap: { Icon: "X" } }),
   shownIn: selected,
-  label: undefined,
-  iconsFor: () => [],
-  parts: [
-    {
-      key: "header",
-      slot: undefined,
-      place: "list-detail-detail/0/0",
-      shownIn: selected,
-      label: undefined,
-      iconsFor: () => [],
-      parts: [
-        {
-          key: "title",
-          slot: "list-detail-title",
-          shownIn: selected,
-          label: text(FIRST.name, "Title", selected),
-          iconsFor: () => [],
-        },
-      ],
-    },
-    {
-      key: "product",
-      slot: undefined,
-      place: "list-detail-detail/0/1",
-      shownIn: selected,
-      label: text(FIRST.product, "Product", selected),
-      iconsFor: () => [],
-    },
-  ],
+  exposed: true,
 };
+
+/**
+ * The selected customer's detail: the header row around the title, and the close where the layout
+ * renders one, over the product. `base` is the nearest element with a `data-slot` above it, from
+ * which its places count: the pane, or the Sheet's inner column.
+ */
+function itemManifest(base: string, close: readonly InstanceManifest[]): PartManifest {
+  return {
+    key: "item",
+    slot: undefined,
+    place: `${base}/0`,
+    shownIn: selected,
+    label: undefined,
+    iconsFor: () => [],
+    parts: [
+      {
+        key: "header",
+        slot: undefined,
+        place: `${base}/0/0`,
+        shownIn: selected,
+        label: undefined,
+        iconsFor: () => [],
+        parts: [
+          {
+            key: "title",
+            slot: "list-detail-title",
+            shownIn: selected,
+            label: text(FIRST.name, "Title", selected),
+            iconsFor: () => [],
+          },
+          ...close,
+        ],
+      },
+      {
+        key: "product",
+        slot: undefined,
+        place: `${base}/0/1`,
+        shownIn: selected,
+        label: text(FIRST.product, "Product", selected),
+        iconsFor: () => [],
+      },
+    ],
+  };
+}
 
 /** The pane's manifest, which the capture-backed build reads with `captures/list-detail-pane.json`. */
 export const LIST_DETAIL_PANE_MANIFEST: SetManifest = {
@@ -106,13 +127,70 @@ export const LIST_DETAIL_PANE_MANIFEST: SetManifest = {
       label: text(LIST_DETAIL_EMPTY, "Empty", empty),
       iconsFor: () => [],
     },
-    ITEM,
+    itemManifest("list-detail-detail", []),
   ],
   swapProperties: [],
 };
 
 /** Every cell of the root set shows the part. */
 const always = (): boolean => true;
+
+/**
+ * The Sheet's manifest, which the capture-backed build reads with `captures/list-detail-sheet.json`:
+ * `ListDetail.Detail` in the overlay layout, `Sheet.Content`'s popup with the pane's
+ * `list-detail-detail` slot, fixed on the right in the viewport Sheet's sets declare, around the
+ * first customer's detail with `ListDetail.Close` in its header.
+ */
+export const LIST_DETAIL_SHEET_MANIFEST: SetManifest = {
+  key: "list-detail-sheet",
+  name: "List detail sheet",
+  api: { page: "list-detail", parts: ["ListDetail.Detail", "ListDetail.Title", "ListDetail.Close"] },
+  slot: "list-detail-detail",
+  axes: [{ name: "content", values: ["value"] }],
+  columnAxis: "content",
+  viewport: SHEET_VIEWPORT,
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      key: "inner",
+      slot: "sheet-content-inner",
+      shownIn: always,
+      label: undefined,
+      iconsFor: () => [],
+      parts: [itemManifest("sheet-content-inner", [CLOSE])],
+    },
+  ],
+  swapProperties: [],
+};
+
+/**
+ * The overlay layout's manifest, which the capture-backed build reads with
+ * `captures/list-detail-open.json`: the Sheet's scrim and the panel over it, against the right edge
+ * of the viewport.
+ */
+export const LIST_DETAIL_OPEN_MANIFEST: SetManifest = {
+  key: "list-detail-open",
+  name: "List detail (open)",
+  api: { page: "list-detail", parts: ["ListDetail.Root", "ListDetail.Detail"] },
+  slot: "list-detail-open",
+  axes: [{ name: "content", values: ["value"] }],
+  columnAxis: "content",
+  viewport: SHEET_VIEWPORT,
+  union: ["sheet-overlay", "list-detail-detail"],
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "detail",
+      of: LIST_DETAIL_SHEET_MANIFEST,
+      cell: () => ({ content: "value" }),
+      shownIn: always,
+    },
+  ],
+  swapProperties: [],
+};
 
 /**
  * One row of the list: the demo's `<li>` around a ghost Button at the default size, at rest and with
