@@ -1,4 +1,5 @@
 import type { MeasuredBox } from "./box-cascade";
+import { bordersOn, literalPixels, SIDES } from "./box-insets";
 import { readCentredGrowth } from "./centred-row";
 import type { CentredGrowth } from "./centred-row";
 import type { PreviewLength } from "./component-spec";
@@ -15,6 +16,7 @@ import {
   readNumber,
 } from "./css-values";
 import type { VariableIndex, Viewport } from "./css-values";
+import { keepsOwnSize, keepsOwnWidth } from "./flex-item-width";
 import { cellRoom } from "./grid-layout";
 import { fixedLength, outOfLayout, strokeRoom } from "./kit-spec";
 import type {
@@ -44,7 +46,7 @@ import { roomyMaximum, withRoom } from "./popup-room";
 import { readSize } from "./sizing-value";
 import type { PercentBasis } from "./sizing-value";
 import { spannedWidth, spansBesideBlocks, spansParent, SPANS_HUGGING_PARENT } from "./spanning-block";
-import { horizontal, subgridCellRoom } from "./subgrid-row";
+import { subgridCellRoom } from "./subgrid-row";
 import { limitsNeverMoveVariable } from "./variable-limits";
 
 /** What a box's parent gives it on one axis. */
@@ -337,10 +339,10 @@ export type Holder = {
   readonly limits: LimitsSpec;
   readonly extent: Extent;
   /**
-   * The names of the box's layers in the cell that sit in its flow, in layer order, its parts first.
-   * An absolute part sits outside it.
+   * The box's layers in the cell that sit in its flow, in layer order, its parts first. An absolute
+   * part sits outside it.
    */
-  readonly layers: readonly string[];
+  readonly layers: readonly RowLayer[];
   /** The cap the boxes around the box set on its width, from its room. */
   readonly widthCap: WidthCap;
   /** Whether the width CSS makes available to the box is unbounded, as {@link Room.unbounded} says. */
@@ -350,8 +352,20 @@ export type Holder = {
    * `width` does not map and the box hugs in its place.
    */
   readonly widthKnown: boolean;
-  /** How much of a row each of `layers` takes, in the same order. */
-  readonly shares: readonly RowShare[];
+};
+
+/** A layer in a box's flow. */
+export type RowLayer = {
+  /** The layer's name in the cell. */
+  readonly name: string;
+  /** How much of a row the layer takes. */
+  readonly share: RowShare;
+  /** What the layer is: one of the box's parts, one of its icons, or its own label. */
+  readonly kind: "part" | "icon" | "label";
+  /** The layer's style, or undefined for the box's own label. */
+  readonly style: LayerStyle | undefined;
+  /** The tag of a part's element, where the capture holds one, or undefined for an icon or the label. */
+  readonly tag: string | undefined;
 };
 
 /**
@@ -398,31 +412,6 @@ export function partShare(style: LayerStyle): RowShare {
   return length === undefined || margins === undefined
     ? UNREAD_SHARE
     : { kind: "pixels", value: length + margins };
-}
-
-/** Why `flex: none` drops. */
-const NO_FLEX =
-  "`none` neither grows nor shrinks the item from its own size (CSS Flexbox 1 §7.1.1), as Figma's auto layout keeps a fixed or hugging layer";
-
-/**
- * Whether a box's `flex` is `none`, `0 0 auto` (CSS Flexbox 1 §7.1.1): it neither grows nor shrinks
- * from its own size, as `flex-none` sets.
- */
-function keepsOwnSize(style: LayerStyle): boolean {
-  return normalizeCss(style.resolved("flex") ?? "") === "none";
-}
-
-/** Whether a flex item neither shrinks nor grows from its `auto` basis, as `shrink-0` alone or `flex-none` sets. */
-function keepsOwnWidth(style: LayerStyle): boolean {
-  if (keepsOwnSize(style)) {
-    return !style.has("flex-basis") && !style.has("flex-grow") && !style.has("flex-shrink");
-  }
-  return (
-    normalizeCss(style.resolved("flex-shrink") ?? "") === "0" &&
-    !style.has("flex") &&
-    !style.has("flex-basis") &&
-    ["", "0"].includes(normalizeCss(style.resolved("flex-grow") ?? ""))
-  );
 }
 
 /**
@@ -507,63 +496,6 @@ export function selfStretchedRoom(holder: Holder, style: LayerStyle, room: Room)
  */
 export function outOfFlow(style: LayerStyle): boolean {
   return ["absolute", "fixed"].includes(normalizeCss(style.raw("position") ?? ""));
-}
-
-/** The padding sides of each axis. */
-const SIDES = {
-  horizontal: ["padding-left", "padding-right"],
-  vertical: ["padding-top", "padding-bottom"],
-} as const;
-
-/**
- * A box's literal length in pixels, 0 where the box does not set it, or undefined where its value is
- * no literal length, such as a bound padding or a percentage.
- */
-function literalPixels(style: LayerStyle, property: string): number | undefined {
-  const value = style.resolved(property);
-  return value === undefined ? 0 : evaluateLength(value);
-}
-
-/** The border sides of each axis, which `border-l` and its siblings set alone. */
-const AXIS_BORDERS = {
-  horizontal: ["border-left-width", "border-right-width"],
-  vertical: ["border-top-width", "border-bottom-width"],
-} as const;
-
-/** The logical inline border sides, which `border-s` and `border-e` set alone. */
-const INLINE_BORDERS = ["border-inline-start-width", "border-inline-end-width"] as const;
-
-/** The logical shorthand of both inline border sides' widths, which `border-x` sets. */
-const INLINE_BORDER = "border-inline-width";
-
-/**
- * The pixels a box's borders take on one axis: each side's own width where the box sets one, as
- * `border-r` does, or `border-width` otherwise. A box that sets its borders across by their logical
- * inline sides instead, as `border-s` sets `border-inline-start-width`, takes those. A horizontal
- * writing mode puts them on the left and right in either direction (CSS Logical Properties 1 §4.1),
- * so their sum is the same.
- *
- * @returns The two sides' widths together, or undefined where one is no literal length. It is
- *   undefined too where the box sets a logical inline border in a vertical writing mode, or beside a
- *   physical side across, since the build reads neither that axis nor the cascade order between them.
- */
-function bordersOn(style: LayerStyle, axis: keyof Extent): number | undefined {
-  const physical = (side: string) => literalPixels(style, style.has(side) ? side : "border-width");
-  const inline = (side: string) =>
-    literalPixels(style, style.has(side) ? side : style.has(INLINE_BORDER) ? INLINE_BORDER : "border-width");
-  const logical = [...INLINE_BORDERS, INLINE_BORDER].some((property) => style.has(property));
-  const sides = !logical
-    ? AXIS_BORDERS[axis].map(physical)
-    : !horizontal(style)
-      ? [undefined]
-      : axis === "vertical"
-        ? AXIS_BORDERS.vertical.map(physical)
-        : AXIS_BORDERS.horizontal.some((side) => style.has(side))
-          ? [undefined]
-          : INLINE_BORDERS.map(inline);
-  return sides.some((side) => side === undefined)
-    ? undefined
-    : sides.reduce<number>((sum, side) => sum + (side ?? 0), 0);
 }
 
 /**
@@ -730,7 +662,7 @@ export function roomInside(holder: Holder, index: number): Room {
   if (layout.centresLone === true) {
     return centredRoom(holder);
   }
-  const siblings = layers.filter((_name, place) => place !== index);
+  const siblings = layers.filter((_layer, place) => place !== index).map(({ name }) => name);
   const along = (axis: DirectionSpec): readonly string[] =>
     (layout.flex || layout.blocks) && layout.direction === axis ? siblings : [];
   return {
@@ -809,7 +741,7 @@ export function widthCapInside(holder: Holder, index: number): WidthCap {
  *   is set.
  */
 function lessShares(holder: Holder, index: number, length: number): number | undefined {
-  const others = holder.shares.filter((_share, place) => place !== index);
+  const others = holder.layers.filter((_layer, place) => place !== index).map(({ share }) => share);
   if (others.length === 0) {
     return length;
   }
@@ -1056,6 +988,15 @@ export function readItemSizing(
 }
 
 /**
+ * Why a `flex` that keeps the item's own size drops, as `none` does.
+ *
+ * @param written - The `flex` as written.
+ */
+function noFlex(written: string): string {
+  return `\`${normalizeCss(written)}\` neither grows nor shrinks the item from its own size (CSS Flexbox 1 §7.1.1), as Figma's auto layout keeps a fixed or hugging layer`;
+}
+
+/**
  * Read the `flex` of the parts in a flex box's flow. A box that hugs its length along its direction,
  * with no limit there that can change that length, is as long as its layers, so it leaves no free
  * space (CSS Flexbox 1 §9.7), and the one part that grows keeps its own length, as `flex: 1` does
@@ -1087,7 +1028,7 @@ function readGrowth(
     part.read(
       "flex",
       (value) => value,
-      () => ({ outcome: "dropped", detail: NO_FLEX }),
+      (written) => ({ outcome: "dropped", detail: noFlex(written) }),
       []
     );
   }
