@@ -50,6 +50,7 @@ import dropdownMenuPopup from "../../captures/dropdown-menu-popup.json" with { t
 import dropdownMenuRadioItem from "../../captures/dropdown-menu-radio-item.json" with { type: "json" };
 import dropdownMenuSubContent from "../../captures/dropdown-menu-sub-content.json" with { type: "json" };
 import dropdownMenuSubTrigger from "../../captures/dropdown-menu-sub-trigger.json" with { type: "json" };
+import dropdownMenuSubmenuOpen from "../../captures/dropdown-menu-submenu-open.json" with { type: "json" };
 import empty from "../../captures/empty.json" with { type: "json" };
 import fieldDescription from "../../captures/field-description.json" with { type: "json" };
 import fieldError from "../../captures/field-error.json" with { type: "json" };
@@ -239,6 +240,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["breadcrumb-separator", breadcrumbSeparator],
   ["breadcrumb-trail", breadcrumbTrail],
   ["dropdown-menu-sub-content", dropdownMenuSubContent],
+  ["dropdown-menu-submenu-open", dropdownMenuSubmenuOpen],
   ["command-list", commandList],
   ["item", item],
   ["item-link", itemLink],

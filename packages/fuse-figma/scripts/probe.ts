@@ -4,7 +4,7 @@
  * text, infers each box's horizontal sizing, and fails where the capture build maps a kind that
  * contradicts it, where a part the build drew has no box at its place, a box of another `data-slot`
  * or no layer at its recorded path, or where an anchored composite's measured gap differs from its
- * `sideOffset`.
+ * `sideOffset`. A nested popup's gap runs from the row it opens beside.
  *
  *     pnpm --filter @elmeragroup/fuse-figma figma:probe [<set>…]
  *
@@ -76,6 +76,8 @@ const main = Effect.fn("probe.main")(function* () {
       request: requestOf(target, renderer, cell, index),
     }));
     const probed = new Map<string, ProbedCell>();
+    // A nested popup's gap runs from the row it opens beside.
+    const anchor = target.anchor === undefined ? undefined : `[data-slot="${target.anchor.slot}"]`;
     for (let from = 0; from < cells.length; from += CELLS_PER_PAGE) {
       const chunk = cells.slice(from, from + CELLS_PER_PAGE);
       const read = yield* browser.openPreview(
@@ -85,7 +87,10 @@ const main = Effect.fn("probe.main")(function* () {
         (opened) =>
           probeCells(
             opened.page,
-            chunk.map(({ request }) => ({ id: request.id, measured: request.measured }))
+            chunk.map(({ request }) => {
+              const cell = { id: request.id, measured: request.measured };
+              return anchor === undefined ? cell : { ...cell, anchor };
+            })
           )
       );
       for (const [at, cell] of read.entries()) {

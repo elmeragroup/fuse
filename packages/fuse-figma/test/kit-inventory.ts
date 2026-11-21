@@ -237,6 +237,13 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "dropdown-menu-sub-content", name: "Dropdown menu sub content", variants: 1, previewed: 1 },
       // Below the outline Button trigger, the Basic demo's popup.
       { key: "dropdown-menu-open", name: "Dropdown menu (open)", variants: 1, previewed: 1 },
+      // The Submenu demo's popup, its submenu open beside the sub trigger.
+      {
+        key: "dropdown-menu-submenu-open",
+        name: "Dropdown menu submenu (open)",
+        variants: 1,
+        previewed: 1,
+      },
     ],
   },
   {

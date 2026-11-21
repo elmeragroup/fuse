@@ -57,6 +57,7 @@ import {
   DROPDOWN_MENU_OPEN_MANIFEST,
   DROPDOWN_MENU_POPUP_MANIFEST,
   DROPDOWN_MENU_SUB_CONTENT_MANIFEST,
+  DROPDOWN_MENU_SUBMENU_OPEN_MANIFEST,
 } from "./dropdown-popup-kit";
 import { EMPTY_MANIFEST } from "./empty-kit";
 import {
@@ -716,6 +717,11 @@ export const KIT: readonly KitEntry[] = [
     page: DROPDOWN_MENU_PAGE,
     previewCells: possibleCells(DROPDOWN_MENU_OPEN_MANIFEST),
     manifest: DROPDOWN_MENU_OPEN_MANIFEST,
+  },
+  {
+    page: DROPDOWN_MENU_PAGE,
+    previewCells: possibleCells(DROPDOWN_MENU_SUBMENU_OPEN_MANIFEST),
+    manifest: DROPDOWN_MENU_SUBMENU_OPEN_MANIFEST,
   },
   {
     page: COMBOBOX_PAGE,

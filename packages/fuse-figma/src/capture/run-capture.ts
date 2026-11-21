@@ -50,6 +50,7 @@ import type {
   VariableSource,
 } from "./capture-format.ts";
 import { factsOfWinners } from "./declared-facts.ts";
+import type { SetManifest } from "./manifest.ts";
 import { measuredFacts } from "./page-facts.ts";
 import type { RootRole } from "./page-facts.ts";
 import {
@@ -103,6 +104,8 @@ export type CaptureTarget = {
   readonly union?: readonly string[];
   /** An anchored popup's distance from its anchor, which the perturbation probe measures. */
   readonly sideOffset?: number;
+  /** The row a nested popup opens beside, the anchor the perturbation probe measures its gap from. */
+  readonly anchor?: SetManifest["anchor"];
 };
 
 /** The theme every capture renders in: the kit's first preview theme. */

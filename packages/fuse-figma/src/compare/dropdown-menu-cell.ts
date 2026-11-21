@@ -19,6 +19,8 @@
  * - `dropdownMenuSubContent`: the Submenu demo with its submenu open, measured as the submenu's popup,
  *   which sits 24px from the parent popup, as the open sub trigger's cell places it.
  * - `dropdownMenuOpen`: the Basic demo's trigger and popup, measured together.
+ * - `dropdownMenuSubmenuOpen`: the Submenu demo with its submenu open at `DropdownMenu.SubContent`'s
+ *   default offsets, its popup and its submenu measured together.
  *
  * Each row cell's row sits in a `<div>` 160px wide, so the popup hugs it and the row is as wide as
  * the set draws it. The popup aligns to its trigger's start, so it starts on the slot's pixel grid
@@ -172,14 +174,19 @@ export const dropdownMenuRadioItem: ClientCellRendering = {
 
 const ICONS = { User, Trash } as const;
 
-/** A docs demo's child as the demo writes it. */
-function demoNode(node: DropdownDemoNode, key: string): ReactNode {
+/** Whether a demo's submenu stays closed or opens into a container, as the open submenu's does. */
+type SubmenuShown = { readonly _tag: "closed" } | { readonly _tag: "open"; readonly container: HTMLElement };
+
+const CLOSED: SubmenuShown = { _tag: "closed" };
+
+/** A docs demo's child as the demo writes it, its submenu shown as `submenu` says. */
+function demoNode(node: DropdownDemoNode, key: string, submenu: SubmenuShown = CLOSED): ReactNode {
   switch (node.kind) {
     case "group":
       return createElement(
         DropdownMenu.Group,
         { key },
-        ...node.children.map((child, index) => demoNode(child, `${key}-${String(index)}`))
+        ...node.children.map((child, index) => demoNode(child, `${key}-${String(index)}`, submenu))
       );
     case "radio-group":
       return createElement(
@@ -211,19 +218,26 @@ function demoNode(node: DropdownDemoNode, key: string): ReactNode {
     case "sub-trigger":
       return createElement(
         DropdownMenu.Sub,
-        { key },
+        { key, defaultOpen: submenu._tag === "open" },
         createElement(DropdownMenu.SubTrigger, null, node.label),
         createElement(
           DropdownMenu.SubContent,
-          null,
+          submenu._tag === "open" ? { container: submenu.container } : null,
           ...DROPDOWN_SUBMENU.map((child, index) => demoNode(child, `sub-${String(index)}`))
         )
       );
   }
 }
 
-/** An open, non-modal menu whose popup holds a docs demo's children. */
-function openDemo(container: HTMLElement, nodes: readonly DropdownDemoNode[]) {
+/**
+ * An open, non-modal menu whose popup holds a docs demo's children, its submenu shown as `submenu`
+ * says.
+ */
+function openDemo(
+  container: HTMLElement,
+  nodes: readonly DropdownDemoNode[],
+  submenu: SubmenuShown = CLOSED
+) {
   return createElement(
     DropdownMenu.Root,
     { defaultOpen: true, modal: false },
@@ -235,7 +249,7 @@ function openDemo(container: HTMLElement, nodes: readonly DropdownDemoNode[]) {
     createElement(
       DropdownMenu.Content,
       { container, align: "start" },
-      ...nodes.map((node, index) => demoNode(node, String(index)))
+      ...nodes.map((node, index) => demoNode(node, String(index), submenu))
     )
   );
 }
@@ -284,4 +298,11 @@ export const dropdownMenuOpen: ClientCellRendering = {
   element: (_cell: Cell, _turnedOn: ReadonlySet<string>, container: HTMLElement) =>
     openDemo(container, DROPDOWN_POPUPS.basic),
   union: ["dropdown-menu-trigger", "dropdown-menu-content"],
+};
+
+/** The docs Submenu demo with its submenu open at its default offsets: its popup and its submenu. */
+export const dropdownMenuSubmenuOpen: ClientCellRendering = {
+  element: (_cell: Cell, _turnedOn: ReadonlySet<string>, container: HTMLElement) =>
+    openDemo(container, DROPDOWN_POPUPS.submenu, { _tag: "open", container }),
+  union: ["dropdown-menu-content", "dropdown-menu-sub-content"],
 };

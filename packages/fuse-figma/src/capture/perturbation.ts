@@ -3,8 +3,8 @@
  * cell renders on a compare page as the capture renders it, and the probe measures every box of each
  * root it measures as rendered, with the element around the root 120px wider, and with the box's own
  * text longer and far longer. For an anchored composite it also measures the gap between the anchor
- * and the popup. `capture/probe-sizing.ts`
- * reads the sizing these widths imply and compares it with the built set.
+ * and the popup. A nested popup's anchor is the row of the parent popup it opens beside.
+ * `capture/probe-sizing.ts` reads the sizing these widths imply and compares it with the built set.
  *
  * The measured boxes are oracle data only: the probe compares them and keeps none.
  */
@@ -87,6 +87,14 @@ export type ProbedCell = {
  */
 const SETTLE_FRAMES = 600;
 
+/** A cell the probe measures: its id, the selectors of its roots, and a nested popup's anchor row. */
+export type ProbeRequest = {
+  readonly id: string;
+  readonly measured: readonly string[];
+  /** The selector of the row a nested popup opens beside, which its gap is measured from. */
+  readonly anchor?: string;
+};
+
 /**
  * Measure the cells of an opened page in each run, restoring the page between runs. Before each run
  * reads the page, it waits until each anchored popup takes its anchor's width, as Base UI sets it a
@@ -94,16 +102,15 @@ const SETTLE_FRAMES = 600;
  * the wider run stops, it puts each widened parent's style back before it rejects.
  *
  * @param page - The page.
- * @param cells - Each cell's id and the selectors of the roots it measures.
+ * @param cells - Each cell's id, the selectors of the roots it measures, and a nested popup's
+ *   anchor row.
  * @returns Each cell's boxes.
  */
-export async function probeCells(
-  page: Page,
-  cells: readonly { readonly id: string; readonly measured: readonly string[] }[]
-): Promise<readonly ProbedCell[]> {
-  const roots = cells.map(({ id, measured }) => ({
+export async function probeCells(page: Page, cells: readonly ProbeRequest[]): Promise<readonly ProbedCell[]> {
+  const roots = cells.map(({ id, measured, anchor }) => ({
     id,
     selectors: measured.map((selector) => cellSelector(id, selector)),
+    anchor: anchor === undefined ? null : cellSelector(id, anchor),
   }));
   return page.evaluate(
     async ({ roots, widerBy, longerBy, longestBy, settleFrames }) => {
@@ -209,20 +216,27 @@ export async function probeCells(
           const root = document.querySelector(selector);
           return root === null ? [] : [root];
         });
-      // Base UI writes a popup's `--anchor-width` on its positioner a frame or more after its anchor
-      // resizes, so the probe waits for each anchored popup it measures beside its anchor to take the
-      // anchor's width before each run reads the page: as rendered, widened, and once it puts the
-      // page back. A popup is the root that names Base UI's `data-side`, as the capture build's
-      // anchored placement reads it, and its anchor the other root, whatever the property holds when
-      // the probe starts.
-      const anchored = roots.flatMap(({ id, selectors }) => {
+      // Each cell's popup and the anchor it sits beside, resolved once for every read of the pair. A
+      // popup is the root that names Base UI's `data-side`, as the capture build's anchored placement
+      // reads it, and its anchor the other root. A nested popup's anchor is the row it opens beside,
+      // and its popup the root that does not hold that row, since both of its roots name a side.
+      const pairs = roots.map(({ id, selectors, anchor }) => {
         const elements = elementsOf(selectors);
-        const popup = elements.find((each) => each.hasAttribute("data-side"));
-        const anchor = elements.find((each) => each !== popup);
-        return popup?.parentElement && anchor !== undefined
-          ? [{ id, positioner: popup.parentElement, anchor }]
-          : [];
+        if (anchor === null) {
+          const popup = elements.find((each) => each.hasAttribute("data-side"));
+          return { id, popup, anchor: elements.find((each) => each !== popup) };
+        }
+        const row = document.querySelector(anchor) ?? undefined;
+        return { id, popup: elements.find((each) => row !== undefined && !each.contains(row)), anchor: row };
       });
+      // Base UI writes a popup's `--anchor-width` on its positioner a frame or more after its anchor
+      // resizes, so the probe waits for each popup it measures beside its anchor to take the
+      // anchor's width before each run reads the page: as rendered, widened, and once it puts the
+      // page back. The popup's positioner is its parent, whatever the property holds when the probe
+      // starts.
+      const anchored = pairs.flatMap(({ id, popup, anchor }) =>
+        popup?.parentElement && anchor !== undefined ? [{ id, positioner: popup.parentElement, anchor }] : []
+      );
       // The property in pixels, or NaN for a value that is not one, as `auto` or none.
       const anchorWidthOf = (positioner: HTMLElement): number => {
         const value = positioner.style.getPropertyValue("--anchor-width").trim();
@@ -264,8 +278,16 @@ export async function probeCells(
         }
         return false;
       };
-      const gaps = roots.map(({ selectors }) => {
-        const [first, second] = elementsOf(selectors).map((each) => each.getBoundingClientRect());
+      // A cell with no popup that names a side, as a dialog's Backdrop and popup, measures the gap
+      // between its first two roots.
+      const gaps = pairs.map(({ popup, anchor }, at) => {
+        const [first, second] = (
+          popup !== undefined && anchor !== undefined
+            ? [anchor, popup]
+            : roots[at]?.anchor === null
+              ? elementsOf(roots[at].selectors)
+              : []
+        ).map((each) => each.getBoundingClientRect());
         if (first === undefined || second === undefined) {
           return undefined;
         }

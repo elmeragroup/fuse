@@ -31,6 +31,12 @@ export type KitParityRow =
 /** The open issue that tracks the component sets, variants and axes the kit does not draw yet. */
 const MISSING_SETS = 524;
 
+/**
+ * The open issue that tracks the kit's gaps the Figma issue run found, such as a nested instance's
+ * overrides.
+ */
+const NESTED_OVERRIDES = 922;
+
 /** The open issue that tracks the native Calendar and RangeCalendar day set. */
 const CALENDAR_DAY = 677;
 
@@ -200,9 +206,11 @@ export const KIT_PARITY = {
       "dropdown-menu-popup",
       "dropdown-menu-sub-content",
       "dropdown-menu-open",
+      "dropdown-menu-submenu-open",
     ],
-    missing: "The submenu form.",
-    issue: MISSING_SETS,
+    missing:
+      "The open sub trigger's highlight beside the open submenu, which sits on a sub trigger instance inside the popup instance, where no override of the plugin reaches. The open submenu's stand-ins follow the captured rows above `Share`, so a row a designer adds there, or a `New tab` label edited to wrap, leaves the sub content where the demo's rows put it.",
+    issue: NESTED_OVERRIDES,
   },
   emoji: { kind: "excluded", reason: "It belongs to the icon library." },
   empty: {
