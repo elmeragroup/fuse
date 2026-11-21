@@ -28,18 +28,45 @@
  *   Figma where CSS paints the element over it (CSS 2.1 Appendix E), and nothing between clips the
  *   element in Figma where CSS does not clip it (CSS Overflow 3 §3).
  * - From the parent up to that ancestor, the ancestor included, no element generates a `::before`
- *   or `::after` box. Above the parent, Figma draws such a box as a layer of its element's frame,
- *   beside the frame that holds the element, and no order of the two paints as CSS does in every
- *   case. CSS paints a positioned `::before` under the element and over the in-flow content around
+ *   or `::after` box, nor another box an author can position: a scroller's buttons, marker group
+ *   or markers, a `details` element's content or a picker's icon. Above the parent, Figma draws
+ *   such a box as a layer of its element's frame, beside the frame that holds the element, and no
+ *   order of the two paints as CSS does in every case. CSS paints a positioned `::before` under the element and over the in-flow content around
  *   it, and the element over an in-flow `::after` (CSS 2.1 Appendix E, steps 4 to 8). The parent's
  *   own absolute `::before` or `::after` has the block above it as its containing block, so the
  *   kit draws no layer for it, and the page refuses the parent's too rather than reason about it.
- * - No element after the element in tree order inside that ancestor, outside the element's own
- *   subtree, is positioned or forms a stacking context: a `z-index` on a flex or grid item, an
- *   opacity below 1, a transform, translate, rotate, scale, filter, backdrop filter, perspective,
- *   clip path or mask, `isolation: isolate`, a blend mode, a `will-change`, or layout or paint
- *   containment. CSS paints such a box after the element, so over it (CSS 2.1 Appendix E, step 8;
- *   CSS Positioned Layout 3), while the kit orders the element last in its parent's frame.
+ * - No box of the captured root outside the element's subtree, nor a box an element of the root
+ *   generates, may paint over the element (CSS 2.1 §9.9.1 and Appendix E). The page compares no
+ *   rectangles. A box that is positioned or may establish a stacking context paints as a layer. The
+ *   page refuses every such layer after the element in tree order, at any `z-index`. It counts every
+ *   generated box other than `::before` and `::after` as after the element, since Chromium paints
+ *   those apart from their element's place in tree order. It refuses a layer before the element
+ *   where its applied `z-index` is above the element's level, the lowest of the element's own and
+ *   that of each ancestor below their common ancestor that may establish a stacking context, an
+ *   `auto` counting as 0. A stacking context around the earlier box does not exempt it.
+ *   Where the page cannot tell whether an element establishes one, as with a `will-change`, a
+ *   transform on an inline box, `contain` on a table row or a running animation, it counts it as
+ *   one. The kit orders the element last in its parent's frame, which paints as CSS does only where
+ *   nothing paints over it.
+ * - No element of the captured root preserves 3D. A 3D rendering context orders its boxes by depth,
+ *   not by level or tree order (CSS Transforms 2 §2).
+ * - `z-index` applies to a positioned box and to an item of a flex, grid or `-webkit-box` container,
+ *   the display Tailwind's `line-clamp` sets. The item's container is the nearest element above it
+ *   that generates a box, past each `display: contents` (CSS 2.1 §9.9.1, CSS Flexbox 1 §4.3). A flex or grid container paints its items in order-modified document order
+ *   (CSS Flexbox 1 §5.4.1), so the element wins a tie only where each element between the two boxes
+ *   and their common ancestor computes `order: 0`. A box inside a `display: none` element paints
+ *   nothing.
+ * - The element's level, and that of each ancestor that may establish a stacking context, is 0 or
+ *   more. CSS paints a negative layer under the in-flow boxes of its context (CSS 2.1 Appendix E,
+ *   steps 3 and 4).
+ * - No element of the document outside the element is in the top layer, an open popover, a modal
+ *   dialog or a fullscreen element, which paints over every other box (CSS Positioned Layout 4).
+ *   None computes `overlay: auto` either, which keeps a closing popover or dialog in the top layer
+ *   while it transitions out.
+ * - The element sits in no `legend` or `summary`. Chromium paints a fieldset's legend and a
+ *   `details` element's summary apart from tree order.
+ * - No element from the captured root down to the element both clips its overflow and sets a
+ *   `resize`. Its resize grip paints over its content (CSS Basic User Interface 4).
  * - From the parent up to, but not including, that ancestor, each element declares a `width` and a
  *   `height` of `100%`, a `min-width` and a `min-height` of `0px`, no `max-width` or `max-height`,
  *   an `auto` flex basis, so a flex item's basis is that width or height, and an `auto` aspect
@@ -68,6 +95,9 @@
  * element between, sets no padding or border, so its bound is zero.
  *
  * The page restores the ancestor's `style` attribute before it returns, also where a reading throws.
+ *
+ * The page reads only the boxes of the captured root's light tree. Paint from outside the captured
+ * root or inside a shadow tree can still cover the element undetected.
  *
  * @param element - The element.
  * @param root - The captured root the element sits below.
@@ -112,42 +142,200 @@ export function parentSpansBlock(element: Element, root: Element): boolean {
       own.clipPath === "none"
     );
   });
-  const generates = (each: Element): boolean =>
-    ["::before", "::after"].some((pseudo) => {
+  // The element whose box lays out the boxes `from` holds: `from`, or the nearest element above it
+  // that generates a box, past each `display: contents`, which generates none.
+  const boxParent = (from: Element | null): Element | null => {
+    let parent = from;
+    while (parent !== null && getComputedStyle(parent).display === "contents") {
+      parent = parent.parentElement;
+    }
+    return parent;
+  };
+  // A box's computed style, the `display` of the box it is a flex or grid item of, if any, and
+  // whether an animation runs on it, which can make it a stacking context at any computed value.
+  type Styled = {
+    readonly own: CSSStyleDeclaration;
+    readonly container: string;
+    readonly animated: () => boolean;
+  };
+  // A generated box. It is `anchored` where it paints at its element's place in tree order, as
+  // `::before` and `::after` do, and `first` where it paints before its element's content, as
+  // `::before` does.
+  type Generated = Styled & { readonly first: boolean; readonly anchored: boolean };
+  const displayOf = (each: Element | null): string => (each === null ? "" : getComputedStyle(each).display);
+  const styled = (each: Element): Styled => ({
+    own: getComputedStyle(each),
+    container: displayOf(boxParent(each.parentElement)),
+    animated: () => each.getAnimations().length > 0,
+  });
+  // The pseudo-elements that generate a box an author can position: `::before` and `::after`
+  // (CSS 2.1 §12.1), a scroller's buttons, marker group and markers (CSS Overflow 5), a `details`
+  // element's content and a picker's icon. `::marker` takes no `position`.
+  const generatedPseudos = [
+    "::before",
+    "::after",
+    ...["up", "down", "left", "right", "block-start", "block-end", "inline-start", "inline-end"].map(
+      (direction) => `::scroll-button(${direction})`
+    ),
+    "::scroll-marker-group",
+    "::scroll-marker",
+    "::details-content",
+    "::picker-icon",
+  ];
+  // A scroller's marker group exists by its element's `scroll-marker-group` and a `details` element's
+  // content box by the element, whatever their `content`; every other pseudo-element by its `content`.
+  // Chromium computes no style, an empty `content`, for a pseudo-element an element cannot have.
+  const generates = (each: Element, pseudo: string, own: CSSStyleDeclaration): boolean =>
+    own.display !== "none" &&
+    (pseudo === "::scroll-marker-group"
+      ? getComputedStyle(each).getPropertyValue("scroll-marker-group") !== "none"
+      : pseudo === "::details-content"
+        ? each.localName === "details"
+        : !["none", "normal", ""].includes(own.content));
+  const pseudos = (each: Element): readonly Generated[] => {
+    const container = displayOf(boxParent(each));
+    return generatedPseudos.flatMap((pseudo) => {
       const own = getComputedStyle(each, pseudo);
-      return !["none", "normal"].includes(own.content) && own.display !== "none";
+      return generates(each, pseudo, own)
+        ? [
+            {
+              own,
+              container,
+              first: pseudo === "::before",
+              // A scroll marker paints in its scroller's marker group, and a scroller's buttons and
+              // marker group and a `details` element's content box paint apart from tree order.
+              anchored: pseudo === "::before" || pseudo === "::after",
+              animated: () =>
+                each
+                  .getAnimations({ subtree: true })
+                  .some(
+                    ({ effect }) =>
+                      effect instanceof KeyframeEffect &&
+                      effect.target === each &&
+                      effect.pseudoElement === pseudo
+                  ),
+            },
+          ]
+        : [];
     });
-  const unpainted = [...between, positioned].every((each) => !generates(each));
-  const stacks = (each: Element): boolean => {
-    const own = getComputedStyle(each);
-    const container = each.parentElement === null ? "" : getComputedStyle(each.parentElement).display;
+  };
+  const unpainted = [...between, positioned].every((each) => pseudos(each).length === 0);
+  // `z-index` applies to a positioned box and to a flex or grid item (CSS 2.1 §9.9.1, CSS Flexbox 1
+  // §4.3).
+  const indexed = ({ own, container }: Styled): boolean =>
+    own.zIndex !== "auto" &&
+    (own.position !== "static" || /flex|grid|-webkit-(?:inline-)?box/.test(container));
+  // Properties whose value other than `none` makes a stacking context of a box they apply to (CSS
+  // Transforms 1 §3, CSS Transforms 2, Filter Effects 1 §5, CSS Masking 1, Motion Path 1 §2).
+  const contextProperties = [
+    "transform",
+    "translate",
+    "rotate",
+    "scale",
+    "perspective",
+    "offset-path",
+    "filter",
+    "backdrop-filter",
+    "clip-path",
+    "mask-image",
+    "-webkit-mask-image",
+    "-webkit-mask-box-image-source",
+    "-webkit-box-reflect",
+  ];
+  // A box that may establish a stacking context: it does by its computed values, or may by a property
+  // whose effect depends on the value or the box, such as a `will-change`, a transform on an inline
+  // box, a 3D context, containment, `content-visibility` or a running animation.
+  const mayEstablishStackingContext = (each: Styled): boolean => {
+    const { own } = each;
     return (
-      own.position !== "static" ||
-      (own.zIndex !== "auto" && /flex|grid/.test(container)) ||
-      Number.parseFloat(own.opacity) < 1 ||
-      [
-        "transform",
-        "translate",
-        "rotate",
-        "scale",
-        "filter",
-        "backdrop-filter",
-        "perspective",
-        "clip-path",
-        "mask-image",
-      ].some((name) => own.getPropertyValue(name) !== "none") ||
-      own.isolation === "isolate" ||
-      own.mixBlendMode !== "normal" ||
-      own.willChange !== "auto" ||
-      /layout|paint|strict|content/.test(own.contain)
+      own.display !== "contents" &&
+      (indexed(each) ||
+        own.position === "fixed" ||
+        own.position === "sticky" ||
+        Number.parseFloat(own.opacity) < 1 ||
+        own.isolation === "isolate" ||
+        own.mixBlendMode !== "normal" ||
+        own.willChange !== "auto" ||
+        own.contain !== "none" ||
+        own.getPropertyValue("content-visibility") !== "visible" ||
+        own.getPropertyValue("transform-style") !== "flat" ||
+        own.getPropertyValue("container-type") !== "normal" ||
+        !["none", ""].includes(own.getPropertyValue("view-transition-name")) ||
+        contextProperties.some((name) => own.getPropertyValue(name) !== "none") ||
+        each.animated())
     );
   };
-  const later = [...positioned.querySelectorAll("*")].filter(
-    (each) =>
-      (element.compareDocumentPosition(each) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 &&
-      !element.contains(each)
-  );
-  const under = later.every((each) => !stacks(each));
+  // A box that paints as a layer of a stacking context and so may paint over the part: positioned, or
+  // a stacking context.
+  const paintsAsLayer = (each: Styled): boolean =>
+    each.own.display !== "contents" && (each.own.position !== "static" || mayEstablishStackingContext(each));
+  // The level a layer paints at: its `z-index`, or 0 for `auto`.
+  const level = (each: Styled): number => (indexed(each) ? Number.parseInt(each.own.zIndex, 10) : 0);
+  const partLevel = level(styled(element));
+  // The level the part paints at among the boxes inside `around`: the lowest of its own and that of
+  // each element between that may hold it in a stacking context of its own.
+  const levelBelow = (around: Element): number => {
+    let lowest = partLevel;
+    for (let each = element.parentElement; each !== null && each !== around; each = each.parentElement) {
+      const computed = styled(each);
+      if (mayEstablishStackingContext(computed)) {
+        lowest = Math.min(lowest, level(computed));
+      }
+    }
+    return lowest;
+  };
+  // Whether every element from `from` up to `around`, `around` left out, computes `order: 0`. A flex
+  // or grid container paints its items in order-modified document order (CSS Flexbox 1 §5.4.1, CSS
+  // Grid 1 §9.5), so an `order` there can move a box after the part. `order` computes as declared on
+  // a box that is no flex or grid item too, so the check can refuse a tie that CSS paints in tree
+  // order, never the reverse.
+  const inOrder = (from: Element, around: Element): boolean => {
+    for (let each: Element | null = from; each !== null && each !== around; each = each.parentElement) {
+      if (getComputedStyle(each).order !== "0") {
+        return false;
+      }
+    }
+    return true;
+  };
+  const rendered = (each: Element): boolean => {
+    for (let around: Element | null = each; around !== null; around = around.parentElement) {
+      if (getComputedStyle(around).display === "none") {
+        return false;
+      }
+    }
+    return true;
+  };
+  // Whether a box of the root outside the part, or its `::before` or `::after`, may paint over the
+  // part. A layer after the part in tree order may, whatever its level. A layer before it may where
+  // its own `z-index` applies above the level the part paints at inside the common ancestor `around`
+  // of the two, or where it ties that level and an `order` can paint it later.
+  const paintsOver = (each: Element): boolean => {
+    if (element.contains(each) || !rendered(each)) {
+      return false;
+    }
+    const holds = each.contains(element);
+    let around: Element = each;
+    while (!around.contains(element) && around.parentElement !== null) {
+      around = around.parentElement;
+    }
+    const lowest = levelBelow(around);
+    const covers = (box: Styled, earlier: boolean, ordered: () => boolean): boolean =>
+      paintsAsLayer(box) &&
+      (!earlier ||
+        level(box) > lowest ||
+        (level(box) === lowest && !(inOrder(element, around) && ordered())));
+    const earlier = (element.compareDocumentPosition(each) & Node.DOCUMENT_POSITION_PRECEDING) !== 0;
+    return (
+      (!holds && covers(styled(each), earlier, () => inOrder(each, around))) ||
+      pseudos(each).some((pseudo) =>
+        covers(
+          pseudo,
+          pseudo.anchored && (holds ? pseudo.first : earlier),
+          () => pseudo.own.order === "0" && inOrder(each, around)
+        )
+      )
+    );
+  };
   const definite = (each: Element): boolean => {
     const declared = each.computedStyleMap();
     const height = declared.get("height");
@@ -180,7 +368,34 @@ export function parentSpansBlock(element: Element, root: Element): boolean {
       !(each.parentElement !== null && getComputedStyle(each.parentElement).display.includes("grid"))
     );
   });
-  if (!clear || !unpainted || !under || !follows || !definite(positioned)) {
+  if (!clear || !unpainted || !follows || !definite(positioned)) {
+    return false;
+  }
+  // The top layer paints over every box of the document (CSS Positioned Layout 4 §2), as does a
+  // popover or dialog that `overlay: auto` keeps there while it transitions out.
+  const lifted = [...document.querySelectorAll("*")].some(
+    (each) =>
+      !each.contains(element) &&
+      (each.matches(":popover-open, :modal, :fullscreen") ||
+        getComputedStyle(each).getPropertyValue("overlay") === "auto")
+  );
+  // A 3D rendering context orders its boxes by depth, not by level or tree order (CSS Transforms 2
+  // §2), and it needs an element of the root that preserves 3D for boxes of the root to take part.
+  const tree = [root, ...root.querySelectorAll("*")];
+  const deep = tree.some((each) => getComputedStyle(each).getPropertyValue("transform-style") !== "flat");
+  // Chromium paints a fieldset's rendered legend and a `details` element's summary apart from tree
+  // order, so a box or generated box before or after them in the tree can paint over them.
+  const reordered = element.closest("legend, summary") !== null;
+  // A scroller that its user can resize paints its resize grip over its content.
+  const gripped = tree.some((each) => {
+    const own = getComputedStyle(each);
+    return (
+      each.contains(element) &&
+      own.resize !== "none" &&
+      (own.overflowX !== "visible" || own.overflowY !== "visible")
+    );
+  });
+  if (levelBelow(root) < 0 || lifted || deep || reordered || gripped || tree.some(paintsOver)) {
     return false;
   }
   const sides = ["top", "right", "bottom", "left"] as const;

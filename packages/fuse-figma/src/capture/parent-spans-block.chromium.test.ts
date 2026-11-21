@@ -1,20 +1,11 @@
 /**
  * Unit under test: `measuredFacts`, the capture's page function, for which absolute elements it
  * records as placed by a containing block that their static parent spans (`parentSpansBlock`).
- * Oracle: Chromium's own layout of markup built for each case, read through CSS 2.1 §10.1, under
- * which an absolute box's containing block is the padding box of its nearest positioned ancestor.
- * The block is a 200×100 `relative` box with a 1px left border, and the close is 16px from its top
- * and right. Where a static column fills the block, the close sits 16px inside the column's top and
- * right edges, which is what a placed layer at those distances draws in the column's frame, and the
- * page records the fact. A padded block, as Toast's root pads its content, a wrapper that clips, a
- * later sibling of the column, a block whose content sets its height, a positioned column, a wrapper
- * that clips by a path, a close a turn moves, a block above the captured root, a block one density
- * pads, a block whose `::before` paints between the column and the close, and a close followed in
- * its column by a positioned box or a box with an opacity below 1, which Chromium paints over the
- * close while the kit orders the close last, each record nothing. Nor does a column that has the
- * block's size at the sample but not at another size of the block, by a maximum, a `clamp()`, a
- * flex basis, a minimum, a grid track, or an aspect ratio in a block its content sizes, where
- * Chromium then puts the close at another distance from the column's edge than 16px.
+ * Oracle: Chromium's own layout and painting of markup built for each case. The close sits 16px
+ * inside the corner of a column that fills a 200×100 `relative` block, so its distances to the
+ * column's edges are what a placed layer draws. Each box that may paint over the close covers only
+ * a 6px strip along the close's left edge, and `elementFromPoint` 3px inside that edge, with every
+ * `pointer-events` set to `auto`, names the box Chromium paints topmost there.
  */
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
@@ -37,15 +28,21 @@ afterAll(async () => {
 const BLOCK = "position: relative; width: 200px; height: 100px; border-left: 1px solid black";
 const COLUMN = "display: flex; flex-direction: column; width: 100%; height: 100%";
 const CLOSE_STYLE = "position: absolute; top: 16px; right: 16px; width: 24px; height: 24px";
+// The close spans 160px to 184px across the column, so a column item or an absolute box in the block
+// with these declarations covers its left 6px and leaves its center bare.
+const EDGE_ITEM = "margin-left: 160px; width: 6px";
+const EDGE_BOX = "top: 0; bottom: 0; left: 160px; width: 6px";
+// A fieldset's ::before over the close's left 6px, where the fieldset's legend holds the block at
+// the captured root's corner.
+const LEGEND_COVER = `#over::before { content: ""; position: absolute; top: 0; left: 161px; width: 6px; height: 100px }`;
 
 /**
- * Measure a block around a column that holds a title and the close: the block's, the column's and
- * the close's styles, a wrapper's style between the block and the column, markup after the column,
- * markup after the close inside the column, rules for the page's head, whether the column is the
- * captured root inside the block, and a style the block takes once the page has measured it.
+ * Measure a block around a column that holds a title and the close, each option adding styles or
+ * markup around them, and `resized` a style the block takes once the page has measured it.
  * Returns the paths the page records the fact at, the close's distances to its parent's top and
- * right edges and, apart, to its bottom edge, with the block so styled, the element Chromium paints
- * topmost at the close's center, and whether the root's `style` attribute came back as it was.
+ * right edges and, apart, to its bottom edge, with the block resized, the elements Chromium paints
+ * topmost 3px inside the close's left edge and at its center, and whether the root's `style`
+ * attribute came back as it was.
  */
 async function measure(options: {
   readonly block?: string;
@@ -53,22 +50,36 @@ async function measure(options: {
   readonly close?: string;
   readonly wrapper?: string;
   readonly after?: string;
+  readonly earlier?: string;
   readonly later?: string;
   readonly head?: string;
   readonly rootIsColumn?: boolean;
+  readonly outside?: string;
+  readonly overlay?: string;
+  readonly popover?: boolean;
+  readonly legend?: boolean;
   readonly resized?: string;
 }) {
   const close = `<button id="close" style="${CLOSE_STYLE}; ${options.close ?? ""}"></button>`;
-  const inner = `<p style="margin: 0">Title</p>${close}${options.later ?? ""}`;
+  const inner = `<p style="margin: 0">Title</p>${options.earlier ?? ""}${close}${options.later ?? ""}`;
   const column = `<div style="${options.column ?? COLUMN}">${inner}</div>`;
   const held = options.wrapper === undefined ? column : `<div style="${options.wrapper}">${column}</div>`;
   const body =
-    options.rootIsColumn === true
-      ? `<div style="${options.block ?? BLOCK}"><div id="root" style="${options.column ?? COLUMN}">${inner}</div></div>`
-      : `<div id="root" style="${options.block ?? BLOCK}">${held}${options.after ?? ""}</div>`;
+    options.legend === true
+      ? `<div id="root" style="position: relative"><fieldset id="over" style="margin: 0; padding: 0; border: 0; min-width: 0"><legend style="padding: 0"><div style="${BLOCK}">${held}</div></legend></fieldset></div>`
+      : options.rootIsColumn === true
+        ? `<div style="${options.block ?? BLOCK}"><div id="root" style="${options.column ?? COLUMN}">${inner}</div></div>`
+        : options.outside === undefined
+          ? `<div id="root" style="${options.block ?? BLOCK}">${held}${options.after ?? ""}</div>`
+          : `<div id="root" style="position: relative">${options.outside}<div style="${options.block ?? BLOCK}">${held}</div></div>`;
   await page.setContent(
-    `<!doctype html><style>body { margin: 0 } ${options.head ?? ""}</style><main data-compare-cell>${body}</main>`
+    `<!doctype html><style>body { margin: 0 } ${options.legend === true ? LEGEND_COVER : ""} ${options.head ?? ""}</style><main data-compare-cell>${body}</main>${options.overlay ?? ""}`
   );
+  if (options.popover === true) {
+    await page.evaluate(() => {
+      document.getElementById("over")?.showPopover();
+    });
+  }
   const style = await page.evaluate(() => document.getElementById("root")?.getAttribute("style"));
   const cdp = await page.context().newCDPSession(page);
   const { root: tree } = await cdp.send("DOM.getDocument", { depth: -1 });
@@ -97,13 +108,21 @@ async function measure(options: {
     const parent = document.getElementById("close")?.parentElement?.getBoundingClientRect();
     return button === undefined || parent === undefined ? undefined : parent.bottom - button.bottom;
   });
-  const topmost = await page.evaluate(() => {
+  const [edge, center] = await page.evaluate(() => {
     const own = document.getElementById("close")?.getBoundingClientRect();
-    return own === undefined
-      ? undefined
-      : document.elementFromPoint(own.left + own.width / 2, own.top + own.height / 2)?.id;
+    const reached = document.createElement("style");
+    reached.textContent = "*, ::before, ::after { pointer-events: auto !important }";
+    document.head.append(reached);
+    const hits =
+      own === undefined
+        ? []
+        : [own.left + 3, own.left + own.width / 2].map(
+            (x) => document.elementFromPoint(x, own.top + own.height / 2)?.id
+          );
+    reached.remove();
+    return hits;
   });
-  return { spans, insets, bottom, topmost, restored };
+  return { spans, insets, bottom, edge, center, restored };
 }
 
 describe("the absolute elements the page records as placed by a block their parent spans", () => {
@@ -112,7 +131,8 @@ describe("the absolute elements the page records as placed by a block their pare
       spans: ["0/1"],
       insets: { top: 16, right: 16 },
       bottom: 60,
-      topmost: "close",
+      edge: "close",
+      center: "close",
       restored: true,
     });
   });
@@ -145,23 +165,249 @@ describe("the absolute elements the page records as placed by a block their pare
     const measured = await measure({
       head: `#root::before { content: ""; position: absolute; inset: 0; background: white }`,
     });
-    expect([measured.spans, measured.topmost, measured.restored]).toEqual([[], "close", true]);
+    expect([measured.spans, measured.edge, measured.center, measured.restored]).toEqual([
+      [],
+      "close",
+      "close",
+      true,
+    ]);
   });
 
   it.each([
     [
       "a positioned box",
-      `<div style="flex: 1"><div id="later" style="position: relative; height: 100%"></div></div>`,
+      {
+        later: `<div style="flex: 1; ${EDGE_ITEM}"><div id="later" style="position: relative; height: 100%"></div></div>`,
+      },
     ],
     [
       "a box with an opacity below 1",
-      `<div style="flex: 1"><div id="later" style="opacity: 0.5; height: 100%"></div></div>`,
+      {
+        later: `<div style="flex: 1; ${EDGE_ITEM}"><div id="later" style="opacity: 0.5; height: 100%"></div></div>`,
+      },
+    ],
+    [
+      "a box with an offset path",
+      {
+        later: `<div id="later" style="flex: none; width: 6px; height: 24px; offset-path: path('M 163 10 L 170 10')"></div>`,
+      },
+    ],
+    [
+      "a box with a reflection",
+      {
+        later: `<div id="later" style="flex: none; height: 24px; -webkit-box-reflect: below 0px; ${EDGE_ITEM}"></div>`,
+      },
+    ],
+    [
+      "a scroller with a positioned ::scroll-button",
+      {
+        later: `<div id="later" style="flex: none; overflow: auto; height: 6px; ${EDGE_ITEM}"></div>`,
+        head: `#later::scroll-button(up) { content: ""; position: absolute; ${EDGE_BOX}; margin: 0; padding: 0; border: 0; min-width: 0 }`,
+      },
     ],
   ])(
     "records nothing for a close followed in its column by %s, which Chromium paints over the close",
-    async (_case, later) => {
-      const measured = await measure({ later });
-      expect([measured.spans, measured.topmost, measured.restored]).toEqual([[], "later", true]);
+    async (_case, options) => {
+      const measured = await measure(options);
+      expect([measured.spans, measured.edge, measured.center === measured.edge, measured.restored]).toEqual([
+        [],
+        "later",
+        false,
+        true,
+      ]);
+    }
+  );
+
+  it.each([
+    [
+      "a flex item with a positive z-index inside a `display: contents` box",
+      {
+        earlier: `<div style="display: contents"><div id="over" style="flex: 1; z-index: 1; ${EDGE_ITEM}"></div></div>`,
+      },
+    ],
+    [
+      "a flex item with a positive z-index",
+      { earlier: `<div id="over" style="flex: 1; z-index: 1; ${EDGE_ITEM}"></div>` },
+    ],
+    [
+      "a `-webkit-box` item with a positive z-index",
+      {
+        column: "display: -webkit-box; -webkit-box-orient: vertical; width: 100%; height: 100%",
+        earlier: `<div id="over" style="z-index: 1; height: 82px; ${EDGE_ITEM}"></div>`,
+      },
+    ],
+    [
+      "a box whose positioned child has a positive z-index",
+      {
+        earlier: `<div style="flex: 1; ${EDGE_ITEM}"><div id="over" style="position: relative; z-index: 1; height: 100%"></div></div>`,
+      },
+    ],
+    [
+      "an in-flow box, where the close's z-index is negative",
+      {
+        close: "z-index: -1",
+        earlier: `<div id="over" style="flex: 1; background: white; ${EDGE_ITEM}"></div>`,
+      },
+    ],
+    [
+      "a positioned box at the close's level 0 that `order: 1` paints after the close",
+      { earlier: `<div id="over" style="flex: 1; order: 1; position: relative; ${EDGE_ITEM}"></div>` },
+    ],
+    [
+      "a positioned box at the close's level 1 that `order: 1` paints after the close",
+      {
+        close: "z-index: 1",
+        earlier: `<div id="over" style="flex: 1; order: 1; position: relative; z-index: 1; ${EDGE_ITEM}"></div>`,
+      },
+    ],
+    [
+      "a box with `will-change: width`, no stacking context, around a positioned child with a positive z-index",
+      {
+        earlier: `<div style="flex: 1; will-change: width; ${EDGE_ITEM}"><div id="over" style="position: relative; z-index: 1; height: 100%"></div></div>`,
+      },
+    ],
+    [
+      "an inline box with a transform, no stacking context, around an absolute child with a positive z-index",
+      {
+        earlier: `<div style="flex: 1"><span style="transform: translateX(0)"><div id="over" style="position: absolute; ${EDGE_BOX}; z-index: 1"></div></span></div>`,
+      },
+    ],
+    [
+      "a positioned box that a 3D context moves in front of the close at the same level",
+      {
+        column: `${COLUMN}; transform-style: preserve-3d`,
+        earlier: `<div id="over" style="position: absolute; ${EDGE_BOX}; transform: translateZ(10px)"></div>`,
+      },
+    ],
+    [
+      "a fixed box with a positive z-index in a table row whose `contain: layout` does not apply to it",
+      {
+        earlier: `<table><tbody><tr style="contain: layout"><td><div id="over" style="position: fixed; top: 16px; left: 161px; width: 6px; height: 24px; z-index: 1"></div></td></tr></tbody></table>`,
+      },
+    ],
+  ])(
+    "records nothing for a close after %s in its column, which Chromium paints over the close",
+    async (_case, options) => {
+      const measured = await measure(options);
+      expect([measured.spans, measured.edge, measured.center === measured.edge, measured.restored]).toEqual([
+        [],
+        "over",
+        false,
+        true,
+      ]);
+    }
+  );
+
+  it("records nothing for a close at a z-index of 2 followed in its column by a positioned box at 1, which Chromium paints under the close", async () => {
+    const measured = await measure({
+      close: "z-index: 2",
+      later: `<div id="later" style="position: absolute; ${EDGE_BOX}; z-index: 1"></div>`,
+    });
+    expect([measured.spans, measured.edge, measured.restored]).toEqual([[], "close", true]);
+  });
+
+  it("records nothing for a close in a fieldset's legend, under the fieldset's ::before that Chromium paints after the legend", async () => {
+    const measured = await measure({ legend: true });
+    expect([measured.spans, measured.edge, measured.center, measured.restored]).toEqual([
+      [],
+      "over",
+      "close",
+      true,
+    ]);
+  });
+
+  it.each([
+    [
+      "a positioned box with a positive z-index before the block in the captured root",
+      {
+        outside: `<div style="height: 0"><div id="over" style="position: absolute; top: 0; bottom: 0; left: 161px; width: 6px; z-index: 1"></div></div>`,
+      },
+    ],
+    [
+      "a positioned box with a z-index of 1 before the block, where the close's 2 holds inside an isolated column",
+      {
+        outside: `<div style="height: 0"><div id="over" style="position: absolute; top: 0; bottom: 0; left: 161px; width: 6px; z-index: 1"></div></div>`,
+        column: `${COLUMN}; isolation: isolate`,
+        close: "z-index: 2",
+      },
+    ],
+    [
+      "an open popover, in the top layer",
+      {
+        overlay: `<div id="over" popover style="inset: auto; top: 0; left: 161px; width: 6px; height: 300px; margin: 0; padding: 0; border: 0"></div>`,
+        popover: true,
+      },
+    ],
+  ])("records nothing for a close under %s, which Chromium paints over the close", async (_case, options) => {
+    const measured = await measure(options);
+    expect([measured.spans, measured.edge, measured.center === measured.edge, measured.restored]).toEqual([
+      [],
+      "over",
+      false,
+      true,
+    ]);
+  });
+
+  it("records nothing for a close after a box whose ::before has a positive z-index, which Chromium paints over the close", async () => {
+    const measured = await measure({
+      earlier: `<div id="over" style="flex: 1"></div>`,
+      head: `#over::before { content: ""; position: absolute; ${EDGE_BOX}; z-index: 1 }`,
+    });
+    expect([measured.spans, measured.edge, measured.center === measured.edge, measured.restored]).toEqual([
+      [],
+      "over",
+      false,
+      true,
+    ]);
+  });
+
+  it("records nothing for a close followed in its column by a box whose positioned ::after Chromium paints over the close", async () => {
+    const measured = await measure({
+      later: `<div id="later" style="flex: 1"></div>`,
+      head: `#later::after { content: ""; position: absolute; ${EDGE_BOX} }`,
+    });
+    expect([measured.spans, measured.edge, measured.center === measured.edge, measured.restored]).toEqual([
+      [],
+      "later",
+      false,
+      true,
+    ]);
+  });
+
+  it.each([
+    [
+      "after a positioned box with a z-index of 0",
+      { earlier: `<div style="flex: 1; position: relative; z-index: 0"></div>` },
+      "0/2",
+    ],
+    [
+      "after a box whose child sets a positive z-index that does not apply to it",
+      { earlier: `<div style="flex: 1"><div style="z-index: 1; height: 100%"></div></div>` },
+      "0/2",
+    ],
+    [
+      "at a z-index of 2 after a positioned box at 1, both inside an isolated column",
+      {
+        column: `${COLUMN}; isolation: isolate`,
+        close: "z-index: 2",
+        earlier: `<div style="flex: 1; position: relative; z-index: 1"></div>`,
+      },
+      "0/2",
+    ],
+    [
+      "after a positioned box with a positive z-index that `display: none` hides",
+      { earlier: `<div style="display: none; position: relative; z-index: 1"></div>` },
+      "0/2",
+    ],
+    [
+      "after a box `display: none` hides around a positioned child with a positive z-index",
+      { earlier: `<div style="display: none"><div style="position: relative; z-index: 1"></div></div>` },
+      "0/2",
+    ],
+  ])(
+    "records the close %s in its column, which Chromium paints under the close",
+    async (_case, options, path) => {
+      expect(await measure(options)).toMatchObject({ spans: [path], edge: "close", restored: true });
     }
   );
 
