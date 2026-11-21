@@ -27,6 +27,9 @@ import card from "../../captures/card.json" with { type: "json" };
 import checkboxCard from "../../captures/checkbox-card.json" with { type: "json" };
 import checkbox from "../../captures/checkbox.json" with { type: "json" };
 import code from "../../captures/code.json" with { type: "json" };
+import comboboxChip from "../../captures/combobox-chip.json" with { type: "json" };
+import comboboxChipsWrapped from "../../captures/combobox-chips-wrapped.json" with { type: "json" };
+import comboboxChips from "../../captures/combobox-chips.json" with { type: "json" };
 import comboboxEmpty from "../../captures/combobox-empty.json" with { type: "json" };
 import comboboxItem from "../../captures/combobox-item.json" with { type: "json" };
 import comboboxOpen from "../../captures/combobox-open.json" with { type: "json" };
@@ -168,6 +171,9 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["combobox-empty", comboboxEmpty],
   ["combobox-popup", comboboxPopup],
   ["combobox-open", comboboxOpen],
+  ["combobox-chip", comboboxChip],
+  ["combobox-chips", comboboxChips],
+  ["combobox-chips-wrapped", comboboxChipsWrapped],
   ["dropdown-menu-item", dropdownMenuItem],
   ["dropdown-menu-checkbox-item", dropdownMenuCheckboxItem],
   ["dropdown-menu-radio-item", dropdownMenuRadioItem],

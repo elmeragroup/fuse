@@ -30,3 +30,18 @@ export const COMBOBOX_EMPTY_TEXT = "No results.";
  * the popup to the `<input>` inside the group, which `combobox-kit.ts` derives from this width.
  */
 export const COMBOBOX_INPUT_GROUP_WIDTH = FIELD_BOX_PREVIEW_WIDTH;
+
+/** The chips the docs Multiple demo selects, in its order. */
+export const COMBOBOX_CHIPS = ["Apple", "Cherry"] as const;
+
+/** Every item of the docs Multiple demo, in its order, which the wrapped chips field selects. */
+export const COMBOBOX_FRUITS = ["Apple", "Banana", "Cherry", "Date"] as const;
+
+/**
+ * The width of the wrapped chips field: a sample host width at which the demo's four chips break onto
+ * a second line before `Date` in every mode.
+ */
+export const COMBOBOX_CHIPS_WRAPPED_WIDTH = 256;
+
+/** The placeholder of the docs Multiple demo's `Combobox.ChipsInput`. */
+export const COMBOBOX_CHIPS_PLACEHOLDER = "Add fruit…";

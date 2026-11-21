@@ -32,6 +32,11 @@ import { CHECKBOX_CARD_MANIFEST } from "./checkbox-card-kit";
 import { CHECKBOX_MANIFEST } from "./checkbox-kit";
 import { CODE_MANIFEST } from "./code-kit";
 import {
+  COMBOBOX_CHIP_MANIFEST,
+  COMBOBOX_CHIPS_MANIFEST,
+  COMBOBOX_CHIPS_WRAPPED_MANIFEST,
+} from "./combobox-chips-kit";
+import {
   COMBOBOX_EMPTY_MANIFEST,
   COMBOBOX_ITEM_MANIFEST,
   COMBOBOX_OPEN_MANIFEST,
@@ -367,7 +372,10 @@ const ACCORDION_PAGE: KitPage = { slug: "accordion", name: "Accordion", example:
 /** The page of Sidebar's rows and sections, and of the panel, expanded and collapsed to its icon rail. */
 const SIDEBAR_PAGE: KitPage = { slug: "sidebar", name: "Sidebar", example: "sidebar" };
 
-/** The page of Combobox's open state: its row, its empty message, its popup and the open input. */
+/**
+ * The page of Combobox: its row, its empty message, its popup, the open input, a chip and the chips
+ * field.
+ */
 const COMBOBOX_PAGE: KitPage = { slug: "combobox", name: "Combobox", example: "combobox-open" };
 
 /** The page of Command's rows and list. The palette dialog waits for a dialog surface. */
@@ -749,6 +757,21 @@ export const KIT: readonly KitEntry[] = [
     page: COMBOBOX_PAGE,
     previewCells: possibleCells(COMBOBOX_OPEN_MANIFEST),
     manifest: COMBOBOX_OPEN_MANIFEST,
+  },
+  {
+    page: COMBOBOX_PAGE,
+    previewCells: possibleCells(COMBOBOX_CHIP_MANIFEST),
+    manifest: COMBOBOX_CHIP_MANIFEST,
+  },
+  {
+    page: COMBOBOX_PAGE,
+    previewCells: possibleCells(COMBOBOX_CHIPS_MANIFEST),
+    manifest: COMBOBOX_CHIPS_MANIFEST,
+  },
+  {
+    page: COMBOBOX_PAGE,
+    previewCells: possibleCells(COMBOBOX_CHIPS_WRAPPED_MANIFEST),
+    manifest: COMBOBOX_CHIPS_WRAPPED_MANIFEST,
   },
   {
     page: COMMAND_PAGE,

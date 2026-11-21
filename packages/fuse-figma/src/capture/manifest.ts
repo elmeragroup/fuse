@@ -182,7 +182,7 @@ export type SetManifest = BoxManifest & {
  *   Attachment's.
  * - 384: a Field's width, the field boxes', the Input group's and Checkbox card's host.
  * - 320: a Command row's host.
- * - 256: a Meter's host, the `w-64` a container gives it.
+ * - 256: a Meter's host, the `w-64` a container gives it, and the wrapped Combobox chips field's.
  * - 160: a Dropdown menu row's host.
  */
 export const SAMPLE_HOST_WIDTHS: ReadonlySet<number> = new Set([768, 576, 512, 448, 384, 320, 256, 160]);
