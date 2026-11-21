@@ -15,6 +15,7 @@ import { paintsLast } from "./paints-last.ts";
 import { parentSpansBlock } from "./parent-spans-block.ts";
 import { paints, pseudoBox, pseudoPaintOf } from "./pseudo-boxes.ts";
 import type { PseudoPaint } from "./pseudo-boxes.ts";
+import { ratioReading } from "./ratio-facts.ts";
 import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
 
 /**
@@ -73,14 +74,13 @@ import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
  *   computed `height` is a length is as tall as that length, within {@link LAYOUT_UNIT_PX}, in every
  *   mode of {@link EVERY_MODE}, so no flex column around it grew or shrank it and the root's
  *   percentage, or the rows that stretch it, resolve against it.
- * - `ratioHeight`: an element with a preferred aspect ratio, none of it `auto`, and a computed
- *   `height` of `auto`, as tall as its width times the ratio within {@link LAYOUT_UNIT_PX}, and with
- *   the width, height and computed `aspect-ratio` of the page's own mode in every mode of
- *   {@link EVERY_MODE}. The ratio then sets the height (CSS Sizing 4 §4.2), and content taller than
- *   that height, which an `overflow: visible` box grows to hold (§4.3), did not grow it. It records
- *   the border box's width and height, which the build compares with the width it reads, since a
- *   flex row shrinks a box below its `width` (CSS Flexbox 1 §9.7) and the ratio follows the shrunk
- *   width.
+ * - `ratio`: an element whose preferred aspect ratio sets one side from the other, as
+ *   `ratio-facts.ts` reads it with the other side {@link RATIO_RAISE_PX} longer, or shorter where a
+ *   flex row shrinks the longer one straight back, where every mode of
+ *   {@link EVERY_MODE} reads the same side, ratio and border box within {@link LAYOUT_UNIT_PX}. It
+ *   records that side as `sets`, and the border box's width and height, which the build compares
+ *   with the lengths it reads, since a flex row shrinks a box below its `width` (CSS Flexbox 1 §9.7)
+ *   and the ratio follows the shrunk width.
  * - `itemsAtContent`: a flex row that neither wraps nor reverses, with two or more in-flow items that
  *   grow, each as wide as its own max-content width and that as wide as its min-content width, within
  *   {@link LAYOUT_UNIT_PX}, in every mode of {@link EVERY_MODE} once its faces have loaded. It holds
@@ -286,6 +286,13 @@ const FIT_CLEARANCE_PX = TRACK_CLEARANCE_PX;
  * maximum narrows it, so a smaller difference between two readings of one layout is no change.
  */
 const LAYOUT_UNIT_PX = 1 / 64;
+
+/**
+ * How far, in CSS pixels, the page lengthens or shortens the side an aspect ratio reads to see the
+ * other follow it, for `ratio`. Any length past {@link LAYOUT_UNIT_PX} tells a ratio from a length that keeps the
+ * side; 10px leaves the reading clear of rounding.
+ */
+const RATIO_RAISE_PX = 10;
 
 /** The page side of {@link measuredFacts}, called on the root. */
 const MEASURE_IN_PAGE = `async function (role) {
@@ -773,30 +780,20 @@ const MEASURE_IN_PAGE = `async function (role) {
   if ((percentHeight(root) || stretchable(root)) && (await holdsInEveryMode([{ element: root, path: "" }], basisAsDeclared)).length > 0) {
     put("", "basisAsDeclared", true);
   }
-  // An element with a preferred aspect ratio and an \`auto\` height, as tall as its width times the
-  // ratio in the page's own mode, and with the same width, height and ratio in every mode, so no mode
-  // changed the box and no content stretched it past the ratio's height. The fact records the box,
-  // since a flex row can shrink it below the width the build reads (CSS Flexbox 1 §9.7).
-  const ratioOf = (element) => {
-    const value = getComputedStyle(element).aspectRatio;
-    if (value.includes("auto")) { return undefined; }
-    const [across, down = 1, ...rest] = value.split("/").map(Number);
-    return rest.length === 0 && across > 0 && down > 0 ? { value, perWidth: down / across } : undefined;
-  };
+  // The side each element's aspect ratio sets, kept where every mode reads the same side, ratio and box.
+  const ratioReading = (${ratioReading.toString()});
+  const ratioHelpers = { withStyles, unit: ${String(LAYOUT_UNIT_PX)}, raise: ${String(RATIO_RAISE_PX)} };
   const ratioBoxes = elements.flatMap(({ element, path }) => {
-    const ratio = ratioOf(element);
-    const box = element.getBoundingClientRect();
-    return ratio !== undefined && String(element.computedStyleMap().get("height")) === "auto" && near(box.height, box.width * ratio.perWidth)
-      ? [{ element, path, ratio: ratio.value, width: box.width, height: box.height }]
-      : [];
+    const reading = ratioReading(element, ratioHelpers);
+    return reading === undefined ? [] : [{ element, path, reading }];
   });
-  const ratioKept = new Map(ratioBoxes.map((candidate) => [candidate.element, candidate]));
-  const ratioHeight = (element) => {
-    const own = ratioKept.get(element);
-    const box = element.getBoundingClientRect();
-    return own !== undefined && ratioOf(element)?.value === own.ratio && near(box.width, own.width) && near(box.height, own.height);
+  const ratioRead = new Map(ratioBoxes.map(({ element, reading }) => [element, reading]));
+  const sameRatio = (element) => {
+    const first = ratioRead.get(element);
+    const again = ratioReading(element, ratioHelpers);
+    return first !== undefined && again !== undefined && again.sets === first.sets && again.value === first.value && near(again.width, first.width) && near(again.height, first.height);
   };
-  for (const { path, width, height } of await holdsInEveryMode(ratioBoxes, ratioHeight)) { put(path, "ratioHeight", { width, height }); }
+  for (const { path, reading: { sets, width, height } } of await holdsInEveryMode(ratioBoxes, sameRatio)) { put(path, "ratio", { sets, width, height }); }
   const growingRows = elements.filter(({ element }) => getComputedStyle(element).display.endsWith("flex") && growing(element).length > 1);
   for (const { path } of await holdsInEveryMode(growingRows, atContent)) { put(path, "itemsAtContent", true); }
   for (const { inline } of await holdsInEveryMode(inlineRows, oneRow)) {

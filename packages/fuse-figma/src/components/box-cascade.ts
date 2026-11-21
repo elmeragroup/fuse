@@ -214,6 +214,19 @@ export type TextRun = {
   readonly elements: readonly LayerStyle[];
 };
 
+/**
+ * A box whose aspect ratio sets one side from the other (CSS Sizing 4 §4.2): its `height` from its
+ * width, or its `width` from its height, with its border box in CSS pixels.
+ */
+export type RatioBox = {
+  /** The side the ratio sets. */
+  readonly sets: "width" | "height";
+  /** The border box's width. */
+  readonly width: number;
+  /** The border box's height. */
+  readonly height: number;
+};
+
 /** What a capture measured of a box's element, as {@link BoxCascade.measured} says. */
 export type MeasuredBox = {
   readonly fitsOneLine: string | undefined;
@@ -244,10 +257,10 @@ export type MeasuredBox = {
   /** The box is a grid whose one column is its content width, with its items' least widths inside. */
   readonly trackFits: boolean;
   /**
-   * The border box, in CSS pixels, of a box whose aspect ratio sets its `auto` height in every mode,
-   * as the capture measured. Undefined where the ratio sets no height.
+   * The side a box's aspect ratio sets from the other in every mode, and the border box the capture
+   * measured, in CSS pixels. Undefined where the ratio sets neither side.
    */
-  readonly ratioHeight: { readonly width: number; readonly height: number } | undefined;
+  readonly ratio: RatioBox | undefined;
   /** On a grid of two or more columns, the columns that hug their widest item in every mode. */
   readonly gridHugs: readonly number[];
   /** On a grid of two or more columns, the columns wider than their items' least widths in every mode. */

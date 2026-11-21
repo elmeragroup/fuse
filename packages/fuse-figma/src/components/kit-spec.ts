@@ -723,7 +723,7 @@ export type BoxSpec = {
   readonly clips: boolean;
   /**
    * The width and height whose ratio Figma's aspect lock keeps, `targetAspectRatio`, on a box whose
-   * CSS aspect ratio sets its height from its width. The box's fixed lengths, so a lock taken after
+   * CSS aspect ratio sets its height from its width, or its width from its height. The box's fixed lengths, so a lock taken after
    * the box is resized to them holds the CSS ratio, and an instance that fills a host's width keeps
    * the ratio's height there (PG19). Absent for a box with no lock.
    */

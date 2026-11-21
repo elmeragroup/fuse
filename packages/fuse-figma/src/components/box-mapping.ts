@@ -536,7 +536,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     inside,
     {
       underMaxWidth: cascade.measured?.underMaxWidth === true,
-      ratioHeight: cascade.measured?.ratioHeight,
+      ratio: cascade.measured?.ratio,
       spansBeside: cascade.measured?.spansBeside,
     }
   );

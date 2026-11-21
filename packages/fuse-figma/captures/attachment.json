@@ -258,7 +258,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":1},"--muted":{"_tag":"theme"},"--radius":{"_tag":"theme"}},
               "unmatched": ["group-data-[orientation=vertical]/attachment:w-full","group-data-[orientation=horizontal]/attachment:group-data-[size=sm]/attachment:w-8","group-data-[orientation=horizontal]/attachment:group-data-[size=xs]/attachment:w-7","group-data-[orientation=vertical]/attachment:[&_svg:not([class*='size-'])]:size-6","group-data-[orientation=horizontal]/attachment:group-data-[size=xs]/attachment:[&_svg:not([class*='size-'])]:size-3.5","*:data-[slot=loader]:p-0","group-data-[state=error]/attachment:bg-error/10","group-data-[state=error]/attachment:text-error","has-data-[slot=attachment-aspect-ratio]:aspect-auto","[&[hidden]:not([hidden=until-found])]:hidden"],
-              "measured": {"ratioHeight":{"width":40,"height":40}},
+              "measured": {"ratio":{"sets":"height","width":40,"height":40}},
               "children": [
                 {
                   "tag": "svg",
@@ -401,7 +401,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":1},"--muted":{"_tag":"theme"},"--radius":{"_tag":"theme"}},
               "unmatched": ["group-data-[orientation=vertical]/attachment:w-full","group-data-[orientation=horizontal]/attachment:group-data-[size=sm]/attachment:w-8","group-data-[orientation=horizontal]/attachment:group-data-[size=xs]/attachment:w-7","group-data-[orientation=vertical]/attachment:[&_svg:not([class*='size-'])]:size-6","group-data-[orientation=horizontal]/attachment:group-data-[size=xs]/attachment:[&_svg:not([class*='size-'])]:size-3.5","*:data-[slot=loader]:p-0","group-data-[state=error]/attachment:bg-error/10","group-data-[state=error]/attachment:text-error","has-data-[slot=attachment-aspect-ratio]:aspect-auto","[&[hidden]:not([hidden=until-found])]:hidden"],
-              "measured": {"ratioHeight":{"width":40,"height":40}},
+              "measured": {"ratio":{"sets":"height","width":40,"height":40}},
               "children": [
                 {
                   "tag": "svg",
@@ -544,7 +544,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":1},"--muted":{"_tag":"theme"},"--radius":{"_tag":"theme"}},
               "unmatched": ["group-data-[orientation=vertical]/attachment:w-full","group-data-[orientation=horizontal]/attachment:group-data-[size=xs]/attachment:w-7","group-data-[orientation=vertical]/attachment:[&_svg:not([class*='size-'])]:size-6","group-data-[orientation=horizontal]/attachment:group-data-[size=xs]/attachment:[&_svg:not([class*='size-'])]:size-3.5","*:data-[slot=loader]:p-0","group-data-[state=error]/attachment:bg-error/10","group-data-[state=error]/attachment:text-error","has-data-[slot=attachment-aspect-ratio]:aspect-auto","[&[hidden]:not([hidden=until-found])]:hidden"],
-              "measured": {"ratioHeight":{"width":32,"height":32}},
+              "measured": {"ratio":{"sets":"height","width":32,"height":32}},
               "children": [
                 {
                   "tag": "svg",
@@ -687,7 +687,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":1},"--muted":{"_tag":"theme"},"--radius":{"_tag":"theme"}},
               "unmatched": ["group-data-[orientation=vertical]/attachment:w-full","group-data-[orientation=horizontal]/attachment:group-data-[size=xs]/attachment:w-7","group-data-[orientation=vertical]/attachment:[&_svg:not([class*='size-'])]:size-6","group-data-[orientation=horizontal]/attachment:group-data-[size=xs]/attachment:[&_svg:not([class*='size-'])]:size-3.5","*:data-[slot=loader]:p-0","group-data-[state=error]/attachment:bg-error/10","group-data-[state=error]/attachment:text-error","has-data-[slot=attachment-aspect-ratio]:aspect-auto","[&[hidden]:not([hidden=until-found])]:hidden"],
-              "measured": {"ratioHeight":{"width":32,"height":32}},
+              "measured": {"ratio":{"sets":"height","width":32,"height":32}},
               "children": [
                 {
                   "tag": "svg",
@@ -830,7 +830,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":1},"--muted":{"_tag":"theme"},"--radius":{"_tag":"theme"}},
               "unmatched": ["group-data-[orientation=vertical]/attachment:w-full","group-data-[orientation=horizontal]/attachment:group-data-[size=sm]/attachment:w-8","group-data-[orientation=vertical]/attachment:[&_svg:not([class*='size-'])]:size-6","*:data-[slot=loader]:p-0","group-data-[state=error]/attachment:bg-error/10","group-data-[state=error]/attachment:text-error","has-data-[slot=attachment-aspect-ratio]:aspect-auto","[&[hidden]:not([hidden=until-found])]:hidden"],
-              "measured": {"ratioHeight":{"width":28,"height":28}},
+              "measured": {"ratio":{"sets":"height","width":28,"height":28}},
               "children": [
                 {
                   "tag": "svg",
@@ -973,7 +973,7 @@
               "pseudo": {},
               "variables": {"--border":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--inner-corner":{"_tag":"element","up":1},"--muted":{"_tag":"theme"},"--radius":{"_tag":"theme"}},
               "unmatched": ["group-data-[orientation=vertical]/attachment:w-full","group-data-[orientation=horizontal]/attachment:group-data-[size=sm]/attachment:w-8","group-data-[orientation=vertical]/attachment:[&_svg:not([class*='size-'])]:size-6","*:data-[slot=loader]:p-0","group-data-[state=error]/attachment:bg-error/10","group-data-[state=error]/attachment:text-error","has-data-[slot=attachment-aspect-ratio]:aspect-auto","[&[hidden]:not([hidden=until-found])]:hidden"],
-              "measured": {"ratioHeight":{"width":28,"height":28}},
+              "measured": {"ratio":{"sets":"height","width":28,"height":28}},
               "children": [
                 {
                   "tag": "svg",

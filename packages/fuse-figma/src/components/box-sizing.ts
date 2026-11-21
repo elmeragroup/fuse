@@ -1,4 +1,4 @@
-import type { MeasuredBox } from "./box-cascade";
+import type { MeasuredBox, RatioBox } from "./box-cascade";
 import { bordersOn, literalPixels, SIDES } from "./box-insets";
 import { readCentredGrowth } from "./centred-row";
 import type { CentredGrowth } from "./centred-row";
@@ -11,6 +11,7 @@ import {
   evaluateLengthOf,
   evaluateNumber,
   evaluatePercentage,
+  evaluateLineHeight,
   inViewport,
   normalizeCss,
   readNumber,
@@ -1543,10 +1544,10 @@ const CLIPPING: ReadonlySet<string> = new Set(["hidden", "clip", "auto", "scroll
  *   whether a layer fills or hugs, the length a share takes, and where a text wraps.
  * @param measured - What the capture measured of the box: `underMaxWidth`, the box as wide with
  *   its `max-width` 24px lower, so a maximum the build cannot read as a length never narrows it and
- *   drops; and `ratioHeight`, its border box where its aspect ratio set its `auto` height in every
- *   mode.
+ *   drops; and `ratio`, the side its aspect ratio set from the other in every mode, with its border
+ *   box.
  * @returns The box's sizing, limits, clipping, extent, and the aspect lock where a ratio sets the
- *   height.
+ *   height or the width.
  */
 export function readSizing(
   reader: LayerStyle,
@@ -1554,20 +1555,19 @@ export function readSizing(
   variables: VariableIndex,
   fit: FitContent,
   inside: Feed,
-  measured: Pick<MeasuredBox, "underMaxWidth" | "ratioHeight" | "spansBeside">
+  measured: Pick<MeasuredBox, "underMaxWidth" | "ratio" | "spansBeside">
 ): BoxSizing {
   // A parent that hugs its width with nothing bounding it is as wide as each layer it holds.
   const roomy = room.horizontal.percent.kind === "hugging" && room.unbounded;
-  const horizontal = readAxis(reader, WIDTH, room.horizontal, variables, {
-    fit,
-    inside,
-    roomy,
-    under: measured.underMaxWidth,
-    beside: measured.spansBeside,
-  });
-  const vertical = readAspectRatio(
+  const { horizontal, vertical, aspectLock } = readAspectRatio(
     reader,
-    horizontal.size,
+    readAxis(reader, WIDTH, room.horizontal, variables, {
+      fit,
+      inside,
+      roomy,
+      under: measured.underMaxWidth,
+      beside: measured.spansBeside,
+    }),
     readAxis(reader, HEIGHT, room.vertical, variables, {
       fit: "content",
       inside,
@@ -1575,7 +1575,7 @@ export function readSizing(
       under: false,
       beside: undefined,
     }),
-    measured
+    measured.ratio
   );
   reader.read(
     "field-sizing",
@@ -1603,7 +1603,7 @@ export function readSizing(
     },
     clips,
     known: { horizontal: horizontal.known, vertical: vertical.known },
-    aspectLock: vertical.aspectLock,
+    aspectLock,
     extent: {
       horizontal: usedPixels(horizontal, room.horizontal.length),
       vertical: usedPixels(vertical, room.vertical.length),
@@ -1636,70 +1636,164 @@ function heightPerWidth(value: string): number | undefined {
 const LAYOUT_UNIT_PX = 1 / 64;
 
 /**
- * Read `aspect-ratio`, which this function alone maps, drops or leaves unmapped. A box with a
- * preferred aspect ratio and an automatic height takes its height from its width through the ratio
- * (CSS Sizing 4 §4.2), so beside a fixed width in pixels the height is a fixed length too, and Figma's
- * aspect lock keeps the ratio as a designer resizes an instance (PG18, PG19). The build takes it only
- * on a box with no `height`, `min-height` or `max-height` of its own, where the capture measured that
- * height in every mode, `ratioHeight`, and measured the box as wide as the width the build reads and
- * as tall as that width times the ratio: content taller than the ratio's height grows an
- * `overflow: visible` box past it (§4.3), and a flex row shrinks a box below its `width` (CSS
- * Flexbox 1 §9.7). A ratio beside a fixed width and a fixed height sizes neither and drops, as
- * Radio's `aspect-square` beside its `size-4`. Any other ratio stays unmapped: Figma's auto layout
- * has no field that sizes one side from the other.
+ * An axis as {@link readAxis} reads it, and whether its length mapped. `readAuto` records the row of
+ * an `auto` length that {@link readLength} left to {@link readAspectRatio}, with `note` in place of
+ * the row `auto` gets on a box with no ratio.
+ */
+type KnownAxis = AxisRead & {
+  readonly known: boolean;
+  readonly readAuto?: (note?: CoverageNote) => void;
+};
+
+/** Both axes once the aspect ratio has sized one of them, and the lock that keeps the ratio. */
+type RatioSizing = {
+  readonly horizontal: KnownAxis;
+  readonly vertical: KnownAxis;
+  /** The lengths Figma's aspect lock keeps, or undefined where the ratio sets neither side. */
+  readonly aspectLock: BoxSpec["aspectLock"];
+};
+
+/**
+ * Read `aspect-ratio`, which this function alone maps, drops or leaves unmapped, and give each axis
+ * the length the ratio sets. A box with a preferred aspect ratio and an automatic size on one side
+ * takes that side from the other through the ratio (CSS Sizing 4 §4.2), so beside a fixed length in
+ * pixels the other side is a fixed length too, and Figma's aspect lock keeps the ratio as a designer
+ * resizes an instance (PG18, PG19). The build takes the side the capture measured the ratio setting
+ * in every mode, `ratio`, where it measured the box at the lengths the build works out:
+ *
+ * - The height, on a box that hugs its height with no `height` of its own but `auto` and no
+ *   `min-height` or `max-height`, beside a fixed width, as wide as that width and as tall as width ÷
+ *   (width / height), as a 448px `aspect-16/9` box is 448 ÷ (16 / 9) = 252px tall. Content taller
+ *   than the ratio's height grows an `overflow: visible` box past it (§4.3), and a flex row shrinks
+ *   a box below its `width` (CSS Flexbox 1 §9.7).
+ * - The width, as Button's `icon-inline` square is as wide as its `1lh` height, on a box that hugs
+ *   its width with no `width` of its own but `auto` and no `min-width` or `max-width`, beside a fixed
+ *   height, as tall as that height and as wide as height × (width / height), as a 90px `aspect-[2/3]`
+ *   box is 90 × (2 / 3) = 60px wide. Content wider than that width keeps the box wider through its
+ *   automatic minimum (§5.1), and a flex basis or a stretch can set the width, which the capture's
+ *   measurement rules out.
+ *
+ * A ratio beside a fixed width and a fixed height it did not set sizes neither and drops, as Radio's
+ * `aspect-square` beside its `size-4`. Any other ratio stays unmapped: Figma's auto layout has no
+ * field that sizes one side from the other. An `auto` length on the box, which {@link readLength}
+ * leaves to this function, says on its row that the ratio sets the side only where it does.
  *
  * @param reader - The box's style.
  * @param width - The box's width as {@link readAxis} read it.
  * @param height - The box's height as {@link readAxis} read it.
- * @param measured - What the capture measured: `ratioHeight`, the box's border box where the ratio
- *   set its height in every mode.
- * @returns The height read, with the length the ratio gives it and the lock that keeps the ratio
+ * @param ratio - What the capture measured: the side the ratio set in every mode, with the box's
+ *   border box.
+ * @returns Both axes with the length the ratio gives one of them, and the lock that keeps the ratio
  *   where the ratio sets one.
  */
 function readAspectRatio(
   reader: LayerStyle,
-  width: SizeSpec,
-  height: AxisRead & { readonly known: boolean },
-  measured: Pick<MeasuredBox, "ratioHeight">
-): AxisRead & { readonly known: boolean; readonly aspectLock: BoxSpec["aspectLock"] } {
-  const across = fixedLength(width);
-  const pixels = across?.kind === "literal" ? across.value : undefined;
-  const box = measured.ratioHeight;
-  const ownHeight = ["height", "min-height", "max-height"].some((property) => reader.has(property));
-  const near = (left: number, right: number): boolean => Math.abs(left - right) < LAYOUT_UNIT_PX;
+  width: KnownAxis,
+  height: KnownAxis,
+  ratio: RatioBox | undefined
+): RatioSizing {
   const sized =
-    box !== undefined && !ownHeight && pixels !== undefined && height.size.kind === "hug"
-      ? reader.read(
-          "aspect-ratio",
-          (value) => {
-            const ratio = heightPerWidth(value);
-            const length = ratio === undefined ? undefined : pixels * ratio;
-            return length !== undefined && near(pixels, box.width) && near(length, box.height)
-              ? length
-              : undefined;
-          },
-          (length) => ({
+    ratio === undefined || !ratioMayApply(reader, ratio.sets, ratio.sets === "height" ? height : width)
+      ? undefined
+      : ratioSide(reader, ratio, fixedPixels(ratio.sets === "height" ? width.size : height.size));
+  for (const axis of [width, height]) {
+    const setByRatio = sized !== undefined && axis === (ratio?.sets === "width" ? width : height);
+    axis.readAuto?.(
+      setByRatio
+        ? {
             outcome: "literal",
-            detail: `${String(Math.round(length * 100) / 100)}px, the width times the ratio, which Figma's aspect lock keeps`,
-          }),
-          reader.feed("sizing")
-        )
-      : undefined;
-  if (sized !== undefined && pixels !== undefined) {
-    return {
-      ...height,
-      size: { kind: "fixed", length: { kind: "literal", value: sized } },
-      known: true,
-      aspectLock: { width: pixels, height: sized },
-    };
+            detail:
+              axis === width
+                ? "auto, so the aspect ratio sets the width from the height"
+                : "auto, so the aspect ratio sets the height from the width",
+          }
+        : undefined
+    );
+  }
+  if (sized !== undefined) {
+    const size: SizeSpec = { kind: "fixed", length: { kind: "literal", value: sized.length } };
+    return ratio?.sets === "width"
+      ? { horizontal: { ...width, size, known: true }, vertical: height, aspectLock: sized.lock }
+      : { horizontal: width, vertical: { ...height, size, known: true }, aspectLock: sized.lock };
   }
   reader.read(
     "aspect-ratio",
-    (value) => (across !== undefined && fixedLength(height.size) !== undefined ? value : undefined),
+    (value) =>
+      fixedLength(width.size) !== undefined && fixedLength(height.size) !== undefined ? value : undefined,
     () => ({ outcome: "dropped", detail: "both sides are fixed, so the ratio sizes neither" }),
     []
   );
-  return { ...height, aspectLock: undefined };
+  return { horizontal: width, vertical: height, aspectLock: undefined };
+}
+
+/**
+ * Whether the side a ratio sets is free for it: the axis hugs, and the box sets no length on it but
+ * `auto`, and no minimum or maximum.
+ */
+function ratioMayApply(reader: LayerStyle, sets: RatioBox["sets"], axis: KnownAxis): boolean {
+  const { length, min, max } = sets === "height" ? HEIGHT : WIDTH;
+  const own = reader.resolved(length);
+  return (
+    axis.size.kind === "hug" &&
+    (own === undefined || normalizeCss(own) === "auto") &&
+    !reader.has(min) &&
+    !reader.has(max)
+  );
+}
+
+/**
+ * Read `aspect-ratio` as the length it gives the side the capture measured it setting, from the
+ * other side's fixed pixels, where the box the capture measured is that length by the other.
+ *
+ * @returns The length and the lock that keeps the ratio, or undefined where the ratio sets none.
+ */
+function ratioSide(
+  reader: LayerStyle,
+  measured: RatioBox,
+  other: number | undefined
+): { readonly length: number; readonly lock: NonNullable<BoxSpec["aspectLock"]> } | undefined {
+  if (other === undefined) {
+    return undefined;
+  }
+  const near = (left: number, right: number): boolean => Math.abs(left - right) < LAYOUT_UNIT_PX;
+  const byWidth = measured.sets === "height";
+  return reader.read(
+    "aspect-ratio",
+    (value) => {
+      const perWidth = heightPerWidth(value);
+      if (perWidth === undefined) {
+        return undefined;
+      }
+      const [across, down] = byWidth ? [other, other * perWidth] : [other / perWidth, other];
+      return near(across, measured.width) && near(down, measured.height)
+        ? {
+            length: byWidth ? down : across,
+            lock: { width: across, height: down },
+            ratio: value.includes("/") ? normalizeCss(value) : `${normalizeCss(value)} / 1`,
+          }
+        : undefined;
+    },
+    ({ length, ratio }) => {
+      const [set, from] = [pixelsText(length), pixelsText(other)];
+      return {
+        outcome: "literal",
+        detail: byWidth
+          ? `Height = ${from} ÷ (${ratio}) = ${set}. Figma keeps this ratio when you resize.`
+          : `Width = ${from} × (${ratio}) = ${set}. Figma keeps this ratio when you resize.`,
+      };
+    },
+    reader.feed("sizing")
+  );
+}
+
+/** Pixels as a coverage row writes them, to two decimals. */
+function pixelsText(pixels: number): string {
+  return `${String(Math.round(pixels * 100) / 100)}px`;
+}
+
+/** The pixels of a fixed literal length, or undefined for any other sizing. */
+function fixedPixels(size: SizeSpec): number | undefined {
+  return size.kind === "fixed" && size.length.kind === "literal" ? size.length.value : undefined;
 }
 
 /** Why inline-size containment drops on a box its parent stretches across. */
@@ -1909,7 +2003,7 @@ function readAxis(
     /** The width the capture measured beside a box that spans its parent, on the width only. */
     readonly beside: number | undefined;
   }
-): AxisRead & { readonly known: boolean } {
+): KnownAxis {
   if (room.placed !== undefined) {
     const { detail, length } = room.placed;
     reader.read(
@@ -1938,9 +2032,9 @@ function readAxis(
     return { size: FILL, min: undefined, max: undefined, notes: new Map(), known: true };
   }
   const spanned = axis === WIDTH ? spannedWidth(reader, room.percent, beside) : undefined;
-  const read = reader.has(axis.length)
+  const { size: read, readAuto } = reader.has(axis.length)
     ? readLength(reader, axis, room, variables, { fit, inside }, spanned)
-    : room.auto;
+    : { size: room.auto, readAuto: undefined };
   const size = read ?? HUG;
   const maximum = reader.resolved(axis.max);
   const inertMaximum =
@@ -2038,9 +2132,11 @@ function readAxis(
     );
   }
   // The width beside a box that spans its parent is the least width the parent leaves it.
-  return spanned === undefined || read?.kind !== "hug"
-    ? { ...limited, known: read !== undefined }
-    : { ...limited, min: { kind: "literal", value: spanned }, known: true };
+  const known: KnownAxis =
+    spanned === undefined || read?.kind !== "hug"
+      ? { ...limited, known: read !== undefined }
+      : { ...limited, min: { kind: "literal", value: spanned }, known: true };
+  return readAuto === undefined ? known : { ...known, readAuto };
 }
 
 /**
@@ -2191,9 +2287,15 @@ function usedLength(length: number, min: number | undefined, max: number | undef
  * leave. A `fit-content` width fills a room that stretches it where `fit` says it draws so, as
  * {@link FitContent} says, and hugs otherwise. The read fills the sizing of the layers inside too,
  * as `inside` names it. `spanned` is the least width {@link spannedWidth} gives a box that spans
- * its parent beside other blocks.
+ * its parent beside other blocks. A box with an `aspect-ratio` leaves the row of an `auto` length
+ * unread, with `readAuto` to record it, since {@link readAspectRatio} alone knows whether the ratio
+ * sets the axis. A length in `lh` reads only as a plain count of lines, such as `1lh` or `2lh`, the
+ * box's own line height times the count, and only where that comes to Figma's least size,
+ * {@link FIGMA_LEAST_SIZE_PX}, or more. A `calc()`, `min()`, `max()` or `clamp()` over `lh` stays
+ * unmapped.
  *
- * @returns The sizing, or undefined when the value does not map.
+ * @returns The sizing, undefined when the value does not map, and `readAuto` for an `auto` length
+ *   left unread.
  */
 function readLength(
   reader: LayerStyle,
@@ -2202,7 +2304,7 @@ function readLength(
   variables: VariableIndex,
   { fit, inside }: { readonly fit: FitContent; readonly inside: Feed },
   spanned: number | undefined
-): SizeSpec | undefined {
+): LengthSizing {
   const { siblings, percent } = room;
   if (room.zeroBasis === true) {
     // `readGrowth` lets a growing layer keep a length only where its own minimum stands in for the
@@ -2216,11 +2318,87 @@ function readLength(
       }),
       []
     );
-    return room.auto;
+    return { size: room.auto, readAuto: undefined };
+  }
+  // CSS computes an `lh` length where it is declared, so a length a box inherits from its parent
+  // is the parent's line height, which the box's own does not give; it stays unmapped.
+  const line =
+    LINE_LENGTH.test(reader.resolved(axis.length) ?? "") && !reader.inherits(axis.length)
+      ? ownLineHeight(reader, variables)
+      : undefined;
+  const feed = [...reader.feed("sizing"), ...inside];
+  const describe = ({ size, share }: LengthRead): CoverageNote => {
+    switch (size.kind) {
+      case "shared": {
+        const [shares, leaves] = siblings.length === 1 ? ["shares", "it leaves"] : ["share", "they leave"];
+        return {
+          outcome: "unmapped",
+          detail: `${listNames(siblings)} ${shares} the ${axis.flow}, and a fill takes only the room ${leaves}, where CSS sizes 100% of the ${axis.flow}`,
+        };
+      }
+      case "fitted":
+        return {
+          outcome: "literal",
+          detail: `the box fits its text up to the ${axis.length} its parent gives it, where its text wraps, which a fill draws, since the box paints nothing and starts its text at its start`,
+        };
+      case "hug":
+        return {
+          outcome: "literal",
+          detail:
+            percent.kind === "auto" && share !== undefined
+              ? AUTO_HEIGHT
+              : spanned !== undefined
+                ? spansBesideBlocks(spanned)
+                : share === 1 && percent.kind === "hugging"
+                  ? SPANS_HUGGING_PARENT
+                  : share === 1 && percent.kind === "unset"
+                    ? "100% sizes an in-flow block-level box with no margins, padding or border as its unset width does, which hugs, since the root sits alone in its component set"
+                    : "the box hugs its content",
+        };
+      case "fill":
+        return { outcome: "literal", detail: `the box fills its parent's ${axis.length}` };
+      case "placed":
+        return { outcome: "literal", detail: "the box's placement sets the length" };
+      case "fixed": {
+        if (line !== undefined) {
+          return size.length.kind === "literal"
+            ? {
+                outcome: "literal",
+                detail: `${String(size.length.value)}px, the lh length at the box's own ${describeLine(line.length)} line height`,
+              }
+            : describeNumber(size.length);
+        }
+        if (share === undefined || percent.kind !== "length" || size.length.kind !== "literal") {
+          return describeNumber(size.length);
+        }
+        const of = `${percent.of} ${axis.length}`;
+        const detail =
+          share === 1
+            ? `${size.length.value}px, ${of} that 100% takes`
+            : `${size.length.value}px, ${Math.round(share * 10_000) / 100}% of ${of}`;
+        return { outcome: "literal", detail };
+      }
+    }
+  };
+  if (reader.has("aspect-ratio") && normalizeCss(reader.resolved(axis.length) ?? "") === "auto") {
+    return {
+      size: room.auto,
+      readAuto: (note) => {
+        reader.read(
+          axis.length,
+          () => room.auto,
+          () => note ?? describe({ size: room.auto, share: undefined }),
+          feed
+        );
+      },
+    };
   }
   const read = reader.read(
     axis.length,
-    (value) => {
+    (value): LengthRead | undefined => {
+      if (LINE_LENGTH.test(value)) {
+        return line === undefined ? undefined : linesTall(value, line.length);
+      }
       // `auto` is a length's initial value, which sizes the axis as no length does.
       if (normalizeCss(value) === "auto") {
         return { size: room.auto, share: undefined };
@@ -2239,57 +2417,117 @@ function readLength(
       const size = readSize(value, variables, percent);
       return size === undefined ? undefined : { size, share };
     },
-    ({ size, share }): CoverageNote => {
-      switch (size.kind) {
-        case "shared": {
-          const [shares, leaves] = siblings.length === 1 ? ["shares", "it leaves"] : ["share", "they leave"];
-          return {
-            outcome: "unmapped",
-            detail: `${listNames(siblings)} ${shares} the ${axis.flow}, and a fill takes only the room ${leaves}, where CSS sizes 100% of the ${axis.flow}`,
-          };
-        }
-        case "fitted":
-          return {
-            outcome: "literal",
-            detail: `the box fits its text up to the ${axis.length} its parent gives it, where its text wraps, which a fill draws, since the box paints nothing and starts its text at its start`,
-          };
-        case "hug":
-          return {
-            outcome: "literal",
-            detail:
-              percent.kind === "auto" && share !== undefined
-                ? AUTO_HEIGHT
-                : spanned !== undefined
-                  ? spansBesideBlocks(spanned)
-                  : share === 1 && percent.kind === "hugging"
-                    ? SPANS_HUGGING_PARENT
-                    : share === 1 && percent.kind === "unset"
-                      ? "100% sizes an in-flow block-level box with no margins, padding or border as its unset width does, which hugs, since the root sits alone in its component set"
-                      : "the box hugs its content",
-          };
-        case "fill":
-          return { outcome: "literal", detail: `the box fills its parent's ${axis.length}` };
-        case "placed":
-          return { outcome: "literal", detail: "the box's placement sets the length" };
-        case "fixed": {
-          if (share === undefined || percent.kind !== "length" || size.length.kind !== "literal") {
-            return describeNumber(size.length);
-          }
-          const of = `${percent.of} ${axis.length}`;
-          const detail =
-            share === 1
-              ? `${size.length.value}px, ${of} that 100% takes`
-              : `${size.length.value}px, ${Math.round(share * 10_000) / 100}% of ${of}`;
-          return { outcome: "literal", detail };
-        }
-      }
-    },
-    [...reader.feed("sizing"), ...inside]
+    describe,
+    feed
   )?.size;
-  if (read?.kind === "fitted") {
-    return FILL;
+  if (line !== undefined && read?.kind === "fixed") {
+    for (const property of line.reads) {
+      reader.read(
+        property,
+        (value) => value,
+        () => ({
+          outcome: line.length.kind === "variable" ? "bound" : "literal",
+          detail: `the box's line height is ${describeLine(line.length)}, which the ${axis.length}'s lh length reads`,
+        }),
+        reader.feed("sizing")
+      );
+    }
   }
-  return read === undefined || read.kind === "shared" ? undefined : read;
+  if (read?.kind === "fitted") {
+    return { size: FILL, readAuto: undefined };
+  }
+  return { size: read === undefined || read.kind === "shared" ? undefined : read, readAuto: undefined };
+}
+
+/**
+ * A `width` or `height` as {@link readLength} maps it: the sizing, a `100%` that siblings share or a
+ * `fit-content` that fits its text, and the percentage it holds.
+ */
+type LengthRead = {
+  readonly size: SizeSpec | { readonly kind: "shared" } | { readonly kind: "fitted" };
+  readonly share: number | undefined;
+};
+
+/**
+ * An axis's length as {@link readLength} returns it: the sizing, undefined where the value does not
+ * map, and the read it left for {@link readAspectRatio} where the length is `auto`.
+ */
+type LengthSizing = { readonly size: SizeSpec | undefined; readonly readAuto: KnownAxis["readAuto"] };
+
+/** A length in `lh`, the line height of the box's own text (CSS Values 4 §6.1.1). */
+const LINE_LENGTH = /\dlh\b/;
+
+/** A plain count of lines, such as Tailwind's `h-lh`, `1lh`. */
+const LINE_COUNT = /^([+-]?(?:\d+\.?\d*|\.\d+))lh$/;
+
+/** The least width or height Figma resizes a layer to, in pixels. */
+const FIGMA_LEAST_SIZE_PX = 0.01;
+
+/**
+ * A length that is a plain count of lines, as a fixed sizing: the line height times the count. A
+ * synced line height binds a length of exactly one line, which no other count of lines does. CSS
+ * clamps a negative line height to zero (CSS Inline 3, `line-height`), and a length under
+ * {@link FIGMA_LEAST_SIZE_PX} does not read.
+ *
+ * @param value - The resolved length, which holds `lh`.
+ * @param lineHeight - The box's own line height.
+ * @returns The sizing, or undefined for any other length in `lh`.
+ */
+function linesTall(value: string, lineHeight: NumberSpec): LengthRead | undefined {
+  const count = LINE_COUNT.exec(normalizeCss(value))?.[1];
+  if (count === undefined) {
+    return undefined;
+  }
+  if (lineHeight.kind === "variable") {
+    return Number(count) === 1
+      ? { size: { kind: "fixed", length: lineHeight }, share: undefined }
+      : undefined;
+  }
+  const pixels = Number(count) * Math.max(0, lineHeight.value);
+  return pixels >= FIGMA_LEAST_SIZE_PX
+    ? { size: { kind: "fixed", length: { kind: "literal", value: pixels } }, share: undefined }
+    : undefined;
+}
+
+/**
+ * The box's own computed line height, which `1lh` stands for, and the properties it reads: the font
+ * size too where the line height multiplies it. A synced line height binds its variable. A length,
+ * or a number over a font size in pixels, is a literal. `normal`, which the face's metrics set, a
+ * percentage, which CSS computes against the font size where it is declared, and a number over a
+ * synced font size stay unread, so a length in `lh` beside them stays unmapped.
+ *
+ * @param reader - The box's style.
+ * @param variables - The synced variables a line height or font size can bind.
+ * @returns The line height and the properties that set it, or undefined where none reads.
+ */
+function ownLineHeight(
+  reader: LayerStyle,
+  variables: VariableIndex
+): { readonly length: NumberSpec; readonly reads: readonly string[] } | undefined {
+  const line = reader.resolved("line-height");
+  if (line === undefined) {
+    return undefined;
+  }
+  const bound = variables.lookup(line);
+  if (bound !== undefined) {
+    return { length: { kind: "variable", variable: bound }, reads: ["line-height"] };
+  }
+  const read = evaluateLineHeight(line);
+  if (read?.kind === "length") {
+    return { length: { kind: "literal", value: read.px }, reads: ["line-height"] };
+  }
+  const size = reader.resolved("font-size");
+  const font = size === undefined ? undefined : readNumber(size, variables);
+  return read === undefined || font?.kind !== "literal"
+    ? undefined
+    : { length: { kind: "literal", value: read.factor * font.value }, reads: ["line-height", "font-size"] };
+}
+
+/** A line height as the coverage table names it: its pixels, or its variable. */
+function describeLine(length: NumberSpec): string {
+  return length.kind === "literal"
+    ? `${String(length.value)}px`
+    : `${length.variable.collection} / ${length.variable.name}`;
 }
 
 /**

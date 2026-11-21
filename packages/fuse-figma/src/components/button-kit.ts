@@ -1,14 +1,14 @@
 /**
  * Button, as two component sets. `Button` holds every variant of the recipe at the four label
  * sizes, in five states, with no icon, a start icon or an end icon: 420 cells. `Icon button`
- * holds every variant at the four square sizes in five states, 140 cells, each an icon with no
+ * holds every variant at the five square sizes in five states, 175 cells, each an icon with no
  * label.
  *
  * - The `state` axis holds rest, hover, focus, disabled and pending. A pending cell shows a spinner
  *   in the leading slot, as `isPending` renders it.
  * - Each icon is an instance of the kit's icon components, which a swap property picks.
- * - `icon-inline` stays out. It takes its size from the surrounding text line, which a standalone
- *   component does not have.
+ * - `icon-inline` is as tall as the line of the text around it. A cell stands alone on the page,
+ *   so its line is the page's own, preflight's 1.5 over the initial 16px, and the square is 24px.
  */
 import { buttonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
@@ -28,7 +28,17 @@ const VARIANTS = Object.keys(buttonVariants.variants.variant).filter(isVariant);
  * set's default, so an instance a designer places starts at the size `<Button>` renders.
  */
 export const BUTTON_LABEL_SIZES = ["default", "xs", "sm", "lg"] as const satisfies readonly ButtonSize[];
-const ICON_SIZES = ["icon", "icon-xs", "icon-sm", "icon-lg"] as const satisfies readonly ButtonSize[];
+/**
+ * The square sizes. The recipe lists `icon-inline` before `icon-lg`; appending it here keeps the
+ * order the Figma `size` axis already had for the other four.
+ */
+const ICON_SIZES = [
+  "icon",
+  "icon-xs",
+  "icon-sm",
+  "icon-lg",
+  "icon-inline",
+] as const satisfies readonly ButtonSize[];
 
 function isVariant(value: string | undefined): value is ButtonVariant {
   return ownKey(buttonVariants.variants.variant, value);

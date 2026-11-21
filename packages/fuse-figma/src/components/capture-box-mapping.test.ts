@@ -768,15 +768,31 @@ describe("an aspect ratio", () => {
   });
 });
 
+/** A synced line height, which a box's `lh` lengths read as its text style does. */
+const LEADING = makeVariableIndex([
+  {
+    ref: { collection: "Fuse density", name: "paragraph-leading-base" },
+    webSyntax: "var(--paragraph-leading-base)",
+    minimum: 24,
+    maximum: 28,
+  },
+]);
+
+/** The number field that binds the variable of {@link LEADING}. */
+const PARAGRAPH_LEADING = {
+  kind: "variable",
+  variable: { collection: "Fuse density", name: "paragraph-leading-base" },
+} as const;
+
 // Oracle: CSS Sizing 4 §4.2 and §4.3, CSS Flexbox 1 §9.7 and probe PG18. A box with a preferred
 // aspect ratio and an automatic height takes its height from its width, so a 200px `aspect-16/9` box
 // is 112.5px tall and a 40px `aspect-square` box 40px, and content taller than that grows an
 // `overflow: visible` box past it. A flex row can shrink the box below its `width`, and the height
 // follows the shrunk width, so a 200px box the capture measured at 100 by 56.25 is no 112.5px box.
-// The capture's `ratioHeight` holds the border box the browser drew in every mode, so without it, with
-// a box of another width, or with a height, minimum or maximum of the box's own, the ratio stays
-// unmapped. Figma's `lockAspectRatio()` on a 448 by 252 main reads back as that width and height, so
-// the lock is the box's own lengths.
+// The capture's `ratio` holds the height set and the border box the browser drew in every mode, so
+// without it, with a box of another width, or with a minimum or maximum height of the box's own, the
+// ratio stays unmapped. A height of `auto` is no height of the box's own. Figma's `lockAspectRatio()`
+// on a 448 by 252 main reads back as that width and height, so the lock is the box's own lengths.
 describe("an aspect ratio beside a fixed width", () => {
   /** Build a chip that wins `classes`, with the capture's facts on its root. */
   async function build(classes: string, measured: MeasuredFacts) {
@@ -786,7 +802,9 @@ describe("an aspect ratio beside a fixed width", () => {
   }
 
   /** The capture's fact for a box of `width` by `height`. */
-  const drawn = (width: number, height: number): MeasuredFacts => ({ ratioHeight: { width, height } });
+  const drawn = (width: number, height: number): MeasuredFacts => ({
+    ratio: { sets: "height", width, height },
+  });
 
   it.each([
     ["w-[200px] aspect-16/9", 200, 112.5],
@@ -797,6 +815,17 @@ describe("an aspect ratio beside a fixed width", () => {
       sizing: fixedSize(literal(width), literal(height)),
       lock: { width, height },
       rows: ["literal"],
+    });
+  });
+
+  it("draws an auto height as the ratio's, and says so on its row", async () => {
+    const { variant, coverage } = await buildCaptured(
+      chip(),
+      rest({ slot: "chip", classes: "w-[40px] h-auto aspect-square", measured: drawn(40, 40) })
+    );
+    expect({ sizing: variant?.root.sizing, rows: notesOf(coverage, "h-auto") }).toEqual({
+      sizing: fixedSize(literal(40), literal(40)),
+      rows: [["height", "literal", "auto, so the aspect ratio sets the height from the width"]],
     });
   });
 
@@ -813,6 +842,228 @@ describe("an aspect ratio beside a fixed width", () => {
       lock: undefined,
       rows: ["unmapped"],
     });
+  });
+});
+
+// Oracle: CSS Sizing 4 §4.2 and §5.1, CSS Flexbox 1 §9.7. A box with a preferred aspect ratio and an
+// automatic width takes its width from a definite height, so a 24px `aspect-square` box is 24px wide
+// and a 90px `aspect-[2/3]` box 60px. Content wider than that keeps the box wider through its
+// automatic minimum, and a flex row can shrink it, so the build takes the width only where the
+// capture's `ratio` holds the width set and the border box the browser drew in every mode, and only
+// on a box with no width, minimum or maximum width of its own.
+describe("an aspect ratio beside a fixed height", () => {
+  /** Build a chip that wins `classes`, with the capture's facts on its root. */
+  async function build(classes: string, measured: MeasuredFacts) {
+    const { variant, coverage } = await buildCaptured(chip(), rest({ slot: "chip", classes, measured }));
+    const rows = coverage.filter((row) => row.property === "aspect-ratio").map((row) => row.outcome);
+    return { sizing: variant?.root.sizing, lock: variant?.root.aspectLock, rows };
+  }
+
+  /** The capture's fact for a box of `width` by `height`. */
+  const drawn = (width: number, height: number): MeasuredFacts => ({
+    ratio: { sets: "width", width, height },
+  });
+
+  it.each([
+    ["h-[24px] aspect-square", 24, 24],
+    ["h-[90px] aspect-[2/3]", 60, 90],
+  ])("draws %s as %spx wide and %spx tall, locked at that ratio", async (classes, width, height) => {
+    expect(await build(classes, drawn(width, height))).toEqual({
+      sizing: fixedSize(literal(width), literal(height)),
+      lock: { width, height },
+      rows: ["literal"],
+    });
+  });
+
+  it("says on an auto width's row that the ratio sets it", async () => {
+    const { coverage } = await buildCaptured(
+      chip(),
+      rest({ slot: "chip", classes: "w-auto h-[24px] aspect-square", measured: drawn(24, 24) })
+    );
+    expect(notesOf(coverage, "w-auto")).toEqual([
+      ["width", "literal", "auto, so the aspect ratio sets the width from the height"],
+    ]);
+  });
+
+  // A synced line height gives the height a variable, which no literal width from the ratio follows,
+  // so the auto width hugs and its row says so.
+  it("stays unmapped, with the width hugging, beside a height a synced line height binds", async () => {
+    const { variant, coverage } = await buildCaptured(
+      chip(),
+      rest({
+        slot: "chip",
+        classes: "leading-(--paragraph-leading-base) h-lh w-auto aspect-square",
+        measured: drawn(24, 24),
+      }),
+      { variables: LEADING }
+    );
+    expect({
+      sizing: variant?.root.sizing,
+      lock: variant?.root.aspectLock,
+      rows: coverage.filter((row) => row.property === "aspect-ratio").map((row) => row.outcome),
+      auto: notesOf(coverage, "w-auto"),
+    }).toEqual({
+      sizing: { horizontal: HUG, vertical: fixed(PARAGRAPH_LEADING) },
+      lock: undefined,
+      rows: ["unmapped"],
+      auto: [["width", "literal", "the box hugs its content"]],
+    });
+  });
+
+  // A minimum width of the box's own keeps the ratio from the width in the build, so the auto width
+  // hugs, though the capture measured the ratio setting it.
+  it("says an auto width hugs beside a minimum width of the box's own", async () => {
+    const { variant, coverage } = await buildCaptured(
+      chip(),
+      rest({
+        slot: "chip",
+        classes: "inline-flex w-auto min-w-0 h-[24px] aspect-square",
+        measured: drawn(24, 24),
+      })
+    );
+    expect({
+      horizontal: variant?.root.sizing.horizontal,
+      rows: coverage.filter((row) => row.property === "aspect-ratio").map((row) => row.outcome),
+      auto: notesOf(coverage, "w-auto"),
+    }).toEqual({
+      horizontal: HUG,
+      rows: ["unmapped"],
+      auto: [["width", "literal", "the box hugs its content"]],
+    });
+  });
+
+  it.each([["the capture measured no ratio width", "h-[24px] aspect-square", {}]])(
+    "stays unmapped, with the width hugging, where %s",
+    async (_case, classes, measured) => {
+      const { sizing, lock, rows } = await build(classes, measured);
+      expect({ horizontal: sizing?.horizontal, lock, rows }).toEqual({
+        horizontal: HUG,
+        lock: undefined,
+        rows: ["unmapped"],
+      });
+    }
+  );
+});
+
+// Oracle: CSS Values 4 §6.1.1, under which `lh` is the element's own computed line height: a length,
+// or a unitless number times the element's font size. A `normal` line height comes from the face's
+// metrics, which the build does not know, so a length in `lh` beside it stays unmapped.
+describe("a height in lh", () => {
+  it.each([
+    ["leading-[20px] h-lh", 20],
+    ["text-[10px] leading-[1.5] h-lh", 15],
+    ["leading-[20px] h-[2lh]", 40],
+    // A length over a length is a number (CSS Values 4, type checking), so the line height is 1.5 times 16px.
+    ["text-[16px] leading-[calc(24px/16px)] h-lh", 24],
+    // A length times a length over a length is a length, so the line height is 48px whatever the font size.
+    ["text-[16px] leading-[calc(24px*16px/8px)] h-lh", 48],
+    ["text-[16px] leading-[calc(24px*2px/1px)] h-lh", 48],
+  ])("draws %s %spx tall", async (classes, height) => {
+    const { variant } = await buildChip(classes);
+    expect(variant?.root.sizing.vertical).toEqual(fixed(literal(height)));
+  });
+
+  // Tailwind's `text-sm` sets its line height as `calc()` over two numbers, which multiplies its
+  // 14px font size, so the 20px height reads the font size as well as the line height.
+  it("reads the font size a calc() line height multiplies", async () => {
+    const { variant, coverage } = await buildChip("text-sm h-lh");
+    expect({
+      height: variant?.root.sizing.vertical,
+      rows: notesOf(coverage, "text-sm").map(([property, outcome]) => [property, outcome]),
+    }).toEqual({
+      height: fixed(literal(20)),
+      rows: [
+        ["font-size", "literal"],
+        ["line-height", "literal"],
+      ],
+    });
+  });
+
+  // The build reads only a plain count of lines, so a `calc()` over `lh` stays unmapped: 1lh - 32px
+  // is negative, which CSS clamps to zero (CSS Values 4, range checking), 1lh - 23.996px is 0.004px,
+  // under Figma's 0.01px resize minimum, 1lh - 100% depends on the viewport's height, and beside a
+  // negative line height, which CSS clamps to zero (CSS Inline 3, `line-height`), Chromium draws
+  // 1lh + 12px 12px tall. A line height of 24px times 2px is an area, which no line height holds,
+  // and one line of 0.004px is under the 0.01px too. A percentage line height computes against the
+  // font size where it is declared, which the build does not follow.
+  it.each([
+    ["leading-[0.004px] h-lh", {}],
+    ["text-[16px] leading-[150%] h-lh", {}],
+    ["leading-[24px] h-[calc(1lh-32px)]", {}],
+    ["leading-[24px] h-[calc(1lh-23.996px)]", {}],
+    ["fixed leading-[24px] h-[calc(1lh-100%)]", { viewport: { width: 100, height: 100 } }],
+    ["leading-[calc(-1*2px)] h-[calc(1lh+12px)]", {}],
+    ["leading-[calc(24px*2px)] h-lh", {}],
+  ])("stays unmapped as %s", async (classes, fields) => {
+    const { variant, coverage } = await buildChip(classes, [], fields);
+    expect({
+      height: variant?.root.sizing.vertical,
+      rows: coverage.filter((row) => row.property === "height").map((row) => row.outcome),
+    }).toEqual({ height: HUG, rows: ["unmapped"] });
+  });
+
+  // An `em` line height computes on the element that declares it, and a child inherits that length
+  // (CSS Inline 3, `line-height`): 1.25em at the parent's 20px is 25px, where the child's own 16px gives 20px.
+  it("stays unmapped on a part that inherits an em line height", async () => {
+    const { variant, coverage } = await buildWithDot("text-[20px] leading-[1.25em]", "text-[16px] h-lh");
+    expect({
+      part: frameOf(variant?.root)?.sizing.vertical,
+      rows: notesOf(coverage, "h-lh").map(([property, outcome]) => [property, outcome]),
+    }).toEqual({ part: HUG, rows: [["height", "unmapped"]] });
+  });
+
+  it("stays unmapped beside a normal line height", async () => {
+    const { variant, coverage } = await buildChip("text-[10px] leading-[normal] h-lh");
+    expect(variant?.root.sizing.vertical).toEqual(HUG);
+    expect(coverage.filter((row) => row.property === "height").map((row) => row.outcome)).toEqual([
+      "unmapped",
+    ]);
+  });
+
+  // `inherit` takes the parent's computed height, and CSS computes the parent's `1lh` at the parent's
+  // own 24px line height, so the part is 24px tall whatever its own 12px line height.
+  it("stays unmapped on a part that inherits it", async () => {
+    const { variant, coverage } = await buildWithDot("leading-[24px] h-lh", "leading-[12px] h-[inherit]");
+    expect({
+      part: frameOf(variant?.root)?.sizing.vertical,
+      rows: notesOf(coverage, "h-[inherit]").map(([property, outcome]) => [property, outcome]),
+    }).toEqual({ part: HUG, rows: [["height", "unmapped"]] });
+  });
+
+  // A synced line height holds a length per mode, so `1lh` is that variable's length in each mode.
+  // Two lines are twice it, which no Figma field binds.
+
+  it("binds the synced line height a box sets, one line tall", async () => {
+    const { variant, coverage } = await buildChip(
+      "leading-(--paragraph-leading-base) h-lh",
+      [],
+      {},
+      {
+        variables: LEADING,
+      }
+    );
+    expect({
+      height: variant?.root.sizing.vertical,
+      rows: notesOf(coverage, "h-lh").map(([property, outcome]) => [property, outcome]),
+    }).toEqual({
+      height: fixed(PARAGRAPH_LEADING),
+      rows: [["height", "bound"]],
+    });
+  });
+
+  it("stays unmapped two synced lines tall", async () => {
+    const { variant, coverage } = await buildChip(
+      "leading-(--paragraph-leading-base) h-[2lh]",
+      [],
+      {},
+      {
+        variables: LEADING,
+      }
+    );
+    expect({
+      height: variant?.root.sizing.vertical,
+      rows: notesOf(coverage, "h-[2lh]").map(([property, outcome]) => [property, outcome]),
+    }).toEqual({ height: HUG, rows: [["height", "unmapped"]] });
   });
 });
 
