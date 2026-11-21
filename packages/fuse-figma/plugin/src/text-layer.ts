@@ -40,10 +40,13 @@ const STYLE_FIELDS: readonly VariableBindableTextField[] = ["fontStyle", "fontWe
  * the characters bind and says nothing of characters that bind none, so the range read is
  * what shows a layer that one character left.
  *
+ * @param run - The run.
+ * @param text - The text layer.
+ * @param field - The text field.
  * @returns The alias when every character binds it, null when no character binds a variable,
  *   or `figma.mixed` when the characters differ.
  */
-function textBinding(
+export function textBinding(
   run: Run,
   text: TextNode,
   field: VariableBindableTextField
@@ -504,12 +507,29 @@ export function planGlyphFaces(
     return;
   }
   const variable = run.variables.variable(spec.weight.variable);
-  const binding = textBinding(run, text, "fontWeight");
-  if (rewritten || refonted || binding === run.figma.mixed || binding?.id !== variable.id) {
+  if (rewritten || refonted || weightUnbound(run, text, spec)) {
     change(run.plan, label, `fontWeight → ${spec.weight.variable.name}`, () =>
       text.setBoundVariable("fontWeight", variable)
     );
   }
+}
+
+/**
+ * Whether a text misses the weight binding its spec names on some character, which
+ * {@link planGlyphFaces} binds again. The fonts preflight in `instance-layers.ts` reads it to know
+ * whether the run writes a label.
+ *
+ * @param run - The run.
+ * @param text - The text layer.
+ * @param spec - The text layer's spec.
+ * @returns Whether the spec binds a weight that some character of the text does not bind.
+ */
+export function weightUnbound(run: Run, text: TextNode, spec: TextLayerSpec): boolean {
+  if (spec.weight === undefined) {
+    return false;
+  }
+  const binding = textBinding(run, text, "fontWeight");
+  return binding === run.figma.mixed || binding?.id !== run.variables.variable(spec.weight.variable).id;
 }
 
 /**

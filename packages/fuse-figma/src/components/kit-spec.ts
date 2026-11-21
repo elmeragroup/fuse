@@ -518,12 +518,12 @@ export type NestedPropertiesSpec = {
 };
 
 /**
- * A paint, stroke weight, corner, shadow or alignment an instance layer overrides on the inner
+ * A paint, stroke weight, font style, corner, shadow or alignment an instance layer overrides on the inner
  * variant's root, at the empty `path`, or on a layer below it, at the keys of the layers from the root
  * down. `fill`, `strokeColor`, `strokeSides`, `cornerRadius` and `effects` apply to the root or a
  * frame, `primaryAlign`, where the auto layout places its layers along its direction, to the root
- * alone, `textColor` and `textAlign`, the alignment across a text's lines, to a text, and `glyph` to
- * an icon's glyph. A `fill` or `strokeColor` of undefined paints none.
+ * alone, `textColor`, `textAlign`, the alignment across a text's lines, and `fontStyle`, the face of
+ * a label whose weight is a literal, to a text, and `glyph` to an icon's glyph. A `fill` or `strokeColor` of undefined paints none.
  */
 export type InstanceOverride = { readonly path: readonly string[] } & (
   | InstancePaintOverride
@@ -542,6 +542,7 @@ export type InstancePaintOverride =
 export type InstanceOverrideValue =
   | { readonly field: "textAlign"; readonly horizontal: TextAlignSpec["horizontal"] }
   | { readonly field: "strokeSides"; readonly sides: SideStroke["sides"] }
+  | { readonly field: "fontStyle"; readonly style: string }
   | { readonly field: "cornerRadius"; readonly value: CornerRadiusSpec }
   | { readonly field: "primaryAlign"; readonly value: PrimaryAlignSpec }
   | { readonly field: "effects"; readonly shadows: readonly ShadowSpec[] };

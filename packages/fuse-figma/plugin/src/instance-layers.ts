@@ -25,11 +25,13 @@
 
 import { Effect } from "effect";
 
-import { layerAt, walkLayers } from "../../src/components/kit-spec.ts";
+import { glyphRanges, layerAt, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   ComponentRootSpec,
   InstanceLayerSpec,
+  InstanceOverride,
   NestedPropertiesSpec,
+  TextLayerSpec,
   VariantSpec,
 } from "../../src/components/kit-spec.ts";
 import { findProperty, propertyName } from "./component-properties.ts";
@@ -37,8 +39,9 @@ import type { PlannedSet } from "./component-set.ts";
 import type { PluginError } from "./errors.ts";
 import { planLimit, planScalar, planVisibleLink } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
-import { heldFonts, linkedLabels, requireFont } from "./fonts.ts";
+import { fontFor, fontsOf, heldFonts, requireFont, shownFace, shownLabel, shownLabels } from "./fonts.ts";
 import type { InnerSpecs } from "./fonts.ts";
+import { staleGlyphRanges } from "./glyph-font.ts";
 import type { PlannedIcon } from "./icons.ts";
 import { keyOf } from "./identity.ts";
 import { pathKey, planOverrides } from "./instance-overrides.ts";
@@ -49,7 +52,7 @@ import { changeLater, changeWith, planWhenRun } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { currentRun } from "./services.ts";
 import type { PlanServices } from "./services.ts";
-import { planGlyphFaces } from "./text-layer.ts";
+import { planGlyphFaces, weightUnbound } from "./text-layer.ts";
 
 /** The inner set and variant an instance layer shows, as the plan leaves them. */
 type InnerVariant = {
@@ -374,22 +377,90 @@ const planNested = Effect.fnUntraced(function* (
   }
 });
 
+/** The inner variant's text layer at a key path, or undefined where none is there. */
+function textAt(root: ComponentRootSpec, path: readonly string[]): TextLayerSpec | undefined {
+  const layer = layerAt(root, path);
+  return layer !== undefined && "kind" in layer && layer.kind === "text" ? layer : undefined;
+}
+
 /**
- * Plan the glyph font on the glyph ranges of each label a TEXT property sets, in the characters it
- * shows, and the weight binding of a label that binds one, as a main's label takes them. A TEXT write on the instance resets the label to one style, the default value included (G5),
- * and a range written after holds until the next (G6). A label at its default shows the main's
- * ranges (G4), so it plans nothing.
+ * Plan the glyph font on the glyph ranges of each label the instance holds, in the characters it
+ * shows and the face the spec gives it, and the weight binding of a label that binds one, as a main's
+ * label takes them. A TEXT write on the instance resets the label to one style, the default value
+ * included (G5), and a range written after holds until the next (G6). A label at its default shows
+ * the main's ranges (G4), which match, so it plans nothing. A label whose face the instance overrides
+ * takes its glyph ranges in that face, static or not, and binds no weight, since the face is literal
+ * (`shownLabel`). One whose override the spec drops goes back to the inner label's, by its weight
+ * binding where the inner label binds one, whether or not the overrides stage wrote its whole font. A
+ * label whose whole font that stage writes, `refaced`, takes its ranges again after that write,
+ * whatever they read now.
+ *
+ * @param refaced - The key paths `planOverrides` writes the whole font of.
  */
-function planLabelGlyphs(run: Run, layers: ReadonlyMap<string, HeldLayer>, root: ComponentRootSpec): void {
+function planLabelGlyphs(
+  run: Run,
+  layers: ReadonlyMap<string, HeldLayer>,
+  root: ComponentRootSpec,
+  spec: InstanceLayerSpec,
+  refaced: ReadonlySet<string>
+): void {
   for (const layer of layers.values()) {
-    const spec = layerAt(root, layer.path);
-    const linked = spec !== undefined && "kind" in spec && spec.kind === "text" ? spec : undefined;
-    if (layer.node.type === "TEXT" && linked?.textProperty !== undefined) {
-      planGlyphFaces(run, layer.node, layer.label, linked, layer.node.characters, false);
+    const label = textAt(root, layer.path);
+    if (layer.node.type === "TEXT" && label !== undefined) {
+      planGlyphFaces(
+        run,
+        layer.node,
+        layer.label,
+        shownLabel(spec, root, label),
+        layer.node.characters,
+        refaced.has(pathKey(layer.path))
+      );
     }
   }
 }
 
+/** What the run can write on a label an instance holds, as the fonts preflight reads it. */
+type LabelWrites = {
+  /** A TEXT write, an alignment, a face, the glyph ranges or the weight binding. */
+  readonly any: boolean;
+  /** A write that gives the label a face of its own: a TEXT reset, a face, the glyph ranges or a binding. */
+  readonly faces: boolean;
+  /** A weight binding, which gives each character the weight's face in its own family (rule 10, PG13). */
+  readonly binds: boolean;
+};
+
+/**
+ * What the run can write on a label the instance holds, read with the predicates its writers use: a
+ * TEXT write where the run writes the property, an alignment the spec gives or drops, a face the spec
+ * gives or drops back to a static inner label's (`planOverrides`), and the glyph ranges and the
+ * weight binding `planLabelGlyphs` writes. Where a TEXT write or a face write runs first, or the
+ * stages wait for an earlier operation, the label changes before those, so they count as written.
+ *
+ * @param node - The label as the file holds it now.
+ * @param shown - The inner label as the instance shows it (`shownLabel`).
+ * @param marks - What the spec and the instance's overrides say of the label.
+ */
+function labelWrites(
+  run: Run,
+  node: TextNode,
+  shown: TextLayerSpec,
+  marks: {
+    readonly text: boolean;
+    readonly aligns: boolean;
+    readonly face: boolean;
+    readonly deferred: boolean;
+  }
+): LabelWrites {
+  const changed = marks.text || marks.face || marks.deferred;
+  const characters = marks.text ? shown.characters : node.characters;
+  const stale = staleGlyphRanges(run, node, fontFor(run, node, shown).style);
+  const glyphs =
+    glyphRanges(characters, run.glyphFont).length > 0 &&
+    (changed || stale.refonted.length > 0 || stale.unbound.length > 0);
+  const binds = shown.weight !== undefined && (changed || glyphs || weightUnbound(run, node, shown));
+  const faces = marks.text || marks.face || glyphs || binds;
+  return { any: faces || marks.aligns, faces, binds };
+}
 /**
  * The last stage: the overrides, the linked labels' glyph ranges and the sizing against the sublayers
  * as they stand, the link to the outer set's BOOLEAN property and the exposure.
@@ -408,8 +479,8 @@ const planOverridesAndSizing = Effect.fnUntraced(function* (
 ) {
   const run = yield* currentRun;
   const layers = heldLayers(instance, label, main);
-  planOverrides(run, instance, layers, label, spec, inner.spec.root);
-  planLabelGlyphs(run, layers, inner.spec.root);
+  const refaced = planOverrides(run, instance, layers, label, spec, inner.spec.root);
+  planLabelGlyphs(run, layers, inner.spec.root, spec, refaced);
   yield* planNested(instance, label, spec);
   // Figma refuses FILL on an absolute layer (P8), so an instance leaves the flow after its sizing
   // and comes back into it before.
@@ -488,14 +559,25 @@ function changesFirst(
 }
 
 /**
- * Require every font the labels of an instance the file holds use where the run may write their TEXT
- * property or their alignment: a TEXT write changes a label's characters, and an alignment write its
- * lines, which needs each font the label holds loaded, a font a designer gave it and each range of
- * mixed ones included, as Figma's text guide and the typings say. A label the spec aligns, or one that
- * holds an alignment the spec may drop, takes its fonts too. Planned before the first write, so a font
- * this machine lacks stops the run with nothing written.
+ * Require, before the run's first write, every font the writes on the labels of an instance the file
+ * holds need: for each label the run writes in any way (`labelWrites`), each font it holds now, a
+ * font a designer gave it and each range of mixed ones included, which a TEXT, alignment or binding
+ * write needs loaded, as Figma's text guide and the typings say. A label the run gives a face of its
+ * own takes the fonts it then shows (`fontsOf`): the face in the inner label's family, resolved in
+ * the instance's modes, which a face write lands in whatever the label holds (`shownFace`), and in
+ * the glyph font's family where it shows glyphs. A weight binding keeps each character's family, so
+ * a label it binds takes the weight's face in each family it holds now too. No face is required in a
+ * family no write gives the label. Each label the spec's TEXT values and faces show (`shownLabels`)
+ * takes the fonts it shows as well, which it may hold nowhere yet. A font this machine lacks then
+ * stops the run with nothing written.
  *
- * @param spec - The instance layer, whose overrides name the labels it aligns.
+ * A TEXT write resets a label to the style a sublayer takes from its main layer or a designer's
+ * whole-text font write gave it (G5), which a range over every character hides and no probe has
+ * read. The face write comes first among a label's overrides (`planOverrides`), so no later write
+ * needs that style. A binding after such a reset with no face write lands in it, which this cannot
+ * read.
+ *
+ * @param spec - The instance layer, whose overrides name the labels it aligns and gives a face.
  * @param differ - The properties the instance's values differ in now, or undefined where its stages
  *   wait for an earlier operation, after which the run may write any of its TEXT properties and any
  *   nested value.
@@ -510,33 +592,62 @@ const requireHeldLabelFonts = Effect.fnUntraced(function* (
   main: ComponentNode | null
 ) {
   const run = yield* currentRun;
+  const { root } = inner.spec;
   const written = new Set(
     differ === undefined
       ? inner.set.spec.textProperties.map((property) => property.name)
       : differ.flatMap((desired) => (desired.type === "TEXT" ? [desired.name] : []))
   );
-  const keys = new Set([
-    ...linkedLabels(inner.spec).flatMap((text) =>
-      text.textProperty !== undefined && written.has(text.textProperty) ? [text.key] : []
-    ),
-    ...(spec.overrides ?? []).flatMap((override) =>
-      override.field === "textAlign" ? [override.path.at(-1) ?? ""] : []
-    ),
-  ]);
-  const aligned = new Set(
-    instance.overrides.flatMap(({ id, overriddenFields }) =>
-      overriddenFields.includes("textAlignHorizontal") ? [id] : []
-    )
+  const overridden = (field: InstanceOverride["field"]) =>
+    new Set(
+      (spec.overrides ?? []).flatMap((override) => (override.field === field ? [pathKey(override.path)] : []))
+    );
+  const faced = overridden("fontStyle");
+  const aligned = overridden("textAlign");
+  const holding = (field: NodeChangeProperty) =>
+    new Set(
+      instance.overrides.flatMap(({ id, overriddenFields }) => (overriddenFields.includes(field) ? [id] : []))
+    );
+  const heldFaces = holding("fontName");
+  const heldAligned = holding("textAlignHorizontal");
+  for (const text of shownLabels(spec, inner.spec)) {
+    for (const font of fontsOf(run, text, shownFace(run, instance, text).family)) {
+      requireFont(run, `${label} / ${text.name}`, font);
+    }
+  }
+  // An instance whose labels the run can write nothing on leaves its sublayers unread.
+  const glyphWork = walkLayers(root).some(
+    (layer) =>
+      layer.kind === "text" &&
+      (layer.weight !== undefined ||
+        glyphRanges(shownLabel(spec, root, layer).characters, run.glyphFont).length > 0)
   );
-  // No label to check leaves the sublayers unread.
-  const instanceLayers =
-    keys.size === 0 && aligned.size === 0 ? [] : heldLayers(instance, label, main).values();
-  for (const layer of instanceLayers) {
+  const read =
+    written.size > 0 ||
+    faced.size > 0 ||
+    aligned.size > 0 ||
+    heldFaces.size > 0 ||
+    heldAligned.size > 0 ||
+    glyphWork;
+  for (const layer of read ? heldLayers(instance, label, main).values() : []) {
     const { node } = layer;
-    if (node.type === "TEXT" && (keys.has(layer.path.at(-1) ?? "") || aligned.has(node.id))) {
-      for (const font of heldFonts(run, node)) {
-        requireFont(run, layer.label, font);
-      }
+    const text = textAt(root, layer.path);
+    if (node.type !== "TEXT" || text === undefined) {
+      continue;
+    }
+    const key = pathKey(layer.path);
+    const shown = shownLabel(spec, root, text);
+    const writes = labelWrites(run, node, shown, {
+      text: text.textProperty !== undefined && written.has(text.textProperty),
+      aligns: aligned.has(key) || heldAligned.has(node.id),
+      face: faced.has(key) || (heldFaces.has(node.id) && text.weight === undefined),
+      deferred: differ === undefined,
+    });
+    const held = writes.any ? heldFonts(run, node) : [];
+    const face = shownFace(run, instance, shown);
+    const bound = writes.binds ? held.map((font) => ({ family: font.family, style: face.style })) : [];
+    for (const font of [...held, ...(writes.faces ? fontsOf(run, shown, face.family) : []), ...bound]) {
+      requireFont(run, layer.label, font);
     }
   }
   // A nested value writes the labels of the instance it reaches, whatever fonts they hold now: those

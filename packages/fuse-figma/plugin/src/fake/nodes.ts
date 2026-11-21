@@ -1407,6 +1407,7 @@ class FakeText extends FakeSceneNode {
       throw new Error("Cannot write figma.mixed as a font.");
     }
     writeFont(state, 0, state.styles.length, font, "fontName");
+    markOverride(state, "fontName");
     state.baseStyle = withFont(state.baseStyle, font);
   }
 

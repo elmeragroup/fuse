@@ -7,9 +7,10 @@
 
 import { Effect } from "effect";
 
-import { FONT_WEIGHT_STYLES, glyphRanges, walkLayers } from "../../src/components/kit-spec.ts";
+import { FONT_WEIGHT_STYLES, glyphRanges, layerAt, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   ChildLayerSpec,
+  ComponentRootSpec,
   ComponentSetSpec,
   InstanceLayerSpec,
   TextLayerSpec,
@@ -98,8 +99,9 @@ function weightFace(run: Run, consumer: SceneNode, spec: TextLayerSpec): string 
 /**
  * Every font a text layer can show, so the run loads each before it writes the layer: each face its
  * bound weight names in some mode, or its one style, in its family and, where its characters hold the
- * glyph font's glyphs, in the glyph font's family too, since a `fontWeight` binding gives each range
- * the face its own family names for the weight (rule 10 of the fake).
+ * glyph font's glyphs, in the glyph font's family too. A `fontWeight` binding gives each range the
+ * face its own family names for the weight (rule 10 of the fake), and the glyph ranges take the
+ * label's one style otherwise (`planGlyphRanges`).
  *
  * @param run - The run, which names the glyph font.
  * @param spec - The text layer.
@@ -108,7 +110,7 @@ function weightFace(run: Run, consumer: SceneNode, spec: TextLayerSpec): string 
  */
 export function fontsOf(run: Run, spec: TextLayerSpec, family: string): readonly FontName[] {
   const faces = spec.weight?.faces ?? [spec.fontStyle];
-  const glyphs = spec.weight !== undefined && glyphRanges(spec.characters, run.glyphFont).length > 0;
+  const glyphs = glyphRanges(spec.characters, run.glyphFont).length > 0;
   const families = glyphs ? [family, run.glyphFont.family] : [family];
   return families.flatMap((each) => faces.map((style) => ({ family: each, style })));
 }
@@ -262,19 +264,73 @@ export function fontLayers(
 }
 
 /**
- * The labels of an inner variant that a TEXT property sets, each with the characters the instance
- * layer gives it, or its own where the layer sets none. Characters an instance gives can hold the
- * glyph font's glyphs where the inner label's own do not, and then need its faces too.
+ * A label of an inner variant as an instance layer shows it: at the characters the layer's TEXT
+ * value gives it, or its own, and in the face the layer's override gives it. A face override is a
+ * literal face, which a font write gives the whole label, and that write drops a weight binding
+ * (PG8), so the label shows the face with no bound weight. The family stays the inner label's, which
+ * the face write lands in ({@link fontFor}), and {@link fontsOf} lists the fonts it then shows.
+ *
+ * @param layer - The instance layer.
+ * @param root - The inner variant's root, which holds the label.
+ * @param label - The label.
+ * @returns The label at the characters and face the instance shows.
+ */
+export function shownLabel(
+  layer: InstanceLayerSpec,
+  root: ComponentRootSpec,
+  label: TextLayerSpec
+): TextLayerSpec {
+  const value = label.textProperty === undefined ? undefined : layer.properties?.text?.[label.textProperty];
+  const characters = value ?? label.characters;
+  const [face] = (layer.overrides ?? []).flatMap((override) =>
+    override.field === "fontStyle" && layerAt(root, override.path) === label ? [override.style] : []
+  );
+  if (face === undefined) {
+    return { ...label, characters };
+  }
+  const { weight: _, ...literal } = label;
+  return { ...literal, characters, fontStyle: face };
+}
+
+/**
+ * The font an instance shows a label of its inner variant in, as one face over the whole label: the
+ * inner label's family, resolved in the instance's modes, in the face of the label as the instance
+ * shows it ({@link shownLabel}), a face override's or the inner label's own. The overrides stage
+ * writes it as the label's whole font, and the planning pass requires it, with the glyph font's
+ * family in the same face ({@link fontsOf}), so neither reads the family or the face from what the
+ * label holds.
+ *
+ * @param run - The run.
+ * @param instance - The instance, whose modes resolve a bound family and a bound weight.
+ * @param shown - The label as the instance shows it.
+ * @returns The font.
+ */
+export function shownFace(run: Run, instance: InstanceNode, shown: TextLayerSpec): FontName {
+  return fontFor(run, instance, shown);
+}
+
+/**
+ * The labels of an inner variant whose fonts the instance layer's writes need, as the layer shows
+ * them ({@link shownLabel}): each a TEXT property sets and each whose face the layer overrides.
+ * Characters an instance gives can hold the glyph font's glyphs where the inner label's own do not,
+ * and then need its faces too. A face only the override names is a font no other layer of the kit
+ * may need.
  *
  * @param layer - The instance layer.
  * @param variant - The inner variant it shows.
- * @returns The text layers that link a TEXT property, at the characters the instance shows.
+ * @returns The text layers, at the characters and face the instance shows.
  */
 export function shownLabels(layer: InstanceLayerSpec, variant: VariantSpec): readonly TextLayerSpec[] {
-  return linkedLabels(variant).map((label) => {
-    const shown = label.textProperty === undefined ? undefined : layer.properties?.text?.[label.textProperty];
-    return shown === undefined ? label : { ...label, characters: shown };
-  });
+  const faced = new Set(
+    (layer.overrides ?? []).flatMap((override) =>
+      override.field === "fontStyle" ? [layerAt(variant.root, override.path)] : []
+    )
+  );
+  return walkLayers(variant.root).flatMap((label) =>
+    label.kind === "text" && (label.textProperty !== undefined || faced.has(label))
+      ? [shownLabel(layer, variant.root, label)]
+      : []
+  );
 }
 
 /**
