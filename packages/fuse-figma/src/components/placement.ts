@@ -11,6 +11,7 @@ import type { PlacementPlan } from "./absolute-placement";
  */
 import { marginsAcross, outOfFlow } from "./box-sizing";
 import type { Room } from "./box-sizing";
+import { KitUnmappable } from "./build-errors";
 import {
   affineLength,
   describeNumber,
@@ -170,7 +171,7 @@ export type Placement<Part extends PlacedPart> = {
 
 /**
  * Read where each part of a box sits, and the box's primary alignment. A part that centers itself
- * by absolute position, one placed by its parent's edges, a turned frame placed by its centre, or one
+ * by absolute position, one placed by its parent's edges, a frame placed by its centre, or one
  * moved along a row by a translate, reads here. A translate on the one part of a flex row sets the
  * row's alignment. An instance sits where the flow puts it, so only its `relative` maps, or by its
  * parent's edges or centre, as `absolute-placement.ts` reads it.
@@ -239,8 +240,12 @@ export function placeParts<Part extends PlacedPart>(
       return kept;
     }
     const pivot = readPivot(style, layer, parent);
+    // A turned part keeps its turn wherever the flow puts it, so one with no place fails the build.
+    if (pivot?.kind === "refused") {
+      throw new KitUnmappable({ message: `the turned part ${layer.name} has no place: ${pivot.why}` });
+    }
     if (pivot !== undefined) {
-      return copied({ ...layer, placement: pivot });
+      return copied({ ...layer, placement: pivot.spec });
     }
     const plan = plans.get(style);
     const read = plan === undefined ? undefined : readPlacement(style, plan);

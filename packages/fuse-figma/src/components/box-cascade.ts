@@ -179,6 +179,12 @@ export type BoxCascade = {
    */
   readonly stretchedToHost?: boolean;
   /**
+   * The `data-slot` of each root an anchored composite's root draws, in the order its placement
+   * rule draws them: the popup first on the `top` and `left` sides, the anchor first otherwise.
+   * Absent on any other box.
+   */
+  readonly drawnSlots?: readonly (string | undefined)[] | undefined;
+  /**
    * The box's `::before` and `::after` the mapping draws as layers of their own, `::before` first:
    * each paints, and the capture measured it as an absolute box laid out against the box.
    */

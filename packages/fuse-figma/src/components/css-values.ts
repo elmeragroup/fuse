@@ -640,6 +640,42 @@ export function affineLength(value: string): AffineLength | undefined {
 }
 
 /**
+ * A length that is a share of the length its percentages take plus a constant, as `calc(50% - 5px)`
+ * is half its basis less 5px.
+ */
+export type ShareLength = {
+  /** The fraction of the basis, 0.5 for 50%. */
+  readonly share: number;
+  /** The pixels added to it. */
+  readonly constant: number;
+};
+
+/** The variable a percentage reads as, a name no custom property can take. */
+const PERCENT_BASIS = "%";
+
+/**
+ * Read a length as a share of its basis plus a constant, for every basis. A percentage reads as a
+ * variable, so the length is one only where {@link affineLength} reads it: a sum and scalings of
+ * percentages and lengths. A `min()` or `max()` over a percentage picks its argument by the basis,
+ * as `min(50%, 60px)` is half the basis up to 120px and 60px past it, so it is none.
+ *
+ * @param value - A CSS value with no `var()` left in it.
+ * @returns The share and the constant, or undefined where the value is no such length.
+ */
+export function shareLength(value: string): ShareLength | undefined {
+  const read = affineLength(
+    normalizeCss(value).replaceAll(
+      /([+-]?(?:\d+\.?\d*|\.\d+))%/g,
+      (_whole, amount: string) => `(${amount}*var(${PERCENT_BASIS})/100)`
+    )
+  );
+  if (read === undefined || [...read.coefficients.keys()].some((name) => name !== PERCENT_BASIS)) {
+    return undefined;
+  }
+  return { share: read.coefficients.get(PERCENT_BASIS) ?? 0, constant: read.constant };
+}
+
+/**
  * Add affine lengths.
  *
  * @param lengths - The lengths.

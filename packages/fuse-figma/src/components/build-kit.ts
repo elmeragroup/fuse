@@ -13,7 +13,7 @@ import type { SetManifest } from "../capture/manifest";
 import { fuseVariableSet } from "../fuse-variable-set";
 import type { CollectionSpec, LiteralValue, VariableSpec } from "../variable-set";
 import { KitSourceInvalid, KitUnmappable } from "./build-errors";
-import { buildSetsInOrder, inPlacementOrder } from "./component-builder";
+import { buildSetsInOrder } from "./component-builder";
 import type { SetSource } from "./component-builder";
 import { variantKey } from "./component-spec";
 import type {
@@ -445,10 +445,7 @@ function setSource({ manifest }: KitEntry): Result.Result<SetSource, CaptureUnre
   return Result.flatMap(keptCaptureOf(manifest.key, manifest.name), (read) =>
     Result.map(openPlacement(manifest), (open): SetSource => {
       const definition = positionedByBaseUi(withMeasuredHost(manifestDefinition(manifest), read), read);
-      const source: SetSource = {
-        definition: open?._tag === "anchored" ? inPlacementOrder(definition, read) : definition,
-        capture: read,
-      };
+      const source: SetSource = { definition, capture: read };
       return open === undefined ? source : { ...source, open };
     })
   );

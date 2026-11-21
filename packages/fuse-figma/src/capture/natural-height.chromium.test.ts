@@ -8,20 +8,11 @@
  * three lines and its density to comfortable. In each state the test waits until the three agree,
  * which a height Base UI stopped updating never does, so the hang guard fails it.
  */
-import { NodeServices } from "@effect/platform-node";
-import { Effect } from "effect";
-import { fileURLToPath } from "node:url";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
-import { build } from "rolldown";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { locateFuseBuild, readPageAssets } from "../compare/page-assets.ts";
-import type { PageAssets } from "../compare/page-assets.ts";
-import { ASSET_PATHS, PAGE_ORIGIN, STYLES_LAYERS } from "../compare/preview-page.ts";
-import { kitFontCss } from "../kit-fonts.ts";
-
-const ENTRY_ID = "\0natural-height-toast.js";
+import { fuseModule, openFusePage } from "../../test/fuse-page.ts";
 
 /**
  * The page's script: a Toast provider whose manager raised one toast before it mounted, with no
@@ -31,8 +22,8 @@ const ENTRY = `
 import { createElement, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { flushSync } from "react-dom";
-import { LocaleProvider } from ${JSON.stringify(fileURLToPath(new URL("../../../fuse/dist/theme.js", import.meta.url)))};
-import { Toast } from ${JSON.stringify(fileURLToPath(new URL("../../../fuse/dist/toast.js", import.meta.url)))};
+import { LocaleProvider } from ${fuseModule("theme.js")};
+import { Toast } from ${fuseModule("toast.js")};
 const manager = Toast.createToastManager();
 const id = manager.add({ title: "Draft saved", description: "You can finish it later.", type: "info", timeout: 0 });
 window.addEventListener("describe-toast", (event) => manager.update(id, { description: event.detail }));
@@ -61,64 +52,6 @@ type Reading = {
 
 let browser: Browser;
 let page: Page;
-
-/** The page's bundle: React, the Fuse build and {@link ENTRY}. */
-async function bundle(): Promise<string> {
-  const { output } = await build({
-    input: ENTRY_ID,
-    cwd: fileURLToPath(new URL("../..", import.meta.url)),
-    plugins: [
-      {
-        name: "natural-height-toast",
-        resolveId: (id) => (id === ENTRY_ID ? id : undefined),
-        load: (id) => (id === ENTRY_ID ? ENTRY : undefined),
-      },
-    ],
-    platform: "browser",
-    logLevel: "silent",
-    transform: { define: { "process.env.NODE_ENV": JSON.stringify("production") } },
-    output: { format: "esm", codeSplitting: false },
-    write: false,
-  });
-  return output[0].code;
-}
-
-/** Serve the page, its bundle and Fuse's styles from the page's origin. */
-async function serve(assets: PageAssets, script: string): Promise<void> {
-  const html = `<!doctype html>
-<html lang="en" data-theme="light" data-density="dense"><head><meta charset="utf-8"><style>
-@layer ${STYLES_LAYERS.join(", ")};
-@import url("${ASSET_PATHS.preflight}") layer(base);
-@import url("${ASSET_PATHS.styles}");
-@import url("${ASSET_PATHS.themes}");
-@import url("${ASSET_PATHS.fonts}");
-${kitFontCss("body")}
-body{margin:0;font-family:var(--font-sans)}
-*,::before,::after{animation:none!important;transition:none!important}
-</style></head><body><script type="module" src="${ASSET_PATHS.client}"></script></body></html>`;
-  await page.route(`${PAGE_ORIGIN}/**`, async (route) => {
-    const { pathname } = new URL(route.request().url());
-    const body = new Map<string, readonly [string, string]>([
-      ["/toast.html", [html, "text/html"]],
-      [ASSET_PATHS.client, [script, "text/javascript"]],
-      [ASSET_PATHS.styles, [assets.styles, "text/css"]],
-      [ASSET_PATHS.themes, [assets.themes, "text/css"]],
-      [ASSET_PATHS.preflight, [assets.preflight, "text/css"]],
-      [ASSET_PATHS.fonts, [assets.fontCss, "text/css"]],
-    ]).get(pathname);
-    if (body !== undefined) {
-      await route.fulfill({ body: body[0], contentType: `${body[1]}; charset=utf-8` });
-    } else if (pathname.startsWith(ASSET_PATHS.fontFiles)) {
-      const [name = "", file = ""] = pathname.slice(ASSET_PATHS.fontFiles.length).split("/");
-      const directory = assets.fontDirectories.get(name);
-      await (directory === undefined
-        ? route.fulfill({ status: 404 })
-        : route.fulfill({ path: `${directory}/${file}` }));
-    } else {
-      await route.fulfill({ status: 404 });
-    }
-  });
-}
 
 /** The state a reading waits for: the toast's description and the document's density. */
 type Settled = { readonly description: string; readonly density: string };
@@ -167,15 +100,12 @@ async function read(settled: Settled): Promise<Reading> {
 }
 
 beforeAll(async () => {
-  const assets = await Effect.runPromise(
-    Effect.gen(function* () {
-      return yield* readPageAssets(yield* locateFuseBuild(), new Map());
-    }).pipe(Effect.provide(NodeServices.layer))
-  );
   browser = await chromium.launch();
   page = await browser.newPage({ viewport: { width: 800, height: 600 } });
-  await serve(assets, await bundle());
-  await page.goto(`${PAGE_ORIGIN}/toast.html`);
+  await openFusePage(page, {
+    htmlAttributes: { "data-theme": "light", "data-density": "dense" },
+    entry: ENTRY,
+  });
   await page.waitForSelector('[data-slot="toast-root"]');
 });
 

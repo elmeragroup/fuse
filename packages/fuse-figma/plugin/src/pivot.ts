@@ -1,24 +1,25 @@
 /**
  * Where a frame sits outside its parent's auto layout by its centre, as a Tooltip's arrow hangs from
- * its popup's bottom edge, turned 45°. CSS turns a box about its centre, while Figma's `x` and `y` are
- * the origin of the layer's transform, which a free layer turns about (rule 26, PQ). So the plugin
- * writes, in this order: `layoutPositioning` ABSOLUTE and the constraints, CENTER across and MAX down,
- * before the layer's box, since Figma refuses FILL on an absolute layer (P8); then the box and the
- * turn, as for every frame; and last the place, `x` then `y`, computed from the centre the spec holds,
- * the turn as it stands and the parent's size once it settles. The constraints keep the place as the
- * parent resizes, a density switch among them (fake rule 59, unprobed until the U9 arrow probe). The
- * plan compares the centre, never `x` and `y`, which follow the turn and sizes the run does not set.
+ * its popup's edge that faces the trigger, turned 45°. CSS turns a box about its centre, while
+ * Figma's `x` and `y` are the origin of the layer's transform, which a free layer turns about (rule
+ * 26, PQ). So the plugin writes, in this order: `layoutPositioning` ABSOLUTE and the constraints
+ * `PIVOT_EDGES` names for the edge, CENTER along it and MIN or MAX across it, before the layer's box,
+ * since Figma refuses FILL on an absolute layer (P8); then the box and the turn, as for every frame;
+ * and last the place, `x` then `y`, computed from the centre the spec holds, the turn as it stands
+ * and the parent's size once it settles. The constraints keep the place as the parent resizes, a
+ * density switch among them (fake rule 59). A real file kept the bottom edge's CENTER and MAX (W5-P11,
+ * W5-P11b), and on 2026-11-20 a real file kept the inset exactly on all four edges, while CENTER
+ * shifted the centre by whole pixels, 0.5px off the middle where the parent's length along the edge
+ * changed parity (PG17). The plan compares the centre, never `x` and `y`, which follow the turn and
+ * sizes the run does not set.
  */
+import { PIVOT_EDGES } from "../../src/components/kit-spec.ts";
 import type { PivotSpec, RotationSpec } from "../../src/components/kit-spec.ts";
 import { near, planScalar } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
 import { holderOf, planConstraints } from "./placing.ts";
-import type { Holder } from "./placing.ts";
 import { change } from "./plan.ts";
 import { settleInstances } from "./settle.ts";
-
-/** The constraints that keep a pivot's place: CENTER across, MAX down. */
-const PIVOT_CONSTRAINTS: Constraints = { horizontal: "CENTER", vertical: "MAX" };
 
 /** The cosine and sine of a turn in degrees, counterclockwise as Figma counts it. */
 function turnOf(degrees: number) {
@@ -45,15 +46,31 @@ function originFor(
   };
 }
 
-/** The layer's centre offset and bottom inset as they stand, read after the parent's instances settle. */
-function heldCentre(frame: FrameNode, holder: Holder): Pick<PivotSpec, "centerOffset" | "bottomInset"> {
-  settleInstances(holder);
+/** A point in the parent's frame, in pixels from its top left corner. */
+type Point = { readonly x: number; readonly y: number };
+
+/** A parent's size. */
+type Size = { readonly width: number; readonly height: number };
+
+/** Where a pivot's centre sits in a parent of `size`. */
+function centreOf(spec: PivotSpec, size: Size): Point {
+  const { along, from } = PIVOT_EDGES[spec.edge];
+  const [alongLength, acrossLength] =
+    along === "horizontal" ? [size.width, size.height] : [size.height, size.width];
+  const alongAt = alongLength / 2 + spec.along;
+  const acrossAt = from === "start" ? spec.inset : acrossLength - spec.inset;
+  return along === "horizontal" ? { x: alongAt, y: acrossAt } : { x: acrossAt, y: alongAt };
+}
+
+/** The layer's centre as it stands, from its origin, turn and size. */
+function heldCentre(frame: FrameNode): Point {
   const { cos, sin } = turnOf(frame.rotation);
   const halfWidth = frame.width / 2;
   const halfHeight = frame.height / 2;
-  const x = frame.x + cos * halfWidth + sin * halfHeight;
-  const y = frame.y - sin * halfWidth + cos * halfHeight;
-  return { centerOffset: x - holder.width / 2, bottomInset: holder.height - y };
+  return {
+    x: frame.x + cos * halfWidth + sin * halfHeight,
+    y: frame.y - sin * halfWidth + cos * halfHeight,
+  };
 }
 
 /**
@@ -62,12 +79,12 @@ function heldCentre(frame: FrameNode, holder: Holder): Pick<PivotSpec, "centerOf
  *
  * @returns Whether the layer turns absolute or its constraints change in this run.
  */
-export function planPivotPositioning(run: Run, frame: FrameNode, label: string): boolean {
+export function planPivotPositioning(run: Run, frame: FrameNode, label: string, spec: PivotSpec): boolean {
   const turns = frame.layoutPositioning !== "ABSOLUTE";
   planScalar(run, label, "layoutPositioning", frame.layoutPositioning, "ABSOLUTE", () => {
     frame.layoutPositioning = "ABSOLUTE";
   });
-  const constrained = planConstraints(run, frame, label, PIVOT_CONSTRAINTS);
+  const constrained = planConstraints(run, frame, label, PIVOT_EDGES[spec.edge].constraints);
   return turns || !constrained;
 }
 
@@ -88,22 +105,22 @@ export function planPivotPlace(
   held: Held
 ): void {
   const holder = holderOf(frame, label);
-  const now = moved || held === "unknown" ? undefined : heldCentre(frame, holder);
-  if (
-    now !== undefined &&
-    near(now.centerOffset, spec.centerOffset) &&
-    near(now.bottomInset, spec.bottomInset)
-  ) {
-    return;
+  if (!moved && held !== "unknown") {
+    settleInstances(holder);
+    const now = heldCentre(frame);
+    const placed = centreOf(spec, holder);
+    if (near(now.x, placed.x) && near(now.y, placed.y)) {
+      return;
+    }
   }
   change(
     run.plan,
     label,
-    `place → its centre ${spec.centerOffset}px from the centre across and ${spec.bottomInset}px above the bottom`,
+    `place → its centre ${spec.along}px from the centre along the ${spec.edge} edge and ${spec.inset}px inside it`,
     () => {
       settleInstances(holder);
       const origin = originFor(
-        { x: holder.width / 2 + spec.centerOffset, y: holder.height - spec.bottomInset },
+        centreOf(spec, holder),
         { width: frame.width, height: frame.height },
         rotation ?? 0
       );

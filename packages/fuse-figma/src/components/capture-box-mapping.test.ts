@@ -855,6 +855,51 @@ describe("a part centered by absolute position", () => {
   });
 });
 
+// Oracle: CSS 2.1 §10.3.7 and CSS Values 4 §10, worked by hand for a 10px arrow in a 200px popup, and
+// CSS Transforms 2 §6, under which a turn leaves the box's centre where it was. A `left` of
+// `calc(50% - 5px)` puts the arrow's centre at 100px, the popup's centre, as does Tailwind's
+// `left-1/2` less the arrow's half width through its translate, and `calc(85% - 35% - 5px)` and
+// `calc(255% - 205% - 5px)`, whose shares sum to a half. A `bottom` of -10px and a translate of
+// `calc(-50% - 2px)` up put the centre 2px inside the bottom edge, turned or not. A `left` of
+// `min(50%, 60px)` puts the centre at 60px in a 200px popup, 40px left of its centre, and at 50px,
+// on its centre, in a 100px popup, so no fixed offset from the centre holds it, and a turned arrow
+// there has no place. The reader takes the popup's length only in a start inset, so a turned arrow
+// at `right: calc(50% - 5px)` has no place either, though CSS centres it.
+describe("an absolute part placed by its centre", () => {
+  const POPUP = "relative w-[200px] h-[40px]";
+  const ARROW = "absolute size-[10px] [bottom:-10px]";
+  const AT_CENTRE = { kind: "pivot", edge: "bottom", along: 0, inset: 2 };
+
+  it.each([
+    ["[left:calc(50%-5px)] [translate:0px_calc(-50%-2px)] [rotate:-45deg]"],
+    ["left-1/2 [translate:-50%_calc(-50%-2px)] [rotate:-45deg]"],
+    ["[left:calc(85%-35%-5px)] [translate:0px_calc(-50%-2px)] [rotate:-45deg]"],
+    ["[left:calc(255%-205%-5px)] [translate:0px_calc(-50%-2px)] [rotate:-45deg]"],
+    ["[left:calc(50%-5px)] [translate:0px_calc(-50%-2px)]"],
+    ["[left:calc(50%-5px)] [translate:0px_calc(-50%-2px)] [rotate:none]"],
+  ])("hangs from the popup's centre with %s", async (insets) => {
+    const { variant } = await buildWithDot(POPUP, `${ARROW} ${insets}`);
+    expect(frameOf(variant?.root)?.placement).toEqual(AT_CENTRE);
+  });
+
+  it.each(["-45deg", "90deg"])(
+    "fails the build where a cap on the start inset moves a part turned %s as the popup resizes",
+    async (turn) => {
+      await expect(
+        buildWithDot(POPUP, `${ARROW} [left:min(50%,60px)] [translate:-50%_calc(-50%-2px)] [rotate:${turn}]`)
+      ).rejects.toThrow("`left: min(50%, 60px)` is no half of the containing block's length");
+    }
+  );
+
+  it("fails the build where a turned part reads the popup's width from its end inset", async () => {
+    await expect(
+      buildWithDot(POPUP, `${ARROW} [right:calc(50%-5px)] [translate:0px_calc(-50%-2px)] [rotate:-45deg]`)
+    ).rejects.toThrow(
+      "`right: calc(50% - 5px)` reads the containing block's length, which the reader takes only in a start inset, `left`"
+    );
+  });
+});
+
 // Oracle: CSS 2.1 §10.1, §10.4 and §10.3.7 to §10.6.4. An absolute box's percentages take its
 // containing block, the padding box of its nearest positioned ancestor, sized after its own limits: a
 // bar that fills a 256px column up to `max-w-[128px]` is 128px wide, so 85% of it is 108.8px and

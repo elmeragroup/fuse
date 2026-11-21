@@ -197,7 +197,7 @@ const planFrame = Effect.fnUntraced(function* (
   const pivot = placement?.kind === "pivot" ? placement : undefined;
   let repositions = false;
   if (placement?.kind === "pivot") {
-    repositions = planPivotPositioning(run, frame, label);
+    repositions = planPivotPositioning(run, frame, label, placement);
   } else {
     planLeaving(run, frame, label, placement);
   }

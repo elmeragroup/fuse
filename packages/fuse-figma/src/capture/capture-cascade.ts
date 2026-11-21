@@ -964,7 +964,7 @@ export class CaptureCellCascade {
         each === placement.anchor && placement.anchorFills ? this.#withStretch(each) : each
       );
       const element = composedRoot(part, roots);
-      return new CaptureBoxCascade(
+      const box = new CaptureBoxCascade(
         this.#read,
         this.#ledger,
         [...path.placed, this.#placed(element, part)],
@@ -975,6 +975,8 @@ export class CaptureCellCascade {
           applied: placementApplied(part, this.#ledger.scope.origin, placement.declarations),
         }
       );
+      box.drawnSlots = placement.roots.map(({ root }) => root.attributes["data-slot"]);
+      return box;
     }
     const [popup, ...rest] = others;
     if (popup === undefined || rest.length > 0) {
@@ -1423,6 +1425,8 @@ class CaptureBoxCascade implements BoxCascade {
   heightBasis: PreviewLength | undefined = undefined;
   /** Whether the flex rows around a root of `auto` height stretch it to its host's height, as {@link stretchedToHost} reads it. */
   stretchedToHost = false;
+  /** The slots of an anchored composite's roots in drawn order, as {@link anchoredPlacement} orders them. */
+  drawnSlots: readonly (string | undefined)[] | undefined = undefined;
   /** The box's pseudo-elements the mapping draws as layers, as `readPseudoElements` keeps them. */
   readonly pseudoElements: readonly PseudoCascade[];
 
