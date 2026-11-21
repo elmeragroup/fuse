@@ -32,7 +32,7 @@ import { fileFailure, makeDirectory, writeBytes, writeText } from "./compare-fil
 import type { CompareFileFailed } from "./compare-files.ts";
 import type { FontNotLoaded } from "./font-check.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
-import type { FuseBuildMissing } from "./page-assets.ts";
+import type { FuseBuild, FuseBuildMissing, PageAssets } from "./page-assets.ts";
 import { forcedSelector, measuredSelectors, rootInCell, slotSpan } from "./preview-page.ts";
 import type { CellContent, PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
@@ -41,7 +41,8 @@ import { compose, diffRasters, encodePng, parsePng } from "./raster.ts";
 import type { Raster, Rgb } from "./raster.ts";
 import { renderReportHtml } from "./report-html.ts";
 import type { CanvasRect, InstanceSnapshot, KitSnapshot, PreviewSnapshot } from "./snapshot.ts";
-import { tokenColorsIn, unchangedByDesign } from "./unchanged-by-design.ts";
+import { unchangedByDesignPerTheme } from "./unchanged-by-design.ts";
+import type { ThemeColors } from "./unchanged-by-design.ts";
 import { judgeCell, worstFirst } from "./verdict.ts";
 import type { BoxSize, CellFlag, CellVerdict } from "./verdict.ts";
 
@@ -150,12 +151,52 @@ export type Renderable = ComponentDefinition & { readonly renderer: AnyCellRende
  * @param renderers - The kit's renderers, by definition key.
  * @returns Each definition with its renderer.
  */
-export function renderables(renderers: ReadonlyMap<string, AnyCellRenderer>): readonly Renderable[] {
+function renderables(renderers: ReadonlyMap<string, AnyCellRenderer>): readonly Renderable[] {
   return KIT.flatMap(({ manifest }) => {
     const renderer = renderers.get(manifest.key);
     return renderer === undefined ? [] : [{ ...manifestDefinition(manifest), renderer }];
   });
 }
+
+/**
+ * What a comparison reads and builds before it renders a page, and the browser it renders in.
+ */
+export type CompareSession = {
+  readonly build: FuseBuild;
+  /** The definitions the run renders, from {@link renderables}. */
+  readonly renderable: readonly Renderable[];
+  readonly assets: PageAssets;
+  readonly componentSets: readonly ComponentSetSpec[];
+  /** A theme's token colors and the forced-state cells the kit draws as at rest in it, kept per theme. */
+  readonly themeColors: (theme: PreviewTheme) => ThemeColors;
+  readonly browser: CompareBrowser;
+};
+
+/**
+ * Open a comparison session: find the Fuse build, load the renderers, read the page's assets,
+ * build the kit's component sets and launch a browser with the assets.
+ *
+ * @returns The session, whose browser closes when the scope does. The Effect fails with why the
+ *   build, a renderer, an asset or the component sets could not be read or built, or when Chromium
+ *   does not start.
+ */
+export const openCompareSession = Effect.fn("openCompareSession")(function* () {
+  const build = yield* locateFuseBuild();
+  // The Fuse build exists by now, so the renderers' imports of it load.
+  const renderers = yield* loadRenderers();
+  const assets = yield* readPageAssets(build, renderers);
+  const componentSets = (yield* buildComponentSets()).map((set) => set.componentSet);
+  const browser = yield* CompareBrowser.launch(assets);
+  const session: CompareSession = {
+    build,
+    renderable: renderables(renderers),
+    assets,
+    componentSets,
+    themeColors: unchangedByDesignPerTheme(componentSets),
+    browser,
+  };
+  return session;
+});
 
 /**
  * A snapshot instance, the definition and cell its variant key names, and the page cell that renders
@@ -341,12 +382,16 @@ function compareCell(
  *
  * @param snapshot - The parsed snapshot.
  * @param options - Where to write, the diff threshold and the page layout.
+ * @param session - The session to render in, which the self-check passes after rendering its own
+ *   previews in it. Without one, the run opens its own and closes its browser before it writes the
+ *   report.
  * @returns The report, already written to `options.outDir`. The Effect fails with why the run
  *   could not start.
  */
 export const compareSnapshot = Effect.fn("compareSnapshot")(function* (
   snapshot: KitSnapshot,
-  options: CompareOptions
+  options: CompareOptions,
+  session?: CompareSession
 ) {
   if (snapshot.scale !== DEVICE_SCALE) {
     return yield* Effect.fail(
@@ -355,52 +400,59 @@ export const compareSnapshot = Effect.fn("compareSnapshot")(function* (
       )
     );
   }
-  const fs = yield* FileSystem.FileSystem;
-  const build = yield* locateFuseBuild();
-  // The Fuse build exists by now, so the renderers' imports of it load.
-  const renderers = yield* loadRenderers();
-  const assets = yield* readPageAssets(build, renderers);
-  const renderable = renderables(renderers);
-  const componentSets = (yield* buildComponentSets()).map((set) => set.componentSet);
-  const cellsDir = join(options.outDir, "cells");
-  const rows: ReportRow[] = [];
-  const skipped: SkippedInstance[] = [];
-  const previews: ReportPreview[] = [];
-  yield* Effect.scoped(
-    Effect.gen(function* () {
-      const browser = yield* CompareBrowser.launch(assets);
-      yield* fs
-        .remove(cellsDir, { recursive: true, force: true })
-        .pipe(Effect.mapError(fileFailure("clear", cellsDir)));
-      yield* makeDirectory(cellsDir);
-      for (const [previewIndex, preview] of snapshot.previews.entries()) {
-        const outcome = yield* comparePreview(
-          browser,
-          preview,
-          previewIndex,
-          renderable,
-          componentSets,
-          options
-        );
-        rows.push(...outcome.rows);
-        skipped.push(...outcome.skipped);
-        previews.push(outcome.preview);
-      }
-    })
-  );
+  const compare = (opened: CompareSession) => comparePreviews(snapshot, options, opened);
+  const compared = yield* session === undefined
+    ? Effect.scoped(Effect.flatMap(openCompareSession(), compare))
+    : compare(session);
   const report: CompareReport = {
     snapshot: { file: snapshot.file, exportedAt: snapshot.exportedAt, scale: snapshot.scale },
     generatedAt: new Date().toISOString(),
     threshold: options.threshold,
-    fuseBuildStale: build.stale,
-    fontPackages: assets.fontPackages,
-    previews,
-    rows: worstFirst(rows),
-    skipped,
+    fuseBuildStale: compared.fuseBuildStale,
+    fontPackages: compared.fontPackages,
+    previews: compared.previews,
+    rows: worstFirst(compared.rows),
+    skipped: compared.skipped,
   };
   yield* writeText(join(options.outDir, "report.json"), `${JSON.stringify(report, null, 2)}\n`);
   yield* writeText(join(options.outDir, "report.html"), renderReportHtml(report));
   return report;
+});
+
+/** What the browser's pass over every preview gives the report, with its rows in snapshot order. */
+type ComparedPreviews = Pick<
+  CompareReport,
+  "fuseBuildStale" | "fontPackages" | "previews" | "rows" | "skipped"
+>;
+
+const comparePreviews = Effect.fnUntraced(function* (
+  snapshot: KitSnapshot,
+  options: CompareOptions,
+  session: CompareSession
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const cellsDir = join(options.outDir, "cells");
+  const rows: ReportRow[] = [];
+  const skipped: SkippedInstance[] = [];
+  const previews: ReportPreview[] = [];
+  yield* fs
+    .remove(cellsDir, { recursive: true, force: true })
+    .pipe(Effect.mapError(fileFailure("clear", cellsDir)));
+  yield* makeDirectory(cellsDir);
+  for (const [previewIndex, preview] of snapshot.previews.entries()) {
+    const outcome = yield* comparePreview(preview, previewIndex, session, options);
+    rows.push(...outcome.rows);
+    skipped.push(...outcome.skipped);
+    previews.push(outcome.preview);
+  }
+  const compared: ComparedPreviews = {
+    fuseBuildStale: session.build.stale,
+    fontPackages: session.assets.fontPackages,
+    previews,
+    rows,
+    skipped,
+  };
+  return compared;
 });
 
 /** What one preview adds to the report. */
@@ -411,11 +463,9 @@ type PreviewOutcome = {
 };
 
 const comparePreview = Effect.fnUntraced(function* (
-  browser: CompareBrowser,
   preview: PreviewSnapshot,
   previewIndex: number,
-  renderable: readonly Renderable[],
-  componentSets: readonly Pick<ComponentSetSpec, "key" | "axes" | "variants">[],
+  { browser, renderable, themeColors }: CompareSession,
   options: CompareOptions
 ) {
   const skip = (variant: string, reason: string): SkippedInstance => ({
@@ -432,8 +482,12 @@ const comparePreview = Effect.fnUntraced(function* (
     };
     return outcome;
   }
-  const unchanged = unchangedByDesign(componentSets, tokenColorsIn(theme.success));
-  const { planned, unsupported } = planCells(preview.instances, renderable, unchanged, options.layout);
+  const { planned, unsupported } = planCells(
+    preview.instances,
+    renderable,
+    themeColors(theme.success).unchangedVariants,
+    options.layout
+  );
   const { background, cells, font } = yield* browser.renderPreview(
     theme.success,
     planned.map((cell) => cell.request),
