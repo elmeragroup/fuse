@@ -30,7 +30,6 @@ type Resolved = {
 function registering(inherits: boolean): BuildContext {
   return {
     compiled: {
-      rules: new Map(),
       themeValues: new Map(),
       registeredProperties: new Map([["--x", { initialValue: "3px", inherits }]]),
     },

@@ -9,7 +9,6 @@
  * `fromParent`. The build compiles every class the fixture uses, as the kit build compiles every class
  * a capture records, so a `var()` of Tailwind's theme resolves.
  */
-import { Effect } from "effect";
 
 import { CAPTURE_FORMAT, CAPTURE_VERSION } from "../src/capture/capture-format.ts";
 import type {
@@ -28,7 +27,6 @@ import type {
   SetManifest,
 } from "../src/capture/manifest.ts";
 import { UnknownLayer, resolveWinners } from "../src/capture/winners.ts";
-import { splitClassName } from "../src/components/class-name.ts";
 import { buildSetsInOrder } from "../src/components/component-builder.ts";
 import { variantKey } from "../src/components/component-spec.ts";
 import type {
@@ -48,8 +46,9 @@ import type {
   VariantSpec,
 } from "../src/components/kit-spec.ts";
 import { expandShorthand } from "../src/components/layer-style.ts";
-import { compileUtilities } from "../src/components/utility-css.ts";
-import type { CompiledUtilities } from "../src/components/utility-css.ts";
+import { bareUtility } from "./bare-utility.ts";
+import { compileFixture } from "./utility-rules.ts";
+import type { UtilityRules } from "./utility-rules.ts";
 
 /** A declaration written out, for one no class compiles to, such as a `style` attribute's. */
 export type Written = {
@@ -148,12 +147,12 @@ function words(classes: string | undefined): readonly string[] {
  * The declarations a class compiles to: its own rule's, or, for a class with a variant, its bare
  * utility's, which the browser applies where the variant holds.
  */
-function compiledOf(compiled: CompiledUtilities, className: string): readonly Written[] {
-  const rule = compiled.rules.get(className) ?? compiled.rules.get(splitClassName(className).utility);
-  if (rule === undefined) {
+function compiledOf(rules: UtilityRules, className: string): readonly Written[] {
+  const declarations = rules.get(className) ?? rules.get(bareUtility(className));
+  if (declarations === undefined) {
     throw new Error(`Tailwind compiles no rule for ${className}`);
   }
-  return rule.declarations.map(({ property, value }) => ({ className, property, value }));
+  return declarations.map(({ property, value }) => ({ className, property, value }));
 }
 
 /**
@@ -171,17 +170,15 @@ export async function buildCaptured(
   options: FixtureOptions = {}
 ): Promise<BuiltFixture> {
   const sets = [...(options.inner ?? []), { manifest, cells }];
-  const compiled = await Effect.runPromise(
-    compileUtilities([
-      ...sets.flatMap((set) => set.cells.flatMap(({ around = [], root }) => classesIn([...around, root]))),
-      ...(options.registered ?? []),
-    ])
+  const classes = sets.flatMap((set) =>
+    set.cells.flatMap(({ around = [], root }) => classesIn([...around, root]))
   );
+  const { compiled, rules } = await compileFixture(classes, options.registered);
   const context: BuildContext = { compiled, variables: options.variables ?? makeVariableIndex([]) };
   const built = buildSetsInOrder(
     sets.map((set) => {
       const definition = manifestDefinition(set.manifest);
-      return { definition, capture: captureOf(set, definition, compiled) };
+      return { definition, capture: captureOf(set, definition, rules) };
     }),
     context
   ).at(-1);
@@ -195,7 +192,7 @@ export async function buildCaptured(
 function captureOf(
   { manifest, cells }: FixtureSet,
   definition: ComponentDefinition,
-  compiled: CompiledUtilities
+  rules: UtilityRules
 ): SetCapture {
   const declarations: CapturedDeclaration[] = [];
   const winners = (
@@ -246,10 +243,10 @@ function captureOf(
   const element = (fixture: FixtureElement): CapturedElement => {
     const indexes = winners([
       ...words(fixture.classes).flatMap((className) =>
-        compiledOf(compiled, className).map((each) => ({ ...each, source: "fuse" as const, owner: 0 }))
+        compiledOf(rules, className).map((each) => ({ ...each, source: "fuse" as const, owner: 0 }))
       ),
       ...words(fixture.fromParent).flatMap((className) =>
-        compiledOf(compiled, className).map((each) => ({ ...each, source: "fuse" as const, owner: 1 }))
+        compiledOf(rules, className).map((each) => ({ ...each, source: "fuse" as const, owner: 1 }))
       ),
       ...(fixture.written ?? []).map((each) => ({ ...each, source: each.source ?? "fuse", owner: 0 })),
       ...(fixture.writtenFromParent ?? []).map((each) => ({
@@ -263,7 +260,7 @@ function captureOf(
         name,
         winners([
           ...words(own.classes).flatMap((className) =>
-            compiledOf(compiled, className).map((each) => ({ ...each, source: "fuse" as const, owner: 0 }))
+            compiledOf(rules, className).map((each) => ({ ...each, source: "fuse" as const, owner: 0 }))
           ),
           ...(own.written ?? []).map((each) => ({ ...each, source: each.source ?? "fuse", owner: 0 })),
         ]),

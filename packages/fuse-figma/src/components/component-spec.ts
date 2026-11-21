@@ -7,6 +7,7 @@
 
 import type { CellAccounting } from "../capture/capture-cascade.ts";
 import { KitUnmappable } from "./build-errors.ts";
+import type { CompiledUtilities } from "./consumer-build";
 import type { CoverageRow } from "./coverage";
 import type { ModeView, VariableIndex, Viewport } from "./css-values";
 import type {
@@ -17,7 +18,6 @@ import type {
   IconWeight,
   SwapPropertySpec,
 } from "./kit-spec";
-import type { CompiledUtilities } from "./utility-css";
 
 /**
  * A preview length: its pixels in the file's default mode, and its CSS length where it changes by
