@@ -409,43 +409,59 @@ export function dropZeroMargins(style: LayerStyle): (property: string) => boolea
   return zero;
 }
 
-/** What a box is to the fold of its negative margins: what it paints, its width and its parent. */
+/** What a box is to the fold of its negative margins: what it paints, its size and its parent. */
 export type FoldingBox = {
-  /** Whether the box paints a fill, a stroke or a shadow. */
+  /** Whether the box paints a fill, a stroke, a shadow or a background blur. */
   readonly paints: boolean;
-  /** Whether the box's width hugs what it holds. */
-  readonly hugs: boolean;
+  /**
+   * Whether the box's width hugs what it holds, and whether its height does with no `min-height` or
+   * `max-height`, which could set its border box apart from its content.
+   */
+  readonly hugs: { readonly horizontal: boolean; readonly vertical: boolean };
   /** Whether the box is a flex item in a row. */
   readonly inFlexRow: boolean;
+  /** Whether an absolute part takes the box as its containing block. */
+  readonly placesAbsolute: boolean;
 };
 
 /**
- * Fold a negative margin across a row into the padding on its side, where the box paints nothing.
+ * Fold a negative margin of a row's item into the padding on its side, where the box paints nothing.
  * A flex item's outer size along the row is its margin box (CSS Flexbox 1 §9.2, CSS 2.1 §8.3), so a
  * negative end margin of 4px takes 4px from the room it uses and pulls the next item, or the row's
  * end, 4px nearer its content. A box that paints nothing and hugs its width shows only its content,
  * which sits in the same place when the 4px come off its padding instead, as Input group's trailing
- * addon pulls its button toward the field's edge with `-mr-1`. Figma has no negative padding, so the
- * fold holds only where the padding less the margin is 0 or more in every mode, and where it reads a
- * variable, only where a synced variable's formula is that difference.
+ * addon pulls its button toward the field's edge with `-mr-1`. Across the row the item's outer cross
+ * size is its margin box too (CSS Flexbox 1 §9.4), which sizes the row's line and places the item in
+ * it, so a box that hugs its height with no height limit folds its top and bottom margins alike, as
+ * Data table filter's chip strip takes back its 2px focus room with `-m-0.5 p-0.5`. A height or a
+ * height limit, or a height the build cannot read, could hold the box at a height its content does
+ * not set, where the fold would move the content, so the margins stay unmapped beside one. An
+ * absolute part places itself from the padding edge of its containing block (CSS Position 3 §3.1),
+ * which the fold moves by the margin, so a box that is one folds no margin. The fold moves the box's edge to its content's edge, so a box that
+ * clips cuts what its layers draw past that edge, as the strip cuts its chip's `shadow-xs`, which the
+ * padding left room for. Figma has no negative padding, so the fold holds only where the padding less
+ * the margin is 0 or more in every mode, and where it reads a variable, only where a synced variable's
+ * formula is that difference.
  *
  * @param style - The box's style.
- * @param side - The side of the margin and the padding, `left` or `right`.
+ * @param side - The side of the margin and the padding.
  * @param box - What the box paints, whether it hugs, and whether it sits in a row.
  * @param variables - The synced variables the folded padding can bind.
  * @returns The padding on that side, with both declarations read, or undefined where nothing folds.
  */
 export function foldNegativeMargin(
   style: LayerStyle,
-  side: "left" | "right",
+  side: "left" | "right" | "top" | "bottom",
   box: FoldingBox,
   variables: VariableIndex
 ): NumberSpec | undefined {
-  const marginProperty = side === "left" ? "margin-left" : "margin-right";
+  const marginProperty = `margin-${side}` as const;
   const paddingProperty = `padding-${side}`;
+  const across = side === "top" || side === "bottom";
   const margin = evaluateLength(style.resolved(marginProperty) ?? "");
   const padding = style.resolved(paddingProperty) ?? "0px";
-  if (margin === undefined || margin >= 0 || box.paints || !box.hugs || !box.inFlexRow) {
+  const hugs = across ? box.hugs.vertical : box.hugs.horizontal;
+  if (margin === undefined || margin >= 0 || box.paints || !hugs || !box.inFlexRow || box.placesAbsolute) {
     return undefined;
   }
   const held = readNumber(padding, variables);
@@ -474,7 +490,7 @@ export function foldNegativeMargin(
     () => folded,
     () => ({
       outcome,
-      detail: `${detail}, the padding on its side less this margin, since the box paints nothing and its width hugs`,
+      detail: `${detail}, the padding on its side less this margin, since the box paints nothing and its ${across ? "height" : "width"} hugs`,
     }),
     style.feed(field)
   );

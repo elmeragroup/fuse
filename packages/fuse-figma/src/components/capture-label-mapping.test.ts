@@ -234,13 +234,14 @@ describe("a label's sizing", () => {
 });
 
 // Oracle: CSS Sizing 3 §5.1, where `fit-content` is the smaller of the text's one-line width and the
-// room the column leaves. A box that paints shows its own width, so it keeps hugging.
+// room the column leaves. A box that paints shows its own width, so it keeps hugging, and a backdrop
+// blur paints the whole border box (Filter Effects 2 §3).
 describe("a `w-fit` part that holds only its text in a column", () => {
-  it("keeps hugging where it paints", async () => {
+  it.each(["bg-[#ff0000]", "backdrop-blur-xs"])("keeps hugging where it paints with %s", async (paint) => {
     const title: LabelManifest = { ...LABEL, characters: "A title longer than its column" };
     const { variant } = await buildWithPart(
       "flex flex-col w-[100px]",
-      { classes: "flex w-fit items-center bg-[#ff0000]", text: "A title longer than its column" },
+      { classes: `flex w-fit items-center ${paint}`, text: "A title longer than its column" },
       labelled({ label: title })
     );
     expect(frameOf(variant?.root)?.sizing.horizontal).toEqual(HUG);

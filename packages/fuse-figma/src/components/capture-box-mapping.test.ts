@@ -517,6 +517,87 @@ describe("a box's margin", () => {
     expect(notesOf(coverage, className)).toEqual([[property, "unmapped", expect.any(String)]]);
   });
 
+  // A flex item's outer cross size is its margin box (CSS Flexbox 1 §9.4), which sizes the row's line
+  // and places the item in it, so a part that paints nothing and hugs its height draws its content
+  // where its `-my-0.5 py-0.5` puts it with neither, as Data table filter's chip strip does.
+  it("folds a negative margin across a row into the padding of a part that hugs its height", async () => {
+    const { variant, coverage } = await buildWithDot("flex items-start", "flex -my-0.5 py-0.5");
+    const frame = frameOf(variant?.root);
+    expect([
+      frame?.paddingTop,
+      frame?.paddingBottom,
+      notesOf(coverage, "-my-0.5").map(([property, outcome]) => [property, outcome]),
+    ]).toEqual([
+      literal(0),
+      literal(0),
+      [
+        ["margin-bottom", "literal"],
+        ["margin-top", "literal"],
+      ],
+    ]);
+  });
+
+  // A height or a height limit can set the item's border box apart from its content, where its
+  // margin box no longer tells where the content sits: `min-h-10` keeps the item 40px tall, and the
+  // -2px margins make its outer height 36px. A height or limit Figma cannot map, or one a logical
+  // property sets (CSS Logical Properties 1 §4), holds the box all the same. A backdrop blur (Filter
+  // Effects 2 §3) blurs what lies behind the border box, its padding included, so the box paints its
+  // padding.
+  it.each([
+    "min-h-10",
+    "max-h-3",
+    "min-h-[10vh]",
+    "h-[10vh]",
+    "max-h-[50%]",
+    "[min-block-size:40px]",
+    "[max-block-size:10px]",
+    "[backdrop-filter:blur(4px)]",
+  ])("leaves the margins across a row unmapped beside %s", async (beside) => {
+    const { variant, coverage } = await buildWithDot("flex items-start", `flex ${beside} -my-0.5 py-0.5`);
+    const frame = frameOf(variant?.root);
+    expect([
+      frame?.paddingTop,
+      frame?.paddingBottom,
+      notesOf(coverage, "-my-0.5").map(([property, outcome]) => [property, outcome]),
+    ]).toEqual([
+      literal(2),
+      literal(2),
+      [
+        ["margin-bottom", "unmapped"],
+        ["margin-top", "unmapped"],
+      ],
+    ]);
+  });
+
+  // An absolute part places itself from its containing block's padding edge (CSS Position 3 §3.1),
+  // which the fold would move by the margin, so `top-0` would draw the badge 2px lower.
+  it("leaves the margin across a row unmapped where an absolute part takes the item as its containing block", async () => {
+    const { variant, coverage } = await buildChip(
+      "flex items-start",
+      [
+        {
+          slot: "chip-dot",
+          classes: "relative flex -mt-0.5 pt-0.5",
+          children: [
+            { slot: "chip-mark", classes: "size-[8px] bg-[#000000]" },
+            { slot: "chip-badge", classes: "absolute top-0 left-0 size-[4px] bg-[#ff0000]" },
+          ],
+        },
+      ],
+      {
+        parts: [
+          part({
+            parts: [part({ key: "mark", slot: "chip-mark" }), part({ key: "badge", slot: "chip-badge" })],
+          }),
+        ],
+      }
+    );
+    expect([
+      frameOf(variant?.root)?.paddingTop,
+      notesOf(coverage, "-mt-0.5").map(([property, outcome]) => [property, outcome]),
+    ]).toEqual([literal(2), [["margin-top", "unmapped"]]]);
+  });
+
   it("subtracts a margin that reads a variable holding one length in every mode", async () => {
     const variables = makeVariableIndex([
       {
