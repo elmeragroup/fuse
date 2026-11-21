@@ -28,6 +28,17 @@
  * where the child is 256px, the list's width, which a hug draws, and to Chromium's widths of the same
  * box under its own `min-width: 400px` and `max-width: 120px`, 400px and 120px, which no hug of the
  * list draws, as review round 2 of B4 measured, so the child's width stays unmapped.
+ *
+ * It also holds the width of an anchored popup that reads `--anchor-width` (`anchorSpan` and the
+ * composite's `anchorWidth`) to Base UI, which sets the property to the anchor's width and so makes
+ * the popup `max(anchor, min-width)`. In a 384px column, a trigger at `width: 100%` and a
+ * block-level `display: flex` one of an auto width are both 384px, which the capture records as
+ * `spansHost: 384`, so the popup fills the column down to its 144px minimum, as the uncapped Select
+ * (open) and Combobox (open) cells draw. Chromium draws a trigger and its popup 240px wide under
+ * `max-width: 240px`, as review run 2 of #850 measured, 400px wide for a `content-box` trigger with
+ * 8px side padding, and 352px wide in a 384px host with 16px side padding, as review run 3 measured.
+ * No fill of the 384px column draws any of them, so the popup's width stays unmapped. The page facts'
+ * Chromium test holds the `spansHost` each of those triggers records.
  */
 import { Effect } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -41,8 +52,8 @@ import { makeVariableIndex } from "../components/css-values.ts";
 import { instancingSlots } from "../components/definition-parts.ts";
 import { compileUtilities } from "../components/utility-css.ts";
 import { CaptureSetCascade } from "./capture-cascade.ts";
-import { CAPTURE_FORMAT, CAPTURE_VERSION } from "./capture-format.ts";
-import type { CapturedDeclaration, CapturedElement, SetCapture } from "./capture-format.ts";
+import { ANCHOR_WIDTH, CAPTURE_FORMAT, CAPTURE_VERSION } from "./capture-format.ts";
+import type { CapturedDeclaration, CapturedElement, MeasuredFacts, SetCapture } from "./capture-format.ts";
 import { manifestDefinition } from "./manifest.ts";
 import type { SetManifest } from "./manifest.ts";
 
@@ -194,6 +205,34 @@ describe("a root's 100% height inside the elements around it", () => {
   });
 });
 
+/**
+ * A capture's declaration table, and a function that adds an element's own declarations to it and
+ * gives their indexes.
+ */
+function declarationTable() {
+  const declarations: CapturedDeclaration[] = [];
+  const indexes = (own: Readonly<Record<string, string>>): number[] =>
+    Object.entries(own).map(([property, value]) => declarations.push(declaration(property, value)) - 1);
+  return { declarations, indexes };
+}
+
+/** A capture of the set `set` with one cell at rest, which measures `roots`. */
+function oneCell(
+  set: string,
+  declarations: readonly CapturedDeclaration[],
+  roots: SetCapture["cells"][number]["roots"]
+): SetCapture {
+  return {
+    format: CAPTURE_FORMAT,
+    version: CAPTURE_VERSION,
+    set,
+    environment: { chromium: "", theme: "", locale: "" },
+    page: [],
+    declarations,
+    cells: [{ key: `${set}/state=rest`, cell: { state: "rest" }, roots }],
+  };
+}
+
 /** A capture of one cell whose root sits in wrappers, outermost first, each with its declarations. */
 function captureOf(
   wrappers: readonly Readonly<Record<string, string>>[],
@@ -201,9 +240,7 @@ function captureOf(
   coinciding: number,
   children: readonly { readonly slot: string; readonly declarations: Readonly<Record<string, string>> }[] = []
 ): SetCapture {
-  const declarations: CapturedDeclaration[] = [];
-  const indexes = (own: Readonly<Record<string, string>>): number[] =>
-    Object.entries(own).map(([property, value]) => declarations.push(declaration(property, value)) - 1);
+  const { declarations, indexes } = declarationTable();
   const around = wrappers.map((own, at) => element(`wrapper-${String(at)}`, indexes(own)));
   // Each child holds the next, as a viewport holds a list.
   const below = children
@@ -213,21 +250,9 @@ function captureOf(
       []
     );
   const measured = coinciding === 0 ? {} : { measured: { coincidingAround: coinciding } };
-  return {
-    format: CAPTURE_FORMAT,
-    version: CAPTURE_VERSION,
-    set: "sample",
-    environment: { chromium: "", theme: "", locale: "" },
-    page: [],
-    declarations,
-    cells: [
-      {
-        key: "sample/state=rest",
-        cell: { state: "rest" },
-        roots: [{ around, root: { ...element("root", indexes(root)), ...measured, children: below } }],
-      },
-    ],
-  };
+  return oneCell("sample", declarations, [
+    { around, root: { ...element("root", indexes(root)), ...measured, children: below } },
+  ]);
 }
 
 const MANIFEST: SetManifest = {
@@ -253,6 +278,7 @@ function cascadeOf(
     definition: manifestDefinition(MANIFEST),
     context,
     record,
+    anchorWidth: () => ({ _tag: "minimum" }),
     instancedIn,
   });
 }
@@ -449,5 +475,100 @@ describe("a fill-less root's fill inside a set that holds it as an instance", ()
       fill: undefined,
       unmapped: [],
     });
+  });
+});
+
+describe("an anchored popup whose width reads its anchor's, below an anchor that takes its column", () => {
+  /**
+   * The popup's horizontal sizing and limits, and the outcome of its `width` row, in a 384px
+   * composite whose trigger wins `trigger` and carries `measured`, and whose popup is `width:
+   * var(--anchor-width); min-width: 144px` under a positioner that carries Base UI's
+   * `--anchor-width`.
+   */
+  const popupBelow = (trigger: Readonly<Record<string, string>>, measured: MeasuredFacts = {}) => {
+    const { declarations, indexes } = declarationTable();
+    const anchorWidth = declarations.push({
+      ...declaration("--anchor-width", ANCHOR_WIDTH),
+      source: "inline",
+      selector: "",
+      className: "inline style",
+    });
+    const positioner = { ...element("positioner", [anchorWidth - 1]), attributes: {} };
+    const popup = {
+      ...element("popup", indexes({ display: "block", width: "var(--anchor-width)", "min-width": "144px" })),
+      attributes: { "data-slot": "popup", "data-side": "bottom", "data-align": "center" },
+    };
+    const capture = oneCell("open", declarations, [
+      {
+        around: [],
+        root: { ...element("trigger", indexes({ display: "flex", height: "32px", ...trigger })), measured },
+      },
+      { around: [positioner], root: popup },
+    ]);
+    const manifest: SetManifest = {
+      ...MANIFEST,
+      key: "open",
+      slot: "open",
+      previewWidth: 384,
+      union: ["trigger", "popup"],
+      sideOffset: 4,
+      alignItemWithTrigger: false,
+      parts: ["trigger", "popup"].map((slot) => ({
+        key: slot,
+        slot,
+        shownIn: () => true,
+        label: undefined,
+        iconsFor: () => [],
+      })),
+    };
+    const [built] = buildSetsInOrder(
+      [
+        {
+          definition: manifestDefinition(manifest),
+          capture,
+          open: { _tag: "anchored", sideOffset: 4 },
+        },
+      ],
+      context
+    );
+    const layer = built?.componentSet.variants[0]?.root.children.find((child) => child.key === "popup");
+    const width = built?.coverage.find((row) => row.part === "popup" && row.property === "width");
+    return [
+      layer && "sizing" in layer ? layer.sizing.horizontal : undefined,
+      layer && "limits" in layer ? layer.limits : undefined,
+      width?.outcome,
+    ];
+  };
+
+  it("fills the column, down to its minimum, beside a trigger 100% of it", () => {
+    expect(popupBelow({ width: "100%" }, { spansHost: 384 })).toEqual([
+      { kind: "fill" },
+      { minWidth: { kind: "literal", value: 144 } },
+      "literal",
+    ]);
+  });
+
+  it("fills the column beside a block-level trigger of an auto width that stretches across it", () => {
+    expect(popupBelow({ "min-width": "0" }, { spansHost: 384 })[0]).toEqual({ kind: "fill" });
+  });
+
+  it.each([
+    [
+      "capped at 240px, which Chromium draws 240px wide with its popup",
+      { width: "100%", "max-width": "240px" },
+      {},
+    ],
+    [
+      "of a content box with 8px side padding, which Chromium draws 400px wide",
+      { width: "100%", "box-sizing": "content-box", "padding-left": "8px", "padding-right": "8px" },
+      {},
+    ],
+    [
+      "in a host whose 16px side padding leaves it and its popup 352px wide in Chromium",
+      { width: "100%", "max-width": "100%" },
+      { spansHost: 352 },
+    ],
+  ])("stays unmapped beside a trigger %s", (_case, trigger, measured) => {
+    expect(popupBelow(trigger, measured)[2]).toBe("unmapped");
   });
 });

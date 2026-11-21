@@ -9,12 +9,14 @@
  * - `selectPopup`: the docs Basic demo's rows or its Groups demo's groups, nothing selected, measured
  *   as the popup.
  * - `selectOpen`: the trigger at a size, holding the Basic demo's placeholder, and the popup with the
- *   Basic demo's rows, measured as the trigger and the popup together.
+ *   Basic demo's rows, measured as the trigger and the popup together. A `width=fill` cell passes the
+ *   trigger `w-full`, as SelectField does, in a host as wide as the kit's preview width, so Base UI
+ *   widens the popup to the trigger.
  *
- * Each trigger is narrower than the popup's 144px minimum. A row or a popup measures alone, so its
- * popup aligns to the trigger's start, which starts it on the slot's pixel grid and inside the slot.
- * The open composite keeps Select's centered popup and centers the trigger in a 144px host instead,
- * so the popup starts at the slot's start. No Select is modal, so no open popup marks another cell
+ * Each hugging trigger is narrower than the popup's 144px minimum. A row or a popup measures alone,
+ * so its popup aligns to the trigger's start, which starts it on the slot's pixel grid and inside the
+ * slot. The open composite keeps Select's centered popup and centers a hugging trigger in a 144px
+ * host instead, so the popup starts at the slot's start, as it does under a filling trigger. No Select is modal, so no open popup marks another cell
  * hidden, and none aligns its selected row over the trigger, which the kit does not draw.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
@@ -26,6 +28,8 @@ import type { ReactElement } from "react";
 
 import { Select } from "../../../fuse/dist/select.js";
 import type { Cell } from "../components/component-spec.ts";
+import { fillsWidth } from "../components/field-box-kit.ts";
+import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
 import { SELECT_BASIC_ROWS, SELECT_GROUPS, SELECT_ITEM_TEXT } from "../components/select-kit.ts";
 import { SELECT_TRIGGER_TEXT, sizeFor } from "../components/select-trigger-kit.ts";
 import type { ClientCellRendering } from "./cell-renderers.ts";
@@ -45,6 +49,7 @@ function openSelect(
     readonly value: string | null;
     readonly size: "default" | "sm";
     readonly align: "start" | "center";
+    readonly trigger: { readonly className?: string };
   },
   rows: readonly ReactElement[]
 ): ReactElement {
@@ -53,7 +58,7 @@ function openSelect(
     { defaultOpen: true, modal: false, items: itemsOf(options.labels), defaultValue: options.value },
     createElement(
       Select.Trigger,
-      { size: options.size },
+      { size: options.size, ...options.trigger },
       createElement(Select.Value, { placeholder: SELECT_TRIGGER_TEXT })
     ),
     createElement(Select.Content, { container, align: options.align, alignItemWithTrigger: false }, ...rows)
@@ -74,6 +79,7 @@ export const selectItem: ClientCellRendering = {
         value: cell.selected === "true" ? valueOf(SELECT_ITEM_TEXT) : null,
         size: "default",
         align: "start",
+        trigger: {},
       },
       [row(SELECT_ITEM_TEXT, cell.state === "disabled")]
     ),
@@ -108,7 +114,7 @@ export const selectPopup: ClientCellRendering = {
   element: (cell: Cell, _turnedOn: ReadonlySet<string>, container: HTMLElement) =>
     openSelect(
       container,
-      { labels: labelsOf(cell), value: null, size: "default", align: "start" },
+      { labels: labelsOf(cell), value: null, size: "default", align: "start", trigger: {} },
       popupRows(cell)
     ),
 };
@@ -116,18 +122,26 @@ export const selectPopup: ClientCellRendering = {
 /** A host as wide as the popup, which centers the trigger in it, so the centered popup starts at its start. */
 const HOST = "flex w-36 justify-center";
 
-/** An open Select at a size, its trigger and its popup. */
+/** An open Select at a size, its trigger hugging its placeholder or filling its host, and its popup. */
 export const selectOpen: ClientCellRendering = {
   hostClasses: HOST.split(" "),
-  element: (cell: Cell, _turnedOn: ReadonlySet<string>, container: HTMLElement) =>
-    createElement(
+  element: (cell: Cell, _turnedOn: ReadonlySet<string>, container: HTMLElement) => {
+    const fill = fillsWidth(cell);
+    return createElement(
       "div",
-      { className: HOST },
+      fill ? { style: { width: `${String(FIELD_BOX_PREVIEW_WIDTH)}px` } } : { className: HOST },
       openSelect(
         container,
-        { labels: SELECT_BASIC_ROWS, value: null, size: sizeFor(cell), align: "center" },
+        {
+          labels: SELECT_BASIC_ROWS,
+          value: null,
+          size: sizeFor(cell),
+          align: "center",
+          trigger: fill ? { className: "w-full" } : {},
+        },
         popupRows({ content: "flat" })
       )
-    ),
+    );
+  },
   union: ["select-trigger", "select-content"],
 };

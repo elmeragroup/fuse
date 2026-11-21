@@ -10,6 +10,14 @@
  * - In a `max-content` row the row widens with the item, to 4555.4px on one line, so no room caps it.
  * - An absolute item with a `max-width: 100%` is out of the flow, so it wraps at 300px, the row's
  *   whole content box, beside the same control.
+ *
+ * It also holds the probe's wait for Base UI's `--anchor-width` to the property's syntax: Base UI
+ * writes the anchor's width in pixels on the positioner of the popup that names `data-side`, a frame
+ * or more after the anchor resizes. A positioner whose property becomes the 200px anchor's width 30
+ * frames after the page loads settles, so the popup reads 200px before the wider run and in it. One
+ * whose property is `auto`, or that carries none, never settles, and the probe stops naming the
+ * cell. Where the property never follows an anchor that fills its widened host, the wider run stops
+ * the same way, and the host's style is the one the page set.
  */
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
@@ -151,5 +159,52 @@ describe("the place of each box", () => {
       "item 0/root/1/1",
       "anchor 1/root",
     ]);
+  });
+});
+
+describe("the probe's wait for a popup to take its anchor's width", () => {
+  /**
+   * Probe an anchor in a 200px host and a popup below it whose absolute positioner carries `style`,
+   * as Base UI's positioner holds the popup that names `data-side`. Where `delay` is a number, the page sets
+   * the positioner's `--anchor-width` to the anchor's width in pixels once, that many frames after it
+   * loads, as Base UI writes it a frame or more after its anchor resizes.
+   */
+  const probeAnchored = async (options: {
+    readonly anchor: string;
+    readonly style: string;
+    readonly delay?: number;
+  }) => {
+    const late =
+      options.delay === undefined
+        ? ""
+        : `<script>(() => { let frame = 0; const tick = () => { frame += 1; if (frame < ${String(options.delay)}) { requestAnimationFrame(tick); return; } document.querySelector("#positioner").style.setProperty("--anchor-width", document.querySelector('[data-slot="anchor"]').getBoundingClientRect().width + "px"); }; requestAnimationFrame(tick); })();</script>`;
+    await page.setContent(
+      `<div data-compare-cell="c0"><div id="host" style="width:200px"><div data-slot="anchor" style="${options.anchor};height:24px"></div></div><div id="positioner" style="position:absolute;${options.style}"><div data-slot="popup" data-side="bottom" style="width:var(--anchor-width);height:24px"></div></div></div>${late}`
+    );
+    return probeCells(page, [{ id: "c0", measured: ['[data-slot="anchor"]', '[data-slot="popup"]'] }]);
+  };
+
+  it("reads the page before and in the wider run once the positioner's --anchor-width is set late", async () => {
+    const [cell] = await probeAnchored({ anchor: "width:200px", style: "", delay: 30 });
+    const popup = cell?.boxes.find((box) => box.slot === "popup");
+    expect([popup?.base, popup?.wider]).toEqual([200, 200]);
+  });
+
+  it.each([
+    ["auto", "--anchor-width:auto"],
+    ["absent", ""],
+  ])("stops naming the cell where --anchor-width is %s", async (_name, style) => {
+    await expect(probeAnchored({ anchor: "width:200px", style })).rejects.toThrow(
+      "Base UI never set --anchor-width to the anchor's width in c0"
+    );
+  });
+
+  it("puts the widened host back where the wider run stops", async () => {
+    // The anchor fills its host, which the wider run widens, and the property stays the 200px the
+    // page set, so the run stops there.
+    await expect(probeAnchored({ anchor: "width:100%", style: "--anchor-width:200px" })).rejects.toThrow(
+      "Base UI never set --anchor-width to the anchor's width in c0"
+    );
+    expect(await page.locator("#host").getAttribute("style")).toBe("width:200px");
   });
 });

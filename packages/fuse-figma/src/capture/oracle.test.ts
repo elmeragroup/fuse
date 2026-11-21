@@ -31,7 +31,7 @@ import { readFileSync } from "node:fs";
 
 import { buildComponentSets } from "../components/build-kit.ts";
 import type { KitComponentSet } from "../components/build-kit.ts";
-import { possibleCells, variantKey } from "../components/component-spec.ts";
+import { possibleCells, previewWidthIn, variantKey } from "../components/component-spec.ts";
 import { KIT } from "../components/kit-registry.ts";
 import type { ChildLayerSpec } from "../components/kit-spec.ts";
 import { fuseVariableSet } from "../fuse-variable-set.ts";
@@ -39,7 +39,7 @@ import type { InstancePlace } from "./capture-cascade.ts";
 import { CAPTURE_FORMAT, CAPTURE_VERSION } from "./capture-format.ts";
 import type { CapturedDeclaration, CapturedElement, SetCapture } from "./capture-format.ts";
 import { keptCapture } from "./captures.ts";
-import { MANIFEST_FIELDS, SAMPLE_HOST_WIDTHS } from "./manifest.ts";
+import { MANIFEST_FIELDS, manifestDefinition, SAMPLE_HOST_WIDTHS } from "./manifest.ts";
 import type { IconManifest, InstanceManifest, LabelManifest, PartManifest, SetManifest } from "./manifest.ts";
 import { alikeValues, drawnRoot, keptLedger, syncedReads, unaccountedDeclarations } from "./oracle.ts";
 import type { KeptRow } from "./oracle.ts";
@@ -124,7 +124,7 @@ function kept(rows: readonly KeptRow[], key: string): readonly string[] {
   return rows.filter((row) => row.set === key).map(named);
 }
 
-/** The host widths a manifest and the manifests its instance parts show name, by set. */
+/** Each distinct host width a manifest and the manifests its instance parts show name, in any cell, by set. */
 function hostWidthsOf(manifest: SetManifest): readonly { readonly set: string; readonly width: number }[] {
   const seen = new Set<SetManifest>();
   const found: { readonly set: string; readonly width: number }[] = [];
@@ -133,8 +133,13 @@ function hostWidthsOf(manifest: SetManifest): readonly { readonly set: string; r
       return;
     }
     seen.add(each);
-    if (each.previewWidth !== undefined) {
-      found.push({ set: each.key, width: each.previewWidth });
+    // The widths the build gives each cell, through the definition the manifest becomes.
+    const definition = manifestDefinition(each);
+    const widths = possibleCells(each).map((cell) => previewWidthIn(definition, cell));
+    for (const width of new Set(widths)) {
+      if (width !== undefined) {
+        found.push({ set: each.key, width });
+      }
     }
     const parts = (list: readonly (PartManifest | InstanceManifest)[]): void => {
       for (const part of list) {

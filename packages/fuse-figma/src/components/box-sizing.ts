@@ -1884,7 +1884,9 @@ function readLimit(
  * Read one axis: its length through {@link readLength}, an unset length as the room gives it, and
  * its limits as {@link resolveLimits} decides. Each read fills the sizing of the layers inside too,
  * as `inside` names it. Where the parent is at least as long as each layer it holds (`roomy`), or the
- * box fills the parent, a maximum of `100%` or more never limits the box, so it drops. A length that does not map leaves
+ * box fills the parent, a maximum of `100%` or more never limits the box, so it drops. A minimum
+ * that reads the same `100%` as a length that fills drops too, where no zero flex basis or maximum
+ * that may bind takes over from the length. A length that does not map leaves
  * the axis hugging in its place, which the result marks as not `known`.
  */
 function readAxis(
@@ -1966,6 +1968,41 @@ function readAxis(
     );
   }
   const popupMaximum = roomyMaximum(axis.max, reader.raw(axis.max) ?? "", variables);
+  // Whether a maximum is declared that may bind: one that reads the available room binds unless the
+  // kit's room makes it none, and any other binds unless the build proved it inert or the capture
+  // measured it never narrowing the box. A maximum the build cannot resolve may bind.
+  const maximumMayBind =
+    popupMaximum === undefined
+      ? reader.has(axis.max) && !inertMaximum && !measuredUnder
+      : popupMaximum.kind !== "none";
+  const minimum = reader.resolved(axis.min);
+  const length = reader.resolved(axis.length);
+  // A whole `100%` that fills the column sizes the box at the column's length, and a minimum of the
+  // same `100%` resolves against the same basis, so it never moves the box, as a Combobox popup's
+  // `min-w-(--anchor-width)` beside its `w-(--anchor-width)` where the anchor spans the column. That
+  // holds only while the length decides the box's size: a zero flex basis sizes it in place of the
+  // length, and a maximum that may bind loses to the minimum (CSS 2.1 §10.4), so there the minimum
+  // stays a limit or unmapped. Along a row, a `100%` fills only as the row's one layer, whose
+  // declared basis the minimum raises to the whole row, which the fill draws.
+  const lengthMinimum =
+    read?.kind === "fill" &&
+    room.zeroBasis !== true &&
+    !maximumMayBind &&
+    length !== undefined &&
+    evaluatePercentage(length) === 1 &&
+    minimum !== undefined &&
+    normalizeCss(minimum) === normalizeCss(length);
+  if (lengthMinimum) {
+    reader.read(
+      axis.min,
+      (value) => value,
+      () => ({
+        outcome: "dropped",
+        detail: `it is the same value as the ${axis.length}, so it never ${axis.grows} the box`,
+      }),
+      []
+    );
+  }
   // Nothing sets the available room outside a positioner, so the value never resolves and the
   // maximum is marked rather than read.
   if (popupMaximum?.kind === "none") {
@@ -1977,7 +2014,9 @@ function readAxis(
       return popupMaximum.kind === "length" ? [{ side, property, value: popupMaximum.value }] : [];
     }
     const value = reader.resolved(property);
-    return value === undefined || (side === "max" && (inertMaximum || measuredUnder))
+    return value === undefined ||
+      (side === "max" && (inertMaximum || measuredUnder)) ||
+      (side === "min" && lengthMinimum)
       ? []
       : [{ side, property, value: readLimit(value, variables, room.percent, size.kind === "fixed") }];
   });

@@ -44,6 +44,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { MeasuredFacts } from "./capture-format.ts";
 import { measuredFacts } from "./page-facts.ts";
+import type { RootRole } from "./page-facts.ts";
 
 const BLUE_PNG =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPj/HwADBwIAMCbHYQAAAABJRU5ErkJggg==";
@@ -541,20 +542,20 @@ describe("an aspect ratio the capture measures as setting the height", () => {
 });
 
 /** Measure the root `#root` of the page's markup, and read back its `style` attribute. */
-async function factsOfRoot(): Promise<{
+async function factsOfRoot(role: RootRole = "root"): Promise<{
   readonly facts: MeasuredFacts | undefined;
   readonly style: string | null;
 }> {
-  const facts = await factsByPath();
+  const facts = await factsByPath(role);
   return { facts: facts.get(""), style: await page.locator("#root").getAttribute("style") };
 }
 
 /** Measure the root `#root` of the page's markup: each element's facts, by its path from the root. */
-async function factsByPath(): Promise<ReadonlyMap<string, MeasuredFacts>> {
+async function factsByPath(role: RootRole = "root"): Promise<ReadonlyMap<string, MeasuredFacts>> {
   const cdp = await page.context().newCDPSession(page);
   const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
   const { nodeId } = await cdp.send("DOM.querySelector", { nodeId: root.nodeId, selector: "#root" });
-  const facts = await measuredFacts(cdp, nodeId);
+  const facts = await measuredFacts(cdp, nodeId, role);
   await cdp.detach();
   return facts;
 }
@@ -617,6 +618,43 @@ describe("a flex line the capture measures as leaving room for an auto margin", 
     ["shrinks", false],
   ])("in a column %s tall: %s", async (height, free) => {
     expect(await measure(height)).toBe(free);
+  });
+});
+
+/**
+ * Unit under test: the page function's `spansHost`, on the anchor of an anchored composite. Oracle:
+ * Chromium's layout of a 32px trigger in a host, in every mode, and again in the host 10px wider. A
+ * `width: 100%` trigger and a block-level `display: flex` trigger of an auto width are 384px in a
+ * 384px host and 394px in the wider one, so the page records 384. A content-box `width: 100%`
+ * trigger with 8px side padding is 400px, and one capped at `max-width: 240px` is 240px, so neither
+ * spans the host. A `max-width: 384px` trigger is 384px, but stays 384px in the wider host, so its
+ * width is the maximum's. In a 384px border-box host with 16px side padding, a `width: 100%;
+ * max-width: 100%` trigger is 352px and follows the host, so the page records 352. A host 384px wide
+ * dense and 400px comfortable records nothing. A root that is no anchor records nothing either.
+ */
+describe("an anchor the capture measures as spanning its host", () => {
+  async function spans(host: string, trigger: string, role: RootRole = "anchor") {
+    await page.setContent(
+      `<style>:root[data-density="comfortable"] .moves { width: 400px !important }</style><main data-compare-cell><div class="${host === "moves" ? "moves" : ""}" style="width:384px;${host === "moves" ? "" : host}"><div id="root" style="height:32px;${trigger}"></div></div></main>`
+    );
+    const { facts, style } = await factsOfRoot(role);
+    return { spans: facts?.spansHost, style };
+  }
+
+  it.each([
+    ["", "display:flex;width:100%", 384],
+    ["", "display:flex", 384],
+    ["", "display:flex;width:100%;box-sizing:content-box;padding:0 8px", undefined],
+    ["", "display:flex;width:100%;max-width:240px", undefined],
+    ["", "display:flex;width:100%;max-width:384px", undefined],
+    ["box-sizing:border-box;padding:0 16px", "display:flex;width:100%;max-width:100%", 352],
+    ["moves", "display:flex;width:100%", undefined],
+  ])("in a host of %j, a trigger of %j: %s", async (host, trigger, width) => {
+    expect(await spans(host, trigger)).toEqual({ spans: width, style: `height:32px;${trigger}` });
+  });
+
+  it("records nothing on a root that is no anchor", async () => {
+    expect((await spans("", "display:flex;width:100%", "root")).spans).toBeUndefined();
   });
 });
 

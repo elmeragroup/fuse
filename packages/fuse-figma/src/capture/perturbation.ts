@@ -82,7 +82,16 @@ export type ProbedCell = {
 };
 
 /**
- * Measure the cells of an opened page in each run, restoring the page between runs.
+ * How many frames the probe waits for Base UI to give a popup its anchor's width before it stops: a
+ * bound on a hang, far past the frame or two Base UI takes, never a pass condition.
+ */
+const SETTLE_FRAMES = 600;
+
+/**
+ * Measure the cells of an opened page in each run, restoring the page between runs. Before each run
+ * reads the page, it waits until each anchored popup takes its anchor's width, as Base UI sets it a
+ * frame or more after the anchor resizes, so a popup as wide as its anchor reads as filling. Where
+ * the wider run stops, it puts each widened parent's style back before it rejects.
  *
  * @param page - The page.
  * @param cells - Each cell's id and the selectors of the roots it measures.
@@ -97,7 +106,7 @@ export async function probeCells(
     selectors: measured.map((selector) => cellSelector(id, selector)),
   }));
   return page.evaluate(
-    ({ roots, widerBy, longerBy, longestBy }) => {
+    async ({ roots, widerBy, longerBy, longestBy, settleFrames }) => {
       type Box = {
         slot: string;
         place: string;
@@ -200,6 +209,44 @@ export async function probeCells(
           const root = document.querySelector(selector);
           return root === null ? [] : [root];
         });
+      // Base UI writes a popup's `--anchor-width` on its positioner a frame or more after its anchor
+      // resizes, so the probe waits for each anchored popup it measures beside its anchor to take the
+      // anchor's width before each run reads the page: as rendered, widened, and once it puts the
+      // page back. A popup is the root that names Base UI's `data-side`, as the capture build's
+      // anchored placement reads it, and its anchor the other root, whatever the property holds when
+      // the probe starts.
+      const anchored = roots.flatMap(({ id, selectors }) => {
+        const elements = elementsOf(selectors);
+        const popup = elements.find((each) => each.hasAttribute("data-side"));
+        const anchor = elements.find((each) => each !== popup);
+        return popup?.parentElement && anchor !== undefined
+          ? [{ id, positioner: popup.parentElement, anchor }]
+          : [];
+      });
+      // The property in pixels, or NaN for a value that is not one, as `auto` or none.
+      const anchorWidthOf = (positioner: HTMLElement): number => {
+        const value = positioner.style.getPropertyValue("--anchor-width").trim();
+        return /^\d+(\.\d+)?px$/.test(value) ? Number.parseFloat(value) : Number.NaN;
+      };
+      const settle = async (): Promise<void> => {
+        for (let frame = 0; ; frame += 1) {
+          // A NaN never sits within a pixel of the anchor, so a value that is no length keeps waiting.
+          const apart = anchored.filter(
+            ({ positioner, anchor }) =>
+              !(Math.abs(anchorWidthOf(positioner) - anchor.getBoundingClientRect().width) < 1)
+          );
+          if (apart.length === 0) {
+            return;
+          }
+          if (frame === settleFrames) {
+            throw new Error(
+              `Base UI never set --anchor-width to the anchor's width in ${apart.map(({ id }) => id).join(", ")}`
+            );
+          }
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
+      };
+      await settle();
       const base = measure();
       const rootOf = (box: { root: boolean }, at: number, index: number): boolean => {
         const selectors = roots[at]?.selectors ?? [];
@@ -226,61 +273,69 @@ export async function probeCells(
         const horizontal = Math.max(second.left - first.right, first.left - second.right);
         return Math.max(vertical, horizontal);
       });
-      // Wider: each root's parent, the element its width fills.
+      // Wider: each root's parent, the element its width fills. The page gets each parent's style
+      // back whether or not the wider run settles.
       const widened: { element: HTMLElement; style: string | null }[] = [];
       const widenedRoots = new Set<Element>();
-      for (const { selectors } of roots) {
-        for (const root of elementsOf(selectors)) {
-          const parent = root.parentElement;
-          // A positioned parent with an auto width, as Base UI's positioner, shrinks to its content,
-          // so it is no container a box could fill; the probe leaves it as it is. The compare page's
-          // own cell is positioned too, and it is the container the kit's frame stands for, so the
-          // probe widens it: a root without text that sits in it is measured, not `unknown`.
-          // A parent whose width follows the root's own text, as a slot that shrinks to fit holds a
-          // Field around a label, hugs the root: widening it shows nothing the page would do.
-          const followsText = (() => {
-            if (parent === null) {
-              return false;
-            }
-            const before = contentWidth(parent);
-            const nodes: { node: Node; text: string }[] = [];
-            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-            for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
-              const text = node.textContent ?? "";
-              if (text.trim() !== "") {
-                nodes.push({ node, text });
-                node.textContent = `${text}W`;
+      const widerRun = async () => {
+        for (const { selectors } of roots) {
+          for (const root of elementsOf(selectors)) {
+            const parent = root.parentElement;
+            // A positioned parent with an auto width, as Base UI's positioner, shrinks to its content,
+            // so it is no container a box could fill; the probe leaves it as it is. The compare page's
+            // own cell is positioned too, and it is the container the kit's frame stands for, so the
+            // probe widens it: a root without text that sits in it is measured, not `unknown`.
+            // A parent whose width follows the root's own text, as a slot that shrinks to fit holds a
+            // Field around a label, hugs the root: widening it shows nothing the page would do.
+            const followsText = (() => {
+              if (parent === null) {
+                return false;
               }
+              const before = contentWidth(parent);
+              const nodes: { node: Node; text: string }[] = [];
+              const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+              for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+                const text = node.textContent ?? "";
+                if (text.trim() !== "") {
+                  nodes.push({ node, text });
+                  node.textContent = `${text}W`;
+                }
+              }
+              const after = contentWidth(parent);
+              for (const { node, text } of nodes) {
+                node.textContent = text;
+              }
+              return Math.abs(after - before) > 0.01;
+            })();
+            const shrinks =
+              parent !== null &&
+              ((["absolute", "fixed"].includes(getComputedStyle(parent).position) &&
+                !parent.hasAttribute("data-compare-cell")) ||
+                followsText);
+            if (parent !== null && !shrinks) {
+              widenedRoots.add(root);
             }
-            const after = contentWidth(parent);
-            for (const { node, text } of nodes) {
-              node.textContent = text;
+            if (parent !== null && !shrinks && !widened.some((each) => each.element === parent)) {
+              widened.push({ element: parent, style: parent.getAttribute("style") });
+              parent.style.width = `${String(parent.getBoundingClientRect().width + widerBy)}px`;
+              parent.style.maxWidth = "none";
             }
-            return Math.abs(after - before) > 0.01;
-          })();
-          const shrinks =
-            parent !== null &&
-            ((["absolute", "fixed"].includes(getComputedStyle(parent).position) &&
-              !parent.hasAttribute("data-compare-cell")) ||
-              followsText);
-          if (parent !== null && !shrinks) {
-            widenedRoots.add(root);
-          }
-          if (parent !== null && !shrinks && !widened.some((each) => each.element === parent)) {
-            widened.push({ element: parent, style: parent.getAttribute("style") });
-            parent.style.width = `${String(parent.getBoundingClientRect().width + widerBy)}px`;
-            parent.style.maxWidth = "none";
           }
         }
-      }
-      const wider = measure();
-      for (const { element, style } of widened) {
-        if (style === null) {
-          element.removeAttribute("style");
-        } else {
-          element.setAttribute("style", style);
+        await settle();
+        return measure();
+      };
+      const restore = (): void => {
+        for (const { element, style } of widened) {
+          if (style === null) {
+            element.removeAttribute("style");
+          } else {
+            element.setAttribute("style", style);
+          }
         }
-      }
+      };
+      const wider = await widerRun().finally(restore);
+      await settle();
       // Longer: each box's own text alone, so a sibling's text that cannot wrap does not widen it.
       const longer = roots.map(({ selectors }) =>
         selectors.flatMap((selector) => {
@@ -371,6 +426,6 @@ export async function probeCells(
         })),
       }));
     },
-    { roots, widerBy: WIDER_BY, longerBy: LONGER_BY, longestBy: LONGEST_BY }
+    { roots, widerBy: WIDER_BY, longerBy: LONGER_BY, longestBy: LONGEST_BY, settleFrames: SETTLE_FRAMES }
   );
 }

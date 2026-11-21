@@ -51,6 +51,7 @@ import type {
 } from "./capture-format.ts";
 import { factsOfWinners } from "./declared-facts.ts";
 import { measuredFacts } from "./page-facts.ts";
+import type { RootRole } from "./page-facts.ts";
 import {
   CellNotFound,
   expandLonghands,
@@ -710,16 +711,15 @@ async function withInitial(cdp: CDPSession, raw: RawCell): Promise<RawCell | Unk
 /**
  * A cell's roots with the anchored popup's root marked where the anchor beside it is more than half a
  * pixel wider than the popup's `min-width`: Base UI then widens the popup to the anchor, which the
- * build draws only for an anchor whose width the spec holds. A cell of one root, or of two roots
- * neither of which Base UI placed by its `data-side`, stays as it is.
+ * build draws only for an anchor whose width the spec holds. A cell with no pair that
+ * {@link anchoredPair} finds stays as it is.
  */
 async function withAnchorFact(cdp: CDPSession, roots: readonly RawCell[]): Promise<readonly RawCell[]> {
-  const side = (raw: RawCell): boolean => raw.root.attributes.some(([name]) => name === "data-side");
-  const popup = roots.find(side);
-  const anchor = roots.find((raw) => !side(raw));
-  if (roots.length !== 2 || popup === undefined || anchor === undefined) {
+  const pair = anchoredPair(roots);
+  if (pair === undefined) {
     return roots;
   }
+  const { popup, anchor } = pair;
   const [{ object: popupObject }, { object: anchorObject }] = await Promise.all([
     cdp.send("DOM.resolveNode", { nodeId: popup.root.nodeId }),
     cdp.send("DOM.resolveNode", { nodeId: anchor.root.nodeId }),
@@ -746,9 +746,22 @@ async function withAnchorFact(cdp: CDPSession, roots: readonly RawCell[]): Promi
   );
 }
 
-/** A cell root's elements with what the page measured of each. */
-async function withMeasuredFacts(cdp: CDPSession, raw: RawCell): Promise<RawCell> {
-  const facts = await measuredFacts(cdp, raw.root.nodeId);
+/**
+ * A cell's anchored popup and its anchor: a cell of two roots, one of which Base UI placed by its
+ * `data-side`. Undefined for any other cell.
+ */
+function anchoredPair(
+  roots: readonly RawCell[]
+): { readonly popup: RawCell; readonly anchor: RawCell } | undefined {
+  const side = (raw: RawCell): boolean => raw.root.attributes.some(([name]) => name === "data-side");
+  const popup = roots.find(side);
+  const anchor = roots.find((raw) => !side(raw));
+  return roots.length === 2 && popup !== undefined && anchor !== undefined ? { popup, anchor } : undefined;
+}
+
+/** A cell root's elements with what the page measured of each, as `role` names the root. */
+async function withMeasuredFacts(cdp: CDPSession, raw: RawCell, role: RootRole): Promise<RawCell> {
+  const facts = await measuredFacts(cdp, raw.root.nodeId, role);
   const attach = (element: RawElement, path: string): RawElement => {
     const children = element.children.map((child, index) =>
       attach(child, path === "" ? String(index) : `${path}/${String(index)}`)
@@ -874,8 +887,9 @@ async function readCells(
   for (const roots of grouped) {
     // The roots of a cell share the page whose mode each measurement stamps, so they measure in turn.
     const facts: RawCell[] = [];
+    const anchor = anchoredPair(roots)?.anchor;
     for (const raw of roots) {
-      facts.push(await withMeasuredFacts(opened.cdp, raw));
+      facts.push(await withMeasuredFacts(opened.cdp, raw, raw === anchor ? "anchor" : "root"));
     }
     measured.push(await withAnchorFact(opened.cdp, facts));
   }

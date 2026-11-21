@@ -344,7 +344,8 @@ export class InstanceParts {
       variant: variant.key,
       sizing: diff.sizing,
     };
-    const set = properties === undefined ? plain : { ...plain, properties };
+    const floored = diff.minWidth === undefined ? plain : { ...plain, minWidth: diff.minWidth };
+    const set = properties === undefined ? floored : { ...floored, properties };
     const overridden = diff.overrides.length === 0 ? set : { ...set, overrides: diff.overrides };
     const exposed = part.exposed === undefined ? overridden : { ...overridden, exposed: part.exposed };
     const layer = part.optional === undefined ? exposed : { ...exposed, visibleProperty: part.optional.name };
@@ -508,8 +509,8 @@ type DecidedRead = { readonly row: Row; readonly origin: Origin; readonly decisi
  * paddings for a translate, the read keeps its outcome, bound or literal, unless an inner root built
  * in place draws that, whose diff decides the `placing` fields in turn. Where the read fills a field
  * the instance draws another way than the variant and no instance field carries, it is unmapped with
- * that difference. Where an override, the instance's own sizing or a swap to a glyph's half-turn
- * mirror carries the read, the inner root built in place that holds the instance, if any, must carry
+ * that difference. Where an override, the instance's own sizing or minimum, or a swap to a glyph's
+ * half-turn mirror carries the read, the inner root built in place that holds the instance, if any, must carry
  * the instance as a whole, so its diff decides in turn. A read the mirror carries keeps its outcome
  * with a detail that names the mirror. One whose fields the variant draws the same drops.
  */
@@ -541,6 +542,7 @@ function decided(row: Row, visit: Visit, fed: readonly FeedTarget[], placing: Fe
   const carried = [
     ...diff.overrides.map((override) => ({ path: override.path, field: OVERRIDDEN_FIELD[override.field] })),
     ...(isDeepStrictEqual(diff.sizing, visit.variant.root.sizing) ? [] : [{ path: [], field: "sizing" }]),
+    ...(diff.minWidth === undefined ? [] : [{ path: [], field: "limits" }]),
   ];
   if (
     mirrored !== undefined ||
