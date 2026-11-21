@@ -129,6 +129,12 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   fitsAlongMain: Schema.optionalKey(Schema.Literal(true)),
   /**
+   * A flex container that wraps, where in every mode forcing `nowrap` moves none of its in-flow items
+   * and the line fits them with a pixel to spare once their auto margins are zero, so it lays them
+   * out on one line.
+   */
+  oneFlexLine: Schema.optionalKey(Schema.Literal(true)),
+  /**
    * A flex row of two or more items that grow, each as wide as its own max-content width in every
    * mode, so none of them grows past its content.
    */

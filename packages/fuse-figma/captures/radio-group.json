@@ -1282,7 +1282,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"},"--surface-gap-lg":{"_tag":"element","up":6}},
                   "unmatched": [],
-                  "measured": {"oneLine":true},
+                  "measured": {"oneLine":true,"oneFlexLine":true},
                   "children": [
                     {
                       "tag": "div",
@@ -1600,7 +1600,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"},"--surface-gap-lg":{"_tag":"element","up":6}},
                   "unmatched": [],
-                  "measured": {"oneLine":true},
+                  "measured": {"oneLine":true,"oneFlexLine":true},
                   "children": [
                     {
                       "tag": "div",
@@ -1918,7 +1918,7 @@
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"},"--surface-gap-lg":{"_tag":"element","up":6}},
                   "unmatched": [],
-                  "measured": {"oneLine":true},
+                  "measured": {"oneLine":true,"oneFlexLine":true},
                   "children": [
                     {
                       "tag": "div",

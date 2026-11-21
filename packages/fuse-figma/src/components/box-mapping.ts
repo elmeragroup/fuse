@@ -726,7 +726,10 @@ export function mapBox(
       ? last.cascade.style
       : undefined;
   const fitsOneLine = cascade.measured?.fitsOneLine;
-  readWraps(holder, growing, fitsOneLine);
+  const oneLine = wrapsOnOneLine(holder, cascade.measured?.oneFlexLine === true);
+  readWraps(holder, growing, oneLine ? ONE_FLEX_LINE : fitsOneLine);
+  const lines =
+    oneLine || normalizeCss(reader.resolved("flex-wrap") ?? "nowrap") === "nowrap" ? "one" : "several";
   const flush = SIDE_PADDINGS.every((property) => evaluateLength(reader.resolved(property) ?? "0px") === 0);
   const { clipsAround: _parent, inFlexRow: _row, ...own } = scope;
   const clipped: MapScope = clips && flush ? { ...own, clipsAround: true } : own;
@@ -847,7 +850,7 @@ export function mapBox(
         ? placedRoom(absoluteRoom(holder), part.cascade.style, plans.get(part.cascade.style))
         : holder.layout.centresLone === true
           ? inFlow()
-          : selfStretchedRoom(holder, part.cascade.style, lessMargins(inFlow(), part.cascade.style));
+          : selfStretchedRoom(holder, part.cascade.style, lessMargins(inFlow(), part.cascade.style), lines);
     const styles = flowing.map((each) => each.cascade.style);
     // The one layer of a box leaves the box its size when it hides: a box fixed or filling on both
     // axes keeps it, and one that hugs is drawn at the layer's literal size with its literal insets.
@@ -1303,6 +1306,39 @@ function spacesNothingOut(
   return flowing.some((child) => child.kind !== "icon" && child.sizing[along].kind === "fill")
     ? "grows"
     : undefined;
+}
+
+/** How the coverage table names a `flex-wrap` that {@link wrapsOnOneLine} reads. */
+const ONE_FLEX_LINE =
+  "the capture measured the row's items on one line in every mode, where forcing nowrap moves none of them, so CSS collects them into one line (CSS Flexbox 1 §9.3 step 1) and align-content stretches it to the row's height (§9.4), as a row that does not wrap lays them out, and a Figma row never wraps";
+
+/** The `align-content` values that stretch a wrapping row's lines to its height, `normal` among them (CSS Box Alignment 3 §5.1). */
+const STRETCHES_LINES: ReadonlySet<string> = new Set(["", "normal", "stretch"]);
+
+/**
+ * Whether a wrapping flex row lays its items out as a row that does not wrap: the capture measured
+ * them on one line in every mode (`oneFlexLine`), so CSS collects them into one line (CSS Flexbox 1
+ * §9.3 step 1). A wrapping row sizes that line to its items, and `align-content: normal`, which
+ * stretches in a flex container, grows it to the row's definite inner height (§9.4, "Handle
+ * 'align-content: stretch'"), the one line a row that does not wrap has (§9.4 step 15). So the row
+ * must be of a fixed height and leave `align-content` stretching. Its items then stretch and centre
+ * across as they do in a row that does not wrap. A narrower row may break a line in CSS, where a
+ * Figma row clips, which is a known limit.
+ *
+ * @param holder - The box.
+ * @param measured - Whether the capture measured the row on one line in every mode.
+ * @returns True where the row lays its items out as a row that does not wrap.
+ */
+function wrapsOnOneLine(holder: Holder, measured: boolean): boolean {
+  const { style, layout, sizing } = holder;
+  return (
+    measured &&
+    layout.flex &&
+    layout.direction === "HORIZONTAL" &&
+    sizing.vertical.kind === "fixed" &&
+    normalizeCss(style.resolved("flex-wrap") ?? "") === "wrap" &&
+    STRETCHES_LINES.has(normalizeCss(style.resolved("align-content") ?? ""))
+  );
 }
 
 /**
