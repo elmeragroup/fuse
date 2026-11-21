@@ -430,6 +430,11 @@ const SOURCES: readonly RendererSource[] = [
     module: { url: new URL("dropdown-menu-cell.ts", import.meta.url), name: "dropdownMenuOpen" },
   },
   {
+    set: "dropdown-menu-submenu-open",
+    entry: "dist/dropdown-menu.js",
+    module: { url: new URL("dropdown-menu-cell.ts", import.meta.url), name: "dropdownMenuSubmenuOpen" },
+  },
+  {
     set: "combobox-item",
     entry: "dist/combobox.js",
     module: { url: new URL("combobox-cell.ts", import.meta.url), name: "comboboxItem" },

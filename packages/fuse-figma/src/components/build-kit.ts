@@ -10,6 +10,7 @@ import type { CaptureUnreadable, SetCapture } from "../capture/capture-format";
 import { keptCapture } from "../capture/captures";
 import { manifestDefinition } from "../capture/manifest";
 import type { SetManifest } from "../capture/manifest";
+import { nestedComposite } from "../capture/nested-placement.ts";
 import { fuseVariableSet } from "../fuse-variable-set";
 import type { CollectionSpec, LiteralValue, VariableSpec } from "../variable-set";
 import { KitSourceInvalid, KitUnmappable } from "./build-errors";
@@ -443,10 +444,14 @@ function keptCaptureOf(
 /** What builds an entry's set, or `CaptureUnreadable` for a kept capture the schema rejects. */
 function setSource({ manifest }: KitEntry): Result.Result<SetSource, CaptureUnreadable | KitUnmappable> {
   return Result.flatMap(keptCaptureOf(manifest.key, manifest.name), (read) =>
-    Result.map(openPlacement(manifest), (open): SetSource => {
+    Result.flatMap(openPlacement(manifest), (open) => {
       const definition = positionedByBaseUi(withMeasuredHost(manifestDefinition(manifest), read), read);
-      const source: SetSource = { definition, capture: read };
-      return open === undefined ? source : { ...source, open };
+      const placed =
+        open?._tag === "nested" ? nestedComposite(definition, read, open) : Result.succeed(definition);
+      return Result.map(placed, (drawn): SetSource => {
+        const source: SetSource = { definition: drawn, capture: read };
+        return open === undefined ? source : { ...source, open };
+      });
     })
   );
 }
@@ -500,13 +505,27 @@ function withInnerPositioners(
 }
 
 /**
- * How an open composite's manifest places its cells' roots: anchored where it names its popup's
- * `sideOffset`, modal where it names the viewport its Backdrop covers, or undefined for a set whose
- * cells measure one root.
+ * How an open composite's manifest places its cells' roots: nested where it names the row its popup
+ * opens beside, anchored where it names its popup's `sideOffset`, modal where it names the viewport
+ * its Backdrop covers, or undefined for a set whose cells measure one root.
  */
 function openPlacement(manifest: SetManifest): Result.Result<OpenPlacement | undefined, KitUnmappable> {
   if (manifest.union === undefined) {
     return Result.succeed(undefined);
+  }
+  if (manifest.anchor !== undefined) {
+    return manifest.sideOffset === undefined
+      ? Result.fail(
+          new KitUnmappable({
+            message: `${manifest.name} opens beside ${manifest.anchor.slot}, and its manifest names no sideOffset`,
+          })
+        )
+      : Result.succeed({
+          _tag: "nested",
+          anchor: manifest.anchor.slot,
+          sideOffset: manifest.sideOffset,
+          alignOffset: manifest.anchor.alignOffset,
+        });
   }
   if (manifest.sideOffset !== undefined) {
     return manifest.alignItemWithTrigger === true
