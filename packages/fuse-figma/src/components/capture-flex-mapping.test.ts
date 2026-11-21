@@ -17,6 +17,7 @@ import {
   frameOf,
   HUG,
   ICON,
+  instanceOf,
   literal,
   notesOf,
   part,
@@ -188,20 +189,38 @@ describe("an auto margin between two layers", () => {
   });
 });
 
+/** The inner set the instance-part cases place in a row. */
+const tag = chip({ key: "review-tag", name: "Review tag", slot: "tag" });
+const TAG = instanceOf("tag", tag);
+
+/**
+ * Build a chip whose root wins `classes` and holds a Review row instance with the parts, whose root
+ * is `rowRoot`. The tag's root `tagRoot` is in the row and in the Review tag set.
+ */
+function buildNestedRow(
+  classes: string,
+  parts: NonNullable<SetManifest["parts"]>,
+  rowRoot: FixtureElement,
+  tagRoot: FixtureElement
+) {
+  const row = chip({ key: "review-row", name: "Review row", slot: "row", parts });
+  return buildCaptured(
+    chip({ parts: [instanceOf("row", row)] }),
+    rest({ slot: "chip", classes, children: [rowRoot] }),
+    {
+      inner: [
+        { manifest: tag, cells: rest(tagRoot) },
+        { manifest: row, cells: rest(rowRoot) },
+      ],
+    }
+  );
+}
+
 // Oracle: the coverage contract, under which a declaration that reaches a Figma field is `literal`
 // and only one with nothing to draw is `dropped`. An auto margin the composite passes an instance part
 // is drawn by the row that holds the instance, through the same row rules as a frame's (CSS Flexbox 1
 // §8.1), and the inner set's variant holds no margin, so nothing repeats it.
 describe("an auto margin on an instance part", () => {
-  const tag = chip({ key: "review-tag", name: "Review tag", slot: "tag" });
-  const TAG = {
-    kind: "instance",
-    key: "tag",
-    of: tag,
-    cell: () => ({ state: "rest" }),
-    shownIn: () => true,
-  } as const;
-
   /** Build a chip whose row holds the parts, the tag instance among them, with the room measured. */
   function buildRow(
     classes: string,
@@ -253,40 +272,12 @@ describe("an auto margin on an instance part", () => {
   // layers at its start, so the margin reaches Figma only where the row instance carries the
   // alignment or the frame in place.
   describe("inside an instance of the row's own set", () => {
-    const row = (parts: NonNullable<SetManifest["parts"]>) =>
-      chip({ key: "review-row", name: "Review row", slot: "row", parts });
-
-    /**
-     * Build a chip that holds a Review row instance, whose root is `rowRoot`, and pushes the tag,
-     * whose root `tagRoot` is in the row and in the Review tag set.
-     */
-    function buildNested(
+    /** Build a chip that sets `--push` to auto around a Review row instance, as `buildNestedRow` builds one. */
+    const buildNested = (
       parts: NonNullable<SetManifest["parts"]>,
       rowRoot: FixtureElement,
       tagRoot: FixtureElement
-    ) {
-      const manifest = row(parts);
-      return buildCaptured(
-        chip({
-          parts: [
-            {
-              kind: "instance",
-              key: "row",
-              of: manifest,
-              cell: () => ({ state: "rest" }),
-              shownIn: () => true,
-            },
-          ],
-        }),
-        rest({ slot: "chip", classes: "flex w-[200px] [--push:auto]", children: [rowRoot] }),
-        {
-          inner: [
-            { manifest: tag, cells: rest(tagRoot) },
-            { manifest, cells: rest(rowRoot) },
-          ],
-        }
-      );
-    }
+    ) => buildNestedRow("flex w-[200px] [--push:auto]", parts, rowRoot, tagRoot);
 
     const PUSHED_START: FixtureElement = { slot: "tag", classes: "size-[20px] ms-[var(--push,0px)]" };
     const PUSHED_END: FixtureElement = { slot: "tag", classes: "size-[20px] me-[var(--push,0px)]" };
@@ -301,6 +292,19 @@ describe("an auto margin on an instance part", () => {
     it("leaves ms-auto unmapped where the row instance cannot carry its spacing", async () => {
       const { coverage } = await buildNested(
         [part({ key: "a", slot: "a" }), TAG],
+        SPACED("w-[200px]"),
+        PUSHED_START
+      );
+      const [note] = notesOf(coverage, "[--push:auto]");
+      expect(note?.slice(0, 2)).toEqual(["--push", "unmapped"]);
+      expect(note?.[2]).toContain("draws primaryAlign");
+    });
+
+    // The row instance's root draws the spacing whether the row holds the tag as an instance or as a
+    // frame of its own, so a frame part's margin is unmapped there too.
+    it("leaves ms-auto on a frame part unmapped where the row instance cannot carry its spacing", async () => {
+      const { coverage } = await buildNested(
+        [part({ key: "a", slot: "a" }), part({ key: "tag", slot: "tag" })],
         SPACED("w-[200px]"),
         PUSHED_START
       );
@@ -345,6 +349,53 @@ describe("an auto margin on an instance part", () => {
       expect(note?.slice(0, 2)).toEqual(["--push", "unmapped"]);
       expect(note?.[2]).toContain("draws layers");
     });
+  });
+});
+
+// Oracle: the coverage contract, under which a declaration that reaches a Figma field is `literal`
+// and only one with nothing to draw is `dropped`. A part's `align-self` places it across the row in
+// place of the row's `align-items` (CSS Box Alignment 3 §6.1), so on an instance part the row that
+// holds the instance draws it, through the row's counter alignment. The inner set's variant aligns
+// nothing for it, so nothing repeats it.
+describe("an align-self on an instance part", () => {
+  /** Build a 40px chip row that holds only the tag instance, whose inner root is `inner`. */
+  function buildRow(tagInPlace: string, inner: string) {
+    return buildCaptured(
+      chip({ parts: [TAG] }),
+      rest({
+        slot: "chip",
+        classes: "flex w-[100px] h-[40px]",
+        children: [{ slot: "tag", classes: tagInPlace }],
+      }),
+      { inner: [{ manifest: tag, cells: rest({ slot: "tag", classes: inner }) }] }
+    );
+  }
+
+  it("draws self-end through the row's counter alignment", async () => {
+    const { variant, coverage } = await buildRow("size-[20px] self-end", "size-[20px]");
+    expect(variant?.root.counterAlign).toBe("MAX");
+    expect(notesOf(coverage, "self-end").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["align-self", "literal"],
+    ]);
+  });
+
+  // Oracle: Figma's instance model, under which an instance of the row's set draws that set's
+  // variant and carries only what an override or its own sizing sets, and no override sets a root's
+  // counter alignment. Here the chip's `[--place:flex-end]` reaches the tag's
+  // `[align-self:var(--place,auto)]` inside a Review row instance, so the row that places the tag is
+  // the row instance's root. Its own variant takes `--place` at `auto`, so `items-start` tops the
+  // tag, where the chip's value ends it.
+  it("leaves the alignment unmapped where the holding row is an instance that cannot carry it", async () => {
+    const PLACED: FixtureElement = { slot: "tag", classes: "size-[20px] [align-self:var(--place,auto)]" };
+    const ROW: FixtureElement = {
+      slot: "row",
+      classes: "flex w-[100px] h-[40px] items-start",
+      children: [PLACED],
+    };
+    const { coverage } = await buildNestedRow("flex w-[200px] [--place:flex-end]", [TAG], ROW, PLACED);
+    const [note] = notesOf(coverage, "[--place:flex-end]");
+    expect(note?.slice(0, 2)).toEqual(["--place", "unmapped"]);
+    expect(note?.[2]).toContain("draws counterAlign");
   });
 });
 

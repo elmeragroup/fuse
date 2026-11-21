@@ -610,7 +610,6 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         editable: holdsEditableText(part.kind === "instance" ? part.visit.part : part.child),
         onlyText: part.kind === "frame" && part.pseudo !== true && showsOnlyText(part.child, cell),
         optional: (part.kind === "instance" ? part.visit.part : part.child).optional !== undefined,
-        instance: part.kind === "instance",
       })),
       others,
       // The flow ends with the last part after the label, else the last end icon, else the label, else

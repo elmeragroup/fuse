@@ -171,7 +171,7 @@ function readAutoStart(
   if (between?.style === undefined || placing === undefined || reader.has("justify-content")) {
     return undefined;
   }
-  readMargin(reader, flow, between.style, between.property, reader.feed("primaryAlign"), {
+  readMargin(reader, between.style, between.property, reader.feed("primaryAlign"), {
     outcome: "literal",
     detail:
       placing === "label-fills"
@@ -232,7 +232,7 @@ function readRestAtEnd(reader: LayerStyle, flow: FlowLayers, line: FlexLine): bo
     return false;
   }
   // The frame regroups the row's layers, which an inner root built in place must carry too.
-  readMargin(reader, flow, first.style, end, [...reader.feed("primaryAlign"), ...reader.feed("layers")], {
+  readMargin(reader, first.style, end, [...reader.feed("primaryAlign"), ...reader.feed("layers")], {
     outcome: "literal",
     detail: REST_AT_END,
   });
@@ -247,15 +247,10 @@ function readRestAtEnd(reader: LayerStyle, flow: FlowLayers, line: FlexLine): bo
 
 /**
  * Read a layer's auto margin along a flex box, which fills the box's fields that place its layers,
- * the box's alignment and, where a frame regroups them, its layers. On an instance part the
- * read fills `around` too, what the composite draws around the instance, as `margin-box.ts` feeds a
- * margin frame around one: the instance's inner root takes the read's fields at its own key paths,
- * which the box's fields do not have, since the box holds the instance. The inner root built in place
- * that draws the box, if any, must still carry the box's fields, as `settle` in `instance-parts.ts`
- * says.
+ * the box's alignment and, where a frame regroups them, its layers. On an instance part the box
+ * draws the margin around the instance, as `readPlacing` in `layer-style.ts` says.
  *
  * @param reader - The box's style.
- * @param flow - The box's layers in flow.
  * @param margined - The style of the layer whose auto margin the box reads.
  * @param property - The margin.
  * @param feed - The box's fields the margin fills.
@@ -263,28 +258,18 @@ function readRestAtEnd(reader: LayerStyle, flow: FlowLayers, line: FlexLine): bo
  */
 function readMargin(
   reader: LayerStyle,
-  flow: FlowLayers,
   margined: LayerStyle,
   property: string,
   feed: Feed,
   note: CoverageNote
 ): void {
-  if (flow.parts.some(({ style, instance }) => instance && style === margined)) {
-    reader.readAround(
-      margined,
-      property,
-      (value) => value,
-      () => note,
-      feed
-    );
-  } else {
-    margined.read(
-      property,
-      (value) => value,
-      () => note,
-      feed
-    );
-  }
+  reader.readPlacing(
+    margined,
+    property,
+    (value) => value,
+    () => note,
+    feed
+  );
 }
 
 /**
