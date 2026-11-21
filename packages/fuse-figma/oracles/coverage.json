@@ -2464,24 +2464,6 @@
         "className": "[&_svg:not([class*='size-'])]:size-4"
       }
     ],
-    "sidebar-footer": [
-      {
-        "part": "sidebar-footer",
-        "className": "in-data-[slot=sidebar-inner]:group-data-[variant=floating]:p-(--surface-pad-sm)"
-      },
-      {
-        "part": "sidebar-footer",
-        "className": "in-data-[slot=sidebar-inner]:group-data-[variant=floating]:[--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-sm))]"
-      },
-      {
-        "part": "sidebar-footer",
-        "className": "in-data-[slot=sidebar-inner]:group-data-[variant=floating]:group-data-[collapsible=icon]:p-2"
-      },
-      {
-        "part": "sidebar-footer",
-        "className": "in-data-[slot=sidebar-inner]:group-data-[variant=floating]:group-data-[collapsible=icon]:[--shell-inner:max(0px,--theme(--radius-lg)-2*var(--spacing))]"
-      }
-    ],
     "sidebar-group-label": [
       {
         "part": "sidebar-group-label",
@@ -2514,42 +2496,6 @@
       {
         "part": "sidebar-group-label",
         "className": "focus-visible:outline-hidden"
-      }
-    ],
-    "sidebar-group": [
-      {
-        "part": "sidebar-group",
-        "className": "in-data-[slot=sidebar-inner]:group-data-[variant=floating]:p-(--surface-pad-sm)"
-      },
-      {
-        "part": "sidebar-group",
-        "className": "in-data-[slot=sidebar-inner]:group-data-[variant=floating]:[--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-sm))]"
-      },
-      {
-        "part": "sidebar-group",
-        "className": "in-data-[slot=sidebar-inner]:group-data-[variant=floating]:group-data-[collapsible=icon]:p-2"
-      },
-      {
-        "part": "sidebar-group",
-        "className": "in-data-[slot=sidebar-inner]:group-data-[variant=floating]:group-data-[collapsible=icon]:[--shell-inner:max(0px,--theme(--radius-lg)-2*var(--spacing))]"
-      }
-    ],
-    "sidebar-header": [
-      {
-        "part": "sidebar-header",
-        "className": "in-data-[slot=sidebar-inner]:group-data-[variant=floating]:p-(--surface-pad-sm)"
-      },
-      {
-        "part": "sidebar-header",
-        "className": "in-data-[slot=sidebar-inner]:group-data-[variant=floating]:[--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-sm))]"
-      },
-      {
-        "part": "sidebar-header",
-        "className": "in-data-[slot=sidebar-inner]:group-data-[variant=floating]:group-data-[collapsible=icon]:p-2"
-      },
-      {
-        "part": "sidebar-header",
-        "className": "in-data-[slot=sidebar-inner]:group-data-[variant=floating]:group-data-[collapsible=icon]:[--shell-inner:max(0px,--theme(--radius-lg)-2*var(--spacing))]"
       }
     ],
     "sidebar-menu-badge": [

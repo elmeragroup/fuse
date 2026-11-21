@@ -63,13 +63,13 @@ export function panelVariant(cell: Cell): PanelVariant {
   return variant;
 }
 
-/** A section as an instance of its set, expanded or collapsed with the panel. */
+/** A section as an instance of its set, expanded or collapsed with the panel, outside a floating surface. */
 function sectionManifest(key: string, of: SetManifest): InstanceManifest {
   return {
     kind: "instance",
     key,
     of,
-    cell: (outer) => ({ collapsed: outer.collapsed ?? "false" }),
+    cell: (outer) => ({ collapsed: outer.collapsed ?? "false", floating: "false" }),
     shownIn: always,
     exposed: true,
   };

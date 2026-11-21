@@ -19,7 +19,9 @@
  * Rows sit 240px wide, the content width of the docs' 16rem Sidebar inside a group's dense 8px
  * row inset, and sub rows 191px, inside the sub menu's margins, padding and border there. The
  * menu actions and the sub menu's border wait for sets of their own, so no row reserves room for
- * an action. No docs demo shows a floating Sidebar, so no row draws its inner corner.
+ * an action. A floating Sidebar rounds its rows inside its surface's corner, which the floating
+ * section sets draw as a corner override on each row instance, so the row sets have no floating
+ * cells.
  */
 import { sidebarMenuButtonVariants, sidebarMenuSubButtonVariants } from "@elmeragroup/fuse/recipe-catalog";
 
