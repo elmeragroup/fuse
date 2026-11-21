@@ -17,7 +17,7 @@
  * - `Tour.Title` and `Tour.Description`;
  * - the footer row around `Tour.Skip`, the ghost `sm` Button at the row's start by `me-auto`, and
  *   `Tour.Prev` and `Tour.Next`, the outline and default `sm` Buttons, at its end, as
- *   `readRestAtEnd` in `auto-margins.ts` reads the margin. `Tour.Prev` is disabled at the first step,
+ *   `readRest` in `auto-margins.ts` reads the margin. `Tour.Prev` is disabled at the first step,
  *   which Button's `state=disabled` draws.
  *
  * The titles and descriptions are the steps' words, which the `Title` and `Description` properties

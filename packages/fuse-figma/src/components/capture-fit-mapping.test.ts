@@ -164,7 +164,8 @@ describe("a flex row's one layer that grows from its content", () => {
     ]);
   });
 
-  // Each case keeps the layer from being the row's width, so `flex-grow`, the part's first class, stays unread.
+  // Each case keeps the layer from being the row's width, so `flex-grow`, the part's `grow` class, stays
+  // unread. A `flex-none` before `grow` sets the shrink and the basis, and `grow` wins the grow factor.
   it.each([
     ["it does not shrink, and overflows the row around wider content", { part: "grow shrink-0" }],
     ["it grows by less than 1, so it takes only part of the free space", { part: "grow-[0.5]" }],
@@ -173,12 +174,12 @@ describe("a flex row's one layer that grows from its content", () => {
     ["it sets a width of its own", { part: "grow w-[100px]" }],
     ["it sets a maximum width", { part: "grow max-w-[100px]" }],
     ["it sets a minimum width", { part: "grow min-w-[400px]" }],
-    ["it sets a `flex` shorthand, whose shrink of 0 overflows the row", { part: "grow flex-none" }],
+    ["it sets a `flex` shorthand, whose shrink of 0 overflows the row", { part: "flex-none grow" }],
     ["it sets a margin across, which takes room from the fill", { part: "grow mx-[50px]" }],
     ["the row hugs it", { row: "flex w-fit", part: "grow" }],
   ])("keeps flex-grow unmapped where %s", async (_case, classes) => {
     const { coverage } = await buildLone(classes);
-    const [grow = ""] = classes.part.split(" ");
+    const grow = classes.part.split(" ").find((name) => name.startsWith("grow")) ?? "";
     expect(notesOf(coverage, grow).map(([property, outcome]) => [property, outcome])).toEqual([
       ["flex-grow", "unmapped"],
     ]);

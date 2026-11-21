@@ -45,6 +45,12 @@ import { readPivot } from "./pivot-part";
 import { wrapPlaced } from "./placement-wrapper";
 import type { SubgridLayout } from "./subgrid-row";
 
+/**
+ * The side of the frame `end-frame.ts` draws where a row's layers pack: `end` for the layers after
+ * a first part's auto end margin, `start` for the layers before a last part's auto start margin.
+ */
+export type RestSide = "end" | "start";
+
 /** How a box lays out its layers, as the box mapping read it. */
 export type Layout = {
   /** Whether the box is a flex box, which lays out its layers along its direction. */
@@ -71,11 +77,13 @@ export type Layout = {
    */
   readonly labelFills?: true;
   /**
-   * True for a flex row whose first part's auto end margin takes the room before the parts after it,
-   * which the box mapping draws in a frame that fills the rest of the row and packs them at its end,
-   * as `readRestAtEnd` in `auto-margins.ts` reads it. Absent elsewhere.
+   * For a flex row whose first part's auto end margin takes the room before the parts after it,
+   * `end`, which the box mapping draws in a frame that fills the rest of the row and packs them at
+   * its end, and for one whose last part's auto start margin takes the room after the parts before
+   * it, `start`, drawn in a frame that fills the row before the last part and packs them at its
+   * start, as `readRest` in `auto-margins.ts` reads them. Absent elsewhere.
    */
-  readonly restAtEnd?: true;
+  readonly restAt?: RestSide;
   /**
    * True for a flex column whose one layer sets `auto` margins on all four sides, which centre it on
    * both axes at its own width up to the column's, as `readCentredLone` in `auto-margins.ts` reads it.
