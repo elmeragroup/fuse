@@ -239,7 +239,7 @@ beforeAll(async () => {
     SETS.map(({ key }) => {
       const set = sets.find((each) => each.componentSet.key === key);
       const root = set?.componentSet.variants[0]?.root;
-      const header = frame(root?.children[0]);
+      const header = frame(root?.children.find((child) => child.name === "calendar-header"));
       const heading = frame(header.children[1]);
       expect(pixels(header.paddingLeft)).toBe(pixels(header.paddingRight));
       expect(pixels(heading.paddingLeft)).toBe(pixels(heading.paddingRight));

@@ -452,6 +452,31 @@ describe("fuseVariableSet", () => {
     );
   });
 
+  it("syncs the corner inside a 1px border around the outer corners the kit fills inside a border, less 1px and at least 0", () => {
+    const names = collection("Fuse tokens")
+      .variables.map((variable) => variable.name)
+      .filter((name) => /^radius-inner\/.+-border$/.test(name))
+      .toSorted();
+    // A Calendar and a RangeCalendar clip their fill at a 1px border around radius-calendar. The field
+    // box corner's inner corner is the formula `radius-inner/field-border`, which a DatePicker's
+    // trigger binds.
+    expect(names).toEqual(["radius-inner/calendar-border", "radius-inner/field-border"]);
+    expect(spec("Fuse tokens", "radius-inner/calendar-border")).toMatchObject({
+      type: "FLOAT",
+      scopes: ["CORNER_RADIUS"],
+      webSyntax:
+        "max(0px, clamp(var(--radius) - 1000 * var(--radius-step, 0px), 4px, var(--radius) + 1000 * var(--radius-step, 0px)) - 1px)",
+    });
+    // themes.css: Fjordkraft's neutral theme sets --radius 8px, and the Calendar corner is radius in a
+    // neutral theme and 4px in a branded one.
+    expect(value("Fuse brand", "light/neutral/private/radius-inner/calendar-border", "Fjordkraft")).toEqual(
+      px(7)
+    );
+    expect(value("Fuse brand", "light/branded/private/radius-inner/calendar-border", "Fjordkraft")).toEqual(
+      px(3)
+    );
+  });
+
   it("syncs each formula over density metrics as a density metric of its own", () => {
     // fuse.css: --surface-pad-lg is 1rem dense and 1.5rem comfortable, --surface-gap-lg 1rem and
     // 1.5rem, and --label-text 0.875rem and 1rem. Tailwind's --spacing is 0.25rem and

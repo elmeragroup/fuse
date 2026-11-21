@@ -43,7 +43,7 @@ import { normalizeCss } from "./css-values";
 import { instancePartsOf, instanceRootSlotOf } from "./definition-parts";
 import { settleInstanceRoot } from "./hugging-rows";
 import type { InstancePlace } from "./hugging-rows";
-import { diffInstance, kindsAndKeys } from "./instance-diff";
+import { diffInstance, kindsAndKeys, pairedLayers } from "./instance-diff";
 import type { InstanceDiff, InstanceDifference } from "./instance-diff";
 import { layerAt } from "./kit-spec";
 import type {
@@ -58,6 +58,7 @@ import type {
 } from "./kit-spec";
 import { neverWraps } from "./label-layout";
 import type { Declaration, Feed, FeedTarget, InPlace, Recorder, SpecField } from "./layer-style";
+import { fillOwner } from "./padding-box-fill";
 import { prepareParts } from "./part-preparation";
 import { PaintedInstances } from "./stacking";
 
@@ -574,7 +575,12 @@ function decided(row: Row, visit: Visit, fed: readonly FeedTarget[], placing: Fe
   }
   const mirrored = diff.mirrored.find(({ path }) => fed.some((feed) => fills(feed, path, "rotation")));
   const carried = [
-    ...diff.overrides.map((override) => ({ path: override.path, field: OVERRIDDEN_FIELD[override.field] })),
+    ...diff.overrides.flatMap((override) => {
+      const carries = { path: override.path, field: OVERRIDDEN_FIELD[override.field] };
+      // A box's fill feed reaches the fill of the `padding box` layer that draws it inside the border.
+      const owner = override.field === "fill" ? fillOwner(visit.variant.root, override.path) : undefined;
+      return owner === undefined ? [carries] : [carries, { path: owner, field: "fill" }];
+    }),
     ...(isDeepStrictEqual(diff.sizing, visit.variant.root.sizing) ? [] : [{ path: [], field: "sizing" }]),
     ...(diff.minWidth === undefined && diff.maxWidth === undefined ? [] : [{ path: [], field: "limits" }]),
   ];
@@ -607,7 +613,9 @@ function decided(row: Row, visit: Visit, fed: readonly FeedTarget[], placing: Fe
  * Whether a feed fills a field a difference names. Where a box's layers differ, the diff compares
  * none of the layers below it, so a feed below that box fills the difference where its own field of
  * the layer at its key path differs, the whole layer for a nested instance. A frame the variant
- * draws the same then says nothing of a frame beside it that the variant lacks.
+ * draws the same then says nothing of a frame beside it that the variant lacks. Where the layers
+ * differ only by a `padding box` layer one of the two boxes holds, the diff compares the others
+ * (`pairedLayers`), whose own differences a feed below the box fills.
  */
 function differs(
   feed: FeedTarget,
@@ -618,8 +626,21 @@ function differs(
   const below =
     difference.field === "layers" &&
     feed.path.length > difference.path.length &&
-    difference.path.every((key, index) => feed.path[index] === key);
+    difference.path.every((key, index) => feed.path[index] === key) &&
+    !pairsBelow(inPlace, variant, difference.path);
   return below ? !drawSame(inPlace, variant, feed) : fills(feed, difference.path, difference.field);
+}
+
+/** Whether the diff pairs the layers of the two boxes at `path`, though their layer trees differ. */
+function pairsBelow(inPlace: BoxSpec, variant: BoxSpec, path: readonly string[]): boolean {
+  const [own, held] = [layerAt(inPlace, path), layerAt(variant, path)];
+  return (
+    own !== undefined &&
+    held !== undefined &&
+    "children" in own &&
+    "children" in held &&
+    pairedLayers(own.children, held.children) !== undefined
+  );
 }
 
 /**

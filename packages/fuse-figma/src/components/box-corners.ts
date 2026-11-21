@@ -65,6 +65,31 @@ export function readCorner(
   return own.length === 0 ? readUniform(reader, box, variables) : readCorners(reader, box, variables);
 }
 
+/**
+ * Whether a box sets a corner radius at all, by `border-radius` or a longhand, which a corner that
+ * {@link readCorner} leaves undefined then leaves unmapped.
+ *
+ * @param reader - The box's style.
+ * @returns True where the box's style sets a radius on any corner.
+ */
+export function setsCorner(reader: LayerStyle): boolean {
+  return (
+    reader.has("border-radius") || CORNERS.some((corner) => cornerProperty(reader, corner) !== undefined)
+  );
+}
+
+/**
+ * The greatest corner Figma draws as written on a box: half its shorter side. Figma caps a larger
+ * radius there (probe P10).
+ *
+ * @param width - The box's width in pixels.
+ * @param height - The box's height in pixels.
+ * @returns Half the shorter side.
+ */
+export function cornerCap(width: number, height: number): number {
+  return Math.min(width, height) / 2;
+}
+
 /** The longhand a box sets a corner by, physical or logical, or undefined for neither. */
 function cornerProperty(reader: LayerStyle, corner: Corner): string | undefined {
   return [corner.physical, corner.logical].find((property) => reader.has(property));
@@ -343,7 +368,7 @@ function unscaledCorners(
     bottomRight + bottomLeft <= width &&
     topRight + bottomRight <= height &&
     bottomLeft + topLeft <= height &&
-    px.every((radius) => radius <= Math.min(width, height) / 2);
+    px.every((radius) => radius <= cornerCap(width, height));
   return fits
     ? known.map((each): NumberSpec =>
         each.kind === "variable" ? each.spec : { kind: "literal", value: each.px }
@@ -378,7 +403,7 @@ function drawnCorners(
     ratio(width, bottomRight + bottomLeft),
     ratio(height, bottomLeft + topLeft)
   );
-  const cap = Math.min(width, height) / 2;
+  const cap = cornerCap(width, height);
   const scaled = factor < 1;
   const fits = px.every((radius) => radius * factor <= cap + 1e-9);
   if (!fits || (scaled && known.some((each) => each.kind === "variable"))) {

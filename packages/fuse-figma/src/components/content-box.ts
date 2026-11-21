@@ -116,16 +116,23 @@ function ownLength(child: ChildLayerSpec, axis: Axis["axis"]): boolean {
 }
 
 /**
+ * A part's frame as {@link readContentBox} draws it, and whether its edges are the CSS border box's,
+ * `refused` where a content box stays as it reads, so the frame's length is the content box's.
+ */
+export type ContentBoxRead = { readonly box: BoxSpec; readonly edges: "border box" | "refused" };
+
+/**
  * A frame part as `content-box` draws it, and its `box-sizing` read as it draws.
  *
  * @param style - The part's style.
  * @param box - The part's box as mapped.
  * @param inPlace - Whether the part sits in an instance part built in place.
- * @returns The box, around an inner frame where its content box takes its length.
+ * @returns The box, around an inner frame where its content box takes its length, and whether the
+ *   frame's edges are the border box's.
  */
-export function readContentBox(style: LayerStyle, box: BoxSpec, inPlace: boolean): BoxSpec {
+export function readContentBox(style: LayerStyle, box: BoxSpec, inPlace: boolean): ContentBoxRead {
   if (normalizeCss(style.resolved("box-sizing") ?? "") !== "content-box") {
-    return box;
+    return { box, edges: "border box" };
   }
   // The axes where padding or border sits outside the length, a limit or a percentage the box sets.
   const framed = AXES.filter(
@@ -143,7 +150,7 @@ export function readContentBox(style: LayerStyle, box: BoxSpec, inPlace: boolean
       () => ({ outcome: "dropped", detail: SAME_BOX }),
       []
     );
-    return box;
+    return { box, edges: "border box" };
   }
   const flow = box.children.filter((child) => !outOfLayout(child));
   const refused =
@@ -159,7 +166,7 @@ export function readContentBox(style: LayerStyle, box: BoxSpec, inPlace: boolean
         !flow.every((child) => ownLength(child, axis.axis))
     );
   if (refused) {
-    return box;
+    return { box, edges: "refused" };
   }
   const moved = matters;
   style.read(
@@ -202,12 +209,15 @@ export function readContentBox(style: LayerStyle, box: BoxSpec, inPlace: boolean
   const outerSize = (axis: Axis["axis"]): SizeSpec =>
     movedAxes.has(axis) ? { kind: "hug" } : box.sizing[axis];
   return {
-    ...box,
-    direction: "HORIZONTAL",
-    sizing: { horizontal: outerSize("horizontal"), vertical: outerSize("vertical") },
-    itemSpacing: ZERO,
-    primaryAlign: "MIN",
-    counterAlign: "MIN",
-    children: [ordered, ...box.children.filter((child) => outOfLayout(child))],
+    box: {
+      ...box,
+      direction: "HORIZONTAL",
+      sizing: { horizontal: outerSize("horizontal"), vertical: outerSize("vertical") },
+      itemSpacing: ZERO,
+      primaryAlign: "MIN",
+      counterAlign: "MIN",
+      children: [ordered, ...box.children.filter((child) => outOfLayout(child))],
+    },
+    edges: "border box",
   };
 }

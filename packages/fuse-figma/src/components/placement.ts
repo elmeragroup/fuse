@@ -12,6 +12,7 @@ import type { PlacementPlan } from "./absolute-placement";
 import { marginsAcross, outOfFlow } from "./box-sizing";
 import type { Room } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
+import { cornerLengths, scaledCorners } from "./corner-spec";
 import {
   affineLength,
   describeNumber,
@@ -42,6 +43,7 @@ import type {
 } from "./kit-spec";
 import type { LayerStyle } from "./layer-style";
 import { MARGINS, VERTICAL_MARGINS } from "./margin-box";
+import { scaledPaddingBox, scalesWithPart } from "./padding-box-fill";
 import { applyPivot } from "./pivot-part";
 import type { PivotPlan } from "./pivot-part";
 import { wrapPlaced } from "./placement-wrapper";
@@ -542,17 +544,9 @@ export function slotAroundDot(style: LayerStyle, box: BoxSpec): SlotAroundDot {
       vertical: scaledSize(sizing.vertical, share),
     },
     limits: NO_LIMITS,
-    cornerRadius:
-      cornerRadius.kind === "corners"
-        ? {
-            kind: "corners",
-            topLeft: scaled(cornerRadius.topLeft, share),
-            topRight: scaled(cornerRadius.topRight, share),
-            bottomRight: scaled(cornerRadius.bottomRight, share),
-            bottomLeft: scaled(cornerRadius.bottomLeft, share),
-          }
-        : scaled(cornerRadius, share),
+    cornerRadius: scaledCorners(cornerRadius, share),
     stroke: stroke === undefined ? undefined : scaledStroke(stroke, share),
+    children: box.children.map((layer) => scaledPaddingBox(layer, share)),
   };
   const slot: BoxSpec = {
     direction: "HORIZONTAL",
@@ -879,7 +873,8 @@ function readTranslate(
  * Read a part's `scale` as the share of its size its paint takes. CSS draws a scaled box's fill,
  * border and corner at that share around its center, and leaves its layout size as it was. Only a
  * scale the same on both axes, of a box with fixed sides, literal lengths, no shadow and no layers
- * of its own maps, since Figma cannot scale a bound length or a child.
+ * of its own maps, since Figma cannot scale a bound length or a child. The `padding box` layer that
+ * holds its fill inside the border, with literal corners, scales with it.
  *
  * @param reader - The part's style.
  * @param box - The part, mapped at its layout size.
@@ -895,17 +890,10 @@ function readScale(reader: LayerStyle, box: BoxSpec): number {
         const scalable =
           literal(fixedLength(box.sizing.horizontal)) &&
           literal(fixedLength(box.sizing.vertical)) &&
-          (box.cornerRadius.kind === "corners"
-            ? [
-                box.cornerRadius.topLeft,
-                box.cornerRadius.topRight,
-                box.cornerRadius.bottomRight,
-                box.cornerRadius.bottomLeft,
-              ].every(literal)
-            : literal(box.cornerRadius)) &&
+          cornerLengths(box.cornerRadius).every(literal) &&
           (box.stroke === undefined || "sides" in box.stroke || literal(box.stroke.weight)) &&
           box.shadows.length === 0 &&
-          box.children.length === 0;
+          box.children.every(scalesWithPart);
         return x !== undefined && x > 0 && y === x && z.length === 0 && scalable ? x : undefined;
       },
       (share) => ({

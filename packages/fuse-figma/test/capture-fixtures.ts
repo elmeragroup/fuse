@@ -37,7 +37,7 @@ import type {
 } from "../src/components/component-spec.ts";
 import type { CoverageRow } from "../src/components/coverage.ts";
 import { makeVariableIndex } from "../src/components/css-values.ts";
-import type { VariableIndex } from "../src/components/css-values.ts";
+import type { ModeView, VariableIndex } from "../src/components/css-values.ts";
 import type {
   BooleanPropertySpec,
   BoxSpec,
@@ -119,6 +119,8 @@ export type FixtureOptions = {
   readonly registered?: readonly string[];
   /** The synced variables a value can bind. */
   readonly variables?: VariableIndex;
+  /** Each mode of the synced collections, with the variables as it resolves them. */
+  readonly modes?: readonly ModeView[];
   /** The sets the fixture's instance parts show, each after the sets it shows, built before it. */
   readonly inner?: readonly FixtureSet[];
 };
@@ -178,7 +180,9 @@ export async function buildCaptured(
     set.cells.flatMap(({ around = [], root }) => classesIn([...around, root]))
   );
   const { compiled, rules } = await compileFixture(classes, options.registered);
-  const context: BuildContext = { compiled, variables: options.variables ?? makeVariableIndex([]) };
+  const variables = options.variables ?? makeVariableIndex([]);
+  const context: BuildContext =
+    options.modes === undefined ? { compiled, variables } : { compiled, variables, modes: options.modes };
   const built = buildSetsInOrder(
     sets.map((set) => {
       const definition = manifestDefinition(set.manifest);

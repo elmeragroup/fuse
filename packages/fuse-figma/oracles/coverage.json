@@ -50,48 +50,6 @@
       "reason": "Collapsed to the icon rail at the default and sm sizes, the row's 8px end padding lies between where the label span ends and where the row clips, and the label hugs its one line past the span, so the build cannot show that the row's clip cuts the text off at the span's edge. The span starts at the row's clip edge there, with no room left after the icon and the gap, so neither Chromium nor Figma shows any of the text. At the large size the row has no end padding and clips where the span ends."
     },
     {
-      "set": "sheet-content",
-      "part": "sheet-content",
-      "className": "bg-clip-padding",
-      "property": "background-clip",
-      "reason": "The panel's left border is `--border`, which the neutral dark theme sets to white at 10%, so the panel's fill shows through it in Figma, where CSS clips the fill at the border and shows the scrim behind it. The other themes draw an opaque border, which hides the fill under it either way."
-    },
-    {
-      "set": "sheet-open",
-      "part": "sheet-content",
-      "className": "bg-clip-padding",
-      "property": "background-clip",
-      "reason": "The panel instance's left border is `--border`, which the neutral dark theme sets to white at 10%, so the panel's fill shows through it in Figma, where CSS clips the fill at the border and shows the scrim behind it. The other themes draw an opaque border, which hides the fill under it either way."
-    },
-    {
-      "set": "list-detail-sheet",
-      "part": "list-detail-detail",
-      "className": "bg-clip-padding",
-      "property": "background-clip",
-      "reason": "The Sheet's left border is `--border`, which the neutral dark theme sets to white at 10%, so the panel's fill shows through it in Figma, where CSS clips the fill at the border and shows the scrim behind it. The other themes draw an opaque border, which hides the fill under it either way."
-    },
-    {
-      "set": "list-detail-open",
-      "part": "list-detail-detail",
-      "className": "bg-clip-padding",
-      "property": "background-clip",
-      "reason": "The Sheet instance's left border is `--border`, which the neutral dark theme sets to white at 10%, so the panel's fill shows through it in Figma, where CSS clips the fill at the border and shows the scrim behind it. The other themes draw an opaque border, which hides the fill under it either way."
-    },
-    {
-      "set": "calendar",
-      "part": "calendar",
-      "className": "bg-clip-padding",
-      "property": "background-clip",
-      "reason": "The card's 1px border is `--border`, which the neutral dark theme sets to white at 10%, so the card's fill shows through it in Figma, where CSS clips the fill at the border and shows the page behind it. The other themes draw an opaque border, which hides the fill under it either way."
-    },
-    {
-      "set": "range-calendar",
-      "part": "range-calendar",
-      "className": "bg-clip-padding",
-      "property": "background-clip",
-      "reason": "The card's 1px border is `--border`, which the neutral dark theme sets to white at 10%, so the card's fill shows through it in Figma, where CSS clips the fill at the border and shows the page behind it. The other themes draw an opaque border, which hides the fill under it either way."
-    },
-    {
       "set": "dropdown-menu-popup",
       "part": "dropdown-menu-shortcut",
       "className": "ml-auto",

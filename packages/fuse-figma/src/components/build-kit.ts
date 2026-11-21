@@ -379,6 +379,7 @@ function modeViews(
       const specs = new Map(collection.variables.map((variable) => [variable.name, variable]));
       return collection.modes.map((mode) => ({
         name: `${collection.name} / ${mode}`,
+        collection: collection.name,
         variables: pinnedIndex(variables, (ref) => {
           const value =
             ref.collection === collection.name ? specs.get(ref.name)?.values.get(mode) : undefined;
