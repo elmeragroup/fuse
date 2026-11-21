@@ -1,5 +1,6 @@
 /**
- * Unit under test: the page function's `inlineRow`, as `measuredFacts` reads the DOM in Chromium.
+ * Unit under test: the page function's `inlineRow`, as `measuredFacts` reads the DOM in Chromium,
+ * then `fitsAlongMain`, `freeAlongMain`, `oneFlexLine` and `itemsAtContent` in the blocks below.
  * Oracle: CSS's own rules for the markup each case builds, which Chromium lays out.
  *
  * - A flex row blockifies its `display: inline` items (CSS Display 3 §2.7) and, where it neither
@@ -36,7 +37,7 @@ afterAll(async () => {
 /** Measure the root `#root` of the markup: each element's facts, by its path from the root. */
 async function factsOf(markup: string): Promise<ReadonlyMap<string, MeasuredFacts>> {
   await page.setContent(
-    `<style>body{margin:0;font:16px/20px sans-serif} .item{display:inline;flex:none;width:40px} :root[data-density="comfortable"] .narrows{width:60px!important} :root[data-density="comfortable"] .blocks{display:block!important} :root[data-density="comfortable"] .lifts{position:absolute!important} :root[data-density="comfortable"] .widens{width:300px!important} :root[data-density="comfortable"] .wraps{width:120px!important;flex-wrap:wrap!important}</style><main data-compare-cell>${markup}</main>`
+    `<style>body{margin:0;font:16px/20px sans-serif} .item{display:inline;flex:none;width:40px} :root[data-density="comfortable"] .narrows{width:60px!important} :root[data-density="comfortable"] .blocks{display:block!important} :root[data-density="comfortable"] .lifts{position:absolute!important} :root[data-density="comfortable"] .widens{width:300px!important} :root[data-density="comfortable"] .wraps{width:120px!important;flex-wrap:wrap!important} :root[data-density="comfortable"] .wraps-wide{flex-wrap:wrap!important} .trails::after{content:"";flex:none;width:260px;height:10px}</style><main data-compare-cell>${markup}</main>`
   );
   const cdp = await page.context().newCDPSession(page);
   const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
@@ -93,15 +94,30 @@ describe("a flex row's inline items the capture measures on one line", () => {
  * dense and 60px comfortable fits in one density and overflows in the other, so neither records
  * either fact. The row exactly as wide as its items and gap, 148px, leaves no whole pixel and
  * records neither, and so does a row 200px wide dense that wraps 120px wide comfortable, since its
- * auto margin takes the room of its own line there (CSS Flexbox 1 §9.5). A row that packs its items at its end or spaces them out leaves the same room for
+ * items break onto two lines there (CSS Flexbox 1 §9.3), where the auto margin takes only the room of
+ * its own line (§9.5). A row 200px wide in both that wraps only comfortable keeps its items on one
+ * line there, so it records both facts. A row that packs its items at its end or spaces them out leaves the same room for
  * the margin, since the margin takes the free space before `justify-content` does, so a 200px row
- * that sets either records both facts and a 160px one only `fitsAlongMain`.
+ * that sets either records both facts and a 160px one only `fitsAlongMain`. The children of a
+ * `display: contents` box are the row's items (CSS Display 3 §2.5), so the same margined item inside
+ * one leaves the same room: both facts in a 200px row, `fitsAlongMain` in a 160px one and neither in
+ * a 100px one. Text after the margined item is an item too (CSS Flexbox 1 §4): a run too long for a
+ * 200px row shrinks to the 152px left and wraps there, so the margin takes nothing, though its
+ * ragged lines end short of the row, and neither fact holds. Text split by a comment is one run and
+ * one item, so `Strawberries Blueberries` after a 40px item shrinks to the 132px a 180px row leaves
+ * and wraps, though each of its two text nodes keeps to one line, and neither fact holds; a 400px row
+ * keeps the run on one line with room to spare, and records both. A column's text run sits on a line
+ * box as tall as its line height (CSS 2.1 §10.8.1), so `Word` at a 100px line height and a 40px item
+ * fill a 140px column, the margin takes nothing, and neither fact holds. A `translate` paints a box
+ * away from where layout puts it and moves no other box (CSS Transforms 2 §5), so a 148px row whose
+ * margined item translates 30px back still leaves the margin nothing, and neither fact holds.
  */
 describe("a flex line the capture measures as fitting its items", () => {
-  /** Which of the two facts the row of the given width records. */
-  async function facts(width: string, className = "", justify = "normal") {
+  /** Which of the two facts the row of the given width records, its margined item wrapped or not. */
+  async function facts(width: string, className = "", justify = "normal", wrapper = "") {
+    const margined = `<div style="width:40px;flex:none;margin-left:auto"></div>`;
     const measured = await factsOf(
-      `<div id="root" class="${className}" style="display:flex;gap:8px;width:${width};justify-content:${justify}"><div style="width:100px;flex:none"></div><div style="width:40px;flex:none;margin-left:auto"></div></div>`
+      `<div id="root" class="${className}" style="display:flex;gap:8px;width:${width};justify-content:${justify}"><div style="width:100px;flex:none"></div>${wrapper === "" ? margined : `<div style="${wrapper}">${margined}</div>`}</div>`
     );
     const root = measured.get("");
     return { fits: root?.fitsAlongMain === true, free: root?.freeAlongMain === true };
@@ -114,8 +130,48 @@ describe("a flex line the capture measures as fitting its items", () => {
     ["148px", "", { fits: false, free: false }],
     ["200px", "narrows", { fits: false, free: false }],
     ["200px", "wraps", { fits: false, free: false }],
+    ["200px", "wraps-wide", { fits: true, free: true }],
   ])("in a %s row %s: %o", async (width, className, expected) => {
     expect(await facts(width, className)).toEqual(expected);
+  });
+
+  it.each([
+    ["200px", { fits: true, free: true }],
+    ["160px", { fits: true, free: false }],
+    ["100px", { fits: false, free: false }],
+  ])("in a %s row whose margined item sits in a display: contents box: %o", async (width, expected) => {
+    expect(await facts(width, "", "normal", "display:contents")).toEqual(expected);
+  });
+
+  it.each([
+    [
+      "neither fact where text after the margined item wraps onto ragged lines",
+      `<div id="root" style="display:flex;gap:8px;width:200px"><div style="width:40px;flex:none;margin-right:auto"></div>wide words then a few short ones, wrapping onto ragged lines</div>`,
+      { fits: false, free: false },
+    ],
+    [
+      "neither fact where a run of text split by a comment wraps onto two lines",
+      `<div id="root" style="display:flex;gap:8px;width:180px"><div style="width:40px;flex:none;margin-left:auto"></div>Strawberries <!-- -->Blueberries</div>`,
+      { fits: false, free: false },
+    ],
+    [
+      "both facts where a run of text split by a comment keeps to one line",
+      `<div id="root" style="display:flex;gap:8px;width:400px"><div style="width:40px;flex:none;margin-right:auto"></div>Strawberries <!-- -->Blueberries</div>`,
+      { fits: true, free: true },
+    ],
+    [
+      "neither fact where the margined item's translate moves its painted box off the row's end",
+      `<div id="root" style="display:flex;gap:8px;width:148px"><div style="width:100px;flex:none"></div><div style="width:40px;flex:none;margin-left:auto;translate:-30px"></div></div>`,
+      { fits: false, free: false },
+    ],
+    [
+      "neither fact in a column whose text sets a line taller than its glyphs",
+      `<div id="root" style="display:flex;flex-direction:column;height:140px;font:16px/100px sans-serif"><div style="height:40px;flex:none;margin-top:auto"></div>Word</div>`,
+      { fits: false, free: false },
+    ],
+  ])("records %s", async (_case, markup, expected) => {
+    const root = (await factsOf(markup)).get("");
+    expect({ fits: root?.fitsAlongMain === true, free: root?.freeAlongMain === true }).toEqual(expected);
   });
 
   it.each([
@@ -163,5 +219,121 @@ describe("a flex row's growing items the capture measures at their content width
 
   it("records nothing where the items' text can wrap, though each sits at its content", async () => {
     expect(await atContent("width:fit-content", "", { a: "cc cc", b: "cc cc", wrap: "normal" })).toBe(false);
+  });
+});
+
+/**
+ * Unit under test: the page function's `oneFlexLine`, and `freeAlongMain` on a row that wraps.
+ * Oracle: CSS Flexbox 1 §9.3 step 1, worked by hand. A wrapping row collects items into a line until
+ * the next item's outer size would overflow it, so two 100px items 8px apart fit one line of a 300px
+ * row, with 92px to spare, and break onto two lines in a 150px row. Children of a `display: contents`
+ * box are the row's items (CSS Display 3 §2.5), so a 250px item inside one breaks the 300px row too,
+ * and an absolute 400px child is no item (CSS Flexbox 1 §4.1), so it breaks nothing. Two 146px items
+ * fill the 300px row with no pixel to spare, and a row 60px wide in the comfortable density wraps
+ * there, so neither keeps the fact in every mode. On the one line, an auto margin takes the 300px
+ * row's free space as on a row that does not wrap (§9.5), 300 - 100 - 8 - 40 = 152px. The row's own
+ * `::after` and the text of a `display: contents` box are items too (CSS Flexbox 1 §4), so a 260px
+ * `::after` after a 40px item, or a run of text after two 40px items, breaks a 240px row onto two
+ * lines while every element item keeps its place, and neither records the fact. A nonbreaking space
+ * is no document white space, so a run of them is an item: 15 of them after a 50px item break a
+ * 120px row, and 32 after a 40px item break a 100px row 20px tall that packs its lines at its start.
+ * A run of text split by a comment is one item that fits a 300px row beside a 40px item. In a 120px
+ * column, a 20px item and `Word` at a 100px line height fill it with no pixel to spare, so it
+ * records nothing. A transform paints a box away from where layout puts it (CSS Transforms 1 §3), so
+ * two 100px items fill a 200px row with no gap, and three 60px items a 180px row, whether the last
+ * scales to half its size or translates 30px back: the auto margin before it takes nothing, and
+ * neither row records either fact.
+ */
+describe("a wrapping flex row the capture measures on one line", () => {
+  /** The facts the root records, around the given children. */
+  async function rootFacts(style: string, children: string, className = "") {
+    const measured = await factsOf(
+      `<div id="root" class="${className}" style="display:flex;flex-wrap:wrap;gap:8px;${style}">${children}</div>`
+    );
+    const root = measured.get("");
+    return { oneLine: root?.oneFlexLine === true, free: root?.freeAlongMain === true };
+  }
+  const item = (width: number, style = "") =>
+    `<div style="width:${String(width)}px;height:10px;flex:none;${style}"></div>`;
+
+  it.each([
+    ["two 100px items in a 300px row", "width:300px", item(100) + item(100), ""],
+    [
+      "an item and one in a display: contents box",
+      "width:300px",
+      item(100) + `<div style="display:contents">${item(100)}</div>`,
+      "",
+    ],
+    ["an item and a run of text split by a comment", "width:300px", item(40) + "Straw<!-- -->berries", ""],
+    [
+      "two items beside an absolute child wider than the row",
+      "width:300px;position:relative",
+      item(100) + item(100) + item(400, "position:absolute"),
+      "",
+    ],
+  ])("records it for %s", async (_case, style, children, className) => {
+    expect((await rootFacts(style, children, className)).oneLine).toBe(true);
+  });
+
+  it.each([
+    ["two 100px items in a 150px row", "width:150px", item(100) + item(100), ""],
+    [
+      "a 250px item in a display: contents box",
+      "width:300px",
+      item(100) + `<div style="display:contents">${item(250)}</div>`,
+      "",
+    ],
+    ["two 146px items that fill the row", "width:300px", item(146) + item(146), ""],
+    ["a row that is 60px wide in the comfortable density", "width:300px", item(40) + item(40), "narrows"],
+    ["a 240px row whose own 260px ::after breaks onto a line of its own", "width:240px", item(40), "trails"],
+    [
+      "a 120px row whose run of 15 nonbreaking spaces breaks onto a line of its own",
+      "width:120px",
+      item(50) + "&nbsp;".repeat(15),
+      "",
+    ],
+    [
+      "a 100px row 20px tall that packs its lines at its start, whose run of 32 nonbreaking spaces breaks onto a line of its own",
+      "width:100px;height:20px;align-items:flex-start",
+      item(40, "height:20px") + "&nbsp;".repeat(32),
+      "",
+    ],
+    [
+      "a 120px column whose margined item and 100px line of text fill it",
+      "flex-direction:column;height:120px;gap:0;line-height:100px",
+      item(20, "height:20px;margin-bottom:auto") + "Word",
+      "",
+    ],
+    [
+      "a row whose display: contents box ends in text that breaks onto a line of its own",
+      "width:240px",
+      item(40) +
+        `<div style="display:contents">${item(40)}words enough to fill a whole line of their own here</div>`,
+      "",
+    ],
+  ])("records nothing for %s", async (_case, style, children, className) => {
+    expect((await rootFacts(style, children, className)).oneLine).toBe(false);
+  });
+
+  it.each([
+    [
+      "a 200px row whose last of two 100px items scales to half its size",
+      "width:200px;gap:0",
+      item(100) + item(100, "margin-left:auto;transform:scale(.5)"),
+    ],
+    [
+      "a 180px row whose last of three 60px items translates 30px back",
+      "width:180px;gap:0",
+      item(60) + item(60) + item(60, "margin-left:auto;transform:translateX(-30px)"),
+    ],
+  ])("records neither fact for %s, which leaves its margin no room", async (_case, style, children) => {
+    expect(await rootFacts(style, children)).toEqual({ oneLine: false, free: false });
+  });
+
+  it("records the room for an auto margin on the one line", async () => {
+    expect(await rootFacts("width:300px", item(100) + item(40, "margin-left:auto"))).toEqual({
+      oneLine: true,
+      free: true,
+    });
   });
 });
