@@ -32,7 +32,7 @@ export const BUTTON_LABEL_SIZES = ["default", "xs", "sm", "lg"] as const satisfi
  * The square sizes. The recipe lists `icon-inline` before `icon-lg`; appending it here keeps the
  * order the Figma `size` axis already had for the other four.
  */
-const ICON_SIZES = [
+export const BUTTON_ICON_SIZES = [
   "icon",
   "icon-xs",
   "icon-sm",
@@ -146,7 +146,7 @@ export const ICON_BUTTON_MANIFEST: SetManifest = {
   name: "Icon button",
   api: { page: "button", parts: ["Button"] },
   slot: "button",
-  axes: [{ name: "variant", values: VARIANTS }, { name: "size", values: ICON_SIZES }, STATE_AXIS],
+  axes: [{ name: "variant", values: VARIANTS }, { name: "size", values: BUTTON_ICON_SIZES }, STATE_AXIS],
   columnAxis: "state",
   label: undefined,
   // The icons sit in DOM order. Button renders the spinner after its children, and the recipe

@@ -9,9 +9,10 @@
  *
  * The page draws each Button once and measures it under every combination of the file's modes.
  * A case names an identity and a density and compares the Button under every pin that takes them,
- * so a wrong value in any brand, scheme or segment copy of a padding fails the case. The pins a
- * case takes must be one per scheme, segment and brand mode, as the theme catalog names them, so a
- * mode the sync drops or doubles fails the case too.
+ * so a wrong value in any brand, scheme or segment copy of a padding fails the case. The file and
+ * its pins come from `sweptFile` in `test/mode-sweep.ts`, which stops unless the pins are one per
+ * scheme, identity, segment, brand and density mode of the theme catalog, so a mode the sync drops
+ * or doubles fails every case.
  *
  * The recipe pads a label Button by its size, by a leading or trailing `data-icon` child and by
  * the floor, which a ButtonGroup clears. No padding class sits under a hover, focus, active,
@@ -29,76 +30,25 @@
  * draws, its override's or its Button variant's, with the real bar's segments in Chromium.
  */
 import { NodeServices } from "@effect/platform-node";
-import { Effect, Result } from "effect";
-import { TestConsole } from "effect/testing";
+import { Effect } from "effect";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { BRAND_CODES, BRANDS, THEME_SEGMENTS } from "@elmeragroup/fuse/theme-catalog";
-
 import { builtKit, variantRoot } from "../../test/built-kit.ts";
 import type { BuiltSets } from "../../test/built-kit.ts";
-import { FILE_KEY, run, TOKEN } from "../../test/cli-fixture.ts";
-import { InMemoryFigma } from "../../test/in-memory-figma.ts";
+import { named, pixelsIn, sweptFile } from "../../test/mode-sweep.ts";
+import type { SweptFile, SweptMode } from "../../test/mode-sweep.ts";
 import { labelButton } from "../compare/button-cell.ts";
 import { dataTableFilterBar } from "../compare/data-table-filter-cell.ts";
 import { locateFuseBuild, readPageAssets } from "../compare/page-assets.ts";
 import { STYLES_LAYERS } from "../compare/preview-page.ts";
-import { parsePreviewTheme, themeStamps } from "../compare/preview-theme.ts";
+import { themeStamps } from "../compare/preview-theme.ts";
 import type { ThemeStamps } from "../compare/preview-theme.ts";
 import { BUTTON_LABEL_SIZES } from "./button-kit.ts";
 import { walkLayers } from "./kit-spec.ts";
 import type { InstanceLayerSpec, NumberSpec } from "./kit-spec.ts";
-
-/** A frame's mode for each collection of the file, by collection name. */
-type Pin = Readonly<Record<string, string>>;
-
-/** Every combination of the file's collection modes, one mode per collection. */
-function everyPin(figma: InMemoryFigma): readonly Pin[] {
-  return figma
-    .collectionNames()
-    .reduce<readonly Pin[]>(
-      (pins, collection) =>
-        pins.flatMap((pin) => figma.modeNames(collection).map((mode) => ({ ...pin, [collection]: mode }))),
-      [{}]
-    );
-}
-
-/**
- * A FLOAT field as the file resolves it under a frame's pin. A variable that resolves to no number
- * never equals Chromium's pixels, so its mismatch line shows what it holds.
- */
-function pixels(figma: InMemoryFigma, spec: NumberSpec, pin: Pin): ReturnType<InMemoryFigma["resolve"]> {
-  return spec.kind === "literal"
-    ? spec.value
-    : figma.resolve(spec.variable.collection, spec.variable.name, pin);
-}
-
-/**
- * The `Fuse tokens`, `Fuse segment` and `Fuse brand` modes a frame takes, as the theme catalog
- * names them: the two supported color schemes, each segment, and each brand by its display name,
- * with a one-segment brand marked `(<segment> only)`.
- */
-const SCHEME_MODES = ["Light", "Dark"] as const;
-const SEGMENT_MODES = THEME_SEGMENTS.map(
-  (segment) => `${segment.charAt(0).toUpperCase()}${segment.slice(1)}`
-);
-const BRAND_MODES = BRAND_CODES.map((code) => {
-  const [only, ...others] = BRANDS[code].segments;
-  return others.length === 0 ? `${BRANDS[code].displayName} (${only} only)` : BRANDS[code].displayName;
-});
-
-/** A pin's scheme, segment and brand modes, the modes a case does not fix. */
-function themeModes(pin: Pin): string {
-  return [pin["Fuse tokens"], pin["Fuse segment"], pin["Fuse brand"]].join(" / ");
-}
-
-/** The theme modes a case's pins must take, once each. */
-const THEME_MODE_SET = SCHEME_MODES.flatMap((scheme) =>
-  SEGMENT_MODES.flatMap((segment) => BRAND_MODES.map((brand) => `${scheme} / ${segment} / ${brand}`))
-).toSorted();
 
 /** The Button set's `state` and `icon` values that place a different element at a label edge. */
 const EDGES = [
@@ -109,7 +59,7 @@ const EDGES = [
   { state: "pending", icon: "end", label: "end icon" },
 ] as const;
 
-/** The identity and density modes the table pins, each with the name its case shows. */
+/** The identity and density modes the table pins, as the file names them, each with the name its case shows. */
 const IDENTITIES = [
   { mode: "Neutral", label: "neutral" },
   { mode: "Branded", label: "branded" },
@@ -253,24 +203,11 @@ function measurePins(page: Page, stamps: readonly ThemeStamps[]): Promise<readon
 
 let browser: Browser | undefined;
 let kit: BuiltSets;
-let figma: InMemoryFigma;
-let pins: readonly Pin[];
+let file: SweptFile;
 let measured: readonly Measured[];
 
 beforeAll(async () => {
-  kit = await builtKit();
-  figma = new InMemoryFigma(FILE_KEY, TOKEN);
-  await Effect.runPromise(
-    run(figma, ["--file-key", FILE_KEY, "sync"]).pipe(Effect.provide(TestConsole.layer))
-  );
-  pins = everyPin(figma);
-  const stamps = pins.map((pin) => {
-    const theme = parsePreviewTheme(Object.entries(pin).map(([collection, mode]) => ({ collection, mode })));
-    if (Result.isFailure(theme)) {
-      throw new Error(theme.failure.message);
-    }
-    return themeStamps(theme.success);
-  });
+  [kit, file] = await Promise.all([builtKit(), sweptFile()]);
   const assets = await Effect.runPromise(
     Effect.gen(function* () {
       return yield* readPageAssets(yield* locateFuseBuild(), new Map());
@@ -279,36 +216,57 @@ beforeAll(async () => {
   browser = await chromium.launch();
   const page = await browser.newPage();
   await page.setContent(tableDocument(`${assets.styles}\n${assets.themes}`));
-  measured = await measurePins(page, stamps);
+  measured = await measurePins(
+    page,
+    file.modes.map(({ theme }) => themeStamps(theme))
+  );
 });
+
+/** The file's pins that take an identity and a density, each with its index among the file's. */
+function pinsTaking(
+  identity: string,
+  density: string
+): readonly { readonly mode: SweptMode; readonly index: number }[] {
+  return file.modes.flatMap((mode, index) =>
+    mode.pin["Fuse identity"] === identity && mode.pin["Fuse density"] === density ? [{ mode, index }] : []
+  );
+}
 
 afterAll(async () => {
   await browser?.close();
 });
 
-/** A pin's modes, joined for a mismatch line. */
-function pinName(pin: Pin): string {
-  return Object.values(pin).join(" / ");
-}
+// A case compares only the pins `pinsTaking` gives it, so a mode the catalog spells otherwise than
+// `IDENTITIES` or `DENSITIES` would leave its cases nothing to compare.
+describe("the pins the cases compare", () => {
+  it("give each pin of the file to one identity and density, and some pins to each", () => {
+    const groups = IDENTITIES.flatMap((identity) =>
+      DENSITIES.map((density) => ({
+        name: `${identity.label} / ${density.label}`,
+        indexes: pinsTaking(identity.mode, density.mode).map(({ index }) => index),
+      }))
+    );
+    expect([
+      groups.filter(({ indexes }) => indexes.length === 0).map(({ name }) => name),
+      groups.flatMap(({ indexes }) => indexes).toSorted((left, right) => left - right),
+    ]).toEqual([[], file.modes.map((_, index) => index)]);
+  });
+});
 
 describe("the Button set's side paddings", () => {
   it.each(CASES)(
     "pads $name as Chromium pads the real Button under every pin",
     ({ identity, density, key, button }) => {
       const root = variantRoot(kit.spec, key);
-      const taken = pins.flatMap((pin, index) =>
-        pin["Fuse identity"] === identity && pin["Fuse density"] === density ? [{ pin, index }] : []
-      );
-      expect(taken.map(({ pin }) => themeModes(pin)).toSorted()).toEqual(THEME_MODE_SET);
-      const apart = taken.flatMap(({ pin, index }) => {
+      const apart = pinsTaking(identity, density).flatMap(({ mode, index }) => {
         const synced = {
-          left: pixels(figma, root.paddingLeft, pin),
-          right: pixels(figma, root.paddingRight, pin),
+          left: pixelsIn(file.figma, root.paddingLeft, mode),
+          right: pixelsIn(file.figma, root.paddingRight, mode),
         };
         const computed = measured[index]?.sides[button];
         return computed !== undefined && synced.left === computed.left && synced.right === computed.right
           ? []
-          : [`${pinName(pin)}: synced ${JSON.stringify(synced)}, Chromium ${JSON.stringify(computed)}`];
+          : [`${named(mode)}: synced ${JSON.stringify(synced)}, Chromium ${JSON.stringify(computed)}`];
       });
       expect(apart).toEqual([]);
     }
@@ -317,25 +275,16 @@ describe("the Button set's side paddings", () => {
 
 describe("the synced Button label floor", () => {
   it("holds what Chromium computes for --button-label-px-min under every pin", () => {
-    expect(
-      pins.map((pin) => `${pin["Fuse identity"]} / ${pin["Fuse density"]} / ${themeModes(pin)}`).toSorted()
-    ).toEqual(
-      IDENTITIES.flatMap((each) =>
-        DENSITIES.flatMap((density) =>
-          THEME_MODE_SET.map((modes) => `${each.mode} / ${density.mode} / ${modes}`)
-        )
-      ).toSorted()
-    );
     const floor: NumberSpec = {
       kind: "variable",
       variable: { collection: "Fuse tokens", name: "button-label-px-min" },
     };
-    const apart = pins.flatMap((pin, index) => {
-      const synced = pixels(figma, floor, pin);
+    const apart = file.modes.flatMap((mode, index) => {
+      const synced = pixelsIn(file.figma, floor, mode);
       const computed = measured[index]?.floor;
       return synced === computed
         ? []
-        : [`${pinName(pin)}: synced ${JSON.stringify(synced)}, Chromium ${String(computed)}`];
+        : [`${named(mode)}: synced ${JSON.stringify(synced)}, Chromium ${String(computed)}`];
     });
     expect(apart).toEqual([]);
   });
@@ -363,19 +312,15 @@ describe("Data table filter bar's Button instances", () => {
       if (instance === undefined) {
         throw new Error(`${FILTER_VARIANT} holds no ${String(key)} instance`);
       }
-      const taken = pins.flatMap((pin, index) =>
-        pin["Fuse identity"] === identity && pin["Fuse density"] === density ? [{ pin, index }] : []
-      );
-      expect(taken.map(({ pin }) => themeModes(pin)).toSorted()).toEqual(THEME_MODE_SET);
-      const apart = taken.flatMap(({ pin, index }) => {
+      const apart = pinsTaking(identity, density).flatMap(({ mode, index }) => {
         const synced = {
-          left: pixels(figma, drawnPadding(instance, "paddingLeft"), pin),
-          right: pixels(figma, drawnPadding(instance, "paddingRight"), pin),
+          left: pixelsIn(file.figma, drawnPadding(instance, "paddingLeft"), mode),
+          right: pixelsIn(file.figma, drawnPadding(instance, "paddingRight"), mode),
         };
         const computed = measured[index]?.filterSides[button];
         return computed !== undefined && synced.left === computed.left && synced.right === computed.right
           ? []
-          : [`${pinName(pin)}: synced ${JSON.stringify(synced)}, Chromium ${JSON.stringify(computed)}`];
+          : [`${named(mode)}: synced ${JSON.stringify(synced)}, Chromium ${JSON.stringify(computed)}`];
       });
       expect(apart).toEqual([]);
     }

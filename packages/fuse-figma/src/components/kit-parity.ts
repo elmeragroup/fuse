@@ -279,7 +279,7 @@ export const KIT_PARITY = {
   pagination: {
     kind: "partial",
     sets: ["pagination-link", "pagination-edge", "pagination-ellipsis", "pagination-row"],
-    missing: "Every link `size` other than `icon`, and every edge `size` other than `default`.",
+    missing: "The link and the edge at `icon-inline`, and the edge at the square sizes.",
     issue: MISSING_SETS,
   },
   // No Input group form holds the country trigger, and the Combobox popup leaves out the search
