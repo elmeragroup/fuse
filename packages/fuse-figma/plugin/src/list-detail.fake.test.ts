@@ -110,7 +110,7 @@ describe("List detail's row Buttons on an applied file", () => {
     expect(await reconcile(file)).toEqual([
       "List detail / content=empty / list-detail-list / row-1 / button: primaryAxisAlignItems → MIN",
       // A Plan that changes a set lays its page out again.
-      "List detail: place List detail pane and List detail, with their labels and the page's title and example, in sections, and 4 previews side by side",
+      "List detail: place List detail pane, List detail, List detail sheet and List detail (open), with their labels and the page's title and example, in sections, and 4 previews side by side",
     ]);
     await reconcile(file, true);
     expect([button.primaryAxisAlignItems, await reconcile(file)]).toEqual(["MIN", []]);
@@ -124,7 +124,7 @@ describe("List detail's row Buttons on an applied file", () => {
     const { file, button } = await firstRow();
     expect(await reconcile(file, false, atMain)).toEqual([
       "List detail / content=empty / list-detail-list / row-1 / button: primaryAxisAlignItems → CENTER",
-      "List detail: place List detail pane and List detail, with their labels and the page's title and example, in sections, and 4 previews side by side",
+      "List detail: place List detail pane, List detail, List detail sheet and List detail (open), with their labels and the page's title and example, in sections, and 4 previews side by side",
     ]);
     await reconcile(file, true, atMain);
     expect([button.primaryAxisAlignItems, await reconcile(file, false, atMain)]).toEqual([centre, []]);

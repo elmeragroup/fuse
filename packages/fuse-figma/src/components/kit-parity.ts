@@ -252,8 +252,8 @@ export const KIT_PARITY = {
   link: { kind: "partial", sets: ["link"], missing: "`weight` and `truncate`.", issue: MISSING_SETS },
   "list-detail": {
     kind: "partial",
-    sets: ["list-detail-pane", "list-detail"],
-    missing: "The overlay layout, whose Sheet holds the detail and `ListDetail.Close`.",
+    sets: ["list-detail-pane", "list-detail", "list-detail-sheet", "list-detail-open"],
+    missing: "The overlay Sheet's corner close (`showCloseButton`) and its sizes other than md.",
     issue: MISSING_SETS,
   },
   loader: { kind: "sets", sets: ["loader"] },
