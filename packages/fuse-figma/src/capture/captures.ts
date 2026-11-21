@@ -121,6 +121,7 @@ import textField from "../../captures/text-field.json" with { type: "json" };
 import textStyles from "../../captures/text-styles.json" with { type: "json" };
 import textareaField from "../../captures/textarea-field.json" with { type: "json" };
 import textarea from "../../captures/textarea.json" with { type: "json" };
+import timelineListLinks from "../../captures/timeline-list-links.json" with { type: "json" };
 import timelineList from "../../captures/timeline-list.json" with { type: "json" };
 import toast from "../../captures/toast.json" with { type: "json" };
 import toggleGroup from "../../captures/toggle-group.json" with { type: "json" };
@@ -193,6 +194,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["table-row", tableRow],
   ["table-caption", tableCaption],
   ["timeline-list", timelineList],
+  ["timeline-list-links", timelineListLinks],
   ["selection-item", selectionItem],
   ["checkbox-card", checkboxCard],
   ["action-bar", actionBar],

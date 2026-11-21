@@ -448,11 +448,15 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "tabs-content", name: "Tabs content", variants: 2, previewed: 2 },
     ],
   },
-  // The docs default demo's three events, each item's connector and dot drawn by its place.
+  // The docs default demo's three events, each item's connector and dot drawn by its place, and the
+  // links demo's two events, each description ending in an underlined link.
   {
     slug: "timeline-list",
     name: "Timeline list",
-    sets: [{ key: "timeline-list", name: "Timeline list", variants: 1, previewed: 1 }],
+    sets: [
+      { key: "timeline-list", name: "Timeline list", variants: 1, previewed: 1 },
+      { key: "timeline-list-links", name: "Timeline list links", variants: 1, previewed: 1 },
+    ],
   },
   // The docs default demo's row, its Checkbox beside its title and description in a two-column grid.
   {

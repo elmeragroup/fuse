@@ -388,6 +388,7 @@ export const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]>
   // NodeChangeProperty does not name.
   ["boundVariables", ["boundVariables" as NodeChangeProperty]],
   ["characters", ["characters"]],
+  ["styledTextSegments", ["styledTextSegments"]],
   ["textAlignHorizontal", ["textAlignHorizontal"]],
   ["minWidth", ["minWidth"]],
   ["minHeight", ["minHeight"]],

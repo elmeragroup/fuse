@@ -39,12 +39,27 @@ export type CharacterStyle = {
   readonly bindings: ReadonlyMap<VariableBindableTextField, string>;
   /** The fills a range write gave the character, absent where it shows the layer's (rule 65). */
   readonly fills?: readonly Paint[];
+  /** The decoration a range write gave the character, absent where it shows the layer's (rule 68). */
+  readonly decoration?: CharacterDecoration;
+  /** The link a range write gave the character, null for none, absent where it shows the layer's (rule 66). */
+  readonly hyperlink?: HyperlinkTarget | null;
   /**
    * Set where the character holds a family state of its own: a range family binding set it, or a range
    * font write or a null range binding dropped its family binding. A whole-text binding then skips it,
    * until every character holds one style (rules 54 and 55).
    */
   readonly ownFamily?: true;
+};
+
+/**
+ * A character's line and the underline fields it remembers, null for one never written. A field
+ * reads only while the character is underlined, and `AUTO` where it was never written (rule 68).
+ */
+export type CharacterDecoration = {
+  readonly line: TextDecoration;
+  readonly offset: TextDecorationOffset | null;
+  readonly thickness: TextDecorationThickness | null;
+  readonly color: TextDecorationColor | null;
 };
 
 /** A TEXT, BOOLEAN or INSTANCE_SWAP property of a component set or a component. */
@@ -270,6 +285,10 @@ export type NodeState = {
    * it. Until then it shows its main layer's (rule 52).
    */
   ownStyles: boolean;
+  /**
+   * The line of the whole text, which a character without a decoration of its own draws. The three
+   * underline fields below are the ones the whole text remembers, as a character does (rule 68).
+   */
   textDecoration: TextDecoration;
   /** The text's letter spacing, one for the whole layer (rule 28). */
   letterSpacing: LetterSpacing;
@@ -286,7 +305,7 @@ export type NodeState = {
   autoRename: boolean;
   /** The id of the local text style a text layer links, or the empty string for none (rule 60). */
   textStyleId: string;
-  /** The URL or node the whole text links to, or null for none (rule 66). */
+  /** The URL or node the whole text links to, which a character without a link of its own shows (rule 66). */
   hyperlink: HyperlinkTarget | null;
 };
 
@@ -520,6 +539,15 @@ export function isOwnKey(key: string): boolean {
  */
 export function stylesOf(state: NodeState): readonly CharacterStyle[] {
   return state.mirrorOf === undefined || state.ownStyles ? state.styles : stylesOf(state.mirrorOf);
+}
+
+/**
+ * The text whose whole-text decoration and link a text shows: its own, or its main layer's where it
+ * is a sublayer that no text write gave styles of its own (rules 52, 66 and 68). On 2026-11-21 an
+ * instance followed its main's whole `textDecoration` write (RD7).
+ */
+export function textLayerOf(state: NodeState): NodeState {
+  return state.mirrorOf === undefined || state.ownStyles ? state : textLayerOf(state.mirrorOf);
 }
 
 /** A text's base style, its main layer's where it shows that layer's styles (rules 51 and 52). */

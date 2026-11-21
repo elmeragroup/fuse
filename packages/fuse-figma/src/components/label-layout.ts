@@ -466,12 +466,28 @@ export function mapLabel(holder: Holder, label: PlacedLabel, scope: LabelScope):
   const ranges =
     scope.runs === undefined
       ? []
-      : readRanges(scope.runs, style, color, characters, { variables, context: scope.context }, scope);
+      : readRanges(
+          scope.runs,
+          style,
+          color,
+          decoration.underline,
+          characters,
+          {
+            variables,
+            context: scope.context,
+            // A label with a line of its own leaves a span's line unmapped.
+            underline:
+              decoration.underline === undefined && decoration.strikethrough !== true
+                ? (span) => readDecoration(span, fontSize, variables, path).underline
+                : undefined,
+          },
+          scope
+        );
   // A TEXT write on an instance writes its characters, which on 2026-11-19 gave every character the
   // first character's fill, even where the text stayed the same.
   if (ranges.length > 0 && label.textProperty !== undefined) {
     throw new KitUnmappable({
-      message: `${scope.variant}: the label ${path.join("/")} colors runs of its text and links the ${label.textProperty} property, whose writes give every character the first character's color`,
+      message: `${scope.variant}: the label ${path.join("/")} styles runs of its text and links the ${label.textProperty} property, whose writes give every character the first character's style`,
     });
   }
   const layout: LabelLayout =

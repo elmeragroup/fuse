@@ -212,6 +212,11 @@ export type TextRun = {
   readonly text: string;
   /** The style of each element between the box and the text node, outermost first. */
   readonly elements: readonly LayerStyle[];
+  /**
+   * The URL the run links to: the `href` of the innermost `<a>` between the box and the text node,
+   * as `linkTarget` reads it, or undefined for none.
+   */
+  readonly hyperlink: string | undefined;
 };
 
 /**

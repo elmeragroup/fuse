@@ -4,13 +4,16 @@
  * sizing, lengths and truncation.
  */
 
+import { PLUGIN_DATA_NAMESPACE } from "../../src/components/kit-spec.ts";
 import type {
   ColorSpec,
   LineHeightSpec,
   NumberSpec,
   TextLayerSpec,
   TextRange,
+  TextRangeSpec,
   TextSizingSpec,
+  UnderlineSpec,
 } from "../../src/components/kit-spec.ts";
 import type { PropertyIds } from "./child-layers.ts";
 import {
@@ -186,19 +189,28 @@ export function planText(
   planScalar(run, label, "name", text.name, spec.name, () => {
     text.name = spec.name;
   });
-  if (spec.ranges === undefined) {
+  const ranged = rangesOf(text, spec);
+  if (ranged === undefined) {
     planPaints(run, label, "text color", text.fills, spec.color, (paints) => {
       text.fills = paints;
     });
   }
 
   const typeset = recordsAny(run.plan, () =>
-    planTypography(run, text, label, spec, propertyIds, parent, replaced)
+    planTypography(run, text, label, spec, propertyIds, parent, replaced, ranged)
   );
-  if (spec.ranges !== undefined) {
+  if (ranged !== undefined) {
     // A font write leaves the label in the new font alone, so a repair of a font Figma cannot load
     // needs only the new one. The glyph ranges' writes load their own.
-    planRangeFills(run, text, label, spec, replaced || typeset, replaced ? [fontName] : [...held, fontName]);
+    planRanges(
+      run,
+      text,
+      label,
+      spec,
+      ranged,
+      replaced || typeset,
+      replaced ? [fontName] : [...held, fontName]
+    );
   }
   if (!replaced && typeset) {
     for (const font of [...held, fontName]) {
@@ -208,55 +220,214 @@ export function planText(
 }
 
 /**
- * Plan the color of a text whose characters take colors of their own: the text's color, then each
- * range's, through `setRangeFills` with a paint bound by `setBoundVariableForPaint`, as the typings
- * say a range's fills bind. On 2026-11-19 a real file's whole `fills` write reset the ranges, and a
- * `characters` write, even of the same text, gave every character the first character's fill, while
- * `fontSize` and `fontName` writes kept them. So the ranges go after every other write of the label,
- * and a label any earlier operation of the run writes takes them all again, which costs one
- * operation on a label the run already changes.
+ * The shared plugin data key of a label whose links the plugin wrote, so a later spec that links no
+ * range still clears them.
+ */
+const LINKS_KEY = "links";
+
+/** The value `LINKS_KEY` holds on a label whose links the plugin owns. */
+const OWNED_LINKS = "owned";
+
+/**
+ * Who owns a label's links: the plugin, for a label whose spec links a range or whose links the
+ * plugin wrote before, or the designer, whose links the plugin leaves as they are.
+ */
+type LinkOwner = "plugin" | "designer";
+
+/** A text the plan styles run by run: its ranges, none for one it only unlinks, and its links' owner. */
+type RangedText = { readonly ranges: readonly TextRangeSpec[]; readonly links: LinkOwner };
+
+/**
+ * How the plan styles a text's characters: run by run where the spec gives ranges or the plugin
+ * linked the label before, or undefined for a text the whole-text writes style.
+ */
+function rangesOf(text: TextNode, spec: TextLayerSpec): RangedText | undefined {
+  const linked =
+    spec.ranges?.some((range) => range.hyperlink !== undefined) === true ||
+    text.getSharedPluginData(PLUGIN_DATA_NAMESPACE, LINKS_KEY) === OWNED_LINKS;
+  const links: LinkOwner = linked ? "plugin" : "designer";
+  if (spec.ranges === undefined) {
+    return linked ? { ranges: [], links } : undefined;
+  }
+  return { ranges: spec.ranges, links };
+}
+
+/** The line a character draws: none, a line through it, or an underline. */
+type CharacterLine =
+  | { readonly kind: "NONE" }
+  | { readonly kind: "STRIKETHROUGH" }
+  | { readonly kind: "UNDERLINE"; readonly underline: UnderlineSpec };
+
+/** The line a text's characters draw outside its ranges. */
+function labelLine(spec: Pick<TextLayerSpec, "underline" | "strikethrough">): CharacterLine {
+  if (spec.underline !== undefined) {
+    return { kind: "UNDERLINE", underline: spec.underline };
+  }
+  return spec.strikethrough === true ? { kind: "STRIKETHROUGH" } : { kind: "NONE" };
+}
+
+/** Whether a segment of a text draws the line the spec asks of its characters. */
+function lineMatches(
+  run: Run,
+  segment: Pick<
+    StyledTextSegment,
+    "textDecoration" | "textDecorationOffset" | "textDecorationThickness" | "textDecorationColor"
+  >,
+  line: CharacterLine
+): boolean {
+  if (line.kind !== "UNDERLINE") {
+    return segment.textDecoration === line.kind;
+  }
+  return (
+    segment.textDecoration === "UNDERLINE" &&
+    decorationMatches(segment.textDecorationOffset, pixelsOrAuto(line.underline.offset)) &&
+    decorationMatches(segment.textDecorationThickness, pixelsOrAuto(line.underline.thickness)) &&
+    decorationColorMatches(run, segment.textDecorationColor, line.underline.color)
+  );
+}
+
+/** An underline's fields as a plan line names them, beside `UNDERLINE`. */
+function describeUnderline(underline: UnderlineSpec): string {
+  return [
+    "UNDERLINE",
+    ...(underline.offset === undefined ? [] : [`offset ${underline.offset}`]),
+    ...(underline.thickness === undefined ? [] : [`thickness ${underline.thickness}`]),
+    ...(underline.color === undefined ? [] : [`color ${describeColor(underline.color)}`]),
+  ].join(", ");
+}
+
+/** An underline's color as Figma holds it: `AUTO`, the text's own fill, for an unset one. */
+function underlineColor(run: Run, underline: UnderlineSpec): TextDecorationColor {
+  return underline.color === undefined ? { value: "AUTO" } : { value: solidPaint(run, underline.color) };
+}
+
+/**
+ * Plan a text whose characters take colors, underlines or links of their own: the text's color, line
+ * and no link, then each range's, through `setRangeFills` with a paint bound by
+ * `setBoundVariableForPaint`, as the typings say a range's fills bind, `setRangeHyperlink`, and
+ * `setRangeTextDecoration` with its underline fields. On 2026-11-19 a real file's whole `fills` write
+ * reset the ranges' fills, and a `characters` write, even of the same text, gave every character the
+ * first character's fill, while `fontSize` and `fontName` writes kept them. On 2026-11-21 range
+ * decorations and links did the same (RD2, RD3, RH4, RH5), and a whole NONE cleared every range's
+ * line while each character kept its underline fields for its next underline (RD4, RD4b). So the
+ * ranges go after every other write of the label, each underlined range writes all four of its
+ * fields, and a label any earlier operation of the run writes takes them all again, which costs one
+ * operation on a label the run already changes. The plan reads no underline style, so a designer's
+ * dotted underline stays.
  *
+ * The plan reads and writes the links of a label the plugin owns, and marks it in shared plugin
+ * data, so a later spec that links no range still clears them. It leaves the links of any other
+ * label alone, so a designer's link on a Code token stays.
+ *
+ * @param ranged - The ranges and who owns the label's links.
  * @param rewritten - Whether the run writes the label's font, characters or type before this.
  * @param fonts - The fonts the label holds once the run's font write, if any, has run, which a range
  *   write needs loaded. A label whose font the run replaces holds only the new one.
  */
-function planRangeFills(
+function planRanges(
   run: Run,
   text: TextNode,
   label: string,
   spec: TextLayerSpec,
+  ranged: RangedText,
   rewritten: boolean,
   fonts: readonly FontName[]
 ): void {
-  const ranges = spec.ranges ?? [];
-  const colors: ColorSpec[] = Array.from({ length: spec.characters.length }, () => spec.color);
+  const { ranges, links } = ranged;
+  const owned = links === "plugin";
+  const linked = ranges.some((range) => range.hyperlink !== undefined);
+  const own = labelLine(spec);
+  const looks: {
+    readonly color: ColorSpec;
+    readonly line: CharacterLine;
+    readonly hyperlink: string | undefined;
+  }[] = Array.from({ length: spec.characters.length }, () => ({
+    color: spec.color,
+    line: own,
+    hyperlink: undefined,
+  }));
   for (const range of ranges) {
-    colors.fill(range.color, range.start, range.end);
+    const line: CharacterLine =
+      range.underline === undefined ? own : { kind: "UNDERLINE", underline: range.underline };
+    looks.fill({ color: range.color, line, hyperlink: range.hyperlink }, range.start, range.end);
   }
+  const marked = text.getSharedPluginData(PLUGIN_DATA_NAMESPACE, LINKS_KEY) === OWNED_LINKS;
   const shown =
     !rewritten &&
+    marked === linked &&
     text.characters === spec.characters &&
-    text.getStyledTextSegments(["fills"]).every((segment) => {
-      const [paint, ...rest] = segment.fills;
-      return (
-        paint !== undefined &&
-        rest.length === 0 &&
-        colors.slice(segment.start, segment.end).every((color) => paintMatches(run, paint, color))
-      );
-    });
+    text
+      .getStyledTextSegments([
+        "fills",
+        "textDecoration",
+        "textDecorationOffset",
+        "textDecorationThickness",
+        "textDecorationColor",
+        "hyperlink",
+      ])
+      .every((segment) => {
+        const [paint, ...rest] = segment.fills;
+        return (
+          paint !== undefined &&
+          rest.length === 0 &&
+          looks
+            .slice(segment.start, segment.end)
+            .every(
+              (look) =>
+                paintMatches(run, paint, look.color) &&
+                lineMatches(run, segment, look.line) &&
+                (!owned || linkMatches(segment.hyperlink, look.hyperlink))
+            )
+        );
+      });
   if (shown) {
     return;
   }
-  const described = ranges.map((range) => `${range.start}-${range.end} ${describeColor(range.color)}`);
-  change(run.plan, label, `text color → ${describeColor(spec.color)}, ${described.join(", ")}`, () => {
+  const described = ranges.map((range) =>
+    [
+      `${range.start}-${range.end} ${describeColor(range.color)}`,
+      ...(range.underline === undefined ? [] : [describeUnderline(range.underline)]),
+      ...(range.hyperlink === undefined ? [] : [`link ${range.hyperlink}`]),
+    ].join(" ")
+  );
+  const line = own.kind === "UNDERLINE" ? describeUnderline(own.underline) : own.kind;
+  const head = [`text color → ${describeColor(spec.color)}`, ...(own.kind === "NONE" ? [] : [line])];
+  const unlinked = owned && !linked ? ["no links"] : [];
+  change(run.plan, label, [head.join(" "), ...described, ...unlinked].join(", "), () => {
     text.fills = [solidPaint(run, spec.color)];
+    // A whole decoration write gives every character the text's line, which the ranges then change.
+    text.textDecoration = own.kind;
+    if (own.kind === "UNDERLINE") {
+      text.textDecorationOffset = pixelsOrAuto(own.underline.offset);
+      text.textDecorationThickness = pixelsOrAuto(own.underline.thickness);
+      text.textDecorationColor = underlineColor(run, own.underline);
+    }
+    if (owned) {
+      // A whole null clears every range's link, which fills and decoration writes keep (RH4, RH6).
+      text.hyperlink = null;
+      text.setSharedPluginData(PLUGIN_DATA_NAMESPACE, LINKS_KEY, linked ? OWNED_LINKS : "");
+    }
     for (const range of ranges) {
       text.setRangeFills(range.start, range.end, [solidPaint(run, range.color)]);
+      if (range.hyperlink !== undefined) {
+        text.setRangeHyperlink(range.start, range.end, { type: "URL", value: range.hyperlink });
+      }
+      if (range.underline !== undefined) {
+        text.setRangeTextDecoration(range.start, range.end, "UNDERLINE");
+        text.setRangeTextDecorationOffset(range.start, range.end, pixelsOrAuto(range.underline.offset));
+        text.setRangeTextDecorationThickness(range.start, range.end, pixelsOrAuto(range.underline.thickness));
+        text.setRangeTextDecorationColor(range.start, range.end, underlineColor(run, range.underline));
+      }
     }
   });
   for (const font of fonts) {
     requireFont(run, label, font);
   }
+}
+
+/** Whether a segment's link is the URL the spec gives its characters, or none where it gives none. */
+function linkMatches(held: HyperlinkTarget | null, url: string | undefined): boolean {
+  return url === undefined ? held === null : held?.type === "URL" && held.value === url;
 }
 
 /** An underline offset or thickness in pixels, or Figma's automatic one for an unset length. */
@@ -390,15 +561,8 @@ export function planDecoration(
   ) {
     return;
   }
-  const details = [
-    ...(underline.offset === undefined ? [] : [`offset ${underline.offset}`]),
-    ...(underline.thickness === undefined ? [] : [`thickness ${underline.thickness}`]),
-    ...(underline.color === undefined ? [] : [`color ${describeColor(underline.color)}`]),
-  ];
-  const description = ["UNDERLINE", ...details].join(", ");
-  const color: TextDecorationColor =
-    underline.color === undefined ? { value: "AUTO" } : { value: solidPaint(run, underline.color) };
-  change(run.plan, label, `textDecoration → ${description}`, () => {
+  const color = underlineColor(run, underline);
+  change(run.plan, label, `textDecoration → ${describeUnderline(underline)}`, () => {
     text.textDecoration = "UNDERLINE";
     text.textDecorationOffset = offset;
     text.textDecorationThickness = thickness;
@@ -596,6 +760,7 @@ function bindRuns(
  * holds another.
  *
  * @param replaced - Whether the plan writes the label's font first.
+ * @param ranged - The ranges of a text the plan styles run by run, which take its line, or undefined.
  */
 function planTypography(
   run: Run,
@@ -604,7 +769,8 @@ function planTypography(
   spec: TextLayerSpec,
   propertyIds: PropertyIds,
   parent: Held,
-  replaced: boolean
+  replaced: boolean,
+  ranged: RangedText | undefined
 ): void {
   const rewrites = writesCharacters(text, spec, propertyIds);
   const planSize = (): void =>
@@ -627,7 +793,10 @@ function planTypography(
     planLineHeight(run, text, label, spec.lineHeight);
   }
   planLetterSpacing(run, text, label, spec);
-  planDecoration(run, text, label, spec, "read");
+  // A text with ranges takes its line with them, after every other write (`planRanges`).
+  if (ranged === undefined) {
+    planDecoration(run, text, label, spec, "read");
+  }
   // A new text hugs its characters, and an empty one is 0 wide, which a fill never widens (PZ), so
   // the characters go in before the layout.
   planCharacters(run, text, label, spec, propertyIds);
