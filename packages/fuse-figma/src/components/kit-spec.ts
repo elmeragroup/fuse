@@ -229,6 +229,24 @@ export function strokeRoom(stroke: StrokeSpec | undefined, side: StrokeSide): Nu
 }
 
 /**
+ * The weight of each side of a solid stroke: its own on some sides, or its one literal weight on
+ * every side, as an instance overrides a stroke's sides.
+ *
+ * @param stroke - The stroke.
+ * @returns The four weights, or undefined for a dashed stroke or a bound weight, which four literal
+ *   weights would not draw in every mode.
+ */
+export function solidSides(stroke: StrokeSpec): SideStroke["sides"] | undefined {
+  if ("sides" in stroke) {
+    return stroke.sides;
+  }
+  const { weight } = stroke;
+  return stroke.dashPattern === undefined && weight.kind === "literal"
+    ? { top: weight.value, right: weight.value, bottom: weight.value, left: weight.value }
+    : undefined;
+}
+
+/**
  * How a text layer sizes each axis. Its height follows its lines unless both sides are fixed: it
  * hugs its characters on both axes, or its width fills its box's room or is fixed and its lines
  * wrap there, or both sides are fixed. Figma's auto resize has these three forms,
@@ -500,28 +518,33 @@ export type NestedPropertiesSpec = {
 };
 
 /**
- * A paint, corner, shadow or alignment an instance layer overrides on the inner variant's root, at
- * the empty `path`, or on a layer below it, at the keys of the layers from the root down. `fill`,
- * `strokeColor`, `cornerRadius` and `effects` apply to the root or a frame, `primaryAlign`, where the
- * auto layout places its layers along its direction, to the root alone, `textColor` and `textAlign`,
- * the alignment across a text's lines, to a text, and `glyph` to an icon's glyph. A `fill` or
- * `strokeColor` of undefined paints none.
+ * A paint, stroke weight, corner, shadow or alignment an instance layer overrides on the inner
+ * variant's root, at the empty `path`, or on a layer below it, at the keys of the layers from the root
+ * down. `fill`, `strokeColor`, `strokeSides`, `cornerRadius` and `effects` apply to the root or a
+ * frame, `primaryAlign`, where the auto layout places its layers along its direction, to the root
+ * alone, `textColor` and `textAlign`, the alignment across a text's lines, to a text, and `glyph` to
+ * an icon's glyph. A `fill` or `strokeColor` of undefined paints none.
  */
-export type InstanceOverride =
-  | {
-      readonly path: readonly string[];
-      readonly field: "fill" | "strokeColor";
-      readonly color: ColorSpec | undefined;
-    }
-  | { readonly path: readonly string[]; readonly field: "textColor" | "glyph"; readonly color: ColorSpec }
-  | {
-      readonly path: readonly string[];
-      readonly field: "textAlign";
-      readonly horizontal: TextAlignSpec["horizontal"];
-    }
-  | { readonly path: readonly string[]; readonly field: "cornerRadius"; readonly value: CornerRadiusSpec }
-  | { readonly path: readonly string[]; readonly field: "primaryAlign"; readonly value: PrimaryAlignSpec }
-  | { readonly path: readonly string[]; readonly field: "effects"; readonly shadows: readonly ShadowSpec[] };
+export type InstanceOverride = { readonly path: readonly string[] } & (
+  | InstancePaintOverride
+  | InstanceOverrideValue
+);
+
+/** The color an instance override paints: a `fill` or `strokeColor` of undefined paints none. */
+export type InstancePaintOverride =
+  | { readonly field: "fill" | "strokeColor"; readonly color: ColorSpec | undefined }
+  | { readonly field: "textColor" | "glyph"; readonly color: ColorSpec };
+
+/**
+ * The value of an instance override that paints nothing, which the plugin writes as the spec gives
+ * it.
+ */
+export type InstanceOverrideValue =
+  | { readonly field: "textAlign"; readonly horizontal: TextAlignSpec["horizontal"] }
+  | { readonly field: "strokeSides"; readonly sides: SideStroke["sides"] }
+  | { readonly field: "cornerRadius"; readonly value: CornerRadiusSpec }
+  | { readonly field: "primaryAlign"; readonly value: PrimaryAlignSpec }
+  | { readonly field: "effects"; readonly shadows: readonly ShadowSpec[] };
 
 /**
  * An instance layer: an instance of another component set's variant inside a variant, such as an
