@@ -1,10 +1,10 @@
 /**
- * Link, as one component set on the Link page: each color variant at each underline, in three
- * states, 54 cells. `Link` renders an `<a data-slot="link">`. A link has no disabled state.
+ * Link, as one component set on the Link page: each color variant at each underline and weight, in
+ * three states, 108 cells. `Link` renders an `<a data-slot="link">`. A link has no disabled state.
  *
- * The set crosses the two axes the docs demos vary, `variant` and `underline`. No demo sets
- * `weight` on a link, which takes its sentence's weight, so the text keeps the host page's.
- * `truncate` cuts a link's text only where its container is narrower than the text, as the
+ * The set crosses the axes the docs demos vary, `variant` and `underline`, with `weight`. A link
+ * with no `weight` takes its sentence's weight, the host page's 400, which `normal` sets too, so the
+ * axis lists the two values `weight` takes. `truncate` cuts a link's text only where its container is narrower than the text, as the
  * Truncate demo's row is, and a link in a hugging Figma frame keeps its text's own width past a
  * limit (P7), so the set leaves it off. The set also leaves off the External link demo's icon.
  */
@@ -16,6 +16,7 @@ import { ownKey } from "./own-key";
 
 type LinkVariant = keyof typeof linkVariants.variants.variant;
 type LinkUnderline = keyof typeof linkVariants.variants.underline;
+type LinkWeight = keyof typeof linkVariants.variants.weight;
 
 function isVariant(value: string | undefined): value is LinkVariant {
   return ownKey(linkVariants.variants.variant, value);
@@ -25,11 +26,18 @@ function isUnderline(value: string | undefined): value is LinkUnderline {
   return ownKey(linkVariants.variants.underline, value);
 }
 
+function isWeight(value: string | undefined): value is LinkWeight {
+  return ownKey(linkVariants.variants.weight, value);
+}
+
 /** Every variant the recipe declares, in its order, so a new one reaches Figma too. */
 const VARIANTS = Object.keys(linkVariants.variants.variant).filter(isVariant);
 
 /** The underlines in the recipe's order, its default `always` first. */
 const UNDERLINES = Object.keys(linkVariants.variants.underline).filter(isUnderline);
+
+/** The weights in the recipe's order, `normal` first, the weight a link with no `weight` shows. */
+const WEIGHTS = Object.keys(linkVariants.variants.weight).filter(isWeight);
 
 /**
  * The text every cell shows, the default of the `Label` text property: the link of the docs Router
@@ -37,26 +45,32 @@ const UNDERLINES = Object.keys(linkVariants.variants.underline).filter(isUnderli
  */
 export const LINK_LABEL = "invoice 1042";
 
-/** A cell's look, as `Link`'s `variant` and `underline` props take it. */
-export type LinkLooks = { readonly variant: LinkVariant; readonly underline: LinkUnderline };
+/** A cell's look, as `Link`'s `variant`, `underline` and `weight` props take it. */
+export type LinkLooks = {
+  readonly variant: LinkVariant;
+  readonly underline: LinkUnderline;
+  readonly weight: LinkWeight;
+};
 
 /**
- * A cell's variant and underline, which the compare renderer passes to `Link`.
+ * A cell's variant, underline and weight, which the compare renderer passes to `Link`.
  *
- * @throws When the cell names a variant or underline the recipe does not declare, a defect in the
- *   caller's cell.
+ * @throws When the cell names a variant, underline or weight the recipe does not declare, a defect
+ *   in the caller's cell.
  */
 export function linkLooks(cell: Cell): LinkLooks {
-  const { variant, underline } = cell;
-  if (!isVariant(variant) || !isUnderline(underline)) {
-    throw new Error(`Link has no variant ${variant ?? ""} or underline ${underline ?? ""}`);
+  const { variant, underline, weight } = cell;
+  if (!isVariant(variant) || !isUnderline(underline) || !isWeight(weight)) {
+    throw new Error(
+      `Link has no variant ${variant ?? ""}, underline ${underline ?? ""} or weight ${weight ?? ""}`
+    );
   }
-  return { variant, underline };
+  return { variant, underline, weight };
 }
 
 /**
  * The link's manifest, which the capture-backed build reads with `captures/link.json`: a link, as
- * `<Link href="/invoices/1042">invoice 1042</Link>` at a variant and underline.
+ * `<Link href="/invoices/1042">invoice 1042</Link>` at a variant, underline and weight.
  */
 export const LINK_MANIFEST: SetManifest = {
   key: "link",
@@ -66,8 +80,11 @@ export const LINK_MANIFEST: SetManifest = {
   axes: [
     { name: "variant", values: VARIANTS },
     { name: "underline", values: UNDERLINES },
+    { name: "weight", values: WEIGHTS },
     { name: "state", values: ["rest", "hover", "focus"] },
   ],
+  // The weight axis came after the set's first release, so a `normal` link keeps the key it had then.
+  addedAxes: new Set(["weight"]),
   columnAxis: "state",
   label: {
     key: "label",
