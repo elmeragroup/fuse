@@ -213,13 +213,14 @@ export async function probeCells(
       // resizes, so the probe waits for each anchored popup it measures beside its anchor to take the
       // anchor's width before each run reads the page: as rendered, widened, and once it puts the
       // page back. A popup is the root that names Base UI's `data-side`, as the capture build's
-      // anchored placement reads it, and its anchor the other root, whatever the property holds when
-      // the probe starts.
+      // anchored placement reads it, inside a positioner that names it too, and its anchor the other
+      // root, whatever the property holds when the probe starts. Sheet's panel names its side but
+      // sits in a Drawer viewport, which no anchor positions.
       const anchored = roots.flatMap(({ id, selectors }) => {
         const elements = elementsOf(selectors);
         const popup = elements.find((each) => each.hasAttribute("data-side"));
         const anchor = elements.find((each) => each !== popup);
-        return popup?.parentElement && anchor !== undefined
+        return popup?.parentElement?.hasAttribute("data-side") === true && anchor !== undefined
           ? [{ id, positioner: popup.parentElement, anchor }]
           : [];
       });

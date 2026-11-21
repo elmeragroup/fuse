@@ -409,11 +409,15 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Action bar",
     sets: [{ key: "action-bar", name: "Action bar", variants: 1, previewed: 1 }],
   },
-  // The "No close button" demo's panel on the right side, and again with the `Close` property on.
   {
     slug: "sheet",
     name: "Sheet",
-    sets: [{ key: "sheet-content", name: "Sheet content", variants: 1, previewed: 2 }],
+    sets: [
+      // The "No close button" demo's panel on the right side, and again with the `Close` property on.
+      { key: "sheet-content", name: "Sheet content", variants: 1, previewed: 2 },
+      // The panel over the scrim, against the right edge.
+      { key: "sheet-open", name: "Sheet (open)", variants: 1, previewed: 1 },
+    ],
   },
   // One day of the month grid, by where it sits in the selection, its state, whether it is outside and
   // whether it is today, and the default demos' months of Calendar and RangeCalendar around it.

@@ -343,9 +343,9 @@ export const KIT_PARITY = {
   separator: { kind: "sets", sets: ["separator"] },
   sheet: {
     kind: "partial",
-    sets: ["sheet-content"],
+    sets: ["sheet-content", "sheet-open"],
     missing:
-      "`Sheet.Body` of the default demo, the panel open over its scrim (#854), the `left`, `top` and `bottom` sides, and the sizes other than md.",
+      "`Sheet.Body` of the default demo, the `left`, `top` and `bottom` sides, and the sizes other than md.",
     issue: NICE_TO_HAVE,
   },
   show: { kind: "excluded", reason: "It renders its children only." },

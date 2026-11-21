@@ -65,7 +65,7 @@ function openPalette() {
           }),
         }),
       }),
-    VIEWPORT_CSS
+    { css: VIEWPORT_CSS }
   );
 }
 
