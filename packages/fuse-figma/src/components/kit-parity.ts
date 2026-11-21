@@ -319,13 +319,13 @@ export const KIT_PARITY = {
       "select-popup",
       "select-open",
     ],
-    missing: "A popup wider than 144px under a trigger that hugs its text, and the read-only fill.",
+    missing: "A popup wider than 144px under a trigger that hugs its text.",
     issue: MISSING_SETS,
   },
   "select-field": {
     kind: "partial",
     sets: ["select-field"],
-    missing: '`size="sm"`, and the read-only fill.',
+    missing: '`size="sm"`.',
     issue: MISSING_SETS,
   },
   "selection-item": {

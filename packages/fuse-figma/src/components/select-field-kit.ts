@@ -1,6 +1,6 @@
 /**
  * Select field, as one component set on the Select page: the docs Basic demo's labelled select in
- * four states, holding the placeholder or a value, 8 cells. The root is `SelectField`'s
+ * five states, holding the placeholder or a value, 10 cells. The root is `SelectField`'s
  * `Field.Root`, Base UI's `<div data-slot="field">`.
  *
  * - The heading row is FieldFrame's label row holding a `Label` instance, `Plan`. Figma packs the
@@ -57,8 +57,8 @@ function triggerProperties(outer: Cell): InstanceProperties {
 /**
  * The select field's manifest, which the capture-backed build reads with
  * `captures/select-field.json`, as `<SelectField label description placeholder items defaultValue?>`
- * renders it, disabled, or invalid with an error message: the label row, the trigger, then the
- * messages.
+ * renders it, disabled, read-only, or invalid with an error message: the label row, the trigger,
+ * then the messages.
  */
 export const SELECT_FIELD_MANIFEST: SetManifest = {
   key: "select-field",
@@ -68,7 +68,7 @@ export const SELECT_FIELD_MANIFEST: SetManifest = {
   statePart: "select-trigger",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,
   axes: [
-    { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
+    { name: "state", values: ["rest", "focus", "disabled", "invalid", "readonly"] },
     { name: "content", values: ["placeholder", "value"] },
   ],
   columnAxis: "state",
