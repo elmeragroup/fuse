@@ -234,10 +234,13 @@ describe.each(MANIFESTS.map((manifest) => [manifest.key, manifest] as const))(
       expect([...new Set(unshown)].toSorted()).toEqual([...listed].toSorted());
     });
 
-    it("draws every state its matrix names, unlike the cell at rest", () => {
+    it("draws every state its matrix names, unlike its resting twin", () => {
       // A state the capture could not reach would hold the same winners as its resting twin, as a
-      // `state-missing` cell of figma:compare does. A cell the capture marks as drawing as at rest
-      // reached no rule while another cell reached the same state, which the capture checked.
+      // `state-missing` cell of figma:compare does. The test names each twin itself rather than
+      // reading the capture's `restingTwin`: an invalid focus cell compares with the invalid cell,
+      // so one that kept the invalid border and lost its focus fails, and every other forced state
+      // compares with rest. A cell the capture marks as drawing as at rest reached no rule while
+      // another cell reached the same state, which the capture checked.
       const capture = keptCapture(key);
       if (capture === undefined || Result.isFailure(capture)) {
         throw new Error(`captures/${key}.json does not read`);
@@ -247,7 +250,8 @@ describe.each(MANIFESTS.map((manifest) => [manifest.key, manifest] as const))(
         if (cell.cell.state === undefined || cell.cell.state === "rest" || cell.drawsAsRest === true) {
           return [];
         }
-        const rest = cells.get(variantKey(manifest, { ...cell.cell, state: "rest" }));
+        const twin = cell.cell.state === "invalid-focus" ? "invalid" : "rest";
+        const rest = cells.get(variantKey(manifest, { ...cell.cell, state: twin }));
         return rest !== undefined && JSON.stringify(rest.roots) === JSON.stringify(cell.roots)
           ? [cell.key]
           : [];

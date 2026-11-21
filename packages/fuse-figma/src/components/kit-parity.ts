@@ -116,7 +116,12 @@ export const KIT_PARITY = {
   },
   carousel: { kind: "issue", issue: MISSING_SETS },
   chart: { kind: "excluded", reason: CHARTS },
-  checkbox: { kind: "partial", sets: ["checkbox"], missing: "The invalid focus ring.", issue: MISSING_SETS },
+  checkbox: {
+    kind: "partial",
+    sets: ["checkbox"],
+    missing: "`CheckboxGroup` and `CheckboxItemGroup`, vertical and horizontal.",
+    issue: MISSING_SETS,
+  },
   "checkbox-card": {
     kind: "partial",
     sets: ["checkbox-card"],
@@ -238,7 +243,7 @@ export const KIT_PARITY = {
   input: {
     kind: "partial",
     sets: ["input"],
-    missing: "The `sm` size axis, and the invalid focus ring.",
+    missing: "The `sm` size axis.",
     issue: MISSING_SETS,
   },
   "input-group": {
@@ -279,7 +284,7 @@ export const KIT_PARITY = {
   "number-field": {
     kind: "partial",
     sets: ["number-field-stepper", "number-field"],
-    missing: "The `sm` size axis, and the invalid focus ring.",
+    missing: "The `sm` size axis.",
     issue: MISSING_SETS,
   },
   pagination: {
@@ -302,7 +307,7 @@ export const KIT_PARITY = {
   "radio-group": {
     kind: "partial",
     sets: ["radio-icon-button", "radio", "radio-row", "radio-group"],
-    missing: "`RadioItemGroup`, and the invalid focus ring.",
+    missing: "`RadioItemGroup`.",
     issue: MISSING_SETS,
   },
   "range-calendar": {
@@ -375,7 +380,7 @@ export const KIT_PARITY = {
   },
   slider: { kind: "issue", issue: MISSING_SETS },
   span: { kind: "excluded", reason: TEXT_STYLE },
-  switch: { kind: "partial", sets: ["switch"], missing: "The invalid focus ring.", issue: MISSING_SETS },
+  switch: { kind: "sets", sets: ["switch"] },
   table: {
     kind: "partial",
     sets: ["table-head", "table-cell", "table-row", "table-caption"],
@@ -400,7 +405,7 @@ export const KIT_PARITY = {
   textarea: {
     kind: "partial",
     sets: ["textarea"],
-    missing: "The `sm` size axis, and the invalid focus ring.",
+    missing: "The `sm` size axis.",
     issue: MISSING_SETS,
   },
   "textarea-field": {

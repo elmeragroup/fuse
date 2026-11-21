@@ -1,5 +1,5 @@
 /**
- * Radio, as one component set: off and on, in four states, with no label: 8 cells.
+ * Radio, as one component set: off and on, in five states, with no label: 10 cells.
  *
  * - The root is Base UI's radio `<span data-slot="radio-group-item">`, which renders checked only
  *   inside a `RadioGroup`.
@@ -8,7 +8,8 @@
  *   the circle.
  * - The dot has no `data-slot`, so the manifest finds it by its place, and its layer takes its key as
  *   its name.
- * - Invalid renders the radio in an invalid `RadioGroup`.
+ * - Invalid renders the radio in an invalid `RadioGroup`. Invalid focus renders it there with focus
+ *   forced, where the recipe draws its error ring.
  */
 import type { SetManifest } from "../capture/manifest";
 import type { Cell } from "./component-spec";
@@ -27,7 +28,7 @@ export const RADIO_MANIFEST: SetManifest = {
   slot: "radio-group-item",
   axes: [
     { name: "checked", values: ["false", "true"] },
-    { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
+    { name: "state", values: ["rest", "focus", "disabled", "invalid", "invalid-focus"] },
   ],
   columnAxis: "state",
   label: undefined,

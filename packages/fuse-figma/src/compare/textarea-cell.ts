@@ -9,7 +9,8 @@
  *   the textarea `disabled` and `data-disabled`. `invalid` sets the Field root's `invalid`, from
  *   which Base UI marks it `aria-invalid="true"` and `data-invalid`, and the root passes its
  *   `data-invalid:text-error` down to a typed value. A plain `<textarea>` gets none of those data
- *   attributes. The root itself stays enabled, as the kit draws no disabled Field around the
+ *   attributes. `invalid-focus` renders the invalid cell, and the page forces focus on the
+ *   textarea. The root itself stays enabled, as the kit draws no disabled Field around the
  *   textarea, so no `group-data-disabled/field:` holds above it.
  * - Chromium draws a resize grip in the textarea's bottom-right corner, since preflight sets
  *   `resize: vertical` and Fuse's Textarea keeps it. The kit draws no grip, so a cell differs there
@@ -23,6 +24,7 @@ import { createElement } from "react";
 
 import { Field } from "../../../fuse/dist/field.js";
 import { Textarea } from "../../../fuse/dist/textarea.js";
+import { isInvalid } from "../components/axis-vocabulary.ts";
 import type { Cell } from "../components/component-spec.ts";
 import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
 import { TEXTAREA_TEXT } from "../components/textarea-kit.ts";
@@ -45,7 +47,7 @@ export const textarea: CellRendering = {
       readOnly: cell.state === "readonly",
       disabled: cell.state === "disabled",
     });
-    const field = createElement(Field.Root, { invalid: cell.state === "invalid" }, control);
+    const field = createElement(Field.Root, { invalid: isInvalid(cell) }, control);
     return createElement("div", { style: { width: `${FIELD_BOX_PREVIEW_WIDTH}px` } }, field);
   },
 };

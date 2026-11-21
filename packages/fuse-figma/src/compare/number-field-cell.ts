@@ -10,7 +10,7 @@
  *   shadow, so the crop holds the stepper alone, as the stepper variant draws it.
  * - A field cell renders the docs Basic demo's label and description in a host as wide as the kit's
  *   preview width. Read-only sets `isReadOnly`, disabled `isDisabled`, and invalid `isInvalid` with the
- *   Error demo's `errorMessage`. With the `Denomination` property on, the field takes the Denomination
+ *   Error demo's `errorMessage`, which invalid focus sets too. With the `Denomination` property on, the field takes the Denomination
  *   demo's `kWh`. The page forces focus on the input.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
@@ -22,6 +22,7 @@ import type { ComponentProps, ReactElement } from "react";
 
 import { NumberField } from "../../../fuse/dist/number-field.js";
 import { LocaleProvider } from "../../../fuse/dist/theme.js";
+import { isInvalid } from "../components/axis-vocabulary.ts";
 import type { Cell } from "../components/component-spec.ts";
 import {
   NUMBER_FIELD_DENOMINATION,
@@ -77,7 +78,7 @@ export const numberFieldStepper: CellRendering = {
   },
 };
 
-/** A `number-field` cell: the labelled field, read-only, disabled or invalid, with or without its denomination. */
+/** A `number-field` cell: the labelled field, read-only, disabled, invalid or invalid and focused, with or without its denomination. */
 export const numberField: CellRendering = {
   element: (cell: Cell, turnedOn: ReadonlySet<string>) => {
     const props: ComponentProps<typeof NumberField> = {
@@ -86,9 +87,9 @@ export const numberField: CellRendering = {
       defaultValue: NUMBER_FIELD_VALUE,
       isReadOnly: cell.state === "readonly",
       isDisabled: cell.state === "disabled",
-      isInvalid: cell.state === "invalid",
+      isInvalid: isInvalid(cell),
     };
-    if (cell.state === "invalid") {
+    if (isInvalid(cell)) {
       props.errorMessage = NUMBER_FIELD_ERROR;
     }
     if (turnedOn.has(NUMBER_FIELD_DENOMINATION_PROPERTY)) {
