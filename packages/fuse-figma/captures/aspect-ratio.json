@@ -167,7 +167,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--container-md":{"_tag":"theme"}},
           "unmatched": ["[&>video]:block"],
-          "measured": {"coincidingAround":1,"ratioHeight":{"width":448,"height":252}},
+          "measured": {"coincidingAround":1,"ratio":{"sets":"height","width":448,"height":252}},
           "children": [
             {
               "tag": "img",
@@ -215,7 +215,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"}},
           "unmatched": ["[&>video]:block"],
-          "measured": {"ratioHeight":{"width":240,"height":240}},
+          "measured": {"ratio":{"sets":"height","width":240,"height":240}},
           "children": [
             {
               "tag": "img",
@@ -263,7 +263,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--container-sm":{"_tag":"theme"}},
           "unmatched": ["[&>video]:block"],
-          "measured": {"ratioHeight":{"width":384,"height":288}},
+          "measured": {"ratio":{"sets":"height","width":384,"height":288}},
           "children": [
             {
               "tag": "img",
@@ -311,7 +311,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"}},
           "unmatched": ["[&>video]:block"],
-          "measured": {"ratioHeight":{"width":240,"height":320}},
+          "measured": {"ratio":{"sets":"height","width":240,"height":320}},
           "children": [
             {
               "tag": "img",
@@ -359,7 +359,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--container-sm":{"_tag":"theme"}},
           "unmatched": ["[&>video]:block"],
-          "measured": {"ratioHeight":{"width":384,"height":256}},
+          "measured": {"ratio":{"sets":"height","width":384,"height":256}},
           "children": [
             {
               "tag": "img",
@@ -407,7 +407,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"}},
           "unmatched": ["[&>video]:block"],
-          "measured": {"ratioHeight":{"width":208,"height":312}},
+          "measured": {"ratio":{"sets":"height","width":208,"height":312}},
           "children": [
             {
               "tag": "img",
@@ -455,7 +455,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"}},
           "unmatched": ["[&>video]:block"],
-          "measured": {"ratioHeight":{"width":176,"height":312.875}},
+          "measured": {"ratio":{"sets":"height","width":176,"height":312.875}},
           "children": [
             {
               "tag": "img",

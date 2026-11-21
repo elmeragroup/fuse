@@ -349,6 +349,38 @@ export function evaluateNumber(value: string): number | undefined {
 }
 
 /**
+ * A `line-height` as {@link evaluateLineHeight} reads it: a length in pixels, or a number that
+ * multiplies the font size of the element it applies to (CSS Inline 3, `line-height`).
+ */
+export type LineHeightValue =
+  | { readonly kind: "length"; readonly px: number }
+  | { readonly kind: "factor"; readonly factor: number };
+
+/**
+ * Evaluate a `line-height` by the type of its result, so `calc(1.25 / 0.875)`, which Tailwind's
+ * `text-sm` writes, and `calc(24px / 16px)` are factors, and `calc(20px + 4px)` and
+ * `calc(24px * 16px / 8px)` lengths. A percentage computes to a length where it is declared, at that
+ * element's font size, and a child inherits the length, so like `em` it gives neither.
+ *
+ * @param value - A CSS value with no `var()` left in it.
+ * @returns The line height, or undefined for a value that is neither, such as `normal`, `em`, a
+ *   percentage, a length plus a percentage, or a length times a length.
+ */
+export function evaluateLineHeight(value: string): LineHeightValue | undefined {
+  const evaluated = finiteQuantity(value);
+  switch (evaluated?.unit) {
+    case "px":
+      return { kind: "length", px: evaluated.value };
+    case "":
+      return { kind: "factor", factor: evaluated.value };
+    case "%":
+    case "mixed":
+    case undefined:
+      return undefined;
+  }
+}
+
+/**
  * Evaluate a percentage, such as the `calc(1 / 2 * 100%)` that `top-1/2` compiles to.
  *
  * @param value - A CSS value with no `var()` left in it.
@@ -454,6 +486,10 @@ function evaluate(expression: string, basis?: number): Quantity | undefined {
       return undefined;
     }
     const defined = args.filter((arg): arg is Quantity => arg !== undefined);
+    // `min()` and `max()` compare arguments of one type (CSS Values 4, type checking).
+    if (new Set(defined.map(lengthPower)).size > 1) {
+      return undefined;
+    }
     const pick = call[1] === "min" ? Math.min : Math.max;
     return { value: pick(...defined.map((arg) => arg.value)), unit: commonUnit(defined) };
   }
@@ -481,7 +517,8 @@ function evaluateSum(expression: string, basis?: number): Quantity | undefined {
   const [first, ...rest] = products.map((tokens) => evaluateProduct(tokens.join(""), basis));
   let total = first;
   for (const [index, next] of rest.entries()) {
-    if (total === undefined || next === undefined) {
+    // A sum adds terms of one type (CSS Values 4, type checking): a number and a length do not add.
+    if (total === undefined || next === undefined || lengthPower(total) !== lengthPower(next)) {
       return undefined;
     }
     total = {
@@ -511,18 +548,35 @@ function evaluateProduct(term: string, basis?: number): Quantity | undefined {
     }
   }
   factors.push(term.slice(start));
-  const [first, ...rest] = factors.map((factor) => evaluate(factor, basis));
-  let product = first;
-  for (const [index, next] of rest.entries()) {
-    if (product === undefined || next === undefined) {
+  const quantities: Quantity[] = [];
+  for (const factor of factors) {
+    const quantity = evaluate(factor, basis);
+    if (quantity === undefined) {
       return undefined;
     }
-    product = {
-      value: operators[index] === "*" ? product.value * next.value : product.value / next.value,
-      unit: commonUnit([product, next]),
-    };
+    quantities.push(quantity);
   }
-  return product;
+  // A product's type multiplies its factors' types and a quotient divides them (CSS Values 4, type
+  // checking), so `calc(24px * 16px / 8px)` is a length and `calc(24px / 16px)` a number. The build
+  // holds only those two, so a product that comes to any other power of a length does not read.
+  let value = 1;
+  let power = 0;
+  for (const [index, quantity] of quantities.entries()) {
+    const divides = operators[index - 1] === "/";
+    value = divides ? value / quantity.value : value * quantity.value;
+    power += divides ? -lengthPower(quantity) : lengthPower(quantity);
+  }
+  const dimensions = quantities.filter((quantity) => quantity.unit !== "");
+  if (power === 0) {
+    // A percentage over a length is a share of a length the evaluation does not know.
+    return dimensions.every((quantity) => quantity.unit === "px") ? { value, unit: "" } : undefined;
+  }
+  return power === 1 ? { value, unit: commonUnit(dimensions) } : undefined;
+}
+
+/** The power of a length a quantity is: 0 for a number, and 1 for a length or a percentage of one. */
+function lengthPower(quantity: Quantity): 0 | 1 {
+  return quantity.unit === "" ? 0 : 1;
 }
 
 /**

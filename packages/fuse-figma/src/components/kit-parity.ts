@@ -92,12 +92,7 @@ export const KIT_PARITY = {
       "breadcrumb-trail",
     ],
   },
-  button: {
-    kind: "partial",
-    sets: ["button", "icon-button"],
-    missing: "The `icon-inline` size.",
-    issue: MISSING_SETS,
-  },
+  button: { kind: "sets", sets: ["button", "icon-button"] },
   // The Button sets leave out the corners a Button takes inside a group.
   "button-group": { kind: "issue", issue: MISSING_SETS },
   calendar: {
@@ -296,7 +291,7 @@ export const KIT_PARITY = {
     missing: "The `showArrow` arrow.",
     issue: MISSING_SETS,
   },
-  // The Button sets leave out the `icon-inline` size, and the Popover sets leave out the arrow.
+  // The Popover sets leave out the arrow.
   "popover-info-button": { kind: "issue", issue: MISSING_SETS },
   "radio-group": {
     kind: "partial",

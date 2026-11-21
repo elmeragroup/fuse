@@ -488,36 +488,43 @@ describe("a one-column grid's column the capture measures as fitting", () => {
 });
 
 /**
- * Unit under test: the page function's `ratioHeight` on a 448px `aspect-ratio: 16 / 9` box. Oracle:
- * Chromium's own layout, read beside the fact. Empty, the box is 252px tall, the width times the
- * ratio (CSS Sizing 4 §4.2), so the fact records 448 by 252. A 400px child grows a box with
+ * Unit under test: the page function's `ratio` on a 448px `aspect-ratio: 16 / 9` box. Oracle:
+ * Chromium's own layout, read beside the fact. Empty, the box is 252px tall, 448 ÷ (16 / 9)
+ * (CSS Sizing 4 §4.2), so the fact records the height set, 448 by 252. A 400px child grows a box with
  * `overflow: visible` to 400px (§4.3), and a `min-height: 300px` raises it to 300px, so the fact does
  * not hold. With `overflow: hidden` the same child leaves the box at 252px, and the fact holds. A box
  * with a height of its own is no candidate, though its height is the ratio's. A 100px flex row
  * shrinks the box to 100px (CSS Flexbox 1 §9.7), and the ratio follows to 56.25px, which the fact
  * records, so the build can tell it from the 448px `width`. A box that a comfortable density widens
  * to 480px, or whose ratio a comfortable density turns to 1 / 1, is 252px tall in the page's own mode
- * and another height there, so the fact does not hold.
+ * and another height there, so the fact does not hold. A box that a comfortable density gives a height
+ * of its own, 252px on the 448px box or 24px on a 24px square, keeps the same box there, and a 24px
+ * flex basis in a column makes a 24px square as tall as it is wide with an `auto` height; at a 34px
+ * width Chromium keeps that one 24px tall, so the ratio does not set the height and the fact does not
+ * hold.
  */
 describe("an aspect ratio the capture measures as setting the height", () => {
-  /** The box's border box as Chromium lays it out, and what the page function records as `ratioHeight`. */
+  /** The box's border box as Chromium lays it out, and the box the page function records as the ratio's. */
   async function measure(style: string, child: string, className = "", around = "") {
     await page.setContent(
-      `<style>[data-density=comfortable] .wide { width: 480px !important } .ratio { --ratio: 16 / 9 } [data-density=comfortable] .ratio { --ratio: 1 / 1 }</style><main data-compare-cell><div style="${around}"><div id="root" class="${className}" style="width:448px;aspect-ratio:16/9;${style}">${child}</div></div></main>`
+      `<style>[data-density=comfortable] .wide { width: 480px !important } .ratio { --ratio: 16 / 9 } [data-density=comfortable] .ratio { --ratio: 1 / 1 } [data-density=comfortable] .pinned { height: 252px !important } [data-density=comfortable] .pinned-square { height: 24px !important }</style><main data-compare-cell><div style="${around}"><div id="root" class="${className}" style="width:448px;aspect-ratio:16/9;${style}">${child}</div></div></main>`
     );
     const [width, height] = await page
       .locator("#root")
       .evaluate((box) => [box.getBoundingClientRect().width, box.getBoundingClientRect().height]);
-    return { width, height, fact: (await factsOfRoot()).facts?.ratioHeight };
+    const ratio = (await factsOfRoot()).facts?.ratio;
+    return { width, height, fact: ratio === undefined ? undefined : { ...ratio } };
   }
 
   const TALL = '<div style="height:400px"></div>';
   const BOX = { width: 448, height: 252 };
+  const FACT = { sets: "height", ...BOX };
+  const SQUARE = { width: 24, height: 24 };
 
   it.each([
-    ["empty", 252, BOX, "", ""],
+    ["empty", 252, FACT, "", ""],
     ["holding a 400px child", 400, undefined, "", TALL],
-    ["holding a 400px child it clips", 252, BOX, "overflow:hidden", TALL],
+    ["holding a 400px child it clips", 252, FACT, "overflow:hidden", TALL],
     ["at a 300px minimum", 300, undefined, "min-height:300px", ""],
     ["with a 252px height of its own", 252, undefined, "height:252px", ""],
   ])("%s, is %spx tall, and the fact records %o", async (_case, height, fact, style, child) => {
@@ -528,7 +535,7 @@ describe("an aspect ratio the capture measures as setting the height", () => {
     expect(await measure("", "", "", "display:flex;width:100px")).toEqual({
       width: 100,
       height: 56.25,
-      fact: { width: 100, height: 56.25 },
+      fact: { sets: "height", width: 100, height: 56.25 },
     });
   });
 
@@ -538,6 +545,146 @@ describe("an aspect ratio the capture measures as setting the height", () => {
   ])("does not hold where %s", async (_case, style, className) => {
     // The page's own mode stamps no density, so the box is 448 by 252 there.
     expect(await measure(style, "", className)).toEqual({ ...BOX, fact: undefined });
+  });
+
+  it.each([
+    ["a density gives it a height of the same 252px", "", "pinned", BOX],
+    [
+      "a density gives a 24px square a height of the same 24px",
+      "width:24px;aspect-ratio:1",
+      "pinned-square",
+      SQUARE,
+    ],
+  ])("does not hold where %s", async (_case, style, className, box) => {
+    expect(await measure(style, "", className)).toEqual({ ...box, fact: undefined });
+  });
+
+  // A flex row that shrinks a wider box straight back leaves its width where it was, so the reading
+  // narrows the box instead. In a 24px row, the 14px-wide box stays 24px tall, and in a 100px row the
+  // 90px-wide box stays 100px tall: the row stretches its height, so the ratio does not set it.
+  it.each([
+    ["a 24px flex row", "width:24px;aspect-ratio:1", "display:flex;width:24px;height:24px", SQUARE],
+    [
+      "a 100px flex row",
+      "width:100px;min-width:0;aspect-ratio:1",
+      "display:flex;width:100px;height:100px",
+      { width: 100, height: 100 },
+    ],
+  ])("does not hold where %s stretches the height", async (_case, style, around, box) => {
+    const square = await measure(style, "", "", around);
+    const [wider, narrower] = await page.locator("#root").evaluate((root) => {
+      if (!(root instanceof HTMLElement)) {
+        return [];
+      }
+      const read = (width: string) => {
+        root.style.setProperty("width", width, "important");
+        const { width: across, height: down } = root.getBoundingClientRect();
+        return { width: across, height: down };
+      };
+      const { width } = root.getBoundingClientRect();
+      return [read(`${String(width + 10)}px`), read(`${String(width - 10)}px`)];
+    });
+    expect({ ...square, wider, narrower }).toEqual({
+      ...box,
+      fact: undefined,
+      wider: box,
+      narrower: { width: box.width - 10, height: box.height },
+    });
+  });
+
+  // A square that a 24px flex basis in a column makes as tall as it is wide keeps that height at any
+  // width, so the ratio does not set it.
+  it("does not hold where a 24px flex basis in a column sets the height", async () => {
+    const square = await measure(
+      "width:24px;aspect-ratio:1;flex:0 0 24px;overflow:hidden",
+      "",
+      "",
+      "display:flex;flex-direction:column"
+    );
+    const raised = await page.locator("#root").evaluate((box) => {
+      box.style.setProperty("width", "34px", "important");
+      return box.getBoundingClientRect().height;
+    });
+    expect({ ...square, raised }).toEqual({ ...SQUARE, fact: undefined, raised: 24 });
+  });
+});
+
+/**
+ * Unit under test: the page function's `ratio` on a 24px-tall `aspect-ratio: 1` box with an `auto`
+ * width. Oracle: Chromium's own layout, read beside the fact. Empty, the box is 24px wide, its height
+ * × (1 / 1) (CSS Sizing 4 §4.2), so the fact records the width set, 24 by 24. A 40px-wide child
+ * keeps the box 40px wide through its automatic minimum (§5.1), and a `min-width: 30px` widens it to
+ * 30px, so the fact does not hold. A box with a width of its own is no candidate, though its width is
+ * the ratio's. A block whose height is `auto` too takes its width from its container, and the fact
+ * records the height set. A box that a comfortable density makes 30px tall is 24px wide in the page's
+ * own mode and another width there, and one that a comfortable density gives a 24px width of its own
+ * keeps the same box there, so the fact does not hold. A 24px flex basis, or a stretch across a 24px
+ * grid column, makes the box as wide as its height with an `auto` width; at a 34px height Chromium
+ * keeps it 24px wide, so the ratio does not set the width and the fact does not hold.
+ */
+describe("an aspect ratio the capture measures as setting the width", () => {
+  /** The box's border box as Chromium lays it out, and the box the page function records as the ratio's. */
+  async function measure(style: string, child: string, className = "", around = "") {
+    await page.setContent(
+      `<style>[data-density=comfortable] .tall { height: 30px !important } [data-density=comfortable] .pinned { width: 24px !important }</style><main data-compare-cell><div style="${around}"><div id="root" class="${className}" style="display:inline-flex;height:24px;aspect-ratio:1;${style}">${child}</div></div></main>`
+    );
+    const [width, height] = await page
+      .locator("#root")
+      .evaluate((box) => [box.getBoundingClientRect().width, box.getBoundingClientRect().height]);
+    const ratio = (await factsOfRoot()).facts?.ratio;
+    return { width, height, fact: ratio === undefined ? undefined : { ...ratio } };
+  }
+
+  /** The root's width once its height is raised to 34px, as Chromium lays it out. */
+  async function raisedWidth(): Promise<number> {
+    return page.locator("#root").evaluate((box) => {
+      box.style.setProperty("height", "34px", "important");
+      return box.getBoundingClientRect().width;
+    });
+  }
+
+  const WIDE = '<div style="width:40px;flex-shrink:0"></div>';
+  const BOX = { width: 24, height: 24 };
+
+  it.each([
+    ["empty", 24, 24, { sets: "width", ...BOX }, "", ""],
+    ["holding a 40px-wide child", 40, 24, undefined, "", WIDE],
+    ["at a 30px minimum width", 30, 24, undefined, "min-width:30px", ""],
+    ["with a 24px width of its own", 24, 24, undefined, "width:24px", ""],
+  ])(
+    "%s, is %spx wide and %spx tall, and the fact records %o",
+    async (_case, width, height, fact, style, child) => {
+      expect(await measure(style, child)).toEqual({ width, height, fact });
+    }
+  );
+
+  // A block whose width and height are both `auto` takes its width from its container and its
+  // height from the ratio, so the fact records the height set.
+  it("records the height set on a box whose height is auto too", async () => {
+    const { width, height, fact } = await measure("display:block;height:auto", "");
+    expect({ square: width === height, sets: fact?.sets }).toEqual({ square: true, sets: "height" });
+  });
+
+  it.each([
+    ["a density moves the height", "tall"],
+    ["a density gives it a width of the same 24px", "pinned"],
+  ])("does not hold where %s", async (_case, className) => {
+    // The page's own mode stamps no density, so the box is 24 by 24 there.
+    expect(await measure("", "", className)).toEqual({ ...BOX, fact: undefined });
+  });
+
+  // A box that a 24px flex basis or a stretch across a 24px grid column makes as wide as it is tall
+  // keeps that width at any height, so the ratio does not set it.
+  it.each([
+    ["a 24px flex basis", "flex:0 0 24px;overflow:hidden", "display:flex"],
+    [
+      "a stretch across a 24px grid column",
+      "display:block;justify-self:stretch",
+      "display:grid;grid-template-columns:24px",
+    ],
+  ])("does not hold where %s sets the width", async (_case, style, around) => {
+    const square = await measure(style, "", "", around);
+    expect({ ...square, raised: await raisedWidth() }).toEqual({ ...BOX, fact: undefined, raised: 24 });
   });
 });
 
