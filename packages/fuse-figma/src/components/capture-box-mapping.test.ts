@@ -32,6 +32,13 @@ import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
 import type { BooleanPropertySpec, FrameLayerSpec } from "./kit-spec";
 
+/** A build whose `font-sans` binds the synced family, as every kit label's does. */
+const FONT_SANS: FixtureOptions = {
+  variables: makeVariableIndex([
+    { ref: { collection: "Fuse tokens", name: "font-sans" }, webSyntax: "var(--font-sans)" },
+  ]),
+};
+
 /** Build a chip whose root wins `classes` and holds one `chip-dot` part that wins `dot`. */
 function buildWithDot(classes: string, dot: string, options: FixtureOptions = {}) {
   return buildChip(classes, [{ slot: "chip-dot", classes: dot }], { parts: [part()] }, options);
@@ -1290,4 +1297,134 @@ describe("a turned icon or part", () => {
     expect(icon?.kind === "icon" ? icon.rotation : icon).toBeUndefined();
     expect(rotateRows(coverage)).toEqual([["Icon", "unmapped"]]);
   });
+});
+
+// Oracle: CSS Sizing 3 §5.1, CSS Flexbox 1 §9.4 and §9.7, Figma's auto layout, and Chromium. A
+// `w-fit` Label instance holding `Stay`, a text with no soft wrap opportunity, in a 240px column
+// that stretches it is as wide as the text and starts at the column's start, as a Date range
+// picker's label does. A Figma column places a hugging instance at its start, so the instance hugs
+// as the Label set's root does. A Label that grows beside a 30px part in a 240px row takes the
+// 210px left and puts the part at x 210, where a hugging instance would put it right after the word.
+// A `self-stretch` Label in an `items-end` column spans the column from its start, where a hugging
+// instance in a Figma column that ends its layers sits at the end. Under
+// `overflow-wrap: anywhere` Chromium breaks even `Stay` where the column is narrower than it, which
+// only a filling text draws, as a text with a space wraps where the column is narrower than it, and a
+// stretched root that paints a fill or blurs what lies behind it shows the column's width. In an
+// 80px column with 60px of padding at its end, Chromium stretches an `overflow-hidden` Label to 20px
+// and clips `September` there, where a hugging instance draws the whole word. A `w-fit
+// overflow-hidden` Label in the same column is `September`'s min-content width, 68.48px (CSS Sizing 3
+// §5.2), so its clip cuts nothing and the instance hugs. A Label set whose root clips holds a
+// hugging instance to the 20px of a `max-w-[20px]` built in place and cuts the word there, where
+// CSS shows it past a cap that `overflow-visible` leaves unclipped. Each refusal keeps the
+// instance filling and its text's sizing unmapped.
+describe("a Label instance around its variant's one word", () => {
+  /** The Label set, whose root holds the given text. */
+  const labelSet = (characters: string) =>
+    chip({
+      key: "field-label",
+      name: "Field label",
+      slot: "label",
+      label: { key: "label", name: "label", characters, textProperty: "Label", shownIn: () => true },
+    });
+  const TEXT = "font-sans text-[14px] leading-[20px] text-[#000000]";
+
+  /**
+   * Build a chip around the Label instance, which wins `label` beside the Label set's own text
+   * classes, and a 30px part, with the given text in both sets and `held` on the Label set's root.
+   */
+  function buildLabelled(classes: string, label: string, around: string, characters: string, held: string) {
+    const of = labelSet(characters);
+    return buildCaptured(
+      chip({
+        parts: [
+          { kind: "instance", key: "label", of, cell: () => ({ state: "rest" }), shownIn: () => true },
+          part({ key: "b", slot: "b" }),
+        ],
+      }),
+      rest({
+        slot: "chip",
+        classes: `${classes} ${around}`,
+        children: [
+          { slot: "label", classes: `${TEXT} ${label}`, text: characters },
+          { slot: "b", classes: "w-[30px] h-[20px]" },
+        ],
+      }),
+      {
+        ...FONT_SANS,
+        inner: [
+          { manifest: of, cells: rest({ slot: "label", classes: `${TEXT} ${held}`, text: characters }) },
+        ],
+      }
+    );
+  }
+
+  /**
+   * The instance's sizing across, whether the build leaves the label's sizing difference unmapped,
+   * and how many rows it leaves unmapped in all.
+   */
+  async function labelled(classes: string, label: string, around = "", characters = "Stay", held = "") {
+    const { variant, coverage } = await buildLabelled(classes, label, around, characters, held);
+    const instance = variant?.root.children.find((child) => child.key === "label");
+    const unmapped = coverage.filter((row) => row.outcome === "unmapped");
+    return {
+      across: instance?.kind === "instance" ? instance.sizing.horizontal : instance?.kind,
+      sizing: unmapped.some((row) => row.detail.startsWith("label draws sizing")),
+      rows: unmapped.length,
+    };
+  }
+
+  it.each([
+    ["that a column stretches", "flex flex-col w-[240px]", "w-fit", "Stay"],
+    [
+      "whose own clip sits past its one word in a padded column",
+      "flex flex-col w-[80px] pr-[60px]",
+      "w-fit overflow-hidden",
+      "September",
+    ],
+  ])("hugs as the Label set's root does for a Label %s", async (_, classes, label, characters) => {
+    expect(await labelled(classes, label, "", characters)).toEqual({ across: HUG, sizing: false, rows: 0 });
+  });
+
+  it.each([
+    ["that grows in a row", "flex w-[240px]", "flex-1 min-w-0", "", "Stay"],
+    [
+      "that stretches in a column that ends its layers",
+      "flex flex-col items-end w-[240px]",
+      "self-stretch",
+      "",
+      "Stay",
+    ],
+    ["whose text breaks anywhere", "flex flex-col w-[240px]", "w-fit", "wrap-anywhere", "Stay"],
+    ["whose text can wrap at its space", "flex flex-col w-[240px]", "w-fit", "", "Check in"],
+    ["that a column stretches and that paints a fill", "flex flex-col w-[240px]", "bg-[#ffffff]", "", "Stay"],
+    [
+      "that a column stretches and that blurs what lies behind it",
+      "flex flex-col w-[240px]",
+      "[backdrop-filter:blur(4px)]",
+      "",
+      "Stay",
+    ],
+    [
+      "that clips its word at a padded column's 20px",
+      "flex flex-col w-[80px] pr-[60px]",
+      "overflow-hidden",
+      "",
+      "September",
+    ],
+    [
+      "whose 20px maximum cuts its word in a variant that clips",
+      "flex flex-col w-[240px]",
+      "w-fit max-w-[20px] overflow-visible",
+      "",
+      "September",
+      "overflow-hidden",
+    ],
+  ])(
+    "keeps the instance filling and its text's sizing unmapped for a Label %s",
+    async (_, classes, label, around, characters, held = "") => {
+      expect(await labelled(classes, label, around, characters, held)).toEqual(
+        expect.objectContaining({ across: FILL, sizing: true })
+      );
+    }
+  );
 });
