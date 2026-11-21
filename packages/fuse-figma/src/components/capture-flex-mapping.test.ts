@@ -88,6 +88,75 @@ describe("a percentage maximum the capture measured", () => {
   });
 });
 
+// Oracle: CSS 2.1 §10.4 and CSS Flexbox 1 §9.2 step 3 and §9.7, with Chromium's layout of each
+// case. In a 320px column, `w-full min-w-full` is 320px, the minimum of the length's own basis,
+// which a fill with no minimum draws. A maximum below it loses to the minimum: `w-full min-w-full
+// max-w-[200px]` is still 320px, which a fill capped at 200px would not draw, and so is `w-full
+// min-w-full max-w-[min(var(--available-width),200px)]` with 800px available. In a 64px row,
+// `flex-1 w-[80px] min-w-[80px]` grows from a zero basis and its minimum raises it to 80px, which a
+// fill with no minimum would draw at 64px. Beside a 20px layer, `flex-1 w-full min-w-full` is
+// raised to the whole 64px row, where a fill would take only the 44px the other layer leaves.
+describe("a minimum of the same value as a length that is not fixed", () => {
+  it("drops beside a whole 100% that fills a column", async () => {
+    const { variant, coverage } = await buildChip(
+      "flex flex-col w-[320px]",
+      [{ slot: "chip-dot", classes: "w-full min-w-full h-[8px]" }],
+      { parts: [part()] }
+    );
+    const dot = frameOf(variant?.root);
+    expect([dot?.sizing.horizontal, dot?.limits]).toEqual([FILL, {}]);
+    expect(notesOf(coverage, "min-w-full").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["min-width", "dropped"],
+    ]);
+  });
+
+  it("stays unmapped beside a maximum it overrides", async () => {
+    const { coverage } = await buildChip(
+      "flex flex-col w-[320px]",
+      [{ slot: "chip-dot", classes: "w-full min-w-full max-w-[200px] h-[8px]" }],
+      { parts: [part()] }
+    );
+    expect(notesOf(coverage, "min-w-full").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["min-width", "unmapped"],
+    ]);
+  });
+
+  it("stays unmapped beside a maximum that reads a room the build does not resolve", async () => {
+    const { coverage } = await buildChip(
+      "flex flex-col w-[320px]",
+      [{ slot: "chip-dot", classes: "w-full min-w-full max-w-[min(var(--available-width),200px)] h-[8px]" }],
+      { parts: [part()] }
+    );
+    expect(notesOf(coverage, "min-w-full").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["min-width", "unmapped"],
+    ]);
+  });
+
+  it("stays the fill's minimum beside a zero flex basis", async () => {
+    const { variant } = await buildChip(
+      "flex w-[64px]",
+      [{ slot: "chip-dot", classes: "flex-1 w-[80px] min-w-[80px] h-[8px]" }],
+      { parts: [part()] }
+    );
+    const dot = frameOf(variant?.root);
+    expect([dot?.sizing.horizontal, dot?.limits]).toEqual([FILL, { minWidth: literal(80) }]);
+  });
+
+  it("stays unmapped on a layer that grows from a zero basis beside another", async () => {
+    const { coverage } = await buildChip(
+      "flex w-[64px]",
+      [
+        { slot: "a", classes: "flex-1 w-full min-w-full h-[8px]" },
+        { slot: "b", classes: "size-[20px] shrink-0" },
+      ],
+      { parts: [part({ key: "a", slot: "a" }), part({ key: "b", slot: "b" })] }
+    );
+    expect(notesOf(coverage, "min-w-full").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["min-width", "unmapped"],
+    ]);
+  });
+});
+
 // Oracle: CSS 2.1 §10.4. A fixed width resolves against its limits, lowered to the maximum and
 // raised to the minimum, and a percentage limit takes the containing block's width: in a 320px
 // preview, `max-w-full` is 320px and `min-w-40` 160px, so a 200px box keeps its width and a 400px

@@ -21,6 +21,7 @@ import type {
   InstanceOverride,
   InstancePropertiesSpec,
   NestedPropertiesSpec,
+  NumberSpec,
   SizingSpec,
   TextLayerSpec,
 } from "./kit-spec";
@@ -54,6 +55,11 @@ export type InstanceDiff = {
   readonly overrides: readonly InstanceOverride[];
   /** The sizing of the root built in place, which the instance takes in its parent's auto layout. */
   readonly sizing: SizingSpec;
+  /**
+   * The least width of the root built in place where the inner variant's root has none, which the
+   * instance takes as its own, undefined where the two agree.
+   */
+  readonly minWidth: NumberSpec | undefined;
   /** Each glyph turned half a turn in place that the instance swaps to its mirror, at its key path. */
   readonly mirrored: readonly Mirrored[];
   /** The differences no instance field carries. */
@@ -95,6 +101,8 @@ type Found = {
   aligned: { readonly override: InstanceOverride; readonly at: number } | undefined;
   /** The sizing of the inner root built in place, which the instance takes. */
   readonly root: SizingSpec;
+  /** The least width of the inner root built in place, which the instance takes, as {@link InstanceDiff} says. */
+  minWidth: NumberSpec | undefined;
   readonly text: Map<string, string>;
   readonly swap: Map<string, string>;
   readonly nested: NestedPropertiesSpec[];
@@ -122,7 +130,10 @@ type Found = {
  *   its direction, and a frame below the root, keep the alignment unmapped, since the probe covered
  *   neither.
  * - The root's sizing is the instance's, whatever the outer layout makes of each axis: a fill, a
- *   length or a hug (N4). The layers inside guard it, since a layer that sizes against the root's
+ *   length or a hug (N4).
+ * - A `minWidth` the root takes in place, where the variant's root has none and its other limits
+ *   agree, is the instance's own, a field of the instance in its parent's auto layout as its sizing
+ *   is: a popup that fills a column above its `min-w-36` keeps that minimum. The layers inside guard it, since a layer that sizes against the root's
  *   length draws another way where that length changes.
  * - A text the variant fills across, a direct child of a root the instance hugs, draws at its own
  *   width, as the text built in place hugs (PH2).
@@ -146,6 +157,7 @@ export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootS
   const found: Found = {
     aligned: undefined,
     root: inPlace.sizing,
+    minWidth: undefined,
     text: new Map(),
     swap: new Map(),
     nested: [],
@@ -166,6 +178,7 @@ export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootS
         ? found.overrides
         : [...found.overrides.slice(0, carried.at), carried.override, ...found.overrides.slice(carried.at)],
     sizing: inPlace.sizing,
+    minWidth: found.minWidth,
     mirrored: found.mirrored,
     unmapped: carried === undefined ? found.unmapped : [],
   };
@@ -252,6 +265,13 @@ function diffBox(
       case "children":
         diffLayers(found, path, inPlace.children, variant.children);
         break;
+      case "limits":
+        if (kind === "root") {
+          diffRootLimits(found, inPlace.limits, variant.limits);
+        } else {
+          diffField(found, path, field, built.get(field), held.get(field));
+        }
+        break;
       case "itemSpacing":
         if (flowCount(inPlace) > 1 || flowCount(variant) > 1) {
           diffField(found, path, field, built.get(field), held.get(field));
@@ -261,6 +281,25 @@ function diffBox(
         diffField(found, path, field, built.get(field), held.get(field));
     }
   }
+}
+
+/**
+ * Diff the root's limits: a `minWidth` the root takes in place and the variant's root does not
+ * becomes the instance's, where the other limits agree, and any other difference stays unmapped.
+ */
+function diffRootLimits(found: Found, inPlace: BoxSpec["limits"], variant: BoxSpec["limits"]): void {
+  if (isDeepStrictEqual(inPlace, variant)) {
+    return;
+  }
+  if (
+    inPlace.minWidth !== undefined &&
+    variant.minWidth === undefined &&
+    isDeepStrictEqual({ ...inPlace, minWidth: undefined }, { ...variant, minWidth: undefined })
+  ) {
+    found.minWidth = inPlace.minWidth;
+    return;
+  }
+  noteUnmapped(found, [], "limits", inPlace, variant);
 }
 
 /** Whether a root fills its parent along its own direction, as the instance LD1 probed did. */

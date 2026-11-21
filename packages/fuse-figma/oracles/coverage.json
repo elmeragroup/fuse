@@ -5968,10 +5968,18 @@
         "select-open/side=bottom,size=default 0/around/1",
         "select-open/side=bottom,size=default 1/around/0",
         "select-open/side=bottom,size=default 1/around/1",
+        "select-open/side=bottom,size=default,width=fill 0/around/0",
+        "select-open/side=bottom,size=default,width=fill 0/around/1",
+        "select-open/side=bottom,size=default,width=fill 1/around/0",
+        "select-open/side=bottom,size=default,width=fill 1/around/1",
         "select-open/side=bottom,size=sm 0/around/0",
         "select-open/side=bottom,size=sm 0/around/1",
         "select-open/side=bottom,size=sm 1/around/0",
-        "select-open/side=bottom,size=sm 1/around/1"
+        "select-open/side=bottom,size=sm 1/around/1",
+        "select-open/side=bottom,size=sm,width=fill 0/around/0",
+        "select-open/side=bottom,size=sm,width=fill 0/around/1",
+        "select-open/side=bottom,size=sm,width=fill 1/around/0",
+        "select-open/side=bottom,size=sm,width=fill 1/around/1"
       ]
     },
     {
@@ -5985,10 +5993,18 @@
         "select-open/side=bottom,size=default 0/around/1",
         "select-open/side=bottom,size=default 1/around/0",
         "select-open/side=bottom,size=default 1/around/1",
+        "select-open/side=bottom,size=default,width=fill 0/around/0",
+        "select-open/side=bottom,size=default,width=fill 0/around/1",
+        "select-open/side=bottom,size=default,width=fill 1/around/0",
+        "select-open/side=bottom,size=default,width=fill 1/around/1",
         "select-open/side=bottom,size=sm 0/around/0",
         "select-open/side=bottom,size=sm 0/around/1",
         "select-open/side=bottom,size=sm 1/around/0",
-        "select-open/side=bottom,size=sm 1/around/1"
+        "select-open/side=bottom,size=sm 1/around/1",
+        "select-open/side=bottom,size=sm,width=fill 0/around/0",
+        "select-open/side=bottom,size=sm,width=fill 0/around/1",
+        "select-open/side=bottom,size=sm,width=fill 1/around/0",
+        "select-open/side=bottom,size=sm,width=fill 1/around/1"
       ]
     },
     {
@@ -6002,10 +6018,18 @@
         "select-open/side=bottom,size=default 0/around/1",
         "select-open/side=bottom,size=default 1/around/0",
         "select-open/side=bottom,size=default 1/around/1",
+        "select-open/side=bottom,size=default,width=fill 0/around/0",
+        "select-open/side=bottom,size=default,width=fill 0/around/1",
+        "select-open/side=bottom,size=default,width=fill 1/around/0",
+        "select-open/side=bottom,size=default,width=fill 1/around/1",
         "select-open/side=bottom,size=sm 0/around/0",
         "select-open/side=bottom,size=sm 0/around/1",
         "select-open/side=bottom,size=sm 1/around/0",
-        "select-open/side=bottom,size=sm 1/around/1"
+        "select-open/side=bottom,size=sm 1/around/1",
+        "select-open/side=bottom,size=sm,width=fill 0/around/0",
+        "select-open/side=bottom,size=sm,width=fill 0/around/1",
+        "select-open/side=bottom,size=sm,width=fill 1/around/0",
+        "select-open/side=bottom,size=sm,width=fill 1/around/1"
       ]
     },
     {
@@ -6038,7 +6062,12 @@
       "className": "isolate",
       "property": "isolation",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["select-open/side=bottom,size=default 1/around/1", "select-open/side=bottom,size=sm 1/around/1"]
+      "at": [
+        "select-open/side=bottom,size=default 1/around/1",
+        "select-open/side=bottom,size=default,width=fill 1/around/1",
+        "select-open/side=bottom,size=sm 1/around/1",
+        "select-open/side=bottom,size=sm,width=fill 1/around/1"
+      ]
     },
     {
       "set": "select-open",
@@ -6046,7 +6075,12 @@
       "className": "z-50",
       "property": "z-index",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["select-open/side=bottom,size=default 1/around/1", "select-open/side=bottom,size=sm 1/around/1"]
+      "at": [
+        "select-open/side=bottom,size=default 1/around/1",
+        "select-open/side=bottom,size=default,width=fill 1/around/1",
+        "select-open/side=bottom,size=sm 1/around/1",
+        "select-open/side=bottom,size=sm,width=fill 1/around/1"
+      ]
     },
     {
       "set": "popover-open",

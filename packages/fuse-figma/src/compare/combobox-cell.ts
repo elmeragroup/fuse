@@ -12,11 +12,11 @@
  * - `comboboxOpen`: the input and the popup with the Basic demo's rows, measured together.
  *
  * Every cell renders `Combobox.Input` in a host as wide as the kit's Input group, which the group's
- * `w-auto` fills. Base UI anchors the popup to the `<input>` inside the group, so each popup is the
- * `<input>`'s width plus 28px, which follows density as the kit's dense width cannot. The popup
- * aligns to the input's start, so it starts on the slot's pixel grid and inside the slot. Combobox
- * reads its labels from `LocaleProvider`, which throws without one, so every cell renders in
- * `en-US`, the locale the docs set.
+ * `w-auto` fills. Fuse anchors the popup to the whole Input group, not the `<input>` inside it, so
+ * each popup is the group's width at both densities. The popup aligns to the group's start, so it
+ * starts on the slot's pixel grid and inside the slot. Combobox reads its labels from
+ * `LocaleProvider`, which throws without one, so every cell renders in `en-US`, the locale the docs
+ * set.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.

@@ -324,7 +324,7 @@ export const KIT_PARITY = {
       "select-popup",
       "select-open",
     ],
-    missing: "A popup width other than 144px, and the read-only fill.",
+    missing: "A popup wider than 144px under a trigger that hugs its text, and the read-only fill.",
     issue: MISSING_SETS,
   },
   "select-field": {

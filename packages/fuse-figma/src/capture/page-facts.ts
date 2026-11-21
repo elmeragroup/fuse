@@ -145,6 +145,11 @@ import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
  *   halve the element's width or make the parent a flex column. The parent shrinks to fit its widest child, the
  *   percentage counting as `auto` meanwhile (CSS Sizing 3 §5.2.1), and the element then spans it,
  *   so it is as wide as its own content or that width, whichever is wider.
+ * - `spansHost`, on the root of an anchored composite's anchor only: the content width of the
+ *   element around it, where the root's border box is that wide, within {@link LAYOUT_UNIT_PX}, and
+ *   widens by 10px with it, in every mode of {@link EVERY_MODE} once its faces have loaded, and the
+ *   width is the same in each. A minimum or maximum that sets the anchor's width, or padding a
+ *   `content-box` width adds, leaves it out.
  *
  * The page restores every element it changes before it returns, and the mode it stamps for the
  * facts above too, also where a measurement throws. A cell's roots share one page and its mode, so a
@@ -152,13 +157,15 @@ import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
  *
  * @param cdp - A DevTools session on the page.
  * @param nodeId - The root's node.
+ * @param role - Whether the root is an anchored composite's anchor, as {@link RootRole} says.
  * @returns Each element's facts, by its path from the root.
  * @throws `FactsUnmeasured` where the page function throws, a defect in it or in the page, which
  *   stops the capture rather than keep facts it did not finish measuring.
  */
 export async function measuredFacts(
   cdp: CDPSession,
-  nodeId: number
+  nodeId: number,
+  role: RootRole = "root"
 ): Promise<ReadonlyMap<string, MeasuredFacts>> {
   const { object } = await cdp.send("DOM.resolveNode", { nodeId });
   if (object.objectId === undefined) {
@@ -168,6 +175,7 @@ export async function measuredFacts(
     objectId: object.objectId,
     returnByValue: true,
     awaitPromise: true,
+    arguments: [{ value: role }],
     functionDeclaration: MEASURE_IN_PAGE,
   });
   if (exceptionDetails !== undefined) {
@@ -185,6 +193,12 @@ export async function measuredFacts(
     )
   );
 }
+
+/**
+ * What a measured root is to its cell: `anchor`, the root of an anchored composite's anchor, which
+ * the page measures `spansHost` on, or `root`, any other.
+ */
+export type RootRole = "anchor" | "root";
 
 /**
  * An element's facts as the page returns them: `coincidingAround` holds the boxes Node measures the
@@ -274,7 +288,7 @@ const FIT_CLEARANCE_PX = TRACK_CLEARANCE_PX;
 const LAYOUT_UNIT_PX = 1 / 64;
 
 /** The page side of {@link measuredFacts}, called on the root. */
-const MEASURE_IN_PAGE = `async function () {
+const MEASURE_IN_PAGE = `async function (role) {
   const modes = ${JSON.stringify(EVERY_MODE)};
   const root = this;
   const out = {};
@@ -897,6 +911,19 @@ const MEASURE_IN_PAGE = `async function () {
   }
   for (const { path, widths } of spanning) {
     if (widths.every(Number.isFinite) && agree(widths)) { put(path, "spansBeside", Math.round(widths[0] * 64) / 64); }
+  }
+  // An anchor's host, and whether, in a mode, the anchor's border box is the host's content width and
+  // widens by 10px with the host, NaN where it is not.
+  const host = root.parentElement;
+  if (role === "anchor" && host !== null && !shrinks(root) && !shrinks(host)) {
+    const widths = [];
+    await inEveryMode(() => {
+      const width = root.getBoundingClientRect().width;
+      const column = contentWidth(host);
+      const follows = withStyles([[host, "width", String(host.getBoundingClientRect().width + 10) + "px"], [host, "max-width", "none"]], () => Math.abs(root.getBoundingClientRect().width - width - 10) <= ${String(LAYOUT_UNIT_PX)});
+      widths.push(follows && Math.abs(width - column) <= ${String(LAYOUT_UNIT_PX)} ? column : NaN);
+    });
+    if (widths.every(Number.isFinite) && agree(widths)) { put("", "spansHost", Math.round(widths[0] * 64) / 64); }
   }
   return out;
 }`;

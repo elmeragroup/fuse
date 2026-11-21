@@ -182,6 +182,11 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   anchorWiderThanMinimum: Schema.optionalKey(Schema.Literal(true)),
   /**
+   * On an anchored composite's anchor root: the content width of its host, in CSS pixels, where in
+   * every mode its border box is that wide and widens with the host, so its width is the column's.
+   */
+  spansHost: Schema.optionalKey(Schema.Finite),
+  /**
    * The element's `::before` and `::after` that paint and, in every mode, are absolute
    * boxes laid out against the element, its containing block, so the kit draws each as a layer.
    */

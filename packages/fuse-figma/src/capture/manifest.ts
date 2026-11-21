@@ -11,6 +11,8 @@
  * kind, which the oracle test walks every manifest object against.
  */
 
+import { Predicate } from "effect";
+
 import type {
   Cell,
   ComponentDefinition,
@@ -145,8 +147,12 @@ export type SetManifest = BoxManifest & {
   readonly statePlace?: string;
   readonly statePeer?: string;
   readonly focusPart?: string;
-  /** The width of the host the sample renders in, in CSS pixels. */
-  readonly previewWidth?: number;
+  /**
+   * The width of the host the sample renders in, in CSS pixels: one width for every cell, or a
+   * function of the cell for a set whose cells differ, which gives undefined for a cell whose root
+   * sits in no host width.
+   */
+  readonly previewWidth?: number | ((cell: Cell) => number | undefined);
   /** The height of the host the sample renders in. */
   readonly previewHeight?: PreviewLength;
   /** The viewport a fixed popup renders in, which its host is as large as. */
@@ -247,8 +253,9 @@ function partDefinition(part: PartManifest | InstanceManifest): PartDefinition |
 
 /**
  * The definition the mapper walks for a manifest: the manifest's intent, with no classes, facts or
- * states, which the capture-backed cascade does not read. An anchored composite's root clips
- * nothing, since its popup's shadow reaches past it.
+ * states, which the capture-backed cascade does not read. A host width given per cell becomes the
+ * definition's `previewWidthFor`. An anchored composite's root clips nothing, since its popup's
+ * shadow reaches past it.
  *
  * @param manifest - The manifest.
  * @returns The definition.
@@ -262,9 +269,16 @@ export function manifestDefinition(manifest: SetManifest): ComponentDefinition {
     sideOffset,
     alignItemWithTrigger: _alignItemWithTrigger,
     api: _api,
+    previewWidth,
     ...rest
   } = manifest;
-  const plain: ComponentDefinition = { ...rest, ...boxDefinition(manifest) };
+  const own: ComponentDefinition = { ...rest, ...boxDefinition(manifest) };
+  const plain: ComponentDefinition =
+    previewWidth === undefined
+      ? own
+      : Predicate.isNumber(previewWidth)
+        ? { ...own, previewWidth }
+        : { ...own, previewWidthFor: previewWidth };
   const definition: ComponentDefinition =
     sideOffset === undefined ? plain : { ...plain, rootOverflow: "visible" };
   return parts === undefined ? definition : { ...definition, parts: parts.map(partDefinition) };

@@ -11,13 +11,17 @@
  * - `Select popup` is the open popup, `content` flat or grouped: 2 cells, the docs Basic and Groups
  *   demos' rows as instances, a fixed sample with nothing selected. Base UI's listbox `<div>` holds
  *   the rows. The separator between the groups spans the popup.
- * - `Select (open)` is the trigger with its popup open below it, at both trigger sizes: 2 cells. Base
- *   UI places the popup under the trigger, 4px below it, centered on it and as wide as it, at least
- *   144px. The popup aligns its selected row over the trigger only while Fuse's
+ * - `Select (open)` is the trigger with its popup open below it, at both trigger sizes, the trigger
+ *   hugging its placeholder or filling the 384px a field box takes: 4 cells. Base UI places the popup
+ *   under the trigger, 4px below it, centered on it and as wide as it, at least 144px, so the popup
+ *   under a hugging trigger is 144px wide, and under a filling one it fills the column with the
+ *   trigger, at least 144px. The popup aligns its selected row over the trigger only while Fuse's
  *   `alignItemWithTrigger` holds and the pointer opens it, which the kit does not draw.
  */
 import type { InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
 import type { Cell } from "./component-spec";
+import { fillsWidth, HUG_OR_FILL } from "./field-box-kit";
+import { FIELD_BOX_PREVIEW_WIDTH } from "./kit-lengths";
 import { MENU_CHECK, MENU_GROUP_LABEL_MANIFEST, MENU_SEPARATOR_MANIFEST } from "./menu-kit";
 import { always } from "./popup-facts";
 import { SELECT_TRIGGER_MANIFEST } from "./select-trigger-kit";
@@ -177,11 +181,16 @@ export const SELECT_OPEN_MANIFEST: SetManifest = {
   name: "Select (open)",
   api: { page: "select", parts: ["Select.Trigger", "Select.Content"] },
   slot: "select-open",
+  // The width axis came after the set's first release, so a hugging cell keeps the key it had then.
+  addedAxes: new Set(["width"]),
   axes: [
     { name: "side", values: ["bottom"] },
     { name: "size", values: ["default", "sm"] },
+    { name: "width", values: HUG_OR_FILL },
   ],
   columnAxis: "size",
+  // A filling trigger fills the width a field box takes. A hugging one sits in no host width.
+  previewWidth: (cell) => (fillsWidth(cell) ? FIELD_BOX_PREVIEW_WIDTH : undefined),
   union: ["select-trigger", "select-content"],
   sideOffset: 4,
   alignItemWithTrigger: false,
@@ -193,7 +202,7 @@ export const SELECT_OPEN_MANIFEST: SetManifest = {
       key: "trigger",
       of: SELECT_TRIGGER_MANIFEST,
       cell: (outer) => ({
-        width: "hug",
+        width: outer.width ?? "",
         size: outer.size ?? "",
         state: "rest",
         content: "placeholder",

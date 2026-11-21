@@ -11,7 +11,7 @@
  *   Fuse hides it until Base UI marks the popup `data-empty`.
  * - `Combobox popup` is the open popup, `content` flat, grouped and empty: 3 cells, the docs Basic and
  *   Groups demos' rows as instances, a fixed sample with nothing selected, and the empty message with
- *   no rows. Its anchor is the `<input>` inside `Combobox.Input`'s Input group, not the group. Its
+ *   no rows. Its anchor is `Combobox.Input`'s whole Input group, not the `<input>` inside it. Its
  *   list holds the rows.
  * - `Combobox (open)` is the Input group of `Combobox.Input` while its popup is open, and the popup
  *   below it holding the Basic demo's rows, 1 cell. The input is the Input group set's

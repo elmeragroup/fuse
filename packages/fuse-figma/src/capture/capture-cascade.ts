@@ -157,11 +157,8 @@ type CellRead = {
   readonly replaced: Map<CapturedElement, CapturedElement>;
   /** The root each element around a root holds, as a positioner holds its popup. */
   readonly rootOf: ReadonlyMap<CapturedElement, CapturedElement>;
-  /**
-   * The width that stands for Base UI's `--anchor-width` in the cell, as a length, or undefined where
-   * the cell has no anchor of a definite width, which leaves the property unset.
-   */
-  readonly anchorWidth: string | undefined;
+  /** The width that stands for Base UI's `--anchor-width` in the cell, as {@link AnchorWidth} says. */
+  readonly anchorWidth: AnchorWidth;
   /** The root `data-slot` of each set that holds this one as an instance, as {@link CaptureSetSource} says. */
   readonly instancedIn: ReadonlySet<string>;
   /** Each captured element of the cell, and each copy a placement rule made of one, by its place. */
@@ -277,8 +274,8 @@ export type CaptureSetSource = {
   readonly captureOf?: (key: string) => SetCapture | undefined;
   /** How the set places its cells' elements, undefined for a set whose cells measure one root. */
   readonly open?: OpenPlacement | undefined;
-  /** The width that stands for `--anchor-width` in a cell, as {@link CellRead} says. By default none. */
-  readonly anchorWidth?: (cell: Cell) => string | undefined;
+  /** The width that stands for `--anchor-width` in a cell, as {@link AnchorWidth} says. By default `unresolved`. */
+  readonly anchorWidth?: (cell: Cell) => AnchorWidth;
   /**
    * The root `data-slot` of each set whose manifest holds this set as an instance part, as
    * {@link instancingSlots} reads them, such as Select popup's `select-content` around Select item.
@@ -295,7 +292,7 @@ function withDefaults(source: CaptureSetSource): FullSource {
   return {
     record: () => undefined,
     captureOf: () => undefined,
-    anchorWidth: () => undefined,
+    anchorWidth: () => ({ _tag: "unresolved" }),
     instancedIn: new Set(),
     ...source,
   };
@@ -400,15 +397,30 @@ function appliedOf(
 const REVERT = /(?<![\w-])revert(?![\w-])/i;
 
 /**
+ * What stands for Base UI's `--anchor-width` in a cell:
+ *
+ * - `length`, the anchor's width as the build maps it, such as `100%` where the anchor spans the
+ *   composite's column, as Select (open)'s filling trigger does, or the anchor set's fixed width.
+ * - `minimum`, for an anchor that hugs its content, a width the spec does not hold: the popup draws
+ *   at its own `min-width`, the least Base UI makes it, which `checkHuggingAnchor` guards.
+ * - `unresolved`, for an anchor that takes the column's width by its declarations but that the
+ *   capture did not measure at the column's width, as {@link AnchorSpan}'s `limited` says, so the
+ *   property stays unset and the popup's width unmapped.
+ */
+export type AnchorWidth =
+  | { readonly _tag: "length"; readonly css: string }
+  | { readonly _tag: "minimum" }
+  | { readonly _tag: "unresolved" };
+
+/**
  * A declaration's value, with a symbol the capture keeps in place of Base UI's measured pixels
- * resolved. The anchor's width is the cell's anchor's as the build maps it. Where the anchor hugs its
- * text, a width the spec does not hold, the popup draws at its own `min-width`, the least Base UI
- * makes it, found on the root the positioner holds: right for an anchor narrower than that minimum,
- * as every sample's is, and too narrow for a wider one, which the kit cannot draw yet (a composite's
- * popup instance carries no `min-width` of its own). The popup's width never follows its rows. The
- * anchor's centre, along a centred popup's side, is the popup's centre less half the element's own
- * size there; for a popup aligned to the anchor's start or end it does not resolve. A `revert` takes
- * the value the browser's default style sheet gives the longhand, as the capture recorded it.
+ * resolved. The anchor's width resolves as {@link AnchorWidth} says, the `minimum` to the
+ * `min-width` of the root the positioner holds: right for an anchor narrower than that minimum, as
+ * every hugging sample's is, and too narrow for a wider one, which `checkHuggingAnchor` stops on.
+ * The popup's width never follows its rows. The anchor's centre, along a centred popup's side, is
+ * the popup's centre less half the element's own size there; for a popup aligned to the anchor's
+ * start or end it does not resolve. A `revert` takes the value the browser's default style sheet
+ * gives the longhand, as the capture recorded it.
  */
 function resolvedValue(
   read: CellRead,
@@ -416,7 +428,14 @@ function resolvedValue(
   element: CapturedElement
 ): string | undefined {
   if (declaration.value === ANCHOR_WIDTH) {
-    return read.anchorWidth ?? ownMinimum(read, element) ?? "auto";
+    switch (read.anchorWidth._tag) {
+      case "length":
+        return read.anchorWidth.css;
+      case "minimum":
+        return ownMinimum(read, element) ?? "auto";
+      case "unresolved":
+        return undefined;
+    }
   }
   if (declaration.revertsTo !== undefined) {
     // `revert` is a CSS-wide keyword, so it stands for the whole value wherever it takes effect,
@@ -1124,13 +1143,56 @@ const ANCHORED_PLACEMENT = "Base UI's anchored placement";
 const MODAL_PLACEMENT = "the modal popup's fixed placement";
 
 /**
- * An anchored composite's roots in the order the composite draws them, the root's layout, and its
- * anchor, which fills the composite across where it is block-level and its width is auto.
+ * How wide an anchored composite's anchor is against the composite's column, which decides what
+ * `--anchor-width` stands for:
+ *
+ * - `column`, the capture measured the anchor's border box as wide as its host in every mode
+ *   (`spansHost`), and the host as wide as the composite's column, which the popup fills beside it.
+ * - `limited`, the anchor's declarations take the column's width, as a block-level anchor of an
+ *   auto width or a `width: 100%` one does, or the capture measured it spanning a host of another
+ *   width, but no measurement shows the column's width: a `w-full max-w-60` trigger in a 384px
+ *   column is 240px wide, a `content-box` one with side padding is wider than the column, and one
+ *   in a padded host is narrower.
+ * - `own`, its width is its own, from its content or its set's length.
  */
-type AnchoredPlacement = {
+export type AnchorSpan = "column" | "limited" | "own";
+
+/**
+ * How wide an anchored composite's anchor is against the composite's column, as {@link AnchorSpan}
+ * says.
+ *
+ * @param placement - The composite's placement, as {@link anchoredPlacement} reads its cell.
+ * @param column - The width of the composite's column in CSS pixels, undefined where the cell sits
+ *   in no host width.
+ * @returns The anchor's span.
+ */
+export function anchorSpan(placement: AnchoredPlacement, column: number | undefined): AnchorSpan {
+  const spans = placement.anchor.root.measured?.spansHost;
+  if (spans !== undefined && column !== undefined && Math.abs(spans - column) <= 1 / 64) {
+    return "column";
+  }
+  return spans !== undefined || placement.anchorTakesColumn ? "limited" : "own";
+}
+
+/**
+ * An anchored composite's roots in the order the composite draws them, the root's layout, and its
+ * anchor.
+ */
+export type AnchoredPlacement = {
   readonly roots: readonly CapturedRoot[];
   readonly anchor: CapturedRoot;
+  /**
+   * Whether the placement rule stretches the anchor across a `top` or `bottom` composite's column:
+   * a block-level anchor of an auto width fills the host it renders in (CSS 2.1 §10.3.3), which a
+   * column draws as a stretch. The anchor's own limits still apply to the stretched box.
+   */
   readonly anchorFills: boolean;
+  /**
+   * Whether the anchor's declarations take the column's width: it fills it as `anchorFills` says,
+   * or its `width` is `100%`. Its limits, padding and host may still move it off the column's
+   * width, which {@link anchorSpan} reads from the capture's measurement.
+   */
+  readonly anchorTakesColumn: boolean;
   readonly declarations: readonly { readonly property: string; readonly value: string }[];
 };
 
@@ -1191,10 +1253,12 @@ export function anchoredPlacement(
       ?.value.trim() ?? "";
   const blockLevel = /^(block|flex|grid|flow-root|table)$/.test(winner("display"));
   const autoWidth = winner("width") === "" || winner("width") === "auto";
+  const anchorFills = !across && blockLevel && autoWidth;
   return {
     roots: side === "top" || side === "left" ? [popup, anchor] : [anchor, popup],
     anchor,
-    anchorFills: !across && blockLevel && autoWidth,
+    anchorFills,
+    anchorTakesColumn: anchorFills || (!across && evaluatePercentage(winner("width")) === 1),
     declarations: [
       { property: "display", value: "flex" },
       { property: "flex-direction", value: across ? "row" : "column" },
@@ -1223,7 +1287,11 @@ function checkHuggingAnchor(cell: CapturedCell, placement: AnchoredPlacement, re
       (declaration) =>
         declaration?.longhands.includes("width") === true && declaration.value.includes("--anchor-width")
     );
-  if (read.anchorWidth !== undefined || sized !== true || popup?.measured?.anchorWiderThanMinimum !== true) {
+  if (
+    read.anchorWidth._tag !== "minimum" ||
+    sized !== true ||
+    popup?.measured?.anchorWiderThanMinimum !== true
+  ) {
     return;
   }
   const minimum = popup.declarations

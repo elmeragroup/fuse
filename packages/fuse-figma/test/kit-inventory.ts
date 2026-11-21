@@ -205,8 +205,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "select-item", name: "Select item", variants: 6, previewed: 6 },
       // The Basic demo's rows, and the Groups demo's groups.
       { key: "select-popup", name: "Select popup", variants: 2, previewed: 2 },
-      // Below the trigger, at the default and the small size.
-      { key: "select-open", name: "Select (open)", variants: 2, previewed: 2 },
+      // Below the trigger, at the default and the small size, under a hugging and a filling trigger.
+      { key: "select-open", name: "Select (open)", variants: 4, previewed: 4 },
     ],
   },
   {

@@ -7,12 +7,13 @@
 
 import {
   anchoredPlacement,
+  anchorSpan,
   CaptureSetCascade,
   castsShadowOrClips,
   partsThatScaleIn,
 } from "../capture/capture-cascade";
-import type { OpenPlacement } from "../capture/capture-cascade";
-import type { SetCapture } from "../capture/capture-format";
+import type { AnchorWidth, OpenPlacement } from "../capture/capture-cascade";
+import type { CapturedRoot, SetCapture } from "../capture/capture-format";
 import { kitFamily } from "../kit-fonts";
 import { mapBox, NO_VALUES, partName } from "./box-mapping";
 import type { MapScope } from "./box-mapping";
@@ -353,31 +354,46 @@ function labelsOf(
 }
 
 /**
- * The width that stands for Base UI's `--anchor-width` in an anchored composite's cell: the anchor's
- * width as the build maps it, for any anchor. An anchor that fills the composite across, as the
- * placement rule stretches a block-level one, is as wide as the composite's host. An anchor whose
- * own set fixes its width is that width. An anchor that hugs its text, as a Select trigger does,
- * has a width only its text sets, which the spec does not hold, so this is undefined and the cascade
- * draws the popup at its own `min-width`. Base UI makes the popup `max(anchor, minimum)`, so that
- * holds for an anchor narrower than the minimum only; the popup's width never follows its rows, as
- * the perturbation probe measures.
+ * The width that stands for Base UI's `--anchor-width` in an anchored composite's cell, one of the
+ * outcomes {@link AnchorWidth} lists, chosen by the anchor's span as {@link anchorSpan} reads it from
+ * the capture. A `column` anchor gives `100%` of the column, a `limited` one leaves the width
+ * unresolved, and an `own` one gives its set's fixed width or, where it hugs, the popup's minimum.
  */
 function anchorWidth(
   definition: ComponentDefinition,
   capture: SetCapture,
   cell: Cell,
   inner: ReadonlyMap<string, InnerSet>
-): string | undefined {
+): AnchorWidth {
   const captured = capture.cells.find((each) => each.key === variantKey(definition, cell));
   if (captured === undefined) {
-    return undefined;
+    return HUGGING_ANCHOR;
   }
   const placement = anchoredPlacement(captured, 0, capture.declarations);
-  const host = previewWidthIn(definition, cell);
-  if (placement.anchorFills) {
-    return host === undefined ? undefined : `${String(host)}px`;
+  switch (anchorSpan(placement, previewWidthIn(definition, cell))) {
+    case "column":
+      return { _tag: "length", css: "100%" };
+    case "limited":
+      return { _tag: "unresolved" };
+    case "own":
+      return ownAnchorWidth(definition, cell, placement.anchor, inner);
   }
-  const slot = placement.anchor.root.attributes["data-slot"];
+}
+
+/** What stands for the anchor's width where it hugs its content, as {@link AnchorWidth} says. */
+const HUGGING_ANCHOR: AnchorWidth = { _tag: "minimum" };
+
+/**
+ * The width of an anchor whose width is its own: its set's fixed literal width, or, for an anchor
+ * that hugs its content, the popup's own minimum, as {@link anchorWidth} says.
+ */
+function ownAnchorWidth(
+  definition: ComponentDefinition,
+  cell: Cell,
+  anchor: CapturedRoot,
+  inner: ReadonlyMap<string, InnerSet>
+): AnchorWidth {
+  const slot = anchor.root.attributes["data-slot"];
   for (const part of definition.parts ?? []) {
     if (!("kind" in part) || !part.shownIn(cell)) {
       continue;
@@ -391,20 +407,20 @@ function anchorWidth(
       ?.variants.find((each) => each.key === variantKey(part.of, innerCell));
     const width = variant?.root.sizing.horizontal;
     return width?.kind === "fixed" && width.length.kind === "literal"
-      ? `${String(width.length.value)}px`
-      : undefined;
+      ? { _tag: "length", css: `${String(width.length.value)}px` }
+      : HUGGING_ANCHOR;
   }
-  return undefined;
+  return HUGGING_ANCHOR;
 }
 
 /**
  * The width of a popup set's sample anchor, which fills the host the sample renders in, where the
- * set names the host's width; undefined otherwise, for an anchor that hugs its text, as a Select
- * trigger does, which the cascade draws as {@link anchorWidth} says.
+ * set names the host's width. Otherwise the anchor hugs its text, as a Select trigger does, and the
+ * width is the popup's own `min-width` (`minimum`), as {@link AnchorWidth} says.
  */
-function sampleAnchorWidth(definition: ComponentDefinition, cell: Cell): string | undefined {
+function sampleAnchorWidth(definition: ComponentDefinition, cell: Cell): AnchorWidth {
   const width = previewWidthIn(definition, cell);
-  return width === undefined ? undefined : `${String(width)}px`;
+  return width === undefined ? HUGGING_ANCHOR : { _tag: "length", css: `${String(width)}px` };
 }
 
 /**
