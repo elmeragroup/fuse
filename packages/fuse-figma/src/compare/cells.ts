@@ -123,10 +123,14 @@ export function parseCell<Definition extends Pick<ComponentDefinition, "key" | "
 /** A pseudo class the page forces on a cell's measured element, or the part of it that takes its states. */
 export type ForcedPseudoClass = "hover" | "focus" | "focus-visible";
 
-/** The `state` values the page forces. Every other state is one the markup draws itself. */
+/**
+ * The `state` values the page forces. Every other state is one the markup draws itself. An
+ * `invalid-focus` cell is an invalid cell, whose markup draws the invalid state, with focus forced.
+ */
 const FORCED = new Map<string, readonly ForcedPseudoClass[]>([
   ["hover", ["hover"]],
   ["focus", ["focus", "focus-visible"]],
+  ["invalid-focus", ["focus", "focus-visible"]],
 ]);
 
 /**
@@ -138,7 +142,8 @@ export type Highlight = "focus" | "data-highlighted";
 
 /**
  * The pseudo classes the page forces for a cell: `:hover` for hover, and `:focus` with
- * `:focus-visible` for focus, as a pointer over the element or a keyboard user on it would. A
+ * `:focus-visible` for focus and invalid focus, as a pointer over the element or a keyboard user on
+ * it would. A
  * highlighted row takes `:focus` alone where its set highlights by focus, as Base UI moves focus
  * along a list without a keyboard focus ring.
  *
@@ -171,25 +176,29 @@ export type FallbackInteraction = "hover" | "focus" | "none";
 
 /**
  * The real interaction the page tries when forcing a cell's state changed nothing: a hover for a
- * hover cell and a focus for a focus cell. A highlighted row gets none, since a real focus on a
- * menu item adds the keyboard focus ring its highlight does not show, and a real hover highlights
- * only once a page hydrates its list.
+ * hover cell and a focus for a focus or invalid focus cell. A highlighted row gets none, since a real
+ * focus on a menu item adds the keyboard focus ring its highlight does not show, and a real hover
+ * highlights only once a page hydrates its list.
  *
  * @param cell - A parsed cell.
  * @returns The interaction, or `none` for a cell whose state no real hover or focus alone draws.
  */
 export function fallbackInteraction(cell: Cell): FallbackInteraction {
+  if (cell.state === "invalid-focus") {
+    return "focus";
+  }
   return cell.state === "hover" || cell.state === "focus" ? cell.state : "none";
 }
 
 /**
  * The same cell at rest: the reference the page compares a forced cell's styles against, to
  * tell whether forcing the pseudo class reached Fuse's `enabled-hover:` and `focus-visible:`
- * rules.
+ * rules. An `invalid-focus` cell rests as the invalid cell, so the invalid state its markup draws
+ * cannot pass for the focus the page forces.
  *
  * @param cell - A parsed cell.
- * @returns The cell with its state set to rest.
+ * @returns The cell with its state set to rest, or to invalid for an invalid focus cell.
  */
 export function restingTwin(cell: Cell): Cell {
-  return { ...cell, state: "rest" };
+  return { ...cell, state: cell.state === "invalid-focus" ? "invalid" : "rest" };
 }

@@ -759,40 +759,6 @@
         "className": "forced-colors:data-in-range:data-invalid:bg-[Mark]"
       }
     ],
-    "checkbox": [
-      {
-        "part": "checkbox",
-        "className": "aria-invalid:focus-visible:ring-3"
-      },
-      {
-        "part": "checkbox",
-        "className": "aria-invalid:focus-visible:ring-error/20"
-      },
-      {
-        "part": "checkbox",
-        "className": "aria-invalid:focus-visible:ring-offset-1"
-      },
-      {
-        "part": "checkbox",
-        "className": "aria-invalid:focus-visible:ring-offset-error"
-      },
-      {
-        "part": "checkbox",
-        "className": "data-invalid:focus-visible:ring-3"
-      },
-      {
-        "part": "checkbox",
-        "className": "data-invalid:focus-visible:ring-error/20"
-      },
-      {
-        "part": "checkbox",
-        "className": "data-invalid:focus-visible:ring-offset-1"
-      },
-      {
-        "part": "checkbox",
-        "className": "data-invalid:focus-visible:ring-offset-error"
-      }
-    ],
     "combobox-popup": [
       {
         "part": "combobox-content",
@@ -1522,22 +1488,6 @@
       },
       {
         "part": "input",
-        "className": "aria-invalid:focus-visible:ring-3"
-      },
-      {
-        "part": "input",
-        "className": "aria-invalid:focus-visible:ring-error/20"
-      },
-      {
-        "part": "input",
-        "className": "aria-invalid:focus-visible:ring-offset-1"
-      },
-      {
-        "part": "input",
-        "className": "aria-invalid:focus-visible:ring-offset-error"
-      },
-      {
-        "part": "input",
         "className": "file:text-sm"
       },
       {
@@ -1998,22 +1948,6 @@
       },
       {
         "part": "group",
-        "className": "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-3"
-      },
-      {
-        "part": "group",
-        "className": "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-error/20"
-      },
-      {
-        "part": "group",
-        "className": "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-1"
-      },
-      {
-        "part": "group",
-        "className": "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-error"
-      },
-      {
-        "part": "group",
         "className": "aria-disabled:cursor-not-allowed"
       },
       {
@@ -2039,14 +1973,6 @@
       {
         "part": "input",
         "className": "entry-floor:[--entry-text:max(16px,var(--field-text,var(--control-text)))]"
-      },
-      {
-        "part": "input",
-        "className": "aria-invalid:focus-visible:ring-0"
-      },
-      {
-        "part": "input",
-        "className": "aria-invalid:focus-visible:ring-offset-0"
       },
       {
         "part": "input",
@@ -2463,72 +2389,6 @@
       {
         "part": "radio-icon-button",
         "className": "enabled-active:scale-[0.96]"
-      },
-      {
-        "part": "radio-icon-button",
-        "className": "aria-invalid:focus-visible:ring-3"
-      },
-      {
-        "part": "radio-icon-button",
-        "className": "aria-invalid:focus-visible:ring-error/20"
-      },
-      {
-        "part": "radio-icon-button",
-        "className": "aria-invalid:focus-visible:ring-offset-1"
-      },
-      {
-        "part": "radio-icon-button",
-        "className": "aria-invalid:focus-visible:ring-offset-error"
-      },
-      {
-        "part": "radio-icon-button",
-        "className": "data-invalid:focus-visible:ring-3"
-      },
-      {
-        "part": "radio-icon-button",
-        "className": "data-invalid:focus-visible:ring-error/20"
-      },
-      {
-        "part": "radio-icon-button",
-        "className": "data-invalid:focus-visible:ring-offset-1"
-      },
-      {
-        "part": "radio-icon-button",
-        "className": "data-invalid:focus-visible:ring-offset-error"
-      }
-    ],
-    "radio": [
-      {
-        "part": "radio-group-item",
-        "className": "aria-invalid:focus-visible:ring-3"
-      },
-      {
-        "part": "radio-group-item",
-        "className": "aria-invalid:focus-visible:ring-error/20"
-      },
-      {
-        "part": "radio-group-item",
-        "className": "aria-invalid:focus-visible:ring-offset-1"
-      },
-      {
-        "part": "radio-group-item",
-        "className": "aria-invalid:focus-visible:ring-offset-error"
-      },
-      {
-        "part": "radio-group-item",
-        "className": "data-invalid:focus-visible:ring-3"
-      },
-      {
-        "part": "radio-group-item",
-        "className": "data-invalid:focus-visible:ring-error/20"
-      },
-      {
-        "part": "radio-group-item",
-        "className": "data-invalid:focus-visible:ring-offset-1"
-      },
-      {
-        "part": "radio-group-item",
-        "className": "data-invalid:focus-visible:ring-offset-error"
       }
     ],
     "select-field": [
@@ -2869,40 +2729,6 @@
         "className": "data-vertical:self-stretch"
       }
     ],
-    "switch": [
-      {
-        "part": "switch",
-        "className": "aria-invalid:focus-visible:ring-3"
-      },
-      {
-        "part": "switch",
-        "className": "aria-invalid:focus-visible:ring-error/20"
-      },
-      {
-        "part": "switch",
-        "className": "aria-invalid:focus-visible:ring-offset-1"
-      },
-      {
-        "part": "switch",
-        "className": "aria-invalid:focus-visible:ring-offset-error"
-      },
-      {
-        "part": "switch",
-        "className": "data-invalid:focus-visible:ring-3"
-      },
-      {
-        "part": "switch",
-        "className": "data-invalid:focus-visible:ring-error/20"
-      },
-      {
-        "part": "switch",
-        "className": "data-invalid:focus-visible:ring-offset-1"
-      },
-      {
-        "part": "switch",
-        "className": "data-invalid:focus-visible:ring-offset-error"
-      }
-    ],
     "text-field": [
       {
         "part": "field",
@@ -2927,22 +2753,6 @@
       {
         "part": "textarea",
         "className": "aria-disabled:opacity-50"
-      },
-      {
-        "part": "textarea",
-        "className": "aria-invalid:focus-visible:ring-3"
-      },
-      {
-        "part": "textarea",
-        "className": "aria-invalid:focus-visible:ring-error/20"
-      },
-      {
-        "part": "textarea",
-        "className": "aria-invalid:focus-visible:ring-offset-1"
-      },
-      {
-        "part": "textarea",
-        "className": "aria-invalid:focus-visible:ring-offset-error"
       }
     ],
     "toggle-group": [
@@ -6099,10 +5909,12 @@
         "radio/checked=false,state=disabled 0/root::after",
         "radio/checked=false,state=focus 0/root::after",
         "radio/checked=false,state=invalid 0/root::after",
+        "radio/checked=false,state=invalid-focus 0/root::after",
         "radio/checked=false,state=rest 0/root::after",
         "radio/checked=true,state=disabled 0/root::after",
         "radio/checked=true,state=focus 0/root::after",
         "radio/checked=true,state=invalid 0/root::after",
+        "radio/checked=true,state=invalid-focus 0/root::after",
         "radio/checked=true,state=rest 0/root::after"
       ]
     },
@@ -6116,14 +5928,17 @@
         "checkbox/checked=false,indeterminate=false,state=disabled 0/root::after",
         "checkbox/checked=false,indeterminate=false,state=focus 0/root::after",
         "checkbox/checked=false,indeterminate=false,state=invalid 0/root::after",
+        "checkbox/checked=false,indeterminate=false,state=invalid-focus 0/root::after",
         "checkbox/checked=false,indeterminate=false,state=rest 0/root::after",
         "checkbox/checked=false,indeterminate=true,state=disabled 0/root::after",
         "checkbox/checked=false,indeterminate=true,state=focus 0/root::after",
         "checkbox/checked=false,indeterminate=true,state=invalid 0/root::after",
+        "checkbox/checked=false,indeterminate=true,state=invalid-focus 0/root::after",
         "checkbox/checked=false,indeterminate=true,state=rest 0/root::after",
         "checkbox/checked=true,indeterminate=false,state=disabled 0/root::after",
         "checkbox/checked=true,indeterminate=false,state=focus 0/root::after",
         "checkbox/checked=true,indeterminate=false,state=invalid 0/root::after",
+        "checkbox/checked=true,indeterminate=false,state=invalid-focus 0/root::after",
         "checkbox/checked=true,indeterminate=false,state=rest 0/root::after"
       ]
     },
@@ -6137,18 +5952,22 @@
         "switch/size=default,checked=false,state=disabled 0/root::after",
         "switch/size=default,checked=false,state=focus 0/root::after",
         "switch/size=default,checked=false,state=invalid 0/root::after",
+        "switch/size=default,checked=false,state=invalid-focus 0/root::after",
         "switch/size=default,checked=false,state=rest 0/root::after",
         "switch/size=default,checked=true,state=disabled 0/root::after",
         "switch/size=default,checked=true,state=focus 0/root::after",
         "switch/size=default,checked=true,state=invalid 0/root::after",
+        "switch/size=default,checked=true,state=invalid-focus 0/root::after",
         "switch/size=default,checked=true,state=rest 0/root::after",
         "switch/size=sm,checked=false,state=disabled 0/root::after",
         "switch/size=sm,checked=false,state=focus 0/root::after",
         "switch/size=sm,checked=false,state=invalid 0/root::after",
+        "switch/size=sm,checked=false,state=invalid-focus 0/root::after",
         "switch/size=sm,checked=false,state=rest 0/root::after",
         "switch/size=sm,checked=true,state=disabled 0/root::after",
         "switch/size=sm,checked=true,state=focus 0/root::after",
         "switch/size=sm,checked=true,state=invalid 0/root::after",
+        "switch/size=sm,checked=true,state=invalid-focus 0/root::after",
         "switch/size=sm,checked=true,state=rest 0/root::after"
       ]
     },
@@ -6162,6 +5981,7 @@
         "input/content=placeholder,state=disabled 0/root",
         "input/content=placeholder,state=focus 0/root",
         "input/content=placeholder,state=invalid 0/root",
+        "input/content=placeholder,state=invalid-focus 0/root",
         "input/content=placeholder,state=readonly 0/root",
         "input/content=placeholder,state=rest 0/root"
       ]
@@ -6176,6 +5996,7 @@
         "input/content=placeholder,state=disabled 0/root::placeholder",
         "input/content=placeholder,state=focus 0/root::placeholder",
         "input/content=placeholder,state=invalid 0/root::placeholder",
+        "input/content=placeholder,state=invalid-focus 0/root::placeholder",
         "input/content=placeholder,state=readonly 0/root::placeholder",
         "input/content=placeholder,state=rest 0/root::placeholder"
       ]
@@ -6327,6 +6148,7 @@
         "textarea/content=placeholder,state=disabled 0/root",
         "textarea/content=placeholder,state=focus 0/root",
         "textarea/content=placeholder,state=invalid 0/root",
+        "textarea/content=placeholder,state=invalid-focus 0/root",
         "textarea/content=placeholder,state=readonly 0/root",
         "textarea/content=placeholder,state=rest 0/root"
       ]
@@ -6341,6 +6163,7 @@
         "textarea/content=placeholder,state=disabled 0/root::placeholder",
         "textarea/content=placeholder,state=focus 0/root::placeholder",
         "textarea/content=placeholder,state=invalid 0/root::placeholder",
+        "textarea/content=placeholder,state=invalid-focus 0/root::placeholder",
         "textarea/content=placeholder,state=readonly 0/root::placeholder",
         "textarea/content=placeholder,state=rest 0/root::placeholder"
       ]
@@ -7430,6 +7253,7 @@
         "number-field/state=disabled 0/root/0/0",
         "number-field/state=focus 0/root/0/0",
         "number-field/state=invalid 0/root/0/0",
+        "number-field/state=invalid-focus 0/root/0/0",
         "number-field/state=readonly 0/root/0/0",
         "number-field/state=rest 0/root/0/0"
       ]

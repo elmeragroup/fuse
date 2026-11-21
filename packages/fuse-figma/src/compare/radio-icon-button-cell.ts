@@ -1,7 +1,8 @@
 /**
  * The renderer of the `radio-icon-button` set: each cell as the real Fuse `<RadioIconButton>`
  * holding `<List />`, alone in a `<RadioGroup>` as `radio-cell.ts` wraps a radio, which checks it
- * at `checked=true` and marks it invalid at `invalid`. `disabled` sets the button's `isDisabled`.
+ * at `checked=true` and marks it invalid at `invalid` and `invalid-focus`, where the page forces
+ * focus on the button. `disabled` sets the button's `isDisabled`.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.

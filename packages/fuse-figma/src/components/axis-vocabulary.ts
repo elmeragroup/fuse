@@ -8,6 +8,7 @@
  * Variant keys are built from these names, and a renamed axis or value deletes the variants it
  * keys, so a name changes here only before the kit's library is first published.
  */
+import type { Cell } from "./component-spec";
 
 /** The values of a two-state axis, a boolean prop's or a Figma-only one's, off first. */
 export const BOOLEAN_VALUES = ["false", "true"] as const;
@@ -39,9 +40,10 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
         "unavailable",
         "readonly",
         "invalid",
+        "invalid-focus",
       ],
       draws:
-        "The interaction or validity state the cell forces or the component's props set: a pointer over it, keyboard focus, the highlighted row of a menu, an open submenu, a hovered or active row's badge, a file dragged over it, an action in flight, disabled, a calendar day the user can reach but not pick, read-only or invalid. A set with one static cell names it `rest`.",
+        "The interaction or validity state the cell forces or the component's props set: a pointer over it, keyboard focus, the highlighted row of a menu, an open submenu, a hovered or active row's badge, a file dragged over it, an action in flight, disabled, a calendar day the user can reach but not pick, read-only, invalid, or invalid with keyboard focus. A set with one static cell names it `rest`.",
     },
   ],
   [
@@ -224,3 +226,14 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
     ] as const
   ).map(([name, draws]): readonly [string, FigmaAxis] => [name, { values: BOOLEAN_VALUES, draws }]),
 ]);
+
+/**
+ * Whether a cell's `state` is one of the two that render its control invalid: `invalid`, and
+ * `invalid-focus`, the invalid cell with focus forced.
+ *
+ * @param cell - A cell of a set whose `state` axis holds `invalid`.
+ * @returns True at `state=invalid` and `state=invalid-focus`.
+ */
+export function isInvalid(cell: Cell): boolean {
+  return cell.state === "invalid" || cell.state === "invalid-focus";
+}

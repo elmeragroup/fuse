@@ -8,7 +8,8 @@
  * - `disabled` sets the item's `disabled`.
  * - `invalid` sets the group's `isInvalid`. `RadioGroup` renders its own `Field.Root` and passes
  *   `isInvalid` to it, so the radio reads its validity from that root. An invalid `Field.Root`
- *   around the group would not reach the radio past the group's own root.
+ *   around the group would not reach the radio past the group's own root. `invalid-focus` renders
+ *   the invalid cell, and the page forces focus on the radio.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.
@@ -19,6 +20,7 @@ import type { ReactElement } from "react";
 
 import { RadioGroup, RadioGroupItem } from "../../../fuse/dist/radio-group.js";
 import type { RadioGroupProps } from "../../../fuse/dist/radio-group.js";
+import { isInvalid } from "../components/axis-vocabulary.ts";
 import type { Cell } from "../components/component-spec.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
@@ -28,7 +30,7 @@ const CELL_LABEL = "Option";
 
 /**
  * One radio item alone in a `<RadioGroup>`, which checks it at `checked=true` and marks it invalid
- * at `invalid`, as the module docblock describes.
+ * at `invalid` and `invalid-focus`, as the module docblock describes.
  *
  * @param cell - The cell.
  * @param value - The item's value, which the group starts with at `checked=true`.
@@ -42,7 +44,10 @@ export function inRadioGroup(
   item: ReactElement,
   props: Partial<RadioGroupProps> = {}
 ): ReactElement {
-  const group: RadioGroupProps = { ...props, isInvalid: cell.state === "invalid" };
+  const group: RadioGroupProps = {
+    ...props,
+    isInvalid: isInvalid(cell),
+  };
   if (cell.checked === "true") {
     group.defaultValue = value;
   }

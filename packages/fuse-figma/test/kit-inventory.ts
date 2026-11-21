@@ -76,24 +76,24 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Radio",
     docs: "radio-group",
     sets: [
-      // 5 sizes, off and on, in 5 states.
-      { key: "radio-icon-button", name: "Radio icon button", variants: 50, previewed: 50 },
-      // Off and on, in 4 states.
-      { key: "radio", name: "Radio", variants: 8, previewed: 8 },
+      // 5 sizes, off and on, in 6 states.
+      { key: "radio-icon-button", name: "Radio icon button", variants: 60, previewed: 60 },
+      // Off and on, in 5 states.
+      { key: "radio", name: "Radio", variants: 10, previewed: 10 },
       // The labelled row, hugging and filling, off and on, in 4 states.
       { key: "radio-row", name: "Radio row", variants: 16, previewed: 16 },
       // The labelled group, vertical and horizontal, at rest, disabled and invalid.
       { key: "radio-group", name: "Radio group", variants: 6, previewed: 6 },
     ],
   },
-  // Unchecked, checked and indeterminate, in 4 states.
+  // Unchecked, checked and indeterminate, in 5 states.
   {
     slug: "checkbox",
     name: "Checkbox",
-    sets: [{ key: "checkbox", name: "Checkbox", variants: 12, previewed: 12 }],
+    sets: [{ key: "checkbox", name: "Checkbox", variants: 15, previewed: 15 }],
   },
-  // 2 sizes, off and on, in 4 states.
-  { slug: "switch", name: "Switch", sets: [{ key: "switch", name: "Switch", variants: 16, previewed: 16 }] },
+  // 2 sizes, off and on, in 5 states.
+  { slug: "switch", name: "Switch", sets: [{ key: "switch", name: "Switch", variants: 20, previewed: 20 }] },
   // Horizontal and vertical.
   {
     slug: "separator",
@@ -129,7 +129,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     slug: "input",
     name: "Input",
     sets: [
-      { key: "input", name: "Input", variants: 10, previewed: 10 },
+      // Placeholder and value in 6 states.
+      { key: "input", name: "Input", variants: 12, previewed: 12 },
       // Combobox's caret and clear forms, Command's search form and Combobox's open caret form, in 4 states.
       { key: "input-group", name: "Input group", variants: 16, previewed: 16 },
       // The labelled input, placeholder and value in 5 states.
@@ -140,8 +141,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     slug: "textarea",
     name: "Textarea",
     sets: [
-      // Placeholder and value in 5 states.
-      { key: "textarea", name: "Textarea", variants: 10, previewed: 10 },
+      // Placeholder and value in 6 states.
+      { key: "textarea", name: "Textarea", variants: 12, previewed: 12 },
       // The labelled textarea in 5 states, and one with its Counter on.
       { key: "textarea-field", name: "Textarea field", variants: 5, previewed: 6 },
     ],
@@ -350,8 +351,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     sets: [
       // The increase stepper at rest, hovered, disabled and read-only.
       { key: "number-field-stepper", name: "Number field stepper", variants: 4, previewed: 4 },
-      // The labelled field in 5 states, and one with its Denomination on.
-      { key: "number-field", name: "Number field", variants: 5, previewed: 6 },
+      // The labelled field in 6 states, and one with its Denomination on.
+      { key: "number-field", name: "Number field", variants: 6, previewed: 7 },
     ],
   },
   {

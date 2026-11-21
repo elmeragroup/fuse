@@ -8,6 +8,7 @@
  *   switch's validity from, which then marks it `aria-invalid="true"` and `data-invalid`.
  *   The field is horizontal because the vertical one stretches its children to its width, which in
  *   the compare page's unsized cell slot collapses the switch to its content width.
+ * - `invalid-focus` renders the invalid cell, and the page forces focus on the switch.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.
@@ -20,6 +21,7 @@ import { switchVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import { Field } from "../../../fuse/dist/field.js";
 import { Switch } from "../../../fuse/dist/switch.js";
+import { isInvalid } from "../components/axis-vocabulary.ts";
 import type { Cell } from "../components/component-spec.ts";
 import { ownKey } from "../components/own-key.ts";
 import type { CellRendering } from "./cell-renderers.ts";
@@ -47,7 +49,7 @@ export const switchCell: CellRendering = {
       disabled: cell.state === "disabled",
     };
     const track = createElement(Switch, props);
-    return cell.state === "invalid"
+    return isInvalid(cell)
       ? createElement(Field.Root, { invalid: true, orientation: "horizontal" }, track)
       : track;
   },

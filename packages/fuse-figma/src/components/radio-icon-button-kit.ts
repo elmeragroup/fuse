@@ -1,10 +1,11 @@
 /**
- * Radio icon button, as one component set: the recipe's five square sizes, off and on, in five
- * states, around one icon with no label: 50 cells.
+ * Radio icon button, as one component set: the recipe's five square sizes, off and on, in six
+ * states, around one icon with no label: 60 cells.
  *
  * - The root is Base UI's radio `<span data-slot="radio-icon-button">`, which renders checked only
  *   inside a `RadioGroup`.
- * - Invalid renders the button in an invalid Field.
+ * - Invalid renders the button in an invalid Field. Invalid focus renders it there with focus
+ *   forced, where the recipe draws its error ring.
  * - The icon is List, the first icon the docs demo places, which the `Icon` swap property picks.
  */
 import type { radioIconButtonVariants } from "@elmeragroup/fuse/recipe-catalog";
@@ -48,7 +49,7 @@ export const RADIO_ICON_BUTTON_MANIFEST: SetManifest = {
   axes: [
     { name: "size", values: SIZES },
     { name: "checked", values: ["false", "true"] },
-    { name: "state", values: ["rest", "hover", "focus", "disabled", "invalid"] },
+    { name: "state", values: ["rest", "hover", "focus", "disabled", "invalid", "invalid-focus"] },
   ],
   columnAxis: "state",
   label: undefined,
