@@ -1,6 +1,6 @@
 /**
- * The Figma side of a sync. It covers what a file holds now and the changes one atomic
- * write makes. The module brands ids because one write mixes collection, mode and variable
+ * The Figma side of a sync. It covers what a file holds now and the changes one write
+ * makes. The module brands ids because one write mixes collection, mode and variable
  * ids, both real ones read from the file and temporary ones minted for new objects. A
  * swapped id would fail only inside Figma. `FigmaApi` owns the REST encoding of these
  * changes.
@@ -184,8 +184,9 @@ export type ValueChange = {
 };
 
 /**
- * One atomic write. Figma applies the lists in this order, and each list in order, so a
- * value may reference a mode or variable created earlier in the same write.
+ * One write. Figma applies the lists in this order, and each list in order, so a value may
+ * reference a mode or variable created earlier in the same write. `FigmaApi` sends a write
+ * too large for one request as several requests in the same order, each under Figma's limit.
  */
 export type ChangeBatch = {
   readonly collections: readonly CollectionChange[];

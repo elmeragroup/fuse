@@ -80,7 +80,7 @@ pnpm --filter @elmeragroup/fuse-figma figma:sync    # apply the plan
 
 `--file-key <key>` overrides `FIGMA_FILE_KEY`, and a branch key targets a Figma branch. `figma --help` lists every flag.
 
-A new file can refuse every REST variable write until Figma itself has made one. Each write then fails with `500 (Error updating file, please try again later)`, even one that creates a single collection, while reads and `check` work. Before the first sync, open the file in Figma, create a variable collection and delete it. The sync prints these steps with a write's 500 and does not retry the write.
+A new file can refuse every REST variable write until Figma itself has made one. Each write then fails with `500 (Error updating file, please try again later)`, even one that creates a single collection, while reads and `check` work. Before the first sync, open the file in Figma, create a variable collection and delete it. The sync prints these steps when the first write request answers 500, and it does not retry the write.
 
 `check` exits 2 when the file differs from the tokens and 1 when it cannot run, for example when the token has expired, so a CI job can tell the two apart. It groups the plan by collection and kind of change. A group of up to 10 changes lists each variable and mode, and a larger group prints its count.
 
@@ -90,7 +90,9 @@ After a sync, publish the library in Figma. The REST API cannot publish, so cons
 
 ## How a sync decides what to write
 
-The sync reads the file, plans one change batch and sends it. Figma applies a batch completely or rejects all of it. The sync then reads the file again and fails unless the plan is now empty, so a successful run means the file was checked.
+The sync reads the file, plans one change batch and sends it. The sync then reads the file again and fails unless the plan is now empty, so a successful run means the file was checked.
+
+Figma applies one request completely or rejects all of it, and it refuses a request body over 4 MB. A batch that fits goes out as one request. A larger batch, such as a first sync into an empty file, goes out as several requests in order, each under the limit. Each request takes the next changes in the order Figma applies a batch: collections, modes, variables, then values. So the requests together apply the batch in the same order one request would, and the values of each alias target still go before the values that alias it. The sync sends nothing when one change alone would not fit in a request, or when the collection and mode changes together would not fit in the first one, and the error names the change or the total. A temporary id names an object only inside the request that creates it. Each later request therefore uses the real ids Figma returned for what earlier requests created. If a later request fails, Figma keeps the requests it accepted before it, and the error says how many. If a request gets no response, the error counts only the requests Figma answered and says that the outcome of the last one is unknown. Either way the next sync plans from the file as it is, matches by name what those requests created and writes only the rest.
 
 - It matches collections, modes and variables by name and updates them in place. Ids survive, so every layer bound to a Fuse variable stays bound.
 - A mode keeps its id only while the tokens keep its name. The sync deletes a mode the tokens no longer name and creates the modes they add, and it never renames one into another, because a dropped brand and an added one are unrelated. Frames pinned to a deleted mode lose that pin. Renaming a brand's display name in code is therefore a delete and a create in Figma, and designers repin the frames that used the old name. The one exception is a collection the set renames, below.

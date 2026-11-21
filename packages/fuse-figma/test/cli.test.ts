@@ -313,6 +313,7 @@ describe("fuse-figma talking to Figma", () => {
         yield* errors,
         "Could not write variables: Figma answered 500 (Scripted failure). A new file can refuse every REST variable write until an editor session has made one. Open it in Figma, create a variable collection, delete it, then sync again."
       );
+      assert.notInclude(yield* errors, "Figma kept");
     })
   );
 

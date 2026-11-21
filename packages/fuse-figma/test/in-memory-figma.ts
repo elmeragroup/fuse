@@ -1,10 +1,13 @@
 /**
  * An in-memory Figma file behind the Variables REST API, served through Effect's
- * `HttpClient` seam. It applies a POST the way the API documents: arrays in a fixed order,
- * temporary ids mapped to real ones, the whole batch atomic, and a 400 for anything the
- * API rejects. It stores numbers as 32-bit floats, as Figma does, and its reads include
- * the rows a sync must skip: library collections and variables, collection extensions and
- * deleted variables that layers still reference. Tests read the result back the way
+ * `HttpClient` seam. It handles a POST the way the API documents. The arrays apply in a
+ * fixed order, and the response maps each temporary id to a real one. A temporary id names
+ * an object only in the request that creates it. A request changes the file completely or
+ * not at all, and the fake answers 413 for a body over 4 MB and 400 for anything else the
+ * API rejects. It stores numbers as
+ * 32-bit floats, as Figma does. Its reads include the rows a sync must skip: library
+ * collections and variables, collection extensions and deleted variables that layers still
+ * reference. Tests read the result back the way
  * designers see it, by resolving a variable in a mode context.
  */
 
@@ -60,16 +63,26 @@ type FileState = {
 /** The picker scopes, code syntax and description of a stored variable. */
 type StoredMetadata = { scopes: string[]; codeSyntax: CodeSyntax; description: string };
 
-/** A canned reply that replaces the next matching request's normal handling. */
+/** A canned reply that replaces a matching request's normal handling. */
 type ScriptedReply = {
   readonly method: "GET" | "POST";
   readonly status: number;
   readonly headers?: Record<string, string>;
+
+  /**
+   * The request it answers, by position among every request with this method the file
+   * receives, counting from 1. Without a position it answers the next such request.
+   */
+  readonly position?: number;
 };
 
 const MAX_MODES = 40;
 const MAX_MODE_NAME = 40;
-const MAX_BODY_BYTES = 4 * 1024 * 1024;
+/**
+ * The REST page says only that "the request body must be 4MB or less". The fake takes the
+ * smaller reading, 4,000,000 bytes rather than 4 MiB, so a sync that fits it fits either.
+ */
+const MAX_BODY_BYTES = 4_000_000;
 
 /**
  * The scopes each variable type accepts, copied from the valid scopes per type on the REST
@@ -220,7 +233,7 @@ export class InMemoryFigma {
     );
   }
 
-  /** Answer the next request with this method using a canned status instead. */
+  /** Answer the matching request with a canned status instead. */
   script(reply: ScriptedReply): void {
     this.scripted.push(reply);
   }
@@ -392,7 +405,10 @@ export class InMemoryFigma {
 
   private handle(request: HttpClientRequest.HttpClientRequest): Response {
     const url = new URL(request.url);
-    const scriptedIndex = this.scripted.findIndex((reply) => reply.method === request.method);
+    const position = this.requests.filter((sent) => sent.method === request.method).length;
+    const scriptedIndex = this.scripted.findIndex(
+      (reply) => reply.method === request.method && (reply.position ?? position) === position
+    );
     if (scriptedIndex !== -1) {
       const [reply] = this.scripted.splice(scriptedIndex, 1);
       if (reply !== undefined) {
@@ -491,6 +507,8 @@ export class InMemoryFigma {
   }
 
   private apply(draft: FileState, body: PostBody, tempIds: Map<string, string>): void {
+    // Only this request's temporary ids map to real ones. A temporary id from an earlier
+    // request stays as sent and names nothing in the file, so the lookups below refuse it.
     const real = (id: string | undefined): string => (id === undefined ? "" : (tempIds.get(id) ?? id));
     const create = (tempId: string, prefix: string): string => {
       if (tempIds.has(tempId)) reject(`Duplicate temporary id ${tempId}`);
@@ -693,8 +711,12 @@ export class InMemoryFigma {
     return found;
   }
 
+  /**
+   * A new real id. Real Figma ids, such as `VariableID:40000001:1234`, are longer than the
+   * sync's temporary ids, so a request that swaps in real ids grows.
+   */
   private mintId(prefix: string): string {
-    const id = `${prefix}:1:${this.nextId}`;
+    const id = `${prefix}:40000001:${this.nextId}`;
     this.nextId += 1;
     return id;
   }
