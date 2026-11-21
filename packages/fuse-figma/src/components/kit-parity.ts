@@ -31,6 +31,9 @@ export type KitParityRow =
 /** The open issue that tracks the component sets, variants and axes the kit does not draw yet. */
 const MISSING_SETS = 524;
 
+/** The open issue that lists the kit's gaps found after its scope froze on 2026-11-21. */
+const LATER_GAPS = 922;
+
 /** The open issue that tracks the native Calendar and RangeCalendar day set. */
 const CALENDAR_DAY = 677;
 
@@ -288,10 +291,10 @@ export const KIT_PARITY = {
   popover: {
     kind: "partial",
     sets: ["popover-content", "popover-open"],
-    missing: "The `showArrow` arrow.",
-    issue: MISSING_SETS,
+    missing: "The `showArrow` arrow on the `top`, `left` and `right` sides, and on the open Popover.",
+    issue: LATER_GAPS,
   },
-  // The Popover sets leave out the arrow.
+  // The Popover sets leave out the arrow on the `right` side, where its popup opens.
   "popover-info-button": { kind: "issue", issue: MISSING_SETS },
   "radio-group": {
     kind: "partial",

@@ -20,6 +20,8 @@ import { chromium } from "playwright";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { fuseModule, openFusePage } from "../../test/fuse-page.ts";
+import { placedBeside, specCentre } from "../../test/popup-place.ts";
+import type { Box } from "../../test/popup-place.ts";
 import { EVERY_MODE } from "../capture/page-modes.ts";
 import { buildComponentSets } from "./build-kit.ts";
 import { walkLayers } from "./kit-spec.ts";
@@ -30,9 +32,6 @@ import { TOOLTIP_TEXT } from "./tooltip-text.ts";
 
 /** How far apart, in CSS pixels, the spec's centre and Chromium's may sit: a few 64ths of a pixel. */
 const TOLERANCE_PX = 0.05;
-
-/** How far apart, in CSS pixels, the popup and the trigger may sit from Base UI's place for them. */
-const PLACE_TOLERANCE_PX = 1 / 64;
 
 /** A text that wraps the popup's `max-w-xs` to more lines at either density on any platform. */
 const LONG_TEXT =
@@ -83,9 +82,6 @@ const mount = () => {
 mount();
 window.addEventListener("mount-tooltips", mount);
 `;
-
-/** A box's place and size, in CSS pixels from the page's top left corner. */
-type Box = { readonly left: number; readonly top: number; readonly width: number; readonly height: number };
 
 /** What the page measures of one open Tooltip in one mode, in CSS pixels. */
 type Measured = {
@@ -212,48 +208,16 @@ async function readFrame(page: Page, modeName: string): Promise<readonly Frame[]
 
 /**
  * Whether a Tooltip is ready to measure: its entrance has ended, and Base UI has opened its popup on
- * the side asked for, `TOOLTIP_SIDE_OFFSET` from its trigger and centred on it, as {@link placeFor}
- * computes. The pass that places the popup also writes the arrow's offset, so the arrow's centre is
- * left for the tests to assert.
+ * the side asked for, `TOOLTIP_SIDE_OFFSET` from its trigger and centred on it ({@link placedBeside}).
+ * The pass that places the popup also writes the arrow's offset, so the arrow's centre is left for
+ * the tests to assert.
  */
 function isReady(reading: Frame): boolean {
-  const expected = placeFor(reading.side, reading.popup, reading.trigger, TOOLTIP_SIDE_OFFSET);
   return (
     reading.entered &&
     reading.placedSide === reading.side &&
-    Math.abs(expected.left - reading.popup.left) <= PLACE_TOLERANCE_PX &&
-    Math.abs(expected.top - reading.popup.top) <= PLACE_TOLERANCE_PX
+    placedBeside(reading.side, reading.popup, reading.trigger, TOOLTIP_SIDE_OFFSET)
   );
-}
-
-/** Where Base UI puts a popup's start against its trigger on its side, centred, `offset` away. */
-function placeFor(side: string, popup: Box, trigger: Box, offset: number) {
-  const centredLeft = trigger.left + trigger.width / 2 - popup.width / 2;
-  const centredTop = trigger.top + trigger.height / 2 - popup.height / 2;
-  switch (side) {
-    case "top":
-      return { left: centredLeft, top: trigger.top - offset - popup.height };
-    case "bottom":
-      return { left: centredLeft, top: trigger.top + trigger.height + offset };
-    case "left":
-      return { left: trigger.left - offset - popup.width, top: centredTop };
-    default:
-      return { left: trigger.left + trigger.width + offset, top: centredTop };
-  }
-}
-
-/** Where a pivot puts its centre in a popup of `width` × `height`, from the popup's top left corner. */
-function specCentre(pivot: PivotSpec, width: number, height: number) {
-  switch (pivot.edge) {
-    case "top":
-      return { x: width / 2 + pivot.along, y: pivot.inset };
-    case "bottom":
-      return { x: width / 2 + pivot.along, y: height - pivot.inset };
-    case "left":
-      return { x: pivot.inset, y: height / 2 + pivot.along };
-    case "right":
-      return { x: width - pivot.inset, y: height / 2 + pivot.along };
-  }
 }
 
 /** An auto layout's axis and its layers' keys in order. */

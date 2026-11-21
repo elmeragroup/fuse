@@ -1133,6 +1133,57 @@ describe("an absolute part placed by its centre", () => {
     expect(frameOf(variant?.root)?.placement).toEqual(AT_CENTRE);
   });
 
+  // The centre takes the size the box lays out at. `aspect-square` makes an 8px-wide box 8px tall,
+  // as the capture measured it, and `max-w-[6px]` makes an 8px square 6px wide, so a `-50% 50%`
+  // translate moves the centre back onto the corner that `bottom-0 left-1/2` places. Unmoved, a
+  // 4 × 8 box there has its centre 2px right of the popup's centre and 4px inside its bottom edge.
+  it.each([
+    [
+      "an aspect ratio",
+      "w-[8px] aspect-square [translate:-50%_50%] [rotate:45deg]",
+      { ratio: { sets: "height", width: 8, height: 8 } },
+      { edge: "bottom", along: 0, inset: 0 },
+    ],
+    [
+      "a maximum width",
+      "size-[8px] max-w-[6px] [translate:-50%_50%] [rotate:45deg]",
+      {},
+      { edge: "bottom", along: 0, inset: 0 },
+    ],
+    ["a maximum width and no move", "size-[8px] max-w-[4px]", {}, { edge: "bottom", along: 2, inset: 4 }],
+  ] as const)(
+    "hangs from the popup's bottom edge by the size %s lays it out at",
+    async (_case, sized, measured, at) => {
+      const { variant } = await buildChip(
+        POPUP,
+        [{ slot: "chip-dot", classes: `absolute bottom-0 left-1/2 ${sized}`, measured }],
+        { parts: [part()] }
+      );
+      expect(frameOf(variant?.root)?.placement).toEqual({ kind: "pivot", ...at });
+    }
+  );
+
+  // `.125turn` is 45deg (CSS Values 4 §7.1), an angle unit the kit does not read, so it cannot draw
+  // the part turned about the centre it would place, and leaves the part to the other readers.
+  it("leaves a part turned by an angle the kit does not read unplaced, with the build going on", async () => {
+    const { variant, coverage } = await buildWithDot(
+      POPUP,
+      "absolute bottom-0 left-1/2 size-[8px] [rotate:.125turn]"
+    );
+    expect({
+      placement: frameOf(variant?.root)?.placement,
+      rows: coverage
+        .filter(
+          (row) => row.part === "chip-dot" && ["position", "left", "bottom", "rotate"].includes(row.property)
+        )
+        .map((row) => `${row.property}: ${row.outcome}`)
+        .toSorted(),
+    }).toEqual({
+      placement: undefined,
+      rows: ["bottom: unmapped", "left: unmapped", "position: unmapped", "rotate: unmapped"],
+    });
+  });
+
   it.each(["-45deg", "90deg"])(
     "fails the build where a cap on the start inset moves a part turned %s as the popup resizes",
     async (turn) => {

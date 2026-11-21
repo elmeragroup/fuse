@@ -48,17 +48,6 @@ import type { NumberSpec } from "./kit-spec.ts";
 /** A frame's mode for each collection of the file, by collection name. */
 type Pin = Readonly<Record<string, string>>;
 
-/** Every combination of the file's collection modes, one mode per collection. */
-function everyPin(figma: InMemoryFigma): readonly Pin[] {
-  return figma
-    .collectionNames()
-    .reduce<readonly Pin[]>(
-      (pins, collection) =>
-        pins.flatMap((pin) => figma.modeNames(collection).map((mode) => ({ ...pin, [collection]: mode }))),
-      [{}]
-    );
-}
-
 /**
  * A FLOAT field as the file resolves it under a frame's pin. A variable that resolves to no number
  * never equals Chromium's pixels, so its mismatch line shows what it holds.
@@ -213,7 +202,7 @@ beforeAll(async () => {
   await Effect.runPromise(
     run(figma, ["--file-key", FILE_KEY, "sync"]).pipe(Effect.provide(TestConsole.layer))
   );
-  pins = everyPin(figma);
+  pins = figma.everyPin();
   const stamps = pins.map((pin) => {
     const theme = parsePreviewTheme(Object.entries(pin).map(([collection, mode]) => ({ collection, mode })));
     if (Result.isFailure(theme)) {
