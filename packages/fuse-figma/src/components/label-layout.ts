@@ -1511,8 +1511,12 @@ const INITIAL_KEYWORDS: ReadonlySet<string> = new Set(["initial", "inherit", "un
  * inherits nothing that breaks inside a word. Such a text sets one line at its own width whatever
  * room the box gives it. One character has no other to break from, so it never wraps. A value that
  * does not resolve counts as breaking, the safe answer.
+ *
+ * @param style - The style of the box that holds the text.
+ * @param characters - The text.
+ * @returns True where the text never wraps.
  */
-function neverWraps(style: LayerStyle, characters: string): boolean {
+export function neverWraps(style: LayerStyle, characters: string): boolean {
   if (!UNBREAKABLE.test(characters)) {
     return false;
   }

@@ -19,6 +19,7 @@ import {
 import type { VariableIndex, Viewport } from "./css-values";
 import { keepsOwnSize, keepsOwnWidth } from "./flex-item-width";
 import { cellRoom } from "./grid-layout";
+import type { InstancePlace } from "./hugging-rows";
 import { fixedLength, outOfLayout, strokeRoom } from "./kit-spec";
 import type {
   BoxSpec,
@@ -608,11 +609,47 @@ export function absoluteRoom(holder: Holder): Room {
  * `normal` does for flex items, or a grid in one column, whose items its unset `justify-items`
  * stretches across (CSS Box Alignment 3 §6.1), since a grid's `align-items` places them down.
  */
-function stretches({ style, layout }: Holder): boolean {
+function stretches({ style, layout }: Pick<Holder, "style" | "layout">): boolean {
   return (
     layout.oneColumnGrid === true ||
     (layout.flex && layout.direction === "VERTICAL" && !style.has("align-items"))
   );
+}
+
+/**
+ * Where a part sits in its box, for an instance part as `settleInstanceRoot` in `hugging-rows.ts`
+ * reads it: `column-start` where the box stretches the part across, as {@link roomInside} gives it
+ * a filling width, a column whose unset `align-items` stretches it, a grid in one column or a box
+ * that stacks blocks, and the box's Figma layout places a layer that hugs at its start, where CSS
+ * starts a part narrower than the stretch (CSS Box Alignment 3 §6.1, CSS 2.1 §10.3.3). The part
+ * sets no auto margin across, which would move it, and no `align-self` but `stretch`. A part that
+ * grows along a row, or that an `align-self` stretches in a column that ends its layers, sits
+ * `elsewhere`, as does every other part.
+ *
+ * @param box - The box's style and layout.
+ * @param part - The part's style.
+ * @param room - The room the box gives the part.
+ * @returns Where the part sits.
+ */
+export function instancePlace(
+  box: Pick<Holder, "style" | "layout">,
+  part: LayerStyle,
+  room: Room
+): InstancePlace {
+  const { layout } = box;
+  const unmoved = ["margin-left", "margin-right"].every(
+    (property) => normalizeCss(part.resolved(property) ?? "0px") !== "auto"
+  );
+  const self = normalizeCss(part.resolved("align-self") ?? "auto");
+  return room.horizontal.auto.kind === "fill" &&
+    room.horizontal.zeroBasis !== true &&
+    layout.direction === "VERTICAL" &&
+    (stretches(box) || layout.blocks) &&
+    layout.counterAlign === "MIN" &&
+    unmoved &&
+    ["auto", "normal", "stretch"].includes(self)
+    ? "column-start"
+    : "elsewhere";
 }
 
 /**
