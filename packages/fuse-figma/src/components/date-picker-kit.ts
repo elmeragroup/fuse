@@ -35,9 +35,9 @@ export const DATE_PICKER_ERROR = "Choose a date after the lease ends.";
 
 /**
  * The calendar trigger, an `Icon button` instance: ghost, `icon-sm`, with CalendarBlank, disabled
- * where the picker disables it.
+ * where the picker disables it. Date range picker's field box ends in the same `DatePickerTrigger`.
  */
-const DATE_PICKER_TRIGGER: InstanceManifest = {
+export const DATE_PICKER_TRIGGER: InstanceManifest = {
   kind: "instance",
   key: "trigger",
   of: ICON_BUTTON_MANIFEST,

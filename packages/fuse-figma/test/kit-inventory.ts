@@ -436,6 +436,12 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     name: "Date picker",
     sets: [{ key: "date-picker", name: "Date picker", variants: 10, previewed: 10 }],
   },
+  // The labelled range picker, closed, empty or holding the range, in the field box's five states.
+  {
+    slug: "date-range-picker",
+    name: "Date range picker",
+    sets: [{ key: "date-range-picker", name: "Date range picker", variants: 10, previewed: 10 }],
+  },
   {
     slug: "tabs",
     name: "Tabs",
