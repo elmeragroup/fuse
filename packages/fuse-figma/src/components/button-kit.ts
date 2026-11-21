@@ -28,7 +28,12 @@ const VARIANTS = Object.keys(buttonVariants.variants.variant).filter(isVariant);
  * set's default, so an instance a designer places starts at the size `<Button>` renders.
  */
 export const BUTTON_LABEL_SIZES = ["default", "xs", "sm", "lg"] as const satisfies readonly ButtonSize[];
-const ICON_SIZES = ["icon", "icon-xs", "icon-sm", "icon-lg"] as const satisfies readonly ButtonSize[];
+export const BUTTON_ICON_SIZES = [
+  "icon",
+  "icon-xs",
+  "icon-sm",
+  "icon-lg",
+] as const satisfies readonly ButtonSize[];
 
 function isVariant(value: string | undefined): value is ButtonVariant {
   return ownKey(buttonVariants.variants.variant, value);
@@ -136,7 +141,7 @@ export const ICON_BUTTON_MANIFEST: SetManifest = {
   name: "Icon button",
   api: { page: "button", parts: ["Button"] },
   slot: "button",
-  axes: [{ name: "variant", values: VARIANTS }, { name: "size", values: ICON_SIZES }, STATE_AXIS],
+  axes: [{ name: "variant", values: VARIANTS }, { name: "size", values: BUTTON_ICON_SIZES }, STATE_AXIS],
   columnAxis: "state",
   label: undefined,
   // The icons sit in DOM order. Button renders the spinner after its children, and the recipe

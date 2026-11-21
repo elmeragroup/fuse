@@ -2,10 +2,10 @@
  * The renderers of the four Pagination sets: each cell as the real Fuse part with the `href` the
  * docs Basic demo gives it.
  *
- * - A `pagination-link` cell renders `<Pagination.Link>` around the number `pagination-kit.ts`
- *   draws, with `isActive` set at `isActive=true`.
- * - A `pagination-edge` cell renders `<Pagination.Previous>` or `<Pagination.Next>`, which write
- *   their own caret and copy.
+ * - A `pagination-link` cell renders `<Pagination.Link>` at the cell's size around the number
+ *   `pagination-kit.ts` draws, with `isActive` set at `isActive=true`.
+ * - A `pagination-edge` cell renders `<Pagination.Previous>` or `<Pagination.Next>` at the cell's
+ *   size, which write their own caret and copy.
  * - A `pagination-ellipsis` cell renders `<Pagination.Ellipsis>`.
  * - The `pagination-row` cell renders the docs Basic demo: `<Pagination.Root>` around
  *   `<Pagination.Content>`, which holds the previous edge, the links to pages 1 to 3 with 1 current,
@@ -23,31 +23,36 @@ import type { ReactElement } from "react";
 import { Pagination } from "../../../fuse/dist/pagination.js";
 import { LocaleProvider } from "../../../fuse/dist/theme.js";
 import type { Cell } from "../components/component-spec.ts";
-import { directionOf, PAGINATION_LINK_LABEL, PAGINATION_ROW_PAGES } from "../components/pagination-kit.ts";
+import {
+  directionOf,
+  PAGINATION_LINK_LABEL,
+  PAGINATION_ROW_PAGES,
+  sizeOf,
+} from "../components/pagination-kit.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
 function inEnglish(part: ReactElement): ReactElement {
   return createElement(LocaleProvider, { locale: "en-US", children: part });
 }
 
-/** A `pagination-link` cell: a page link around the number, current or not. */
+/** A `pagination-link` cell: a page link at its size around the number, current or not. */
 export const paginationLink: CellRendering = {
   element: (cell: Cell) =>
     inEnglish(
       createElement(
         Pagination.Link,
-        { href: `#${PAGINATION_LINK_LABEL}`, isActive: cell.isActive === "true" },
+        { href: `#${PAGINATION_LINK_LABEL}`, size: sizeOf(cell), isActive: cell.isActive === "true" },
         PAGINATION_LINK_LABEL
       )
     ),
 };
 
-/** A `pagination-edge` cell: the previous or the next link. */
+/** A `pagination-edge` cell: the previous or the next link at its size. */
 export const paginationEdge: CellRendering = {
   element: (cell: Cell) => {
     const direction = directionOf(cell);
     const edge = direction === "previous" ? Pagination.Previous : Pagination.Next;
-    return inEnglish(createElement(edge, { href: `#${direction}` }));
+    return inEnglish(createElement(edge, { href: `#${direction}`, size: sizeOf(cell) }));
   },
 };
 

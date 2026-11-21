@@ -2173,6 +2173,34 @@
       {
         "part": "pagination-edge",
         "className": "has-data-[icon=inline-start]:pl-(--control-px-button-icon-md)"
+      },
+      {
+        "part": "pagination-edge",
+        "className": "[&_svg:not([class*='size-'])]:size-3"
+      },
+      {
+        "part": "pagination-edge",
+        "className": "has-data-[icon=inline-end]:pr-(--control-px-button-icon-lg)"
+      },
+      {
+        "part": "pagination-edge",
+        "className": "has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm)"
+      },
+      {
+        "part": "pagination-edge",
+        "className": "has-data-[icon=inline-end]:pr-(--control-px-button-icon-xs)"
+      },
+      {
+        "part": "pagination-edge",
+        "className": "has-data-[icon=inline-start]:pl-(--control-px-button-icon-lg)"
+      },
+      {
+        "part": "pagination-edge",
+        "className": "has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)"
+      },
+      {
+        "part": "pagination-edge",
+        "className": "has-data-[icon=inline-start]:pl-(--control-px-button-icon-xs)"
       }
     ],
     "pagination-link": [
@@ -2291,6 +2319,42 @@
       {
         "part": "pagination-link",
         "className": "aria-expanded:text-foreground"
+      },
+      {
+        "part": "pagination-link",
+        "className": "[&_svg:not([class*='size-'])]:size-3"
+      },
+      {
+        "part": "pagination-link",
+        "className": "has-data-[icon=inline-end]:pr-(--control-px-button-icon-lg)"
+      },
+      {
+        "part": "pagination-link",
+        "className": "has-data-[icon=inline-end]:pr-(--control-px-button-icon-md)"
+      },
+      {
+        "part": "pagination-link",
+        "className": "has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm)"
+      },
+      {
+        "part": "pagination-link",
+        "className": "has-data-[icon=inline-end]:pr-(--control-px-button-icon-xs)"
+      },
+      {
+        "part": "pagination-link",
+        "className": "has-data-[icon=inline-start]:pl-(--control-px-button-icon-lg)"
+      },
+      {
+        "part": "pagination-link",
+        "className": "has-data-[icon=inline-start]:pl-(--control-px-button-icon-md)"
+      },
+      {
+        "part": "pagination-link",
+        "className": "has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)"
+      },
+      {
+        "part": "pagination-link",
+        "className": "has-data-[icon=inline-start]:pl-(--control-px-button-icon-xs)"
       }
     ],
     "pagination-row": [
@@ -6311,7 +6375,25 @@
         "pagination-edge/direction=next,state=rest 0/root/0",
         "pagination-edge/direction=previous,state=focus 0/root/1",
         "pagination-edge/direction=previous,state=hover 0/root/1",
-        "pagination-edge/direction=previous,state=rest 0/root/1"
+        "pagination-edge/direction=previous,state=rest 0/root/1",
+        "pagination-edge/size=lg,direction=next,state=focus 0/root/0",
+        "pagination-edge/size=lg,direction=next,state=hover 0/root/0",
+        "pagination-edge/size=lg,direction=next,state=rest 0/root/0",
+        "pagination-edge/size=lg,direction=previous,state=focus 0/root/1",
+        "pagination-edge/size=lg,direction=previous,state=hover 0/root/1",
+        "pagination-edge/size=lg,direction=previous,state=rest 0/root/1",
+        "pagination-edge/size=sm,direction=next,state=focus 0/root/0",
+        "pagination-edge/size=sm,direction=next,state=hover 0/root/0",
+        "pagination-edge/size=sm,direction=next,state=rest 0/root/0",
+        "pagination-edge/size=sm,direction=previous,state=focus 0/root/1",
+        "pagination-edge/size=sm,direction=previous,state=hover 0/root/1",
+        "pagination-edge/size=sm,direction=previous,state=rest 0/root/1",
+        "pagination-edge/size=xs,direction=next,state=focus 0/root/0",
+        "pagination-edge/size=xs,direction=next,state=hover 0/root/0",
+        "pagination-edge/size=xs,direction=next,state=rest 0/root/0",
+        "pagination-edge/size=xs,direction=previous,state=focus 0/root/1",
+        "pagination-edge/size=xs,direction=previous,state=hover 0/root/1",
+        "pagination-edge/size=xs,direction=previous,state=rest 0/root/1"
       ]
     },
     {
@@ -6326,7 +6408,25 @@
         "pagination-edge/direction=next,state=rest 0/root/0",
         "pagination-edge/direction=previous,state=focus 0/root/1",
         "pagination-edge/direction=previous,state=hover 0/root/1",
-        "pagination-edge/direction=previous,state=rest 0/root/1"
+        "pagination-edge/direction=previous,state=rest 0/root/1",
+        "pagination-edge/size=lg,direction=next,state=focus 0/root/0",
+        "pagination-edge/size=lg,direction=next,state=hover 0/root/0",
+        "pagination-edge/size=lg,direction=next,state=rest 0/root/0",
+        "pagination-edge/size=lg,direction=previous,state=focus 0/root/1",
+        "pagination-edge/size=lg,direction=previous,state=hover 0/root/1",
+        "pagination-edge/size=lg,direction=previous,state=rest 0/root/1",
+        "pagination-edge/size=sm,direction=next,state=focus 0/root/0",
+        "pagination-edge/size=sm,direction=next,state=hover 0/root/0",
+        "pagination-edge/size=sm,direction=next,state=rest 0/root/0",
+        "pagination-edge/size=sm,direction=previous,state=focus 0/root/1",
+        "pagination-edge/size=sm,direction=previous,state=hover 0/root/1",
+        "pagination-edge/size=sm,direction=previous,state=rest 0/root/1",
+        "pagination-edge/size=xs,direction=next,state=focus 0/root/0",
+        "pagination-edge/size=xs,direction=next,state=hover 0/root/0",
+        "pagination-edge/size=xs,direction=next,state=rest 0/root/0",
+        "pagination-edge/size=xs,direction=previous,state=focus 0/root/1",
+        "pagination-edge/size=xs,direction=previous,state=hover 0/root/1",
+        "pagination-edge/size=xs,direction=previous,state=rest 0/root/1"
       ]
     },
     {
@@ -6341,7 +6441,25 @@
         "pagination-edge/direction=next,state=rest 0/root/0",
         "pagination-edge/direction=previous,state=focus 0/root/1",
         "pagination-edge/direction=previous,state=hover 0/root/1",
-        "pagination-edge/direction=previous,state=rest 0/root/1"
+        "pagination-edge/direction=previous,state=rest 0/root/1",
+        "pagination-edge/size=lg,direction=next,state=focus 0/root/0",
+        "pagination-edge/size=lg,direction=next,state=hover 0/root/0",
+        "pagination-edge/size=lg,direction=next,state=rest 0/root/0",
+        "pagination-edge/size=lg,direction=previous,state=focus 0/root/1",
+        "pagination-edge/size=lg,direction=previous,state=hover 0/root/1",
+        "pagination-edge/size=lg,direction=previous,state=rest 0/root/1",
+        "pagination-edge/size=sm,direction=next,state=focus 0/root/0",
+        "pagination-edge/size=sm,direction=next,state=hover 0/root/0",
+        "pagination-edge/size=sm,direction=next,state=rest 0/root/0",
+        "pagination-edge/size=sm,direction=previous,state=focus 0/root/1",
+        "pagination-edge/size=sm,direction=previous,state=hover 0/root/1",
+        "pagination-edge/size=sm,direction=previous,state=rest 0/root/1",
+        "pagination-edge/size=xs,direction=next,state=focus 0/root/0",
+        "pagination-edge/size=xs,direction=next,state=hover 0/root/0",
+        "pagination-edge/size=xs,direction=next,state=rest 0/root/0",
+        "pagination-edge/size=xs,direction=previous,state=focus 0/root/1",
+        "pagination-edge/size=xs,direction=previous,state=hover 0/root/1",
+        "pagination-edge/size=xs,direction=previous,state=rest 0/root/1"
       ]
     },
     {
