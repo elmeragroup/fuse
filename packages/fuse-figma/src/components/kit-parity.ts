@@ -31,6 +31,9 @@ export type KitParityRow =
 /** The open issue that tracks the component sets, variants and axes the kit does not draw yet. */
 const MISSING_SETS = 524;
 
+/** The open issue that lists the kit's gaps the 2026-11-20 Figma issue run left for later. */
+const NICE_TO_HAVE = 922;
+
 /** The open issue that tracks the native Calendar and RangeCalendar day set. */
 const CALENDAR_DAY = 677;
 
@@ -414,8 +417,8 @@ export const KIT_PARITY = {
     kind: "partial",
     sets: ["toast"],
     missing:
-      "The close, `Toast.Close` at the root's top right (#820), `Toast.Action`, a stack of several toasts, a toast behind the frontmost one, and the top placements.",
-    issue: MISSING_SETS,
+      "The close, `Toast.Close` at the root's top right (#820), `Toast.Action`, the top placements, and a stack of several toasts.",
+    issue: NICE_TO_HAVE,
   },
   toggle: { kind: "sets", sets: ["toggle", "icon-toggle"] },
   "toggle-group": {
