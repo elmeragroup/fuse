@@ -111,6 +111,17 @@ export type LabelDefinition = {
 );
 
 /**
+ * The characters a label shows in a cell.
+ *
+ * @param label - The label.
+ * @param cell - The cell.
+ * @returns The label's one text, or the text it gives the cell.
+ */
+export function labelCharacters(label: LabelDefinition, cell: Cell): string {
+  return label.charactersFor === undefined ? label.characters : label.charactersFor(cell);
+}
+
+/**
  * What the root, or a part below it, renders in a cell: its children. The children sit in DOM order:
  * the parts first, then the start icons, the label and the end icons, and last the parts whose
  * `after` names the label.

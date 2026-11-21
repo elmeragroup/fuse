@@ -98,7 +98,29 @@ export type CellRequest = {
    * nothing is then what the cell should show, so the page hovers or focuses nothing for real.
    */
   readonly restsByDesign: boolean;
+  /**
+   * The parts inside the cell the page measures besides its box, as selectors `cellSelector` reads,
+   * such as the parts a BOOLEAN property turns on. None when undefined.
+   */
+  readonly parts?: readonly string[];
 };
+
+/**
+ * Where the page laid one of a request's `parts`, or how many elements its selector matched where
+ * that is not one. `Laid` holds the part's border box in CSS pixels from the crop's top-left corner,
+ * its `textContent` with runs of white space collapsed and trimmed, and the computed
+ * `background-color` and `background-image` of each ancestor from the part's parent up to the cell's
+ * slot that paints, nearest first, for the caller to parse.
+ */
+export type MeasuredPart =
+  | {
+      readonly _tag: "Laid";
+      readonly selector: string;
+      readonly rect: PageRect;
+      readonly text: string;
+      readonly backgrounds: readonly { readonly color: string; readonly image: string }[];
+    }
+  | { readonly _tag: "Unlaid"; readonly selector: string; readonly matches: number };
 
 /**
  * How the page reached a cell's state.
@@ -117,6 +139,8 @@ export type RenderedCell = {
   /** The measured element's border box in CSS pixels. */
   readonly box: BoxSize;
   readonly state: StateOutcome;
+  /** The request's `parts`, in its order. */
+  readonly parts: readonly MeasuredPart[];
 };
 
 /** One rendered preview. */
@@ -759,11 +783,56 @@ async function renderCell(
     { width: clip.width * DEVICE_SCALE, height: clip.height * DEVICE_SCALE },
     { x: (visible.x - clip.x) * DEVICE_SCALE, y: (visible.y - clip.y) * DEVICE_SCALE }
   );
+  const parts = await measureParts(page, request, clip);
   if (interact) {
     await page.mouse.move(0, 0);
     await forcedOn.blur();
   }
-  return { raster, box: { width: box.width, height: box.height }, state };
+  return { raster, box: { width: box.width, height: box.height }, state, parts };
+}
+
+/**
+ * Measure a request's `parts` against its crop, the full `clip` the cell's raster covers, once the
+ * page has laid the cell out for its screenshot and before it lets go of any interaction. A selector
+ * that matches no element, or more than one, is `Unlaid`, so the caller names the part instead of
+ * the run stopping on it.
+ *
+ * An ancestor whose computed `visibility` is not `visible` paints no background, while a descendant
+ * that sets `visible` still paints, so the backgrounds leave it out. The page hides each client slot
+ * and shows only the measured elements, so a Dropdown menu row's popup paints nothing behind the
+ * row's icon.
+ */
+async function measureParts(page: Page, request: CellRequest, clip: PageRect): Promise<MeasuredPart[]> {
+  return Promise.all(
+    (request.parts ?? []).map(async (selector): Promise<MeasuredPart> => {
+      const part = page.locator(cellSelector(request.id, selector));
+      const matches = await part.count();
+      const box = matches === 1 ? await part.boundingBox() : null;
+      if (box === null) {
+        return { _tag: "Unlaid", selector, matches };
+      }
+      const { text, backgrounds } = await part.evaluate((element) => {
+        const found: { color: string; image: string }[] = [];
+        for (let at = element.parentElement; at !== null; at = at.parentElement) {
+          const style = getComputedStyle(at);
+          if (style.visibility === "visible") {
+            found.push({ color: style.backgroundColor, image: style.backgroundImage });
+          }
+          if (at.hasAttribute("data-compare-cell")) {
+            break;
+          }
+        }
+        return { text: element.textContent.replace(/\s+/g, " ").trim(), backgrounds: found };
+      });
+      return {
+        _tag: "Laid",
+        selector,
+        rect: { x: box.x - clip.x, y: box.y - clip.y, width: box.width, height: box.height },
+        text,
+        backgrounds,
+      };
+    })
+  );
 }
 
 async function probeBackground(page: Page): Promise<Rgb> {

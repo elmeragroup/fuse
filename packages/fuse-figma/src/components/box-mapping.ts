@@ -55,6 +55,7 @@ import type {
   LabelDefinition,
   PartDefinition,
 } from "./component-spec";
+import { labelCharacters } from "./component-spec";
 import { readContentBox } from "./content-box";
 import {
   describeNumber,
@@ -97,7 +98,6 @@ import type {
 } from "./kit-spec";
 import {
   inertClamp,
-  labelCharacters,
   labelElementHolder,
   mapLabel,
   readLineClamp,
