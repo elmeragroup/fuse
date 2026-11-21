@@ -36,6 +36,11 @@
  *    `icon-only`, the layer still read `icon-only`, and an instance's sublayer read `icon-only`, named
  *    Q from `getMainComponentAsync`, showed Q's `glyph` and listed no override (PK2). So a sublayer
  *    that does not swap apart reads its main layer's entries and shows its main layer's component.
+ *    A `swapComponent` on a sublayer to the component it already shows is no swap apart either. On
+ *    2026-11-20 a real file's nested sublayer, keyed `slot` on its main layer, still read `slot`
+ *    after `swapComponent(A)` while it showed `A`, and the enclosing instance listed no override. On
+ *    a second instance, the same sublayer swapped to `C` read `C`'s key (FD4). The fake compares the
+ *    component the sublayer shows at the time of the call.
  *
  * An instance's sublayers show the layers of its main component, and a nested instance's sublayers
  * the sublayers its main layer shows. An override, such as the color an icon layer gives its glyph,
