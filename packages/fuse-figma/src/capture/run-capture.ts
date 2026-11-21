@@ -113,7 +113,10 @@ export const CAPTURE_THEME: PreviewTheme = {
   density: "dense",
 };
 
-/** A cell's forced state left its read as its resting twin's, so the capture would record rest. */
+/**
+ * A cell's forced state left its read as its resting twin's, so the capture would record rest, or
+ * the matrix holds no resting twin to tell.
+ */
 export class StateNotReached extends Error {
   readonly _tag = "StateNotReached" as const;
 }
@@ -1043,15 +1046,30 @@ export const captureSet = Effect.fn("captureSet")(function* (
       )
     );
   }
-  const cells: readonly PlannedCell[] = possibleCells(target).map((cell, index) => ({
+  const planned = possibleCells(target).map((cell) => ({
     cell,
     key: variantKey(target, cell),
-    request: requestOf(target, renderer, cell, index),
     rest:
       forcedPseudoClasses(cell, renderer.highlight).length > 0 ||
       writesHighlightAttribute(cell, renderer.highlight)
         ? variantKey(target, restingTwin(cell))
         : undefined,
+  }));
+  // The page tells a forced state it reached from one it missed only against the cell's resting
+  // twin, so a forced cell whose twin the matrix rules out could record rest unnoticed. The check
+  // runs before any request renders the twin, which the renderer may refuse as impossible.
+  const keys = new Set(planned.map(({ key }) => key));
+  const twinless = planned.find(({ rest }) => rest !== undefined && !keys.has(rest));
+  if (twinless !== undefined) {
+    return yield* Effect.fail(
+      new StateNotReached(
+        `${twinless.key}: the page forces its state, and the matrix holds no ${twinless.rest ?? "resting twin"} to tell whether the state took effect`
+      )
+    );
+  }
+  const cells: readonly PlannedCell[] = planned.map((each, index) => ({
+    ...each,
+    request: requestOf(target, renderer, each.cell, index),
   }));
   const pages = Math.max(1, Math.min(PAGES, Math.floor(cells.length / CELLS_PER_PAGE)));
   const size = Math.ceil(cells.length / pages);

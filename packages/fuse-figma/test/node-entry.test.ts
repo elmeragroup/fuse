@@ -53,9 +53,8 @@ describe("the Node entry point", () => {
     expect(result.status).toBe(1);
   });
 
-  // The compare CLI checks client cells' markup, and the check lives in `src`, so the CLI loads
-  // without the test runner. An out-of-range threshold stops the run after every module loaded and
-  // before it writes anything.
+  // The compare CLI loads its modules from `src`, so it must load without the test runner. An
+  // out-of-range threshold stops the run after every module loaded and before it writes anything.
   it("loads the compare entry under plain Node without Vitest", () => {
     const args = nodeArguments(packageJson.scripts["figma:compare"]);
     const entry = args.at(-1) ?? "";

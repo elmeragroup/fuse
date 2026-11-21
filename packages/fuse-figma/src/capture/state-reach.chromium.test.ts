@@ -4,7 +4,8 @@
  * makes them. A hover rule gated by `:not([data-selected])` leaves a selected button unstyled while
  * the page hovers that very button, so the cell draws as at rest and the capture keeps it, marked; a
  * force that lands on a sibling of the styled button shows nothing of the state, so the capture
- * refuses the set.
+ * refuses the set. The page tells the two apart only against the cell's resting twin, so the capture
+ * also refuses a hover whose resting twin the matrix rules out, though the hover would reach its rule.
  */
 import { createElement as h } from "react";
 import type { ReactElement } from "react";
@@ -30,8 +31,11 @@ const ASSETS = {
   client: "",
 };
 
-/** A set of two forms, each at rest and hovered, whose hover lands on the `force` part. */
-function target(forms: readonly string[]): CaptureTarget {
+/**
+ * A set of two forms, each at rest and hovered but where `impossible` rules a cell out, whose hover
+ * lands on the `force` part.
+ */
+function target(forms: readonly string[], impossible: CaptureTarget["impossible"] = []): CaptureTarget {
   return {
     key: "probe",
     slot: "probe",
@@ -40,6 +44,7 @@ function target(forms: readonly string[]): CaptureTarget {
       { name: "form", values: forms },
       { name: "state", values: ["rest", "hover"] },
     ],
+    impossible,
   };
 }
 
@@ -74,12 +79,12 @@ const RENDERER: CellRenderer = {
 };
 
 /** Capture a set of the given forms, as `figma:capture` does. */
-function capture(forms: readonly string[]) {
+function capture(forms: readonly string[], impossible: CaptureTarget["impossible"] = []) {
   return Effect.runPromise(
     Effect.scoped(
       Effect.gen(function* () {
         const browser = yield* CompareBrowser.launch(ASSETS);
-        return yield* Effect.result(captureSet(browser, target(forms), RENDERER));
+        return yield* Effect.result(captureSet(browser, target(forms, impossible), RENDERER));
       })
     )
   );
@@ -98,5 +103,16 @@ describe("a forced state no rule styles in a cell", () => {
   it("refuses a hover the page forces on a sibling of the styled button", async () => {
     const result = await capture(["plain", "wrong"]);
     expect(Result.isFailure(result) ? result.failure._tag : "captured").toBe("StateNotReached");
+  }, 60_000);
+
+  it("refuses a hover whose resting twin the matrix rules out", async () => {
+    const result = await capture(
+      ["plain"],
+      [{ where: { form: "plain", state: "rest" }, fact: "The probe rules out a plain button at rest." }]
+    );
+    expect(Result.isFailure(result) ? result.failure._tag : "captured").toBe("StateNotReached");
+    expect(Result.isFailure(result) ? result.failure.message : "captured").toContain(
+      "probe/form=plain,state=rest"
+    );
   }, 60_000);
 });

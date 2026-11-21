@@ -2,14 +2,22 @@
  * The coverage ledger the capture build answers to, `oracles/coverage.json`: the rows the kit keeps
  * on purpose where its checks would otherwise fail. It names each `unmapped` row the kit accepts,
  * each row that reads a synced variable and stays unbound, each `unshown` row, a class whose state
- * no cell of a set's matrix shows, and each captured declaration that reaches no row at all. The
- * oracle test fails on a row or declaration the ledger does not name, and on an entry that names
+ * no cell of a set's matrix shows, each captured declaration that reaches no row at all, and each
+ * pair of an axis's values whose built variants no slice of the other axes tells apart. The oracle
+ * test fails on a row, declaration or pair the ledger does not name, and on an entry that names
  * none, which a fixed row leaves behind.
  */
 
 import { Result, Schema } from "effect";
+import { isDeepStrictEqual } from "node:util";
 
 import ledger from "../../oracles/coverage.json" with { type: "json" };
+import type {
+  ChildLayerSpec,
+  ComponentRootSpec,
+  FrameLayerSpec,
+  InstanceLayerSpec,
+} from "../components/kit-spec.ts";
 import { placesOf } from "./capture-cascade.ts";
 import type { CellAccounting, InstancePlace } from "./capture-cascade.ts";
 import type { CapturedCell, CapturedDeclaration, CapturedElement, SetCapture } from "./capture-format.ts";
@@ -28,6 +36,14 @@ const KeptRowSchema = Schema.Struct({
 /** A row the ledger names. */
 export type KeptRow = typeof KeptRowSchema.Type;
 
+/** A pair of one axis's values the ledger keeps, in the axis's order, with why. */
+const AxisPairSchema = Schema.Struct({
+  set: Schema.String,
+  axis: Schema.String,
+  values: Schema.Tuple([Schema.String, Schema.String]),
+  reason: Schema.String,
+});
+
 /** An `unshown` row, by its part and class, as a set's coverage lists it with an empty property. */
 const UnshownSchema = Schema.Struct({ part: Schema.String, className: Schema.String });
 
@@ -43,6 +59,16 @@ const CoverageLedgerSchema = Schema.Struct({
    * element's pseudo-element, so an exception for one state or one box excuses no other.
    */
   unreached: Schema.Array(Schema.Struct({ ...KeptRowSchema.fields, at: Schema.Array(Schema.String) })),
+  /**
+   * Each pair of an axis's values that {@link alikeValues} finds built alike, its values in the
+   * axis's order, with why the kit keeps both.
+   */
+  alike: Schema.Array(AxisPairSchema),
+  /**
+   * Each pair of an axis's values that {@link alikeValues} finds on no slice together, with why the
+   * matrix never holds both beside the same values of the other axes.
+   */
+  apart: Schema.Array(AxisPairSchema),
 });
 
 /** The coverage ledger. */
@@ -249,4 +275,100 @@ export function unaccountedDeclarations(
     }
   }
   return [...found.values()];
+}
+
+/** A built layer whose instances hold what their variant draws in place of the variant's key. */
+export type DrawnLayer =
+  | Exclude<ChildLayerSpec, FrameLayerSpec | InstanceLayerSpec>
+  | (Omit<FrameLayerSpec, "children"> & { readonly children: readonly DrawnLayer[] })
+  | (Omit<InstanceLayerSpec, "variant"> & { readonly draws: DrawnRoot });
+
+/** A built root whose instances hold what their variant draws, as `drawnRoot` gives it. */
+export type DrawnRoot = Omit<ComponentRootSpec, "children"> & { readonly children: readonly DrawnLayer[] };
+
+/**
+ * A built root with each instance's variant key replaced by what that variant draws, so two roots
+ * whose instances show different variants that draw the same compare equal. The instance keeps its
+ * properties and overrides, which draw on top of the variant.
+ *
+ * @param root - The built root.
+ * @param rootOf - The root of each variant the kit builds, by key.
+ * @returns The root, each instance holding its variant's drawing in place of the variant's key.
+ * @throws When an instance shows a variant the kit does not build.
+ */
+export function drawnRoot(
+  root: ComponentRootSpec,
+  rootOf: ReadonlyMap<string, ComponentRootSpec>
+): DrawnRoot {
+  const drawn = (layer: ChildLayerSpec): DrawnLayer => {
+    if (layer.kind === "instance") {
+      const inner = rootOf.get(layer.variant);
+      if (inner === undefined) {
+        throw new Error(`the kit builds no variant ${layer.variant}`);
+      }
+      const { variant: _variant, ...instance } = layer;
+      return { ...instance, draws: drawnRoot(inner, rootOf) };
+    }
+    return layer.kind === "frame" ? { ...layer, children: layer.children.map(drawn) } : layer;
+  };
+  return { ...root, children: root.children.map(drawn) };
+}
+
+/**
+ * A pair of one axis's values, in the axis's order, that no slice of the other axes tells apart:
+ * `Alike` where every slice that holds both builds the same root at each, `Apart` where no slice
+ * holds both.
+ */
+export type AxisPair = {
+  readonly _tag: "Alike" | "Apart";
+  readonly axis: string;
+  readonly values: readonly [string, string];
+};
+
+/**
+ * Each pair of an axis's values whose built variants no slice of the other axes tells apart. A
+ * slice is one set of values of the other axes. The pair is `Alike` where every slice that holds a
+ * variant at each value builds the same root at both, as a value the renderer never reads builds as
+ * another value of its axis, and `Apart` where no slice holds both, which `impossible` cells can
+ * leave, so nothing shows how the two differ.
+ *
+ * @param set - The built set: its axes, each with its values in order, and its variants, each by
+ *   its axis values and its root.
+ * @returns Each such pair, by axis and in the axis's order.
+ */
+export function alikeValues(set: {
+  readonly axes: readonly { readonly name: string; readonly values: readonly string[] }[];
+  readonly variants: readonly {
+    readonly properties: Readonly<Record<string, string>>;
+    readonly root: object;
+  }[];
+}): readonly AxisPair[] {
+  return set.axes.flatMap(({ name, values }) => {
+    // The roots by the slice of the other axes they sit on, then by this axis's value.
+    const others = set.axes.filter((axis) => axis.name !== name);
+    const slices = new Map<string, Map<string, object>>();
+    for (const { properties, root } of set.variants) {
+      const value = properties[name];
+      if (value !== undefined) {
+        const slice = JSON.stringify(others.map((axis) => properties[axis.name] ?? null));
+        slices.set(slice, (slices.get(slice) ?? new Map<string, object>()).set(value, root));
+      }
+    }
+    return values.flatMap((first, at) =>
+      values.slice(at + 1).flatMap((second): readonly AxisPair[] => {
+        // `isDeepStrictEqual` reads each object's fields in any order and each array in its order,
+        // so the order the build writes a layer's fields in cannot tell two roots apart, and the
+        // order of its layers can.
+        const shared = [...slices.values()].flatMap((byValue) => {
+          const one = byValue.get(first);
+          const other = byValue.get(second);
+          return one === undefined || other === undefined ? [] : [isDeepStrictEqual(one, other)];
+        });
+        if (shared.length === 0) {
+          return [{ _tag: "Apart", axis: name, values: [first, second] }];
+        }
+        return shared.every(Boolean) ? [{ _tag: "Alike", axis: name, values: [first, second] }] : [];
+      })
+    );
+  });
 }

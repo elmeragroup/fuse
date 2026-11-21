@@ -7,8 +7,7 @@
  *   its first row. The popup is 144px wide, its minimum, wider than the trigger, so the group gives the
  *   label 136px. At `kind=menu` and `kind=menu-inset`, an open Dropdown menu whose popup holds one
  *   group, the caption, `inset` at `menu-inset`, and one row. The caption sits in a `<div>` 136px wide,
- *   which carries no `data-slot`, so the popup hugs it at the same 144px and the markup check reads
- *   the popup and the group around the caption as Fuse renders them.
+ *   so the popup hugs it at the same 144px.
  * - `menuSeparator`, a static rendering: `<Select.Separator />` in a host 144px wide that pads
  *   `surface-pad-sm` across, as a popup that pads its rows holds it, so its margins widen it to the
  *   host's 144px. It needs no Select around it, and Select's own popup pads nothing, so its margins

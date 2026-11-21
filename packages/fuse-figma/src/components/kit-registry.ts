@@ -5,7 +5,7 @@
  *
  * Keep this module free of Tailwind's compiler, the theme catalog and the Fuse build, so the
  * modules that need only the definitions and their cells, such as the compare unit tests that
- * parse keys and check markup, load it without them. A comparison run loads the compiler anyway,
+ * parse keys, load it without them. A comparison run loads the compiler anyway,
  * through `buildComponentSets()`.
  */
 import type { SetManifest } from "../capture/manifest";

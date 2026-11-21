@@ -30,7 +30,7 @@ import type { CellRendering } from "./cell-renderers.ts";
 
 /**
  * Fuse's `Field.Control` marks the element it renders `data-slot="field-control"`, over the
- * textarea's own `data-slot`, and the page and the markup check find a cell's root by the
+ * textarea's own `data-slot`, and the page and the capture find a cell's root by the
  * definition's slot. No Fuse style reads either slot, so the cell gives the textarea its own back.
  */
 const TEXTAREA_SLOT = { "data-slot": "textarea" } as const;
