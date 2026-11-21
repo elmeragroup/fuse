@@ -168,6 +168,7 @@ export function readFlow(
     flow.parts.map(({ style }) => style),
     {
       others: flow.others.length,
+      instances: flow.parts.filter((part) => part.instance).length,
       outOfFlow: box.outOfFlow,
       sizing: box.sizing,
       limits: box.limits,
@@ -608,7 +609,8 @@ export type FlowLayers = {
   /**
    * The parts, each with whether it holds text a TEXT property sets, which a grid's tracks read, and
    * whether it shows its own text and no icon or part, which `readCentredLone` in `auto-margins.ts`
-   * reads, and whether a BOOLEAN property shows or hides it, which `readRestAtEnd` there reads.
+   * reads, and whether a BOOLEAN property shows or hides it, which `readRestAtEnd` there reads, and
+   * whether it is an instance part, which a subgrid row cannot regroup into its inset.
    */
   readonly parts: readonly (FlowLayer & {
     readonly style: LayerStyle;
@@ -616,6 +618,7 @@ export type FlowLayers = {
     readonly editable: boolean;
     readonly onlyText: boolean;
     readonly optional: boolean;
+    readonly instance: boolean;
   })[];
   readonly others: readonly FlowLayer[];
   /**

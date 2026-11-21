@@ -325,6 +325,7 @@ export class InstanceParts {
       values: visit.values,
       painted: new PaintedInstances(),
       translates: new WeakMap(),
+      main: variant.root,
     };
     const root: ComponentRootSpec = {
       name: part.of.slot,

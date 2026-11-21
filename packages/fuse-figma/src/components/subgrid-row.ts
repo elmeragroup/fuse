@@ -6,8 +6,9 @@
  *
  * The list's width is the width of every Item, since each spans every column. The first column is
  * `min(50%, <length>)` of that width, and the `auto` column stretches over the rest (CSS Grid 1
- * §7.2.4, §11.8). Two FILL layers in a horizontal auto layout split it evenly whatever they hold
- * (probe DL3), and a `maxWidth` on the first caps it while the second takes the rest: at the cap of
+ * §7.2.4, §11.8). Two FILL layers that pad no side, in a horizontal auto layout, split it evenly
+ * whatever they hold (probe DL3; {@link drawSubgridCell} moves a cell's side padding inside, DL5),
+ * and a `maxWidth` on the first caps it while the second takes the rest: at the cap of
  * 320px, a row 800px wide drew 320 and 480, and one 576px wide drew 288 and 288 (DL2, 2026-11-19), the
  * widths Chromium gives Description list at those widths. Every row computes the same split from the
  * same width, so the rows line up as the shared columns do, at any width.
@@ -23,7 +24,9 @@
  * shorthand such as `border` or `border-width`, so one keeps the Item unmapped. The Item sets no
  * width, minimum or maximum: a subgrid ignores them across its subgridded columns and stays as wide
  * as its span, where the row would take them. It must not hug its width, which would make the
- * percentage cyclic. Its two cells sit in columns 1 and 2 in source order, set no width, inline
+ * percentage cyclic. Its two cells are frames the Item draws, not instance parts, whose side padding
+ * {@link drawSubgridCell} could not move inside them and whose root takes no cap. They sit in columns
+ * 1 and 2 in source order, set no width, inline
  * margin, border or self-alignment of their own, and paint nothing. CSS stretches each cell to its
  * row's height (CSS Box Alignment 3 §6.1), where the row draws each cell at its own height from the
  * top. A block cell that paints nothing and sets no `align-content` places its text from its top
@@ -36,14 +39,56 @@
  */
 import type { Room } from "./box-sizing";
 import { evaluateLength, normalizeCss, splitTopLevel } from "./css-values";
-import type { LimitsSpec, NumberSpec, SizingSpec } from "./kit-spec";
-import type { Feed, LayerStyle } from "./layer-style";
+import { NO_LIMITS, outOfLayout, ZERO } from "./kit-spec";
+import type { BoxSpec, ChildLayerSpec, FrameLayerSpec, LimitsSpec, NumberSpec, SizingSpec } from "./kit-spec";
+import type { Feed, FeedTarget, LayerStyle, SpecField } from "./layer-style";
 import type { Layout } from "./placement";
 
 /** What {@link readSubgridFlow} read a box as: the list's column, or an Item's row and its first cell's cap. */
 export type SubgridLayout =
   | { readonly kind: "list" }
   | { readonly kind: "item"; readonly firstMaximum: NumberSpec };
+
+/** A cell of an Item's row, and the width it fills up to: the first cell's cap, none for the second. */
+export type SubgridCell = { readonly maximumWidth: NumberSpec | undefined };
+
+/** The key and name of the frame inside a cell that takes the cell's side padding, unless a layer of the cell has it. */
+const INSET = "inset";
+
+/** The fields of a cell the inner frame takes: its side padding and the layout of what it holds. */
+const INSET_FIELDS: ReadonlySet<SpecField> = new Set([
+  "paddingLeft",
+  "paddingRight",
+  "direction",
+  "itemSpacing",
+  "primaryAlign",
+  "counterAlign",
+  "layers",
+]);
+
+/** The fields of a cell its side padding fills. */
+const SIDE_PADDING: ReadonlySet<SpecField> = new Set(["paddingLeft", "paddingRight"]);
+
+/** Why a cell's side padding stays unmapped where no one frame inside the cell keeps its paint order. */
+const INTERLEAVED =
+  "the cell's layers in its layout sit on both sides of a layer out of it, so no one frame inside the cell takes the side padding and keeps their paint order, and padding on the cell moves the row's split (probe DL5)";
+
+/** Why a cell's side padding stays unmapped where the cell holds no layer in its layout. */
+const NOTHING_IN_FLOW =
+  "the cell holds no layer in its layout, and Figma keeps an auto-layout frame with no layer in it at its last height (PE4) where CSS draws the cell as tall as its padding, so no frame inside the cell takes the side padding, and padding on the cell moves the row's split (probe DL5)";
+
+/**
+ * A key no layer of a cell has, for the frame inside it: `inset`, or `inset-2` and on where a layer
+ * of the cell is keyed `inset`, since a key is unique among its siblings.
+ */
+function freeKey(children: readonly { readonly key: string }[]): string {
+  const taken = new Set(children.map((child) => child.key));
+  let key = INSET;
+  for (let suffix = 2; taken.has(key); suffix += 1) {
+    key = `${INSET}-${String(suffix)}`;
+  }
+  return key;
+}
 
 /** The span `col-span-full` compiles to, every column of the grid. */
 const FULL_SPAN = "1/-1";
@@ -278,7 +323,12 @@ function spansRows(grid: LayerStyle, parts: readonly LayerStyle[], others: numbe
 function readItem(
   item: LayerStyle,
   cells: readonly LayerStyle[],
-  box: { readonly others: number; readonly outOfFlow: number; readonly sizing: SizingSpec }
+  box: {
+    readonly others: number;
+    readonly instances: number;
+    readonly outOfFlow: number;
+    readonly sizing: SizingSpec;
+  }
 ): NumberSpec | undefined {
   const list = item.parent();
   const cap = halfCappedColumns(list?.resolved("grid-template-columns") ?? "");
@@ -290,6 +340,7 @@ function readItem(
     second === undefined ||
     more.length > 0 ||
     box.others > 0 ||
+    box.instances > 0 ||
     box.outOfFlow > 0 ||
     box.sizing.horizontal.kind === "hug" ||
     normalizeCss(item.resolved("display") ?? "") !== "grid" ||
@@ -346,8 +397,8 @@ function readItem(
  *
  * @param reader - The box's style.
  * @param parts - The styles of the parts in the box's flow.
- * @param box - How many icons and labels sit in its flow beside its parts, how many of its parts sit
- *   out of its flow, its sizing and limits, and the sizing of the layers inside it, which the list's
+ * @param box - How many icons and labels sit in its flow beside its parts, how many of its parts are
+ *   instance parts, how many sit out of its flow, its sizing and limits, and the sizing of the layers inside it, which the list's
  *   `display` decides as it stretches them.
  * @returns The box's layout, or undefined where it is neither shape.
  */
@@ -356,6 +407,7 @@ export function readSubgridFlow(
   parts: readonly LayerStyle[],
   box: {
     readonly others: number;
+    readonly instances: number;
     readonly outOfFlow: number;
     readonly sizing: SizingSpec;
     readonly limits: LimitsSpec;
@@ -401,23 +453,194 @@ export function readSubgridFlow(
   };
 }
 
+/** A side of a cell: the spec field its padding fills and the CSS property that sets it. */
+const SIDES = [
+  { field: "paddingLeft", property: "padding-left" },
+  { field: "paddingRight", property: "padding-right" },
+] as const;
+
+/** Whether a length pads its side: a variable, or a literal other than 0. */
+function pads(length: NumberSpec): boolean {
+  return length.kind === "variable" || length.value !== 0;
+}
+
+/** The layer that draws a cell's side padding: the cell, or the frame inside it. */
+type PaddingHolder = "cell" | "inset";
+
+/** The kind and key of each layer, which tell apart the cell that pads itself and the cell whose frame pads. */
+function kindsAndKeys(layers: readonly { readonly kind: string; readonly key: string }[]): string {
+  return JSON.stringify(layers.map((layer) => [layer.kind, layer.key]));
+}
+
+/** The layer at a key path below a root, undefined where no frame holds it. */
+function layerAt(root: BoxSpec, path: readonly string[]): BoxSpec | undefined {
+  let box: BoxSpec | undefined = root;
+  for (const key of path) {
+    const child: ChildLayerSpec | undefined = box?.children.find((layer) => layer.key === key);
+    box = child?.kind === "frame" ? child : undefined;
+  }
+  return box;
+}
+
+/**
+ * Draw a cell of an Item's row: the first fills the row up to its column's cap, which no class of its
+ * own sets, and a cell that pads a side draws that padding on a frame inside it.
+ *
+ * Figma takes each FILL layer's side padding out of the row's free space before it splits the rest,
+ * and each layer gets its share plus its own padding, where CSS splits the columns themselves. Probe
+ * DL5 (a scratch file, 2026-11-20): in a gapless row of two FILL frames, the first capped at 320,
+ * padding the first frame's right by 8px drew it 204, 292 and 320 wide in rows 400, 576 and 800 wide,
+ * and 206 and 294 below the cap at 12px, where Chromium draws Description list's term 200 and 288.
+ * Padding both frames alike drew 200, 288 and 320, as DL4 did, and so did an unpadded first frame
+ * whose inner FILL frame took the padding. So the row's layers carry no side padding:
+ * the cell keeps its key, its sizing, its cap, its padding above and below and what it
+ * paints, and a FILL frame keyed `inset` takes its side padding and lays out its layers. The frame
+ * takes another key where a layer of the cell has that one, since a key is unique among siblings. Padding the
+ * other cell to match would also split the row alike, but narrow its text below Chromium's. A layer
+ * out of the cell's layout stays on the cell, which still has the cell's border box, before or after
+ * the frame as it came before or after the layers the frame takes, so the cell paints them in the
+ * order it did. The frame alone paints its first layer on top where the cell did, since the cell
+ * becomes a row, where Figma draws that only in a column (PZ2). The cell then lists its layers in
+ * the order it paints them, back to front. A cell whose layers in its layout sit on both sides of
+ * one out of it keeps its padding, and each side it pads stays unmapped, since no one frame keeps
+ * that order. So does a cell with no layer in its layout: a frame inside it would hold nothing, and
+ * Figma keeps an auto-layout frame with no layer in it at its last height (PE4), where CSS draws the
+ * cell as tall as its padding.
+ *
+ * A cell of an instance part, built in place, keeps the layers its main draws, since an instance keeps
+ * its main's layers, and the diff compares no layer of a box whose layers differ, so the instance
+ * would lose its TEXT values and overrides inside the cell. Where the cell's own side padding would
+ * add the frame or remove it, the cell draws the main's layers with its own padding, and the instance
+ * diff leaves each side whose padding differs from the main's unmapped. The side
+ * padding decides whether the frame exists, so it fills the cell's `layers` too, and the frame's
+ * fields move with the reads that fill them, so an instance part's coverage tells what it carries.
+ *
+ * @param style - The cell's style.
+ * @param box - The cell as mapped.
+ * @param cell - The cell's place in the row, as {@link subgridCellRoom} gives it.
+ * @param main - The root of the inner set's variant where the cell is built in place, which holds
+ *   the main's cell at the cell's key path; undefined for a set's own cells.
+ * @returns The cell's box.
+ */
+export function drawSubgridCell(
+  style: LayerStyle,
+  box: BoxSpec,
+  cell: SubgridCell,
+  main: BoxSpec | undefined
+): BoxSpec {
+  const capped =
+    cell.maximumWidth === undefined
+      ? box
+      : { ...box, limits: { ...box.limits, maxWidth: cell.maximumWidth } };
+  const { path } = style;
+  const own = (feed: FeedTarget): boolean =>
+    feed.path.length === path.length && path.every((key, index) => feed.path[index] === key);
+  // Whether the cell draws the frame follows its side padding, so that padding fills its `layers`.
+  const decides = (feed: FeedTarget): readonly FeedTarget[] =>
+    own(feed) && SIDE_PADDING.has(feed.field) ? [{ path, field: "layers" }] : [];
+  const inFlow = capped.children.flatMap((child, index) => (outOfLayout(child) ? [] : [index]));
+  const first = inFlow[0] ?? 0;
+  const last = inFlow.at(-1) ?? -1;
+  const before = capped.children.slice(0, first);
+  const held = capped.children.slice(first, last + 1);
+  const after = capped.children.slice(last + 1);
+  const refused = inFlow.length === 0 ? NOTHING_IN_FLOW : held.some(outOfLayout) ? INTERLEAVED : undefined;
+  const insetKey = freeKey(capped.children);
+  const { firstOnTop, ...rest } = capped;
+  // A cell that paints its first layer on top lists its layers front to back. It becomes a row with
+  // no first layer on top, so it lists the layers beside the frame back to front, and the frame
+  // keeps the cell's order and its first layer on top.
+  const around = <Layer extends { readonly kind: string; readonly key: string }>(frame: Layer) =>
+    firstOnTop === true
+      ? [...[...after].reverse(), frame, ...[...before].reverse()]
+      : [...before, frame, ...after];
+  const ownHolder: PaddingHolder =
+    refused === undefined && SIDES.some(({ field }) => pads(capped[field])) ? "inset" : "cell";
+  const mainCell = main === undefined ? undefined : layerAt(main, path);
+  const mainKeys = mainCell === undefined ? undefined : kindsAndKeys(mainCell.children);
+  const mainHolder: PaddingHolder | undefined =
+    mainKeys === kindsAndKeys(around({ kind: "frame", key: insetKey }))
+      ? "inset"
+      : mainKeys === kindsAndKeys(capped.children)
+        ? "cell"
+        : undefined;
+  const holder: PaddingHolder = refused === undefined ? (mainHolder ?? ownHolder) : "cell";
+  if (holder === "cell") {
+    style.moveFeeds((feed) => [feed, ...decides(feed)]);
+    if (refused !== undefined) {
+      for (const { field, property } of SIDES) {
+        if (pads(capped[field])) {
+          style.read(
+            property,
+            (value) => value,
+            () => ({ outcome: "unmapped", detail: refused }),
+            []
+          );
+        }
+      }
+    }
+    return capped;
+  }
+  style.moveFeeds((feed) => {
+    const within = path.every((key, index) => feed.path[index] === key);
+    const moves = own(feed)
+      ? INSET_FIELDS.has(feed.field)
+      : !capped.children.some((child) => child.key === feed.path[path.length] && outOfLayout(child));
+    const moved =
+      within && moves ? { ...feed, path: [...path, insetKey, ...feed.path.slice(path.length)] } : feed;
+    return [moved, ...decides(feed)];
+  });
+  const frame: FrameLayerSpec = {
+    kind: "frame",
+    key: insetKey,
+    name: insetKey,
+    direction: capped.direction,
+    sizing: {
+      horizontal: { kind: "fill" },
+      vertical: capped.sizing.vertical.kind === "hug" ? { kind: "hug" } : { kind: "fill" },
+    },
+    limits: NO_LIMITS,
+    clips: false,
+    paddingTop: ZERO,
+    paddingRight: capped.paddingRight,
+    paddingBottom: ZERO,
+    paddingLeft: capped.paddingLeft,
+    itemSpacing: capped.itemSpacing,
+    primaryAlign: capped.primaryAlign,
+    counterAlign: capped.counterAlign,
+    cornerRadius: ZERO,
+    fill: undefined,
+    stroke: undefined,
+    shadows: [],
+    opacity: 1,
+    children: held,
+  };
+  return {
+    ...rest,
+    direction: "HORIZONTAL",
+    paddingLeft: ZERO,
+    paddingRight: ZERO,
+    itemSpacing: ZERO,
+    primaryAlign: "MIN",
+    counterAlign: "MIN",
+    children: around<ChildLayerSpec>(firstOnTop === true ? { ...frame, firstOnTop } : frame),
+  };
+}
+
 /**
  * The room an Item's row gives a cell: each fills the row's width, the first up to its cap, and hugs
- * its height from the row's top.
+ * its height from the row's top. {@link drawSubgridCell} draws the cell in it.
  *
  * @param row - The Item's row, as {@link readSubgridFlow} read it.
  * @param index - The cell's place in the row.
  * @returns The cell's room.
  */
 export function subgridCellRoom(row: Extract<SubgridLayout, { readonly kind: "item" }>, index: number): Room {
-  const room: Room = {
+  return {
     horizontal: { percent: { kind: "none" }, auto: { kind: "fill" }, siblings: [], length: undefined },
     vertical: { percent: { kind: "none" }, auto: { kind: "hug" }, siblings: [], length: undefined },
     widthCap: { kind: "unread" },
     unbounded: false,
+    subgridCell: { maximumWidth: index === 0 ? row.firstMaximum : undefined },
   };
-  if (index !== 0) {
-    return room;
-  }
-  return { ...room, maximumWidth: row.firstMaximum };
 }

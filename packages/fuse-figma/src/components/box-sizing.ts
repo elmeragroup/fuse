@@ -47,6 +47,7 @@ import { readSize } from "./sizing-value";
 import type { PercentBasis } from "./sizing-value";
 import { spannedWidth, spansBesideBlocks, spansParent, SPANS_HUGGING_PARENT } from "./spanning-block";
 import { subgridCellRoom } from "./subgrid-row";
+import type { SubgridCell } from "./subgrid-row";
 import { limitsNeverMoveVariable } from "./variable-limits";
 
 /** What a box's parent gives it on one axis. */
@@ -129,8 +130,11 @@ export type Room = {
    * around it, as `hugging-rows.ts` reads it. Absent elsewhere.
    */
   readonly rowMinimum?: NumberSpec;
-  /** The width a subgrid row's cell fills up to, as `subgridCellRoom` gives it. Absent elsewhere. */
-  readonly maximumWidth?: NumberSpec;
+  /**
+   * A subgrid row's cell, and the width it fills up to, as `subgridCellRoom` gives them. Absent
+   * elsewhere.
+   */
+  readonly subgridCell?: SubgridCell;
 };
 
 const HUG: SizeSpec = { kind: "hug" };
