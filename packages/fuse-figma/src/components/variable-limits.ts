@@ -41,3 +41,19 @@ export function limitsNeverMoveVariable(
       : most !== undefined && value.value >= most;
   });
 }
+
+/**
+ * Whether a length is one length in every mode: a literal, or a variable whose least and greatest
+ * values across its modes the synced variables both know, and which are the same.
+ *
+ * @param length - The length.
+ * @param variables - The synced variables, with the least and greatest value each holds.
+ * @returns True for a literal, or for a variable with equal, known bounds.
+ */
+export function oneLengthInEveryMode(length: NumberSpec, variables: VariableIndex): boolean {
+  if (length.kind === "literal") {
+    return true;
+  }
+  const least = variables.minimum(length.variable);
+  return least !== undefined && least === variables.maximum(length.variable);
+}

@@ -47,7 +47,33 @@ export type PartElement = {
  * slotted span, draws no layer of its own. Undefined where the icon's element is not in the cell's
  * own capture.
  */
-export type IconCascade = { readonly style: LayerStyle; readonly drawnAt: DrawnAt | undefined };
+export type IconCascade = {
+  readonly style: LayerStyle;
+  readonly drawnAt: DrawnAt | undefined;
+  /**
+   * What the box's element holds around the `<svg>`, where the `<svg>` is a child of the box's own
+   * element in the cell's capture and the box draws nothing from outside that element. Undefined
+   * otherwise.
+   */
+  readonly neighbours?: IconNeighbours;
+};
+
+/** One element's or pseudo-element's winning value of a property, as the capture records it. */
+export type CapturedValues = (property: string) => string | undefined;
+
+/**
+ * What a box's element holds around an icon's `<svg>`, by each element's winning values, which an
+ * absolute icon's paint reads (`absolute-icon.ts`). Document order puts an element before its
+ * `::before`, its `::before` before its children, and its `::after` after them.
+ */
+export type IconNeighbours = {
+  /** The box's element children, the `<svg>` among them, which are the box's flex items. */
+  readonly items: readonly CapturedValues[];
+  /** Every element and pseudo-element of the box's subtree before the `<svg>`, the box's `::before` first. */
+  readonly before: readonly CapturedValues[];
+  /** Every one after the `<svg>`, descendants included, the box's `::after` last. */
+  readonly after: readonly CapturedValues[];
+};
 
 /** The cascade of one box, the root or a part, as the mapping reads it. */
 export type BoxCascade = {

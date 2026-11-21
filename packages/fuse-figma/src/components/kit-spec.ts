@@ -367,6 +367,11 @@ export type IconLayerSpec = {
    * its swap link (PI2), absent for an icon that shows wherever its variant holds it.
    */
   readonly visibleProperty?: string;
+  /**
+   * Where the icon sits outside its parent's auto layout, absent for one the auto layout places. It
+   * keeps its own size, so it takes the places an instance takes.
+   */
+  readonly placement?: EdgePlacementSpec<InstanceAxisPlacementSpec>;
 };
 
 /**
@@ -406,7 +411,10 @@ export type AxisPlacementSpec =
   | { readonly kind: "stretch"; readonly start: number; readonly end: number }
   | { readonly kind: "scale"; readonly start: number };
 
-/** The places an instance takes on an axis: one that keeps the length the instance's main gives it. */
+/**
+ * The places an instance or an icon takes on an axis: one that keeps the length the layer has of its
+ * own, its main's or the icon's size.
+ */
 export type InstanceAxisPlacementSpec = Extract<
   AxisPlacementSpec,
   { readonly kind: "start" | "end" | "centre" }
@@ -605,7 +613,7 @@ export type InstanceLayerSpec = {
 export type ChildLayerSpec = TextLayerSpec | IconLayerSpec | FrameLayerSpec | InstanceLayerSpec;
 
 /**
- * Whether a layer sits outside its parent's auto layout: a frame or an instance with a placement,
+ * Whether a layer sits outside its parent's auto layout: a frame, an instance or an icon with a placement,
  * which takes no room in the flow and counts toward no hug (P8). Every reader of a box's flow asks
  * this, so a placement of any kind leaves the flow alike.
  *
@@ -613,7 +621,7 @@ export type ChildLayerSpec = TextLayerSpec | IconLayerSpec | FrameLayerSpec | In
  * @returns True for a placed layer.
  */
 export function outOfLayout(layer: ChildLayerSpec): boolean {
-  return (layer.kind === "frame" || layer.kind === "instance") && layer.placement !== undefined;
+  return layer.kind !== "text" && layer.placement !== undefined;
 }
 
 /**

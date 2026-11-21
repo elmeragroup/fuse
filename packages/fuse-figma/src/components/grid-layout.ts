@@ -92,8 +92,11 @@ const UNSET_GRID = [
   "grid-auto-rows",
 ] as const;
 
-/** The item properties that place an item away from auto-placement. */
-const PLACES_ITSELF = [
+/**
+ * The grid-placement properties, which place an item by the grid's lines (CSS Grid 1 §8.3) and give an
+ * absolute child of a grid the grid area they name as its containing block (§9.1).
+ */
+export const GRID_LINES = [
   "grid-area",
   "grid-column",
   "grid-column-start",
@@ -101,8 +104,10 @@ const PLACES_ITSELF = [
   "grid-row",
   "grid-row-start",
   "grid-row-end",
-  "order",
 ] as const;
+
+/** The item properties that place an item away from auto-placement. */
+const PLACES_ITSELF = [...GRID_LINES, "order"] as const;
 
 /**
  * One column of `grid-template-columns` as a Figma track, where the capture proves it, as the module

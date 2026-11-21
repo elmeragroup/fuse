@@ -110,6 +110,115 @@ function paintsInFlow(style: LayerStyle): boolean {
   });
 }
 
+/**
+ * How a box paints in the stacking context around it, as {@link stackingOf} reads it: in the flow,
+ * as a static box that makes no stacking context; in a layer of its own, as a positioned box or a
+ * stacking context; or `unknown`, where a value may or may not make one.
+ */
+export type Stacking = "flow" | "own-layer" | "unknown";
+
+/**
+ * Each property beside {@link OWN_LAYER} that can make a stacking context, with its initial values.
+ * Chromium paints a box that runs a transform or opacity animation over an absolute box before it in
+ * the markup, and so it paints one that sets `transform-style: preserve-3d` or a `content-visibility`
+ * other than `visible`. A capture records an animation as the `animation` shorthand or as its
+ * `animation-name`, so both read.
+ */
+const MAY_OWN_LAYER: ReadonlyMap<string, readonly string[]> = new Map([
+  ["z-index", ["auto"]],
+  ["animation", ["none"]],
+  ["animation-name", ["none"]],
+  ["transform-style", ["flat"]],
+  ["content-visibility", ["visible"]],
+  ["container-type", ["normal"]],
+  ["view-transition-name", ["none"]],
+  ["mask", ["none"]],
+  ["-webkit-mask-image", ["none"]],
+  ["-webkit-box-reflect", ["none"]],
+  ["offset-path", ["none"]],
+]);
+
+/** The positions that take a box out of the flow's paint: every one but `static` (CSS Position 3 §2). */
+const POSITIONS: ReadonlySet<string> = new Set(["relative", "absolute", "fixed", "sticky"]);
+
+/**
+ * The `will-change` values that make a stacking context as the property they name does at a value
+ * other than its initial one (CSS Will Change 1 §2). Chromium makes none for `scroll-position` or
+ * `contents`, or for a property such as `color`, so those stay unknown.
+ */
+const STACKING_HINTS: ReadonlySet<string> = new Set([
+  "opacity",
+  "transform",
+  "translate",
+  "rotate",
+  "scale",
+  "filter",
+  "backdrop-filter",
+  "perspective",
+  "isolation",
+  "mix-blend-mode",
+  "clip-path",
+  "mask",
+  "mask-image",
+]);
+
+/** The `contain` keywords that make a stacking context: layout and paint containment (CSS Containment 2 §3). */
+const STACKING_CONTAINS: ReadonlySet<string> = new Set(["strict", "content", "layout", "paint"]);
+
+/**
+ * How one property's value, other than its initial one, paints the box that sets it. A value that
+ * reads a variable, or one whose effect depends on more than the value, is unknown: a `z-index` on a
+ * box that may be no flex item and unpositioned, or an animation, which may run any property.
+ */
+function stackingFrom(property: string, value: string): Stacking {
+  if (value.includes("var(") || ["inherit", "unset", "revert", "revert-layer"].includes(value)) {
+    return "unknown";
+  }
+  const words = value.split(/[\s,]+/).filter((word) => word !== "");
+  switch (property) {
+    case "position":
+      return POSITIONS.has(value) ? "own-layer" : "unknown";
+    case "opacity": {
+      const share = value.endsWith("%") ? Number(value.slice(0, -1)) / 100 : Number(value);
+      return Number.isFinite(share) && share < 1 ? "own-layer" : "unknown";
+    }
+    case "isolation":
+      return value === "isolate" ? "own-layer" : "unknown";
+    case "will-change":
+      return words.some((word) => STACKING_HINTS.has(word)) ? "own-layer" : "unknown";
+    case "contain":
+      return words.some((word) => STACKING_CONTAINS.has(word)) ? "own-layer" : "unknown";
+    case "z-index":
+    case "animation":
+    case "animation-name":
+      return "unknown";
+    default:
+      return "own-layer";
+  }
+}
+
+/**
+ * How a box paints in the stacking context around it, from the value each property that can make
+ * a stacking context takes on it. Every property at its initial value, or unset, paints it in the
+ * flow, which CSS paints before the positioned boxes and stacking contexts (CSS 2.1 Appendix E). A
+ * value known to position the box or make a stacking context puts it in a layer of its own, and any
+ * other value is unknown, so a reader that must prove a box paints in the flow refuses it.
+ *
+ * @param valueOf - The box's value of a property, or undefined where it sets none.
+ * @returns How the box paints: in its own layer where any value puts it there, else unknown where
+ *   any value is, else in the flow.
+ */
+export function stackingOf(valueOf: (property: string) => string | undefined): Stacking {
+  const readings = [...OWN_LAYER, ...MAY_OWN_LAYER].map(([property, initial]): Stacking => {
+    const value = valueOf(property);
+    const normalized = value === undefined ? undefined : normalizeCss(value);
+    return normalized === undefined || initial.includes(normalized)
+      ? "flow"
+      : stackingFrom(property, normalized);
+  });
+  return readings.includes("own-layer") ? "own-layer" : readings.includes("unknown") ? "unknown" : "flow";
+}
+
 /** Whether a flex block holds a layer that casts a shadow, which paints as a flex item does. */
 function ringsAsItem({ layer, style }: StackedPart): boolean {
   return (

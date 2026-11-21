@@ -6,8 +6,18 @@
  * assembles a set from the root of each cell.
  */
 
-import { placedRoom, planPlacement, UNPAINTABLE } from "./absolute-placement";
-import type { BoxCascade, PartElement } from "./box-cascade";
+import { iconPaintRefusal } from "./absolute-icon";
+import {
+  instancePlacement,
+  leaveUnplaced,
+  placedRoom,
+  planPlacement,
+  readPlacement,
+  UNKEPT_TURN,
+  UNPAINTABLE,
+} from "./absolute-placement";
+import type { PlacementPlan } from "./absolute-placement";
+import type { BoxCascade, IconNeighbours, PartElement } from "./box-cascade";
 import { readCorner } from "./box-corners";
 import type { MarkerReading } from "./box-flow";
 import {
@@ -43,7 +53,7 @@ import {
   viewportRoom,
 } from "./box-sizing";
 import type { Holder, Room, RowLayer } from "./box-sizing";
-import { dropIdleOrigin, readRotation } from "./box-transform";
+import { dropIdleOrigin, readRotation, turnOf } from "./box-transform";
 import { KitUnmappable } from "./build-errors";
 import { centresBesideSpan, foldGap, holdsOnlyLabel, padCentred } from "./centred-row";
 import type {
@@ -134,6 +144,7 @@ import { drawSubgridCell } from "./subgrid-row";
 import { tableDisplayDetail } from "./table-layout";
 import { foldTranslate, sharedTranslate } from "./translate-fold";
 import type { CarriedTranslates } from "./translate-fold";
+import { oneLengthInEveryMode } from "./variable-limits";
 
 /**
  * A part's layer name: its `data-slot`, or its key for an element without one.
@@ -562,12 +573,26 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     if (stack !== undefined) {
       dropShownStackRest(style);
     }
-    const icon = mapIcon(slot, style, scope);
-    if (icon !== undefined) {
-      icons.push({ side: slot.side, style, icon, key: slot.key, at: iconCascades[place]?.drawnAt });
+    const unturned = mapIcon(slot, style, scope);
+    if (unturned !== undefined) {
+      // The icon's place reads its turn before the turn reads, since a turn the place refuses draws
+      // in no layer.
+      const plan = planPlacement(
+        style,
+        {
+          kind: "icon",
+          direct: slot.direct,
+          turn: turnOf(style.resolved("rotate") ?? "none"),
+          oneSize: oneLengthInEveryMode(unturned.size, context.variables),
+        },
+        { parent: reader, positionedBy: box.positionedBy }
+      );
+      const icon = turnIcon(style, unturned, plan);
+      const { drawnAt, neighbours } = iconCascades[place] ?? {};
+      const mapped = { side: slot.side, style, icon, key: slot.key, at: drawnAt, neighbours };
+      icons.push(plan === undefined ? mapped : { ...mapped, plan });
     }
   }
-  const onSide = (side: IconSlot["side"]) => icons.filter((each) => each.side === side);
   // Every part cascades before any maps, since an absolute part sits out of the box's flow. The box's
   // flow, `holder.layers`, is the one membership every layout reader below reads: the rooms, the
   // stretch, the label, the display and the placement.
@@ -590,6 +615,18 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     cascaded.filter((part) => !empty.includes(part)),
     slots.length + (label === undefined ? 0 : 1)
   );
+  // An absolute icon leaves the flow only where the box, drawing it last, paints it as CSS does.
+  const flowStyles = inDom.flatMap((part) => (outOfFlow(part.cascade.style) ? [] : [part.cascade.style]));
+  const { flowIcons, placedIcons } = placeIcons(
+    icons.map((icon) => {
+      const why =
+        icon.plan?.kind === "planned"
+          ? iconPaintRefusal(icon.style, icon.neighbours, { style: reader, flow: flowStyles })
+          : undefined;
+      return why === undefined ? icon : { ...icon, plan: { kind: "refused", why } };
+    })
+  );
+  const onSide = (side: IconSlot["side"]) => flowIcons.filter((each) => each.side === side);
   // The parts the markup holds after the label draw after it and the end icons, and so does an
   // absolute part first in the DOM that may end a row beside its label in flow.
   const leading = label !== undefined && onSide("end").length === 0 ? leadingAbsolute(inDom) : undefined;
@@ -663,7 +700,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         items: cascade.measured?.gridItems,
         places: flowing.map((part) => part.cascade.measured?.gridItem),
       },
-      outOfFlow: shown.length - flowing.length,
+      outOfFlow: shown.length - flowing.length + placedIcons.length,
     }
   );
   const { layout } = flow;
@@ -780,15 +817,18 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     shown.flatMap((part) => {
       const plan =
         flowing.indexOf(part) === -1
-          ? planPlacement(part.cascade.style, part.kind, {
-              parent: reader,
-              positionedBy: box.positionedBy,
-              parentSpansBlock: part.cascade.measured?.parentSpansBlock === true,
-              oneLength: part.cascade.measured?.oneLength ?? new Set(),
-              flow: flowing.map((each) => each.cascade.style),
-              layers: holder.layers.length,
-              paddingBox: paddingBoxOf(absoluteRoom(holder)),
-            })
+          ? planPlacement(
+              part.cascade.style,
+              {
+                kind: part.kind,
+                parentSpansBlock: part.cascade.measured?.parentSpansBlock === true,
+                oneLength: part.cascade.measured?.oneLength ?? new Set(),
+                flow: flowing.map((each) => each.cascade.style),
+                layers: holder.layers.length,
+                paddingBox: paddingBoxOf(absoluteRoom(holder)),
+              },
+              { parent: reader, positionedBy: box.positionedBy }
+            )
           : undefined;
       return plan === undefined ? [] : [[part.cascade.style, plan] as const];
     })
@@ -1000,6 +1040,9 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     ...(placed === undefined ? [] : [placed.layer]),
     ...end.map(({ layer }) => layer),
   ];
+  for (const { at, key, icon } of placedIcons) {
+    scope.drawn?.note(at, key, icon);
+  }
   // The display reads once the layers are known, since a grid maps only around one item.
   const textBlock = readDisplay(reader, order, label?.name, layout, clamp, {
     width: across === undefined ? sizing.horizontal : FILL_ACROSS,
@@ -1015,7 +1058,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       style: reader,
       layout,
       clips: clips || (scope.clipsAround === true && sizing.horizontal.kind === "fill"),
-      drawsOthers: after.length > 0,
+      drawsOthers: after.length + placedIcons.length > 0,
     },
     parts,
     context.variables
@@ -1117,6 +1160,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
         })),
     ...after,
     ...placedLayers.slice(drawnBefore.length),
+    // A placed icon draws over every other layer, where `iconPaintRefusal` says CSS paints it.
+    ...placedIcons.map(({ icon }) => icon),
   ];
   const joined = joinFlushLayers(
     reader,
@@ -1214,6 +1259,12 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   );
   const ordered =
     firstOnTop || painting.unplaceable.size > 0 ? children : inPaintOrder(children, painting.order);
+  const lastPlaced = ordered.slice(ordered.length - placedIcons.length);
+  if (placedIcons.length > 0 && (firstOnTop || placedIcons.some(({ icon }) => !lastPlaced.includes(icon)))) {
+    throw new Error(
+      `${cascade.path.join(" / ")}'s placed icons do not draw last, over every other layer, as \`iconPaintRefusal\` requires`
+    );
+  }
   readRaisedLevels(
     drawn.map((part) => ({
       key: part.key,
@@ -1778,7 +1829,10 @@ function labelBox(
   return own === undefined ? box : { holder: own, ellipsisFits };
 }
 
-/** An icon the box shows, as it maps before the box's layout: its side, its style and its layer. */
+/**
+ * An icon the box shows, as it maps before the box's layout: its side, its style, its layer, and the
+ * place `planPlacement` planned for it where it is absolute.
+ */
 type MappedIcon = {
   readonly side: IconSlot["side"];
   readonly style: LayerStyle;
@@ -1786,7 +1840,61 @@ type MappedIcon = {
   /** The icon's key and where the element the probe measures for it sits. */
   readonly key: string;
   readonly at: DrawnAt | undefined;
+  /** What the box's element holds around the icon's `<svg>`, which an absolute icon's paint reads. */
+  readonly neighbours: IconNeighbours | undefined;
+  readonly plan?: PlacementPlan;
 };
+
+/** A box's icons split by {@link placeIcons}: those in its flow, and the placed ones with their placement. */
+type PlacedIcons = {
+  readonly flowIcons: readonly MappedIcon[];
+  readonly placedIcons: readonly MappedIcon[];
+};
+
+/**
+ * Split a box's icons into those in its flow and the absolute ones placed out of it, by each one's
+ * plan, which `iconPaintRefusal` has refused where the icon would not paint as CSS paints it. Any
+ * other absolute icon stays in the flow with its position and offsets unmapped, with the reason.
+ *
+ * @param icons - The icons the box shows, each with its plan.
+ * @returns The icons in the flow, and the placed ones with their placement.
+ */
+function placeIcons(icons: readonly MappedIcon[]): PlacedIcons {
+  const flowIcons: MappedIcon[] = [];
+  const placedIcons: MappedIcon[] = [];
+  for (const each of icons) {
+    const read = each.plan === undefined ? undefined : readPlacement(each.style, each.plan);
+    const placement = read?.kind === "placed" ? instancePlacement(read.placement) : undefined;
+    if (placement !== undefined) {
+      placedIcons.push({ ...each, icon: { ...each.icon, placement } });
+      continue;
+    }
+    if (read?.kind === "refused") {
+      leaveUnplaced(each.style, read.why);
+    }
+    flowIcons.push(each);
+  }
+  return { flowIcons, placedIcons };
+}
+
+/**
+ * An icon with its turn, once its place is planned. A turn the place refuses, as one that moves the
+ * box off its offsets, draws in no layer, so its `rotate` stays unmapped with the reason, and the
+ * icon draws unturned in the flow. Any other turn reads as `readRotation` reads it.
+ *
+ * @param style - The icon's style.
+ * @param icon - The icon's layer, unturned.
+ * @param plan - The icon's place, or undefined for an icon that is not absolute.
+ * @returns The icon's layer with its turn.
+ */
+function turnIcon(style: LayerStyle, icon: IconLayerSpec, plan: PlacementPlan | undefined): IconLayerSpec {
+  if (plan === UNKEPT_TURN) {
+    style.mark("rotate", "unmapped", UNKEPT_TURN.why, []);
+    return icon;
+  }
+  const rotation = readRotation(style);
+  return rotation === undefined ? icon : { ...icon, rotation };
+}
 
 /**
  * An icon as the box draws it once its layout is known: its style, the layer the box holds, which
@@ -1810,9 +1918,10 @@ const ICON_DISPLAYS = new Map([
  * Button leaves out its own leading icon while its spinner takes the place, and `inline-block`
  * shows it. The icon's glyph takes the text color it inherits, as a Fuse icon paints with
  * `currentColor`. Its `vertical-align` drops, since Figma has no line of text, and the box's auto
- * layout places the icon across its row instead.
+ * layout places the icon across its row instead. Its turn reads once its place is planned
+ * (`turnIcon`).
  *
- * @returns The icon layer, or undefined for an icon the cell hides.
+ * @returns The icon layer, unturned, or undefined for an icon the cell hides.
  */
 function mapIcon(
   slot: IconSlot,
@@ -1862,7 +1971,5 @@ function mapIcon(
     size: width,
     color,
   };
-  const linked = slot.optional === undefined ? layer : { ...layer, visibleProperty: slot.optional.name };
-  const rotation = readRotation(style);
-  return rotation === undefined ? linked : { ...linked, rotation };
+  return slot.optional === undefined ? layer : { ...layer, visibleProperty: slot.optional.name };
 }

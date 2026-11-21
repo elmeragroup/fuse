@@ -1,7 +1,7 @@
 /**
- * Where a frame or an instance sits outside its parent's auto layout by its distances to the
+ * Where a frame, an instance or an icon sits outside its parent's auto layout by its distances to the
  * parent's edges or centre (`EdgePlacementSpec`), as a timeline item's dot, a meter's fill, an
- * overlay's corner close and a Sidebar menu badge sit. The layer turns absolute and takes its
+ * overlay's corner close and a Sidebar menu badge sit. A turned icon's place is its unturned box's. The layer turns absolute and takes its
  * constraints with its own fields, so a later resize of the parent moves it by them, and its parent
  * places it once the parent's other layers are planned, from the sizes the parent and its instances
  * settle at, since an axis other than `start` follows the parent's length, which its layers set where
@@ -28,6 +28,7 @@ import type { AxisPlacementSpec, EdgePlacementSpec, SizingSpec } from "../../src
 import { AXIS_CONSTRAINT } from "../../src/components/kit-spec.ts";
 import { near, planScalar } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
+import { heldCentre, originFor } from "./layer-turn.ts";
 import { change } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { settleInstances } from "./settle.ts";
@@ -129,7 +130,7 @@ function along(axis: AxisPlacementSpec, length: number, own: number): Placed {
   }
 }
 
-/** Where the placement puts the layer in its parent, as both stand. */
+/** Where the placement puts the layer's unturned box in its parent, as both stand. */
 function placedIn(node: PlacedNode, holder: Holder, placement: EdgePlacementSpec) {
   return {
     across: along(placement.horizontal, holder.width, node.width),
@@ -137,14 +138,20 @@ function placedIn(node: PlacedNode, holder: Holder, placement: EdgePlacementSpec
   };
 }
 
-/** Whether the layer sits where the placement puts it in its parent, read after its instances settle. */
+/**
+ * Whether the layer sits where the placement puts it in its parent, read after its instances settle:
+ * its unturned box at its distances, a turned icon's box about the centre its origin and turn give it
+ * (`layer-turn.ts`). A layer that turns absolute or turns in the run records an operation, which makes
+ * its parent write the place whatever it reads.
+ */
 function heldAt(node: PlacedNode, holder: Holder, placement: EdgePlacementSpec): boolean {
   settleInstances(holder);
   const { across, down } = placedIn(node, holder, placement);
+  const centre = heldCentre(node);
   return (
-    near(node.x, across.at) &&
+    near(centre.x - node.width / 2, across.at) &&
     near(node.width, across.length) &&
-    near(node.y, down.at) &&
+    near(centre.y - node.height / 2, down.at) &&
     near(node.height, down.length)
   );
 }
@@ -170,14 +177,18 @@ function describe(axis: AxisPlacementSpec, start: string, end: string): string {
  * where the layer does not hold it, and wherever the run writes something that can resize the parent,
  * from the sizes the parent and its instances settle at when the write runs. A `stretch` sets the
  * frame's length on its axis too. That resize turns both of the frame's sizing modes FIXED (fake rule
- * 5), so an axis the frame hugs, as a placement wrapper hugs across, takes HUG again after it.
+ * 5), so an axis the frame hugs, as a placement wrapper hugs across, takes HUG again after it. A
+ * turned icon's place is its unturned box's, so the write puts its origin where the turn as it stands
+ * then, after the icon's own turn, puts the box there (`layer-turn.ts`). No real file has yet held an
+ * absolute layer turned this way.
  *
  * @param run - The run.
  * @param target - The layer, which an earlier operation may create.
  * @param label - The layer's label, for change lines.
  * @param placement - Where the layer sits.
- * @param held - `unknown` where the run writes a field that can resize the parent.
- * @param sizing - A frame's sizing, or undefined for an instance, which keeps its main's.
+ * @param held - `unknown` where the run writes a field that can resize the parent, or the layer's
+ *   positioning, constraints or turn.
+ * @param sizing - A frame's sizing, or undefined for an instance or an icon, which keeps its own.
  */
 export function planPlace(
   run: Run,
@@ -210,7 +221,12 @@ export function planPlace(
         node.layoutSizingVertical = "HUG";
       }
     }
-    node.x = across.at;
-    node.y = down.at;
+    const origin = originFor(
+      { x: across.at + node.width / 2, y: down.at + node.height / 2 },
+      node,
+      node.rotation
+    );
+    node.x = origin.x;
+    node.y = origin.y;
   });
 }

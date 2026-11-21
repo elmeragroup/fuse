@@ -96,7 +96,9 @@ function planRotation(
 /**
  * Plan an icon layer: an instance of the icon component the spec names, linked to the set's
  * swap property when it has one, sized and turned by the cell, its visibility linked to the set's
- * BOOLEAN property when it hides behind one (PI2), and with its glyph in the label's color.
+ * BOOLEAN property when it hides behind one (PI2), and with its glyph in the label's color. A placed
+ * icon leaves the flow after its size and before its turn, and its parent places it after its
+ * siblings, as a placed instance.
  */
 const planIcon = Effect.fnUntraced(function* (
   instance: InstanceNode,
@@ -145,6 +147,7 @@ const planIcon = Effect.fnUntraced(function* (
     },
     spec.size
   );
+  planLeaving(run, instance, label, spec.placement);
   planRotation(run, instance, label, spec.rotation);
   planVisibleLink(run, instance, label, spec.visibleProperty, links.properties);
   // A swap or a redraw replaces the glyph, and a repaint of the component reaches a glyph whose color
@@ -337,7 +340,7 @@ export const planChildren = Effect.fnUntraced(function* (
   planGridItems(run, label, box.grid, parent.layoutMode === "GRID", planned);
   const resized = size === "unknown" || recorded ? "unknown" : "read";
   for (const { spec, node } of planned) {
-    const placement = spec.kind === "frame" || spec.kind === "instance" ? spec.placement : undefined;
+    const placement = spec.kind === "text" ? undefined : spec.placement;
     if (placement?.kind === "edges") {
       planPlace(
         run,

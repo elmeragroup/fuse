@@ -21,6 +21,25 @@ const FLUSH =
 type FlowPart = { readonly key: string; readonly style: LayerStyle };
 
 /**
+ * Whether a layer's top margin cancels a flex column's gap: the two sum to zero wherever their
+ * variables take a value.
+ *
+ * @param column - The column's style.
+ * @returns The test, or undefined where the column sets no gap, or a zero one, which leaves nothing
+ *   to cancel, though a zero margin sums with it to zero.
+ */
+export function cancelsGap(column: LayerStyle): ((style: LayerStyle) => boolean) | undefined {
+  const gap = affineLength(column.resolved("gap") ?? column.resolved("row-gap") ?? "");
+  if (gap === undefined || constantOf(gap) === 0) {
+    return undefined;
+  }
+  return (style) => {
+    const margin = affineLength(style.resolved("margin-top") ?? "");
+    return margin !== undefined && constantOf(sumAffine([margin, gap])) === 0;
+  };
+}
+
+/**
  * Join each layer of a flex column whose top margin cancels the column's gap to the layer before it,
  * in a frame with no gap that takes their place, and record the margin as read.
  *
@@ -38,19 +57,10 @@ export function joinFlushLayers(
   children: readonly ChildLayerSpec[],
   counterAlign: CounterAlignSpec
 ): readonly ChildLayerSpec[] {
-  if (!layout.flex || layout.direction !== "VERTICAL") {
+  const cancels = layout.flex && layout.direction === "VERTICAL" ? cancelsGap(column) : undefined;
+  if (cancels === undefined) {
     return children;
   }
-  const gap = affineLength(column.resolved("gap") ?? column.resolved("row-gap") ?? "");
-  // A zero gap leaves nothing to cancel, though a zero margin sums with it to zero.
-  if (gap === undefined || constantOf(gap) === 0) {
-    return children;
-  }
-  // The margin cancels the gap where the two sum to zero wherever their variables take a value.
-  const cancels = (style: LayerStyle): boolean => {
-    const margin = affineLength(style.resolved("margin-top") ?? "");
-    return margin !== undefined && constantOf(sumAffine([margin, gap])) === 0;
-  };
   const flush = new Set(
     parts
       .slice(1)

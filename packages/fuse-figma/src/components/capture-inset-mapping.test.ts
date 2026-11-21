@@ -10,13 +10,28 @@
  * the build cannot place, and a pseudo-element the capture did not measure, keep their rows unmapped.
  * A static parent the capture measured as spanning the part's containing block (`parentSpansBlock`)
  * has its outer edge on that block's padding edge, so each distance is the offset alone; a border on
- * the parent, or a wrapper the kit does not draw between the two, breaks that.
+ * the parent, or a wrapper the kit does not draw between the two, breaks that. An absolute icon with
+ * both vertical offsets `auto` in a flex row that centres its items sits at its static position,
+ * centred in the row's content box (CSS Flexbox 1 §4.1), which CENTER keeps, and a half turn about
+ * its centre leaves its square box where CSS put it (CSS Transforms 2 §6).
  */
 import { describe, expect, it } from "vitest";
 
-import { buildCaptured, chip, fixed, frameOf, literal, part, rest } from "../../test/capture-fixtures";
-import type { FixtureElement } from "../../test/capture-fixtures";
+import {
+  buildCaptured,
+  chip,
+  fixed,
+  frameOf,
+  ICON,
+  literal,
+  notesOf,
+  part,
+  rest,
+} from "../../test/capture-fixtures";
+import type { FixtureElement, Written } from "../../test/capture-fixtures";
 import type { CoverageRow } from "./coverage";
+import { makeVariableIndex } from "./css-values";
+import type { VariableIndex } from "./css-values";
 import type { AxisPlacementSpec, EdgePlacementSpec } from "./kit-spec";
 
 /** A place by the parent's edges on each axis. */
@@ -419,5 +434,604 @@ describe("a block's vertical margins", () => {
   it("leaves two adjoining margins unmapped, which collapse to the larger", async () => {
     const { coverage } = await column("mb-10", "mt-4");
     expect(unmapped(coverage)).toEqual(["margin-bottom", "margin-top"]);
+  });
+});
+
+/**
+ * A child a row holds, in the order the markup holds them: an icon, on its side of the label, or a
+ * frame part, before the label or after it, each with its key and classes.
+ */
+type RowChild =
+  | {
+      readonly kind: "icon";
+      readonly key: string;
+      readonly side: "start" | "end";
+      readonly classes: string;
+    }
+  | {
+      readonly kind: "part";
+      readonly key: string;
+      readonly at: "before" | "after";
+      readonly classes: string;
+    };
+
+/**
+ * What a row's build reads besides its classes: declarations written on the row, variables, and
+ * whether the row holds the label.
+ */
+type RowOptions = {
+  readonly written?: readonly Written[];
+  readonly variables?: VariableIndex;
+  readonly label?: "none";
+};
+
+/** The font variable every row's label binds. */
+const FONT_SANS = { ref: { collection: "Fuse tokens", name: "font-sans" }, webSyntax: "var(--font-sans)" };
+
+/**
+ * A row holding the label `Share`, unless the options leave it out, and its children in the order
+ * given, with the row's classes and each child's. The label's text follows every start icon and
+ * part before it.
+ */
+function iconsRow(row: string, children: readonly RowChild[], options: RowOptions = {}) {
+  const afterLabel = (child: RowChild) =>
+    child.kind === "icon" ? child.side === "end" : child.at === "after";
+  const textIndex = children.findIndex(afterLabel);
+  const labelled = options.label !== "none";
+  const root: FixtureElement = {
+    slot: "chip",
+    classes: `${row} w-[200px] font-sans text-[14px] leading-[20px] text-[#000000]`,
+    written: options.written ?? [],
+    children: children.map((child) =>
+      child.kind === "icon"
+        ? { tag: "svg", classes: child.classes }
+        : { slot: `chip-${child.key}`, classes: child.classes }
+    ),
+  };
+  return buildCaptured(
+    chip({
+      label: labelled
+        ? { key: "label", name: "label", characters: "Share", textProperty: "Label", shownIn: () => true }
+        : undefined,
+      iconsFor: () =>
+        children.flatMap((child) =>
+          child.kind === "icon" ? [{ ...ICON, key: child.key, name: child.key, side: child.side }] : []
+        ),
+      parts: children.flatMap((child) => {
+        if (child.kind === "icon") {
+          return [];
+        }
+        const own = part({ key: child.key, slot: `chip-${child.key}` });
+        return [child.at === "after" ? { ...own, after: "label" as const } : own];
+      }),
+    }),
+    rest(
+      labelled ? { ...root, text: "Share", textIndex: textIndex === -1 ? children.length : textIndex } : root
+    ),
+    { variables: options.variables ?? makeVariableIndex([FONT_SANS]) }
+  );
+}
+
+/** A row holding the label `Share` and one icon at its end, with the row's and the icon's classes. */
+function iconRow(row: string, icon: string, options: RowOptions = {}) {
+  return iconsRow(row, [{ kind: "icon", key: "icon", side: "end", classes: icon }], options);
+}
+
+/** The keys of a box's layers, each with its place where it has one. */
+const placesOf = (variant: Awaited<ReturnType<typeof iconRow>>["variant"]) =>
+  variant?.root.children.map((layer) => [layer.key, layer.kind === "text" ? undefined : layer.placement]);
+
+/** The outcome of a class's row for a property, and whether its detail starts with a reason. */
+function noteFor(coverage: readonly CoverageRow[], className: string, property: string, reason: string) {
+  const [, outcome, detail] = notesOf(coverage, className).find(([each]) => each === property) ?? [];
+  return [outcome, String(detail).startsWith(reason)];
+}
+
+/** The outcome of a layer's row for a property, and whether its detail starts with a reason. */
+function noteOn(coverage: readonly CoverageRow[], layer: string, property: string, reason: string) {
+  const row = coverage.find((each) => each.part === layer && each.property === property);
+  return [row?.outcome, row?.detail.startsWith(reason) === true];
+}
+
+describe("an absolute icon in a flex row", () => {
+  // The row's content box runs from 10px below its top edge (a 4px border and 6px of padding) to 2px
+  // above its bottom, so a centred icon's centre sits (10 - 2) / 2 = 4px below the row's centre. The
+  // icon's `right` measures from the padding edge, inside the row's 2px right border: 5px.
+  const ROW = "relative flex items-center border-t-[4px] border-r-[2px] border-black pt-[6px] pb-[2px]";
+
+  it("sits at its end offset across and centred down, out of the flow after the label", async () => {
+    const { variant, coverage } = await iconRow(ROW, "absolute right-[3px] size-[16px]");
+    expect(placesOf(variant)).toEqual([
+      ["label", undefined],
+      ["icon", edges({ kind: "end", end: 5 }, { kind: "centre", offset: 4 })],
+    ]);
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
+  it("keeps that place through a half turn, which leaves its square box where it was", async () => {
+    const { variant, coverage } = await iconRow(ROW, "absolute right-[3px] size-[16px] rotate-180");
+    const icon = variant?.root.children.at(-1);
+    expect([icon?.kind === "icon" ? icon.rotation : undefined, placesOf(variant)?.at(-1)]).toEqual([
+      180,
+      ["icon", edges({ kind: "end", end: 5 }, { kind: "centre", offset: 4 })],
+    ]);
+    expect(unmapped(coverage)).toEqual([]);
+  });
+
+  // An icon's own `align-self` places it at its static position before the row's `align-items`
+  // (CSS Flexbox 1 §4.1, CSS Box Alignment 3 §6.1). A left-to-right row's inline end is its right
+  // (CSS Logical Properties 1 §4), so `border-e-[6px]` sets the icon's `right-[3px]` 9px in.
+  it.each([
+    [
+      "aligns itself centred in a row that packs its items at its top",
+      "relative flex items-start border-t-[4px] border-r-[2px] border-black pt-[6px] pb-[2px]",
+      edges({ kind: "end", end: 5 }, { kind: "centre", offset: 4 }),
+    ],
+    [
+      "sits in a row that sets its end border by its logical side",
+      "relative flex items-center border-e-[6px] border-black",
+      edges({ kind: "end", end: 9 }, { kind: "centre", offset: 0 }),
+    ],
+  ])("sits centred at its static position where it %s", async (_case, row, placed) => {
+    const { variant, coverage } = await iconRow(row, "absolute right-[3px] self-center size-[16px]");
+    expect([placesOf(variant)?.at(-1), noteFor(coverage, "self-center", "align-self", "")]).toEqual([
+      ["icon", placed],
+      ["literal", true],
+    ]);
+  });
+
+  // CSS paints positioned boxes and stacking contexts in tree order after the in-flow boxes (CSS 2.1
+  // Appendix E, step 8), so the `relative` part before the icon in the markup paints under it, as
+  // Figma paints the icon, its row's last layer.
+  it("draws last, over a relative part before it in the markup", async () => {
+    const { variant } = await iconsRow(
+      ROW,
+      [
+        { kind: "part", key: "mark", at: "before", classes: "relative size-[16px] bg-[#ff0000]" },
+        { kind: "icon", key: "icon", side: "start", classes: "absolute left-0 top-0 size-[16px]" },
+      ],
+      { label: "none" }
+    );
+    expect(placesOf(variant)).toEqual([
+      ["mark", undefined],
+      ["icon", edges({ kind: "start", start: 0 }, { kind: "start", start: 4 })],
+    ]);
+  });
+
+  // A `relative` icon or part is positioned, and a turn or an opacity below 1 makes a stacking context
+  // (CSS Transforms 2 §4, CSS Color 4 §10.1), so CSS paints each one after the absolute icon in the
+  // markup over it (CSS 2.1 Appendix E, step 8), where Figma would draw the icon over every layer of
+  // its row. An absolute frame its offsets do not place is positioned too.
+  it.each([
+    ["a relative icon", [{ kind: "icon", key: "second", side: "end", classes: "relative size-[16px]" }]],
+    ["a turned icon", [{ kind: "icon", key: "second", side: "end", classes: "rotate-180 size-[16px]" }]],
+    ["a faded icon", [{ kind: "icon", key: "second", side: "end", classes: "opacity-50 size-[16px]" }]],
+    [
+      "a relative part after it and the label",
+      [{ kind: "part", key: "mark", at: "before", classes: "relative size-[16px] bg-[#ff0000]" }],
+    ],
+    [
+      "an absolute part its offsets do not place, then a static one",
+      [
+        { kind: "part", key: "mark", at: "after", classes: "absolute size-[8px] bg-[#ff0000]" },
+        { kind: "part", key: "tail", at: "after", classes: "size-[8px] bg-[#00ff00]" },
+      ],
+    ],
+  ] as const)("stays in the flow where CSS paints %s after it over it", async (_case, later) => {
+    const icon: RowChild = {
+      kind: "icon",
+      key: "icon",
+      side: "start",
+      classes: "absolute left-0 top-0 size-[16px]",
+    };
+    const { variant, coverage } = await iconsRow(ROW, [icon, ...later]);
+    const why = "a box after the absolute icon in the markup is positioned or makes a stacking context";
+    expect([
+      placesOf(variant)?.find(([key]) => key === "icon"),
+      noteOn(coverage, "icon", "position", why),
+    ]).toEqual([
+      ["icon", undefined],
+      ["unmapped", true],
+    ]);
+  });
+
+  // Figma turns a free layer about the origin its `x` and `y` name, so a mode that grows a half-turned
+  // 16px icon to 24px keeps that origin and moves the icon's box 8px up and left, where CSS keeps it.
+  it("stays in the flow where a mode can change the size of a turned icon", async () => {
+    const variables = makeVariableIndex([
+      FONT_SANS,
+      {
+        ref: { collection: "Fuse density", name: "icon-size" },
+        webSyntax: "var(--icon-size)",
+        minimum: 16,
+        maximum: 24,
+      },
+    ]);
+    const { variant, coverage } = await iconRow(ROW, "absolute left-0 top-0 size-(--icon-size) rotate-180", {
+      variables,
+    });
+    expect([
+      placesOf(variant)?.at(-1),
+      noteFor(coverage, "absolute", "position", "a mode can change the turned absolute icon's size"),
+    ]).toEqual([
+      ["icon", undefined],
+      ["unmapped", true],
+    ]);
+  });
+
+  // A variable whose least and greatest values are the same length is one length in every mode, so
+  // the icon keeps its place at its parent's end and binds its size.
+  it("sits at its end offset where its size variable holds one length in every mode", async () => {
+    const variables = makeVariableIndex([
+      FONT_SANS,
+      {
+        ref: { collection: "Fuse density", name: "icon-size" },
+        webSyntax: "var(--icon-size)",
+        minimum: 16,
+        maximum: 16,
+      },
+    ]);
+    const { variant } = await iconRow(ROW, "absolute right-[3px] size-(--icon-size)", { variables });
+    const icon = variant?.root.children.at(-1);
+    expect([placesOf(variant)?.at(-1), icon?.kind === "icon" ? icon.size : undefined]).toEqual([
+      ["icon", edges({ kind: "end", end: 5 }, { kind: "centre", offset: 4 })],
+      { kind: "variable", variable: { collection: "Fuse density", name: "icon-size" } },
+    ]);
+  });
+
+  // The kit draws a turn only as a quarter or half turn (`kit-check.ts`), so a 45° icon that keeps no
+  // place draws in the flow unturned, its turn unmapped with the reason.
+  it("stays in the flow unturned where a turn other than a quarter or half moves its box", async () => {
+    const { variant, coverage } = await iconRow(ROW, "absolute right-[3px] size-[16px] rotate-45");
+    const icon = variant?.root.children.at(-1);
+    const reason = "the absolute icon turns other than a quarter or half turn about its centre";
+    expect([
+      placesOf(variant)?.at(-1),
+      icon?.kind === "icon" ? icon.rotation : "no icon",
+      noteFor(coverage, "rotate-45", "rotate", reason),
+      noteFor(coverage, "absolute", "position", reason),
+    ]).toEqual([["icon", undefined], undefined, ["unmapped", true], ["unmapped", true]]);
+  });
+
+  it("sits its top offset below the row's top edge where it sets one", async () => {
+    const { variant } = await iconRow(ROW, "absolute right-[3px] top-[1px] size-[16px]");
+    expect(placesOf(variant)?.at(-1)).toEqual([
+      "icon",
+      edges({ kind: "end", end: 5 }, { kind: "start", start: 5 }),
+    ]);
+  });
+
+  const NEITHER =
+    "the absolute part's offsets and lengths place it neither by its parent's edges nor its centre";
+  it.each([
+    [
+      "a static row, which is no containing block",
+      "flex items-center",
+      "absolute right-0 size-[16px]",
+      "the absolute part's containing block lies above its parent",
+    ],
+    [
+      "a row that packs its items at its top",
+      "relative flex items-start",
+      "absolute right-0 size-[16px]",
+      NEITHER,
+    ],
+    [
+      "a margin, which moves its margin box",
+      "relative flex items-center",
+      "absolute right-0 mr-[2px] size-[16px]",
+      "the absolute icon sets a margin",
+    ],
+    ["both offsets across auto", "relative flex items-center", "absolute size-[16px]", NEITHER],
+    [
+      "a translate",
+      "relative flex items-center",
+      "absolute right-0 size-[16px] translate-y-[1px]",
+      "a turn, a translate or a scale moves the absolute part off its offsets",
+    ],
+    [
+      "an icon that aligns itself at the top of a row that centres its items",
+      "relative flex items-center",
+      "absolute right-0 self-start size-[16px]",
+      NEITHER,
+    ],
+    // `place-self` sets `align-self` too (CSS Box Alignment 3 §6.1), which the build keeps whole.
+    [
+      "an icon whose place-self aligns it at the top of a row that centres its items",
+      "relative flex items-center",
+      "absolute right-0 place-self-start size-[16px]",
+      "a `place-self` on the absolute icon or a `place-items` on its box",
+    ],
+    // A grid line makes the grid area the icon's containing block (CSS Grid 1 §9.1): in this 200px
+    // grid of two columns, `col-start-2` puts `left-0` at 100px, where no layer draws the area.
+    [
+      "a grid line, which makes a grid area its containing block",
+      "relative grid grid-cols-2",
+      "absolute col-start-2 left-0 top-0 size-[16px]",
+      "the absolute part's grid lines",
+    ],
+  ])("stays in the flow with its place unmapped beside %s", async (_case, row, icon, reason) => {
+    const { variant, coverage } = await iconRow(row, icon);
+    expect(placesOf(variant)).toEqual([
+      ["label", undefined],
+      ["icon", undefined],
+    ]);
+    expect(noteFor(coverage, "absolute", "position", reason)).toEqual(["unmapped", true]);
+  });
+});
+
+/**
+ * The refusals that keep an absolute icon in its box's flow where the build cannot prove the place
+ * or the paint CSS gives it. Figma draws a placed icon over every other layer of its box, and CSS
+ * paints it so only where every box after it in the markup is static and makes no stacking context,
+ * no box of its box's subtree sets a `z-index` or an `order`, and the box is a flex row or column that
+ * no flush run regroups (CSS 2.1 Appendix E, CSS Flexbox 1 §5.4.1).
+ */
+describe("an absolute icon whose place or paint the build cannot prove", () => {
+  const MARK = { ...ICON, key: "mark", name: "mark" };
+  const ABSOLUTE = "absolute left-0 top-0 size-[16px] text-[#000000]";
+  const DOT = "relative size-[16px] bg-[#000000]";
+  const LATER = "a box after the absolute icon in the markup is positioned or makes a stacking context";
+  it.each([
+    // A block box can paint its first layer on top (`stacksFirstOnTop`), which puts the icon, its
+    // last layer, under the white panel CSS paints it over.
+    [
+      "a block box",
+      {
+        iconsFor: () => [{ ...MARK, side: "end" as const }],
+        parts: [
+          part({ key: "header", slot: "header", parts: [part({ key: "button", slot: "button" })] }),
+          part({ key: "panel", slot: "panel" }),
+        ],
+      },
+      {
+        slot: "chip",
+        classes: "relative block w-[100px]",
+        children: [
+          {
+            slot: "header",
+            classes: "flex",
+            children: [{ slot: "button", classes: "size-[16px] ring-2 ring-[#000000]" }],
+          },
+          { slot: "panel", classes: "block size-[16px] bg-[#ffffff]" },
+          { tag: "svg", classes: "absolute left-0 top-[16px] size-[16px] text-[#000000]" },
+        ],
+      },
+      "the absolute icon's box is no flex container",
+    ],
+    // No probe has shown how a Figma grid draws an absolute layer among its items.
+    [
+      "a grid box",
+      { iconsFor: () => [MARK], parts: [part()] },
+      {
+        slot: "chip",
+        classes: "relative grid grid-cols-2 w-[100px]",
+        children: [
+          { slot: "chip-dot", classes: "size-[16px]" },
+          { tag: "svg", classes: ABSOLUTE },
+        ],
+      },
+      "the absolute icon's box is no flex container",
+    ],
+    // The flush run draws `a` and `dot` in one frame, which drops the keys the paint reads.
+    [
+      "a flush run a column's gap joins",
+      { iconsFor: () => [MARK], parts: [part({ key: "a", slot: "a" }), part()] },
+      {
+        slot: "chip",
+        classes: "relative flex flex-col gap-2",
+        children: [
+          { tag: "svg", classes: "absolute left-0 top-[16px] size-[16px] text-[#000000]" },
+          { slot: "a", classes: "size-[16px]" },
+          { slot: "chip-dot", classes: `${DOT} -mt-2` },
+        ],
+      },
+      "a flex item of the absolute icon's box cancels the column's gap",
+    ],
+    // With no label, the definition's sides say nothing of the markup, where the dot follows the icon.
+    [
+      "a relative part after it in a box with no label",
+      { iconsFor: () => [{ ...MARK, side: "end" as const }], parts: [part()] },
+      {
+        slot: "chip",
+        classes: "relative flex size-[100px]",
+        children: [
+          { tag: "svg", classes: ABSOLUTE },
+          { slot: "chip-dot", classes: DOT },
+        ],
+      },
+      LATER,
+    ],
+    // A static wrapper paints in the flow, and the `relative` dot inside it after the icon (CSS 2.1
+    // Appendix E, step 8).
+    [
+      "a relative part inside a static wrapper after it",
+      { iconsFor: () => [MARK], parts: [part({ key: "wrapper", slot: "wrapper", parts: [part()] })] },
+      {
+        slot: "chip",
+        classes: "relative flex size-[100px]",
+        children: [
+          { tag: "svg", classes: ABSOLUTE },
+          { slot: "wrapper", classes: "size-[16px]", children: [{ slot: "chip-dot", classes: DOT }] },
+        ],
+      },
+      LATER,
+    ],
+    // `will-change: scroll-position` makes no stacking context in Chromium, while other values do, so
+    // the build cannot tell how the dot paints.
+    [
+      "a will-change after it",
+      { iconsFor: () => [MARK], parts: [part()] },
+      {
+        slot: "chip",
+        classes: "relative flex size-[100px]",
+        children: [
+          { tag: "svg", classes: ABSOLUTE },
+          { slot: "chip-dot", classes: "will-change-scroll size-[16px] bg-[#000000]" },
+        ],
+      },
+      "a box after the absolute icon in the markup sets a value that may or may not make a stacking context",
+    ],
+    // Chromium paints a box that runs a transform or opacity animation, as `animate-spin` does, over the
+    // icon before it, and an animation of another property would not, so the build cannot tell.
+    [
+      "an animation after it",
+      { iconsFor: () => [MARK], parts: [part()] },
+      {
+        slot: "chip",
+        classes: "relative flex size-[100px]",
+        children: [
+          { tag: "svg", classes: ABSOLUTE },
+          { slot: "chip-dot", classes: "animate-spin size-[16px] bg-[#000000]" },
+        ],
+      },
+      "a box after the absolute icon in the markup sets a value that may or may not make a stacking context",
+    ],
+    // `transform-style: preserve-3d` and `content-visibility: auto` each make a stacking context
+    // (CSS Transforms 2 §4, CSS Containment 2 §4), which Chromium paints over the icon before it.
+    ...(
+      [
+        ["a preserved 3D context after it", "transform-style", "preserve-3d"],
+        ["a content-visibility after it", "content-visibility", "auto"],
+      ] as const
+    ).map(
+      ([name, property, value]) =>
+        [
+          name,
+          { iconsFor: () => [MARK], parts: [part()] },
+          {
+            slot: "chip",
+            classes: "relative flex size-[100px]",
+            children: [
+              { tag: "svg", classes: ABSOLUTE },
+              {
+                slot: "chip-dot",
+                classes: "size-[16px] bg-[#000000]",
+                written: [{ className: `[${property}:${value}]`, property, value }],
+              },
+            ],
+          },
+          LATER,
+        ] as const
+    ),
+    // A reversed row lays its items out against the order Figma paints its layers in.
+    [
+      "a row that lays its items out in reverse",
+      { iconsFor: () => [MARK] },
+      {
+        slot: "chip",
+        classes: "relative flex flex-row-reverse size-[100px]",
+        children: [{ tag: "svg", classes: ABSOLUTE }],
+      },
+      "the absolute icon's box lays its items out in reverse",
+    ],
+    // CSS paints flex items in order-modified document order (CSS Flexbox 1 §5.4.1), so the dot
+    // before the icon in the markup paints after it.
+    [
+      "an order that paints a relative part before it last",
+      { iconsFor: () => [MARK], parts: [part()] },
+      {
+        slot: "chip",
+        classes: "relative flex size-[100px]",
+        children: [
+          { slot: "chip-dot", classes: `${DOT} order-last` },
+          { tag: "svg", classes: ABSOLUTE },
+        ],
+      },
+      "an item of the absolute icon's box sets an `order`",
+    ],
+    // A positive level paints the dot after every box at level 0, the icon included (CSS 2.1 §9.9.1).
+    [
+      "a z-index on a relative part before it",
+      { iconsFor: () => [MARK], parts: [part()] },
+      {
+        slot: "chip",
+        classes: "relative flex size-[100px]",
+        children: [
+          { slot: "chip-dot", classes: `${DOT} z-10` },
+          { tag: "svg", classes: ABSOLUTE },
+        ],
+      },
+      "a box in the absolute icon's box sets a `z-index`",
+    ],
+    // `place-items: start` can win over `align-items: center`, which puts the icon at the row's top,
+    // and the build keeps the shorthand whole beside the longhand.
+    [
+      "a place-items on its box beside the static centre",
+      { iconsFor: () => [MARK] },
+      {
+        slot: "chip",
+        classes: "relative flex items-center place-items-start size-[100px]",
+        children: [{ tag: "svg", classes: "absolute right-0 size-[16px] text-[#000000]" }],
+      },
+      "a `place-self` on the absolute icon or a `place-items` on its box",
+    ],
+    // The `relative` dot after the absolute icon paints over it, beside a second icon in the flow.
+    [
+      "a relative part after it and an icon in the flow",
+      { iconsFor: () => [MARK, { ...ICON, key: "other", name: "other" }], parts: [part()] },
+      {
+        slot: "chip",
+        classes: "relative flex size-[100px]",
+        children: [
+          { tag: "svg", classes: ABSOLUTE },
+          { tag: "svg", classes: "size-[16px] text-[#000000]" },
+          { slot: "chip-dot", classes: DOT },
+        ],
+      },
+      LATER,
+    ],
+    // A top border whose style is `none` draws no width (CSS Backgrounds 3 §4.3), while the box's
+    // sizing counts its 8px, so the row Figma draws and the row CSS lays out differ in height.
+    [
+      "a top border whose style draws none",
+      { iconsFor: () => [MARK] },
+      {
+        slot: "chip",
+        classes: "relative flex items-center size-[100px] border-t-[8px]",
+        written: [{ className: "border-t-none", property: "border-top-style", value: "none" }],
+        children: [{ tag: "svg", classes: "absolute right-0 size-[16px] text-[#000000]" }],
+      },
+      "the absolute icon's box sets a border on a side whose width or style the build cannot read",
+    ],
+    // In a left-to-right box, `border-inline-end-style` and `border-right-style` both set the right
+    // border's style, and the build cannot tell which wins.
+    [
+      "a right border whose style two declarations set apart",
+      { iconsFor: () => [MARK] },
+      {
+        slot: "chip",
+        classes: "relative flex items-center size-[100px] border-r-[6px] border-[#000000]",
+        written: [
+          { className: "[border-inline-end-style:none]", property: "border-inline-end-style", value: "none" },
+        ],
+        children: [{ tag: "svg", classes: "absolute right-0 size-[16px] text-[#000000]" }],
+      },
+      "the absolute icon's box sets a border on a side whose width or style the build cannot read",
+    ],
+  ] as const)("stays in the flow beside %s", async (_case, manifest, root, reason) => {
+    const { variant, coverage } = await buildCaptured(chip(manifest), rest(root));
+    const icon = variant?.root.children.find((layer) => layer.key === "mark");
+    expect([
+      icon?.kind === "icon" ? icon.placement : "no icon",
+      noteOn(coverage, "mark", "position", reason),
+    ]).toEqual([undefined, ["unmapped", true]]);
+  });
+
+  // Tailwind compiles `border-x-[6px]` to `border-inline-width`, which sets the right border too
+  // (CSS Logical Properties 1 §4), so `right-0` sits 6px inside the box's outer edge (CSS 2.1 §10.3.7).
+  it("sits inside a right border its box sets by border-x", async () => {
+    const { variant } = await buildCaptured(
+      chip({ iconsFor: () => [MARK] }),
+      rest({
+        slot: "chip",
+        classes: "relative flex items-center size-[100px] border-x-[6px] border-[#000000]",
+        children: [{ tag: "svg", classes: "absolute right-0 size-[16px] text-[#000000]" }],
+      })
+    );
+    const icon = variant?.root.children.find((layer) => layer.key === "mark");
+    expect(icon?.kind === "icon" ? icon.placement : "no icon").toEqual(
+      edges({ kind: "end", end: 6 }, { kind: "centre", offset: 0 })
+    );
   });
 });

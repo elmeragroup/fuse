@@ -25,7 +25,9 @@ import { childSpacingNote } from "../components/box-cascade.ts";
 import type {
   BoxCascade,
   CapturedText,
+  CapturedValues,
   IconCascade,
+  IconNeighbours,
   TextRun,
   ChildSpacing,
   InstanceScope,
@@ -1925,10 +1927,17 @@ class CaptureBoxCascade implements BoxCascade {
     // around it draws no layer, and its box holds the `<svg>`'s margins too.
     const svg = found.at(-1);
     const place = svg === undefined ? undefined : this.#read.places.get(svg);
-    return {
-      style,
-      drawnAt: place === undefined ? undefined : { place, slot: svg?.attributes["data-slot"] },
-    };
+    const drawnAt = place === undefined ? undefined : { place, slot: svg?.attributes["data-slot"] };
+    // The neighbours say what the box's own element holds around an `<svg>` it holds itself, so a box
+    // that draws roots from outside its element, or an icon from another capture, has none.
+    const [direct] = found;
+    return at >= 0 &&
+      found.length === 1 &&
+      direct !== undefined &&
+      box !== undefined &&
+      this.#rooted.size === 0
+      ? { style, drawnAt, neighbours: neighboursOf(this.#read.declarations, box, direct) }
+      : { style, drawnAt };
   }
 
   /**
@@ -1976,6 +1985,64 @@ class CaptureBoxCascade implements BoxCascade {
 
   /** The box's icons not read yet, each as the elements from below the box down to its `<svg>`. */
   #icons: CapturedElement[][] | undefined;
+}
+
+/**
+ * One element's or pseudo-element's winning value of a property: the last of its winning declarations
+ * that sets the longhand, an important one before any other (CSS Cascade 4 §6.1).
+ */
+function winningValues(
+  declarations: readonly CapturedDeclaration[],
+  indexes: readonly number[]
+): CapturedValues {
+  return (property) => {
+    const setting = indexes.flatMap((index) => {
+      const declaration = declarations[index];
+      return declaration?.longhands.includes(property) === true ? [declaration] : [];
+    });
+    return (setting.findLast(({ important }) => important) ?? setting.at(-1))?.value.trim();
+  };
+}
+
+/**
+ * What a box's element holds around an `<svg>` it holds as a child, as `IconNeighbours` says: its
+ * element children, and every element and pseudo-element of its subtree before and after the
+ * `<svg>` in document order.
+ */
+function neighboursOf(
+  declarations: readonly CapturedDeclaration[],
+  box: CapturedElement,
+  svg: CapturedElement
+): IconNeighbours {
+  const before: CapturedValues[] = [];
+  const after: CapturedValues[] = [];
+  let past = false;
+  const pseudo = (element: CapturedElement, name: "before" | "after"): readonly CapturedValues[] => {
+    const own = element.pseudo[name];
+    return own === undefined ? [] : [winningValues(declarations, own)];
+  };
+  const visit = (element: CapturedElement): void => {
+    for (const child of element.children) {
+      if (child === svg) {
+        past = true;
+        continue;
+      }
+      (past ? after : before).push(
+        winningValues(declarations, child.declarations),
+        ...pseudo(child, "before")
+      );
+      visit(child);
+      (past ? after : before).push(...pseudo(child, "after"));
+    }
+  };
+  before.push(...pseudo(box, "before"));
+  visit(box);
+  after.push(...pseudo(box, "after"));
+  return {
+    items: box.children.map((child) => winningValues(declarations, child.declarations)),
+    before,
+    after,
+  };
 }
 
 /**

@@ -132,6 +132,23 @@ function clockwiseDegrees(value: string): number | undefined {
 }
 
 /**
+ * The turn a `rotate` value gives, as Figma's `rotation` holds it: counterclockwise from -180 to 180,
+ * as {@link readRotation} says, reading nothing.
+ *
+ * @param value - The `rotate` value.
+ * @returns The turn, 0 for `none`, or undefined for a value that does not map.
+ */
+export function turnOf(value: string): number | undefined {
+  const normalized = normalizeCss(value);
+  const clockwise = normalized === "none" ? 0 : clockwiseDegrees(normalized);
+  if (clockwise === undefined) {
+    return undefined;
+  }
+  const turned = ((-clockwise % 360) + 360) % 360;
+  return turned > 180 ? turned - 360 : turned;
+}
+
+/**
  * Read a part's or an icon's `rotate` as the turn Figma's `rotation` holds. CSS turns a box
  * clockwise about its center and leaves its layout as it was. Figma counts degrees
  * counterclockwise: on 2026-10-22 a real file read `relativeTransform` `[[0, -1], [1, 0]]` at -90, a
@@ -145,15 +162,7 @@ function clockwiseDegrees(value: string): number | undefined {
 export function readRotation(style: LayerStyle): RotationSpec | undefined {
   const rotation = style.read(
     "rotate",
-    (value) => {
-      const normalized = normalizeCss(value);
-      const clockwise = normalized === "none" ? 0 : clockwiseDegrees(normalized);
-      if (clockwise === undefined) {
-        return undefined;
-      }
-      const turned = ((-clockwise % 360) + 360) % 360;
-      return turned > 180 ? turned - 360 : turned;
-    },
+    turnOf,
     (turn) => ({
       outcome: "literal",
       detail: turn === 0 ? "no turn" : `a rotation of ${turn}, counterclockwise as Figma counts it`,
