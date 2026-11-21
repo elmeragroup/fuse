@@ -65,7 +65,7 @@ export const KIT_PARITY = {
   "alert-dialog": {
     kind: "partial",
     sets: ["alert-dialog-content", "alert-dialog-open"],
-    missing: "Every content size other than `md`.",
+    missing: "The content sizes from `2xl` to `10xl`.",
     issue: MISSING_SETS,
   },
   "aspect-ratio": { kind: "sets", sets: ["aspect-ratio"] },
@@ -193,7 +193,7 @@ export const KIT_PARITY = {
   dialog: {
     kind: "partial",
     sets: ["dialog-content", "dialog-open"],
-    missing: "Every content size other than `md`.",
+    missing: "The content sizes from `2xl` to `10xl`.",
     issue: MISSING_SETS,
   },
   "dropdown-menu": {
