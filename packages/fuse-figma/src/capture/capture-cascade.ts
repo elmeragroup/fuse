@@ -57,12 +57,14 @@ import { CellLedger, inheritance, inheritsProperty, LayerStyle } from "../compon
 import type {
   Applied,
   CellScope,
+  ComputedStyle,
   CoverageNote,
   InPlace,
   Layer,
   Recorder,
 } from "../components/layer-style.ts";
 import { percentHeightBasis, stretchedToHost } from "../components/percent-height.ts";
+import { fourSidedLonghands, fourSidedValues } from "./border-shorthands.ts";
 import { ANCHOR_CENTRE, ANCHOR_WIDTH } from "./capture-format.ts";
 import type {
   CapturedCell,
@@ -386,11 +388,37 @@ function appliedOf(
         ),
         rank: 0,
         order,
-        declarations: [{ property: declaration.property, value }],
+        declarations: wonDeclarations(declaration, value),
         at,
       },
     ];
   });
+}
+
+/**
+ * What a captured declaration sets: itself, or, for a four-sided border shorthand that wins only some
+ * of its longhands, each of those longhands alone. A segmented Toggle group item's `rounded-none`
+ * loses its outer corners to the later `first:rounded-l-md`, and an outline item's `border` loses its
+ * left width to `border-l-0`, so the item sets those corners and sides one by one, as Chromium draws
+ * them. A value whose split `border-shorthands.ts` leaves unknown stays whole, which leaves the
+ * corners or sides it wins unmapped.
+ */
+function wonDeclarations(
+  declaration: CapturedDeclaration,
+  value: string
+): readonly { readonly property: string; readonly value: string }[] {
+  const whole = [{ property: declaration.property, value }];
+  const longhands = fourSidedLonghands(declaration.property);
+  const partial =
+    longhands !== undefined &&
+    declaration.longhands.length < longhands.length &&
+    declaration.longhands.every((longhand) => longhands.includes(longhand));
+  const values = partial ? fourSidedValues(declaration.property, value) : undefined;
+  return values === undefined
+    ? whole
+    : values.flatMap(([longhand, part]) =>
+        declaration.longhands.includes(longhand) ? [{ property: longhand, value: part }] : []
+      );
 }
 
 /** The keyword `revert`, apart from `revert-layer`. */
@@ -719,6 +747,20 @@ export class CaptureSetCascade {
   }
 }
 
+/**
+ * Declarations with each border shorthand split into its longhands, as `withBorderLonghands` says.
+ * A shorthand's `var()` resolves through a cascade of the declarations, unsplit, over what the
+ * element inherits, on a ledger of its own so the cell's layers stay as they are. A declaration that
+ * loses its property to a later one resolves to nothing.
+ */
+function splitBorders(scope: CellScope, inherited: ComputedStyle, applied: readonly Applied[]): Applied[] {
+  const scratch = new CellLedger(scope);
+  const unsplit = new LayerStyle(scratch, scratch.add(inherited, applied, undefined), []);
+  return withBorderLonghands(applied, (property, value) =>
+    normalizeCss(unsplit.raw(property) ?? "") === normalizeCss(value) ? unsplit.resolved(property) : undefined
+  );
+}
+
 /** A box's pseudo-element the mapping draws as a layer of its own, with its cascaded style. */
 export type DrawnPseudo = { readonly pseudo: "before" | "after"; readonly style: LayerStyle };
 
@@ -744,8 +786,13 @@ function readPseudoElements(
     if (pseudo === "placeholder") {
       continue;
     }
-    const applied = withBorderLonghands(appliedOf(read, indexes, placed, () => true, `::${pseudo}`));
-    const pseudoLayer = ledger.add(inheritance(layer, read.context), applied, layer);
+    const inherited = inheritance(layer, read.context);
+    const applied = splitBorders(
+      ledger.scope,
+      inherited,
+      appliedOf(read, indexes, placed, () => true, `::${pseudo}`)
+    );
+    const pseudoLayer = ledger.add(inherited, applied, layer);
     const style = new LayerStyle(ledger, pseudoLayer, [...path, `::${pseudo}`]);
     const { paints, ...note } = pseudoVerdict(style, pseudo, read.context.variables);
     if (paints && (pseudo === "before" || pseudo === "after") && boxes.has(pseudo)) {
@@ -1080,19 +1127,13 @@ export class CaptureCellCascade {
         path,
         ({ property }) => !page || (inheritsProperty(property, context) && !context.variables.owns(property))
       );
+      const inherited = parent === undefined ? new Map() : inheritance(parent, context);
       const applied = [
         ...(parent === undefined ? [initialFontSize(origin)] : []),
         // A border's sides cascade one by one, so the content height around the root reads them.
-        ...(page ? own : withBorderLonghands(own)),
+        ...(page ? own : splitBorders(this.#ledger.scope, inherited, own)),
       ];
-      parent = this.#ledger.add(
-        parent === undefined ? new Map() : inheritance(parent, context),
-        applied,
-        parent,
-        {
-          undrawn,
-        }
-      );
+      parent = this.#ledger.add(inherited, applied, parent, { undrawn });
       if (!page) {
         layers.push({ element, layer: parent });
       }

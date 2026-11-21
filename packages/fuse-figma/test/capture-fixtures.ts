@@ -10,6 +10,7 @@
  * a capture records, so a `var()` of Tailwind's theme resolves.
  */
 
+import { fourSidedLonghands } from "../src/capture/border-shorthands.ts";
 import { CAPTURE_FORMAT, CAPTURE_VERSION } from "../src/capture/capture-format.ts";
 import type {
   MeasuredFacts,
@@ -26,7 +27,7 @@ import type {
   PartManifest,
   SetManifest,
 } from "../src/capture/manifest.ts";
-import { UnknownLayer, resolveWinners } from "../src/capture/winners.ts";
+import { UnknownLayer, physicalLonghand, resolveWinners } from "../src/capture/winners.ts";
 import { buildSetsInOrder } from "../src/components/component-builder.ts";
 import { variantKey } from "../src/components/component-spec.ts";
 import type {
@@ -214,9 +215,13 @@ function captureOf(
             name: declaration.property,
             value: declaration.value,
             important: false,
+            // A logical longhand goes by its physical name, as the capture's page reads it.
             longhands: declaration.property.startsWith("--")
               ? [declaration.property]
-              : expandShorthand(declaration.property, declaration.value).map(([longhand]) => longhand),
+              : (
+                  fourSidedLonghands(declaration.property) ??
+                  expandShorthand(declaration.property, declaration.value).map(([longhand]) => longhand)
+                ).map(physicalLonghand),
           },
         ],
       }))

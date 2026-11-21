@@ -1,11 +1,15 @@
 /**
  * Toggle, as two component sets. `Toggle` holds every variant of the recipe at its four sizes,
- * in four states, off and on, with no icon, a start icon or an end icon: 192 cells. `Icon
- * toggle` holds the same variants, sizes, states and pressed values around one icon with no
- * label, 64 cells.
+ * in four states, off and on, with no icon, a start icon or an end icon, on its own or as the
+ * first, a middle or the last item of a segmented Toggle group: 768 cells. `Icon toggle` holds
+ * the same variants, sizes, states and pressed values around one icon with no label, 64 cells.
  *
  * - The `pressed` axis turns the Toggle off and on, as Base UI's Toggle stamps `aria-pressed` and
  *   `data-pressed` while it is pressed.
+ * - The `segment` axis draws a `ToggleGroup.Item` in a `spacing={0}` group, which takes the icon
+ *   inset, squares off its inner corners and, after the first, drops an outline item's left
+ *   border. Figma takes neither the inset nor a stroke weight as an override of an instance, so a
+ *   segmented Toggle group picks these variants for its items.
  * - Each icon is Star, as the Toggle docs place it, and a swap property picks it.
  */
 import { toggleVariants } from "@elmeragroup/fuse/recipe-catalog";
@@ -31,6 +35,9 @@ function isVariant(value: string | undefined): value is ToggleVariant {
 const STATE_AXIS = { name: "state", values: ["rest", "hover", "focus", "disabled"] };
 
 const PRESSED_AXIS = { name: "pressed", values: ["false", "true"] };
+
+/** Where a Toggle sits in a segmented group, on its own first, so its earlier keys hold. */
+const SEGMENT_AXIS = { name: "segment", values: ["none", "first", "middle", "last"] };
 
 /** Star, the icon the Toggle docs place on either side. */
 const START_ICON: IconManifest = {
@@ -95,7 +102,8 @@ const LABEL: LabelManifest = {
 
 /**
  * The Toggle's manifest, which the capture-backed build reads with `captures/toggle.json`: a Toggle
- * with a label, as `<Toggle>Toggle</Toggle>`, and an icon on either side.
+ * with a label, as `<Toggle>Toggle</Toggle>`, and an icon on either side, or the same item as
+ * `<ToggleGroup.Item>` at its place in a segmented group.
  */
 export const TOGGLE_MANIFEST: SetManifest = {
   key: "toggle",
@@ -108,7 +116,10 @@ export const TOGGLE_MANIFEST: SetManifest = {
     STATE_AXIS,
     PRESSED_AXIS,
     { name: "icon", values: ["none", "start", "end"] },
+    SEGMENT_AXIS,
   ],
+  addedAxes: new Set([SEGMENT_AXIS.name]),
+  elementSlot: (cell) => (cell.segment === "none" ? "toggle" : "toggle-group-item"),
   columnAxis: "state",
   label: LABEL,
   iconsFor: toggleIcons,

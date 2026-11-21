@@ -90,6 +90,7 @@ import radioIconButton from "../../captures/radio-icon-button.json" with { type:
 import radioRow from "../../captures/radio-row.json" with { type: "json" };
 import radio from "../../captures/radio.json" with { type: "json" };
 import rangeCalendar from "../../captures/range-calendar.json" with { type: "json" };
+import segmentedToggleGroup from "../../captures/segmented-toggle-group.json" with { type: "json" };
 import selectField from "../../captures/select-field.json" with { type: "json" };
 import selectItem from "../../captures/select-item.json" with { type: "json" };
 import selectOpen from "../../captures/select-open.json" with { type: "json" };
@@ -223,6 +224,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["checkbox", checkbox],
   ["switch", switchCapture],
   ["toggle-group", toggleGroup],
+  ["segmented-toggle-group", segmentedToggleGroup],
   ["radio-row", radioRow],
   ["radio-group", radioGroup],
   ["textarea", textarea],

@@ -528,7 +528,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const onlyText = showsOnlyText(box, cell);
   // The box's lengths and layout read before its parts map, since they decide what a part can fill.
   const fit = onlyText && drawsAlikeWide(reader, paint) ? "room" : "content";
-  const { sizing, limits, clips, extent, known, aspectLock } = readSizing(
+  const { sizing, limits, clips, extent, known, aspectLock, limitsRead } = readSizing(
     reader,
     room,
     context.variables,
@@ -1185,6 +1185,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
             grid === undefined ? laidOut : { ...laidOut, grid: keyedCells(grid, children) },
             context.variables
           ).min,
+          limits: limitsRead ? limits : undefined,
         },
         context.variables
       ) ?? ZERO,

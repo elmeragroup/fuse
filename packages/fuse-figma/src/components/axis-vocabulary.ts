@@ -176,6 +176,14 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
         "Where a Description list Item sits in its list: first, which draws no rule above it, or after another Item, which draws one where the list shows dividers.",
     },
   ],
+  [
+    "segment",
+    {
+      values: ["none", "first", "middle", "last"],
+      draws:
+        "Where a Toggle sits in a segmented Toggle group, `spacing={0}`: on its own, or the group's first, a middle or its last item, which square off the corners they share with a neighbor.",
+    },
+  ],
   ["keys", { values: ["2"], draws: "How many Kbd caps a Kbd group holds." }],
   ["avatars", { values: ["3"], draws: "How many Avatars an Avatar group holds." }],
   ["pages", { values: ["3"], draws: "How many page links a Pagination row holds." }],

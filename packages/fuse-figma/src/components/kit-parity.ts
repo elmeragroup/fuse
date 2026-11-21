@@ -420,8 +420,9 @@ export const KIT_PARITY = {
   toggle: { kind: "sets", sets: ["toggle", "icon-toggle"] },
   "toggle-group": {
     kind: "partial",
-    sets: ["toggle-group"],
-    missing: "The segmented look.",
+    sets: ["toggle-group", "segmented-toggle-group"],
+    missing:
+      "A vertical group, a segmented group of icon toggles, a segmented group of two items or more than three, a focused segmented item's ring outside the group's edge, which the clipping root cuts, and its ring at the edge it shares with the next item, which that item's fill covers, since Figma lifts no layer of a row above the next.",
     issue: MISSING_SETS,
   },
   toolbar: { kind: "sets", sets: ["toolbar"] },
