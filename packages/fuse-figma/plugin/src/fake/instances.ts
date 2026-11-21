@@ -103,7 +103,7 @@
 
 import { ownSize, settled } from "./layout.ts";
 import { propertyOwner, propertyValue, rootMain } from "./overrides.ts";
-import { componentKey, f32, isText, sourceOf, write } from "./state.ts";
+import { componentKey, f32, isText, numberOwner, sourceOf, write } from "./state.ts";
 import type { FileState, NodeState, PropertyState } from "./state.ts";
 import { requireHeldFonts, resetStyles } from "./text.ts";
 import { childrenOf, createNode, insert, mirror } from "./tree.ts";
@@ -399,6 +399,28 @@ export const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]>
   ["paddingLeft", ["paddingLeft"]],
   ["primaryAxisAlignItems", ["primaryAxisAlignItems"]],
   ["counterAxisAlignItems", ["counterAxisAlignItems"]],
+  // A number a layer holds as its own, other than a corner or a padding, which list above (FM3). The
+  // typings' NodeChangeProperty names no grid gap, so the fake lists none.
+  ...(
+    [
+      "itemSpacing",
+      "counterAxisSpacing",
+      "opacity",
+      "minWidth",
+      "maxWidth",
+      "minHeight",
+      "maxHeight",
+    ] as const
+  ).map((field): [string, readonly NodeChangeProperty[]] => [numberOwner(field), [field]]),
+  // FM3 read a whole `strokeWeight` write or binding as `strokeWeight` and the four sides, the top one
+  // spelled `stokeTopWeight` as the typings' NodeChangeProperty spells it.
+  [numberOwner("strokeTopWeight"), ["stokeTopWeight"]],
+  [numberOwner("strokeRightWeight"), ["strokeRightWeight"]],
+  [numberOwner("strokeBottomWeight"), ["strokeBottomWeight"]],
+  [numberOwner("strokeLeftWeight"), ["strokeLeftWeight"]],
+  ["strokeWeight", ["strokeWeight"]],
+  // A number write that changed a hugging instance's size lists its lengths, which it still hugs (FM3).
+  ["hugged", ["width", "height"]],
 ]);
 
 /**

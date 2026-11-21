@@ -62,10 +62,12 @@
  *    (PS2). On 2026-11-20 a frame, an auto layout frame and a component, each with one SOLID stroke
  *    and no weight written, read `[1,1,1,1]`, and top 2 read `[2,0,0,0]` and left 2 read `[0,0,0,2]`,
  *    with `strokeWeight` mixed and no error (FS1). So the first side write, of any non-negative
- *    weight, sets the other sides to 0 and its own side to its weight, and each side after it writes alone. A side
- *    binding neither spills nor counts as a write, and no probe read a binding as the first write.
- *    The typings require a non-negative side weight, so the fake throws for a negative one before it
- *    changes any side.
+ *    weight, sets the other sides to 0 and its own side to its weight, and each side after it writes
+ *    alone. A side binding neither spills nor counts as a write, and no probe read a binding as the
+ *    first write. The typings require a non-negative side weight, so the fake throws for a negative
+ *    one before it changes any side. A spill is a literal write of every side, so it unbinds each
+ *    and, on an instance or a sublayer, makes each its own and lists it, as a literal write to one
+ *    side does (rule 8, FM3).
  */
 
 import { sha1Hex } from "../../../src/components/sha1.ts";
@@ -162,17 +164,26 @@ export function storeEffect(state: NodeState, effect: Effect, held: ReadonlySet<
  * Write one side's stroke weight (rule 49). On a node whose weight was never written, the other sides
  * first drop to 0 (PS2, FS1).
  *
+ * @returns The sides the write set, every side for a spill, for the caller to unbind (rule 8).
  * @throws When the weight is negative or NaN, which the typings rule out, before any side changes.
  */
-export function writeStrokeSide(state: NodeState, side: keyof Sides, value: number): void {
+export function writeStrokeSide(
+  state: NodeState,
+  side: keyof Sides,
+  value: number
+): readonly (keyof Sides)[] {
   if (!(value >= 0)) {
     throw new Error(`A ${side} stroke weight must be non-negative, not ${value}.`);
   }
-  if (!state.strokeWeightWritten) {
-    state.strokeWeights = { top: 0, right: 0, bottom: 0, left: 0 };
-    state.strokeWeightWritten = true;
+  const weight = f32(value);
+  if (state.strokeWeightWritten) {
+    state.strokeWeights[side] = weight;
+    return [side];
   }
-  state.strokeWeights[side] = f32(value);
+  state.strokeWeights = { top: 0, right: 0, bottom: 0, left: 0 };
+  state.strokeWeightWritten = true;
+  state.strokeWeights[side] = weight;
+  return ["top", "right", "bottom", "left"];
 }
 
 const BASE64_DIGITS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

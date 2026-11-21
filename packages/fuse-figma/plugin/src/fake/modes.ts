@@ -18,20 +18,39 @@
  *    read 7 and no binding after `paddingLeft = 7`, and still 7 once moved under the Dense frame
  *    (FM2). So the fake resolves a bound number when it is read, in the modes of the layer read,
  *    and stores no resolved value for later. A layer shows the binding it holds itself, or else the
- *    one its source shows, for an instance its main's and for a sublayer its main layer's, until
- *    the layer writes the number as its own. A layer that shows no binding reads the number of
- *    the nearest layer along that chain that holds its own. A hugging layer measures its children
- *    by the same reads, an instance child by the length it binds through its main. So a
- *    `remove()` that leaves a component without a parent, or `combineAsVariants`, a move or a pin,
- *    changes what the next read gives with nothing written. A width or a height reads through
- *    `lengthOn` and `settled` (rules 32, 56). A literal write to any bound number field but a width
- *    or a height drops the binding the layer holds and makes the number its own, where FM2 wrote
- *    only `paddingLeft`. An unbind keeps the number the layer showed, as its own. The fake lays a
- *    row out again only where it lays one out at all (rule 32), and does not place the row's
- *    layers. A sublayer's inherited binding on a field other than a corner is the fake's reading,
- *    as rule 38 probed only corners. FM1 and FM2 left open a cleared pin, which the fake does not
- *    model, and a `resize` over a bound width or height. A text's bound numbers and a bound paint
- *    color still resolve once, when they bind.
+ *    one its source shows, for an instance its main's and for a sublayer its main layer's, a
+ *    sublayer's width and height included, until the layer holds that field as its own. A layer
+ *    that shows no binding reads the number of the nearest layer along that chain that holds its
+ *    own. The fake tracks that ownership one field at a time, each corner and stroke side apart, so
+ *    a write, a binding or an unbind on one side leaves the others as they showed, and a binding on
+ *    a width or a height claims that axis alone. A literal write to any bound number field but a
+ *    width or a height drops the binding the layer holds and makes the field its own, where FM2
+ *    wrote only `paddingLeft`, and the first 0 that spills to every side of a never-written stroke
+ *    (rule 49) writes, and so unbinds, every side. A binding or an unbind on a layer makes the field
+ *    its own, and an unbind keeps the number, null included, or the length the layer showed in its
+ *    modes. A field stays its own when it equals what the source shows: on the same file an
+ *    instance that wrote 7 over its main's bound `itemSpacing`, `topLeftRadius`, `strokeWeight` or
+ *    `paddingLeft` and then bound the main's own variable read 40, bound, and listed the field and
+ *    `boundVariables`, and after the main took a literal 6 it still read 40, bound and listed
+ *    (FM3). `overrides` lists such a field as rule 37 says. A rejected `resize` claims nothing.
+ *    `removeOverrides` drops the fields a layer holds as its own and their bindings. An unbind keeps the length the layer shows once settled and laid out. Measures read the
+ *    same way: a hugging layer measures an instance child by the length it binds through its main,
+ *    or else, the first time it is measured and once its modes differ from those it last settled
+ *    in, by its own hug around nested instances in those modes, a nested instance's through its
+ *    chain of sources. A new instance records its size and modes when it is made, so an edit to the
+ *    main reaches it only when it settles (rule 32, PI). A size its own numbers give it in its main's
+ *    modes is no mode hold (rule 56, FM3). A sublayer whose main layer hugs nested instances hugs its own children in the modes
+ *    it reads, and a wrapping row or a grid's FLEX tracks split the length its modes and its parent
+ *    give it. So a `remove()` that leaves a component without a parent, or `combineAsVariants`, a
+ *    move or a pin, changes what the next read gives with nothing written. A width or a height
+ *    reads through `lengthOn` and `settled` (rules 32, 56). The fake lays a row out again only where
+ *    it lays one out at all (rule 32), and does not place the row's layers. A sublayer's inherited
+ *    binding on a field other than a corner, and the per-side ownership, are the fake's reading, as
+ *    rule 38 probed only corners written whole. FM1 to FM3 left open a cleared pin, which the fake
+ *    does not model, and a `resize` over a bound width or height. The fake models cloning no further
+ *    than `copiedFields` copies, and `rescale` scales the lengths a layer stores, not what a
+ *    sublayer shows; the plugin never clones and rescales only an icon drawing at its top level. A text's bound numbers and a
+ *    bound paint color still resolve once, when they bind.
  */
 
 import { f32, numberOwner, sourceOf } from "./state.ts";
@@ -44,6 +63,11 @@ import type {
   StoredNumberField,
   VariableState,
 } from "./state.ts";
+
+/** The mode a node reads in each of the file's collections, as one key, which changes with a move or a pin. */
+export function modeKey(state: NodeState): string {
+  return state.file.collections.map((collection) => modeFor(state, collection)).join(" ");
+}
 
 /** The mode a node reads a collection in: the nearest pinned one, or the default. */
 export function modeFor(consumer: NodeState | undefined, collection: CollectionState): string {
@@ -124,20 +148,26 @@ export function resolveString(
  * Store a number on the layer, as a binding or an unbind does. A read resolves a bound field again
  * (rule 8), so a bound field's stored number only seeds the value the layer keeps once unbound.
  */
-export function storeNumber(state: NodeState, field: StoredNumberField, value: number): void {
-  const stored = f32(value);
+export function storeNumber(state: NodeState, field: StoredNumberField, value: number | null): void {
+  // A limit and `counterAxisSpacing` keep null where the layer sets none; no other field reads null.
   switch (field) {
     case "minWidth":
     case "maxWidth":
     case "minHeight":
     case "maxHeight":
-      state.limits[field] = stored;
-      return;
-    case "itemSpacing":
-      state.itemSpacing = stored;
+      state.limits[field] = value === null ? null : f32(value);
       return;
     case "counterAxisSpacing":
-      state.counterAxisSpacing = stored;
+      state.counterAxisSpacing = value === null ? null : f32(value);
+      return;
+  }
+  if (value === null) {
+    return;
+  }
+  const stored = f32(value);
+  switch (field) {
+    case "itemSpacing":
+      state.itemSpacing = stored;
       return;
     case "paddingTop":
       state.padding.top = stored;
@@ -188,7 +218,7 @@ export function storeNumber(state: NodeState, field: StoredNumberField, value: n
 }
 
 /** The number a layer stores for a field, apart from any binding. */
-function storedNumber(state: NodeState, field: StoredNumberField): number | null {
+export function storedNumber(state: NodeState, field: StoredNumberField): number | null {
   switch (field) {
     case "minWidth":
     case "maxWidth":
@@ -236,6 +266,28 @@ function storedNumber(state: NodeState, field: StoredNumberField): number | null
 type NullableNumberField = LimitField | "counterAxisSpacing";
 
 /**
+ * The variable a layer shows bound on a number field (rule 8): its own binding, or else, while it
+ * does not hold the field as its own, the one its source shows.
+ */
+export function shownBinding(state: NodeState, field: StoredNumberField): string | undefined {
+  return holderOf(state, field).bindings.get(field);
+}
+
+/**
+ * The layer along a layer's chain of sources whose binding or stored number it shows on a field:
+ * the first that binds the field, holds it as its own, or has no source.
+ */
+function holderOf(state: NodeState, field: StoredNumberField): NodeState {
+  for (let node = state; ;) {
+    const source = sourceOf(node);
+    if (node.bindings.has(field) || source === undefined || node.overridden.has(numberOwner(field))) {
+      return node;
+    }
+    node = source;
+  }
+}
+
+/**
  * The number a layer shows for a field a binding can set (rule 8): the variable it binds, or its
  * source shows bound, resolved in the layer's own modes, or else the number of the nearest layer
  * along its chain of sources that holds the field as its own.
@@ -243,24 +295,18 @@ type NullableNumberField = LimitField | "counterAxisSpacing";
 export function shownNumber(state: NodeState, field: Exclude<StoredNumberField, NullableNumberField>): number;
 export function shownNumber(state: NodeState, field: StoredNumberField): number | null;
 export function shownNumber(state: NodeState, field: StoredNumberField): number | null {
-  for (let node = state; ;) {
-    const bound = node.bindings.get(field);
-    if (bound !== undefined) {
-      return f32(resolveNumber(state.file, variableState(state.file, bound), state));
-    }
-    const source = sourceOf(node);
-    if (source === undefined || node.overridden.has(numberOwner(field))) {
-      return storedNumber(node, field);
-    }
-    node = source;
-  }
+  const holder = holderOf(state, field);
+  const bound = holder.bindings.get(field);
+  return bound === undefined
+    ? storedNumber(holder, field)
+    : f32(resolveNumber(state.file, variableState(state.file, bound), state));
 }
 
 /**
  * Make a number a layer's own, so it stops showing its source's (rule 8), as a literal write or an
  * unbind does. A layer with no source owns every number already.
  */
-export function ownNumber(state: NodeState, field: StoredNumberField): void {
+export function ownNumber(state: NodeState, field: StoredNumberField | "width" | "height"): void {
   if (sourceOf(state) !== undefined) {
     state.overridden.add(numberOwner(field));
   }

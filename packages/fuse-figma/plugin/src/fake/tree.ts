@@ -36,7 +36,7 @@
  *      a sublayer swapped to a removed component stays in place.
  */
 
-import { BLACK, isStoredNumber, NEW_TEXT_STYLE, sourceOf, STATES, WHITE, write } from "./state.ts";
+import { BLACK, NEW_TEXT_STYLE, sourceOf, STATES, WHITE, write } from "./state.ts";
 import type { FileState, NodeState, NodeType, UncopiedField } from "./state.ts";
 
 /** The children a node shows, an instance's sublayers included. */
@@ -77,10 +77,8 @@ export function mirror(state: NodeState, source: NodeState, swapped: boolean): v
     const sublayer = copyNode(state.file, child, child.type, `I${state.id};${child.id}`);
     sublayer.mirrorOf = child;
     sublayer.parent = state;
-    // A sublayer shows its main layer's number bindings rather than copies of them (rule 8).
-    for (const field of [...sublayer.bindings.keys()].filter(isStoredNumber)) {
-      sublayer.bindings.delete(field);
-    }
+    // A sublayer shows its main layer's bindings rather than copies of them (rule 8).
+    sublayer.bindings.clear();
     const named = swapped ? previous.find((old) => old.name === child.name) : undefined;
     if (named?.overridden.has("fills") === true) {
       sublayer.fills = named.fills;
@@ -373,6 +371,7 @@ export function createNode(file: FileState, type: NodeType, name: string, id?: s
     overridden: new Set(),
     unboundLengths: new Set(),
     heldByModes: false,
+    settledModes: undefined,
     characters: "",
     styles: [NEW_TEXT_STYLE],
     baseStyle: NEW_TEXT_STYLE,
@@ -462,6 +461,7 @@ export function forkFile(source: FileState): FileState {
       overridden: new Set(state.overridden),
       unboundLengths: new Set(state.unboundLengths),
       heldByModes: state.heldByModes,
+      settledModes: state.settledModes,
       properties: new Map(state.properties),
       propertyValues: new Map(state.propertyValues),
       exposedInstance: state.exposedInstance,
