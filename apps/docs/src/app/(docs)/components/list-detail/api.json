@@ -115,7 +115,16 @@
           "type": "string | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "The Sheet's corner close button's accessible name. Defaults to `overlay.close` from the locale dictionary. It applies below the breakpoint only.",
+          "description": "The Sheet's corner close button's accessible name. Defaults to `overlay.close` from the locale dictionary. It applies only while the detail shows in a Sheet.",
+          "required": false
+        },
+        {
+          "name": "container",
+          "origin": "declared",
+          "type": "HTMLElement | RefObject<HTMLElement | null> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The element the Sheet renders into, as on `Sheet.Content`. Defaults to the nearest enclosing `ThemeScope` element. It applies only while the detail shows in a Sheet.",
           "required": false
         },
         {
@@ -135,7 +144,7 @@
           "type": "boolean | undefined",
           "shortType": null,
           "defaultValue": null,
-          "description": "Whether the Sheet shows its corner close button. It applies below the breakpoint only.",
+          "description": "Whether the Sheet shows its corner close button. It applies only while the detail shows in a Sheet.",
           "required": false
         },
         {
@@ -144,7 +153,7 @@
           "type": "\"10xl\" | \"2xl\" | \"3xl\" | \"4xl\" | \"5xl\" | \"6xl\" | \"7xl\" | \"8xl\" | \"9xl\" | \"lg\" | \"md\" | \"sm\" | \"xl\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The Sheet's maximum width, as on `Sheet.Content`. It applies below the breakpoint only.",
+          "description": "The Sheet's maximum width, as on `Sheet.Content`. It applies only while the detail shows in a Sheet.",
           "required": false,
           "values": [
             "10xl",
