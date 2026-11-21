@@ -6,16 +6,24 @@
  * popup stays 264px around its `w-64` list, and a Badge widens with its text. Review round 2 of B4
  * measured a 500px root that a hug of its 256px child does not draw. The probe in the browser only goes red where a
  * mapped kind contradicts what it infers, so a rule that stops inferring would pass it silently;
- * these cases hold what each rule infers.
+ * these cases hold what each rule infers. A hug leaves out a layer placed outside its auto layout.
+ * On 2026-11-20 Chromium measured an `inline-flex` row with an 8px gap at 40px wide when it held a
+ * 40px item and a 100px `position: absolute` item, and at 148px wide with both items in the flow
+ * (CSS Flexbox 1 §4.1).
  */
 import { Result } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { builtKit } from "../../test/built-kit";
 import type { BuiltSets } from "../../test/built-kit";
+import { buildChip, part } from "../../test/capture-fixtures";
 import { densityLengths } from "../components/build-kit.ts";
+import type { ComponentSetSpec } from "../components/kit-spec.ts";
 import { agrees, contradictions, inferKind } from "./perturbation.ts";
 import type { InferredKind, MappedWidth, ProbedBox } from "./perturbation.ts";
+
+/** Each length's pixels at Dense. */
+const DENSE = Result.getOrThrow(densityLengths("dense"));
 
 /** A 100px box below a widened root that widened neither with its container nor with its text. */
 const KEPT: ProbedBox = {
@@ -34,6 +42,35 @@ const KEPT: ProbedBox = {
   capsAtParent: false,
   widened: true,
 };
+
+/**
+ * What the probe finds against a set's first variant, whose root it measured at a kept width.
+ *
+ * @param set - The set.
+ * @param width - The root's kept width, in pixels.
+ * @returns Each contradiction, as `inferred → mapped`.
+ */
+function foundAtRoot(set: Omit<ComponentSetSpec, "page">, width: number): readonly string[] {
+  const variant = set.variants[0];
+  if (variant === undefined) {
+    throw new Error(`the set ${set.key} has no variant`);
+  }
+  const root: ProbedBox = {
+    ...KEPT,
+    slot: variant.root.name,
+    root: true,
+    base: width,
+    wider: width,
+    longer: width,
+    longest: width,
+  };
+  return contradictions(
+    set,
+    new Map([[variant.key, { id: "cell", boxes: [root], gap: undefined }]]),
+    new Map(),
+    DENSE
+  ).found.map(({ inferred, mapped }) => `${inferred} → ${mapped}`);
+}
 
 describe("inferKind", () => {
   it.each<readonly [string, ProbedBox, InferredKind]>([
@@ -143,24 +180,10 @@ describe("a hug the probe measured at a kept width", () => {
   /** What the probe finds against a set's first variant, whose root it measured at a kept width. */
   const foundAt = (key: string, width: number) => {
     const set = built.spec.componentSets.find((each) => each.key === key);
-    const variant = set?.variants[0];
-    if (set === undefined || variant === undefined) {
+    if (set === undefined) {
       throw new Error(`the kit builds no set ${key}`);
     }
-    const root: ProbedBox = {
-      ...KEPT,
-      slot: variant.root.name,
-      root: true,
-      base: width,
-      wider: width,
-      longer: width,
-    };
-    return contradictions(
-      set,
-      new Map([[variant.key, { id: "cell", boxes: [root], gap: undefined }]]),
-      new Map(),
-      Result.getOrThrow(densityLengths("dense"))
-    ).found.map(({ inferred, mapped }) => `${inferred} → ${mapped}`);
+    return foundAtRoot(set, width);
   };
 
   it("agrees with the Navigation menu popup, which hugs its w-64 list at the 264px Chromium measures", () => {
@@ -206,7 +229,7 @@ describe("a fixed layer as wide as the parent that hugs it", () => {
       set,
       new Map([[variant.key, { id: "cell", boxes: [button], gap: undefined }]]),
       new Map([["calendar-day-button", "button"]]),
-      Result.getOrThrow(densityLengths("dense"))
+      DENSE
     ).found.map(({ inferred, mapped }) => `${inferred} → ${mapped}`);
   };
 
@@ -216,5 +239,29 @@ describe("a fixed layer as wide as the parent that hugs it", () => {
 
   it("contradicts the fixed width where the far longer text widened the box", () => {
     expect(found(1264)).toEqual(["tracks → fixed"]);
+  });
+});
+
+describe("a hug holding a layer placed outside its auto layout", () => {
+  /** A hugging row of a 40px item and a 100px item placed at its top left. */
+  let row: Omit<ComponentSetSpec, "page">;
+
+  beforeAll(async () => {
+    ({ componentSet: row } = await buildChip(
+      "relative inline-flex gap-[8px]",
+      [
+        { slot: "chip-item", classes: "w-[40px] h-[20px]" },
+        { slot: "chip-placed", classes: "absolute top-0 left-0 w-[100px] h-[20px]" },
+      ],
+      { parts: [part({ key: "item", slot: "chip-item" }), part({ key: "placed", slot: "chip-placed" })] }
+    ));
+  });
+
+  it("agrees with the row at the 40px its one flowing item gives it", () => {
+    expect(foundAtRoot(row, 40)).toEqual([]);
+  });
+
+  it("contradicts the row at the 148px it would draw with the placed item in the flow", () => {
+    expect(foundAtRoot(row, 148)).toEqual(["fixed → hug"]);
   });
 });
