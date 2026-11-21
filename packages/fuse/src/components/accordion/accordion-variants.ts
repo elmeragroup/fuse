@@ -43,8 +43,10 @@ export const accordionVariants = tv({
     header: "flex",
     // Fuse ships no preflight, so `text-inherit` and `bg-transparent` replace the native button's
     // ButtonText and ButtonFace: the label takes its item's text color over its item's fill.
+    // `text-start` replaces the native button's centered text, so each line of a wrapped label
+    // starts at the row's start.
     trigger: cn(
-      "group/accordion-trigger font-medium flex flex-1 cursor-pointer items-center justify-between gap-2 bg-transparent text-inherit enabled-hover:underline",
+      "group/accordion-trigger font-medium flex flex-1 cursor-pointer items-center justify-between gap-2 bg-transparent text-start text-inherit enabled-hover:underline",
       selfFocusRingClass,
       nativeStateFaceClass,
       dataStateFaceClass
