@@ -63,6 +63,7 @@ function boxRefs(box: BoxSpec): BoundRef[] {
       box.paddingBottom,
       box.paddingLeft,
       box.itemSpacing,
+      box.lineGap,
       box.grid?.columnGap,
       box.grid?.rowGap,
       ...cornerLengths(box.cornerRadius),

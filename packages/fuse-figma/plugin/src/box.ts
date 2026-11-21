@@ -209,6 +209,15 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
     planScalar(run, label, "counterAxisAlignItems", node.counterAxisAlignItems, spec.counterAlign, () => {
       node.counterAxisAlignItems = spec.counterAlign;
     });
+    // A row that wraps breaks its layers into lines, which Figma's WRAP does where CSS does (WR1 to
+    // WR7), and turning it on or off changes no sizing (WR8). `layoutWrap` takes only a horizontal or
+    // vertical auto layout, which the direction above writes first.
+    if (direction === "HORIZONTAL" || direction === "VERTICAL") {
+      const wrap = spec.lineGap === undefined ? "NO_WRAP" : "WRAP";
+      planScalar(run, label, "layoutWrap", node.layoutWrap, wrap, () => {
+        node.layoutWrap = wrap;
+      });
+    }
 
     planLayoutSizing(
       run,
@@ -253,6 +262,24 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
       },
       spec.itemSpacing
     );
+    // The gap between a wrapping row's lines, which binds a FLOAT variable and follows the frame's
+    // mode (WR9).
+    if (spec.lineGap !== undefined) {
+      planNumber(
+        run,
+        node,
+        label,
+        {
+          name: "counterAxisSpacing",
+          bindings: ["counterAxisSpacing"],
+          matches: (value) => near(node.counterAxisSpacing ?? 0, value),
+          write: (value) => {
+            node.counterAxisSpacing = value;
+          },
+        },
+        spec.lineGap
+      );
+    }
   });
   planCorners(run, node, label, spec.cornerRadius);
 

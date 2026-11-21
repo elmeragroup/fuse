@@ -19,4 +19,5 @@ export const KEPT: ProbedBox = {
   capsAtParent: false,
   widened: true,
   tableCell: false,
+  lineMoved: false,
 };

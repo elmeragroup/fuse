@@ -1170,3 +1170,351 @@ describe("a wrapping row the capture measured on one line", () => {
     );
   });
 });
+
+// Unit under test: the WRAP rule of `flex-lines.ts`, through `buildSetsInOrder`, which holds
+// Figma's WRAP layout (`figma-wrap-layout.ts`, WR1 to WR9) of the layers as the build draws them to
+// the layout the capture kept. Oracle: CSS Flexbox 1 §9.2, §9.3, §9.4 and §9.7 and CSS Box Alignment
+// 3 §5.1 and §8.1, worked by hand for each row's layout, which Chromium lays out the same. In a
+// 200px row, 80px items 10px apart take two per line, 170px, and a third opens a second line, 4px
+// down under `gap-y-[4px]`, and `own` is each item's width at `flex: 0 0 auto`. A row whose layers a
+// Figma WRAP row sets where CSS sets the items draws WRAP, with each gap from the declaration that
+// wins its axis. Any other keeps `flex-wrap` and its gaps unmapped with the reason, never dropped as
+// a row on one line, and the declarations the build leaves unread stay unmapped beside them.
+describe("a wrapping row the capture measured on lines that fill it", () => {
+  /** An item's place relative to the row's content box, and its own width. */
+  type Item = readonly [x: number, y: number, width: number, height: number, own: number];
+  /** The facts of a row `width` wide whose lines fill it, with one layout in the dense density. */
+  const fillsIn = (width: number, ...items: readonly Item[]): MeasuredFacts => ({
+    flexLines: {
+      fills: [
+        {
+          mode: "light / dense",
+          density: "dense",
+          width,
+          items: items.map(([x, y, width, height, own]) => ({ x, y, width, height, own })),
+        },
+      ],
+    },
+  });
+  /** The facts of a 200px row whose lines fill it. */
+  const fills = (...items: readonly Item[]): MeasuredFacts => fillsIn(200, ...items);
+  const W = "w-[80px] h-[20px]";
+  const GAPS = "gap-x-[10px] gap-y-[4px]";
+  const ROW = `flex flex-wrap items-center w-[200px] ${GAPS}`;
+  /** Three 80px items on two lines, the third 4px below the first. */
+  const TWO_LINES = fills([0, 0, 80, 20, 80], [90, 0, 80, 20, 80], [0, 24, 80, 20, 80]);
+  const WRAP_GAPS = ["column-gap", "flex-wrap", "row-gap"];
+
+  const build = (row: string, measured: MeasuredFacts, last = W, first = W) =>
+    buildCaptured(
+      chip({
+        parts: ["a", "b", "c"].map((key) => part({ key, slot: key })),
+      }),
+      rest({
+        slot: "chip",
+        classes: row,
+        measured,
+        children: [
+          { slot: "a", classes: first },
+          { slot: "b", classes: W },
+          { slot: "c", classes: last },
+        ],
+      })
+    );
+
+  it.each([
+    ["gap-x-[10px] gap-y-[4px]", `flex flex-wrap items-center w-[200px] ${GAPS}`, W, TWO_LINES, 4, 10, []],
+    // `gap` sets both axes, which the build read as 0 between lines before.
+    [
+      "gap-[10px]",
+      "flex flex-wrap items-center w-[200px] gap-[10px]",
+      W,
+      fills([0, 0, 80, 20, 80], [90, 0, 80, 20, 80], [0, 30, 80, 20, 80]),
+      10,
+      10,
+      [],
+    ],
+    // A later `gap-x` takes the column axis, so `gap` spaces only the lines.
+    [
+      "gap-[4px] gap-x-[10px]",
+      "flex flex-wrap items-center w-[200px] gap-[4px] gap-x-[10px]",
+      W,
+      TWO_LINES,
+      4,
+      10,
+      [],
+    ],
+    // With no row gap, the lines touch.
+    [
+      "gap-x-[10px]",
+      "flex flex-wrap items-center w-[200px] gap-x-[10px]",
+      W,
+      fills([0, 0, 80, 20, 80], [90, 0, 80, 20, 80], [0, 20, 80, 20, 80]),
+      0,
+      10,
+      [],
+    ],
+    // A filling last layer breaks its line at its 64px minimum, 170 + 10 + 64 > 200, and fills the
+    // second line, as a zero basis above `min-width` does in CSS (WR6).
+    [
+      "a filling last layer",
+      ROW,
+      "flex-1 min-w-[64px] h-[20px]",
+      fills([0, 0, 80, 20, 80], [90, 0, 80, 20, 80], [0, 24, 200, 20, 64]),
+      4,
+      10,
+      [],
+    ],
+    // Lines that fill the row leave `align-content` no height to place them in, so it changes
+    // nothing, and the build leaves it unread.
+    ["centred lines", `content-center ${ROW}`, W, TWO_LINES, 4, 10, ["align-content"]],
+    // An unset `align-items` stretches items that set no height, and these set one.
+    ["an unset align-items", `flex flex-wrap w-[200px] ${GAPS}`, W, TWO_LINES, 4, 10, []],
+    // `align-self: stretch` on an item that sets its height stretches nothing, and the build leaves
+    // it unread.
+    [
+      "a stretched item of fixed height",
+      ROW,
+      "self-stretch w-[80px] h-[20px]",
+      TWO_LINES,
+      4,
+      10,
+      ["align-self"],
+    ],
+    // `flex-1 basis-[80px]` breaks its line at 80px in CSS and Figma's FILL at its 40px minimum, and
+    // both put it on the second line of this row, which it fills.
+    [
+      "a grow from a longhand basis that breaks where the minimum does",
+      ROW,
+      "flex-1 basis-[80px] min-w-[40px] h-[20px]",
+      fills([0, 0, 80, 20, 80], [90, 0, 80, 20, 80], [0, 24, 200, 20, 40]),
+      4,
+      10,
+      ["flex-basis"],
+    ],
+  ] as const)(
+    "draws %s as a WRAP row %ipx between lines and %ipx between layers",
+    async (_, row, last, measured, lineGap, itemSpacing, unmapped) => {
+      const { variant, coverage } = await build(row, measured, last);
+      expect([variant?.root.lineGap, variant?.root.itemSpacing, variant?.root.primaryAlign]).toEqual([
+        literal(lineGap),
+        literal(itemSpacing),
+        "MIN",
+      ]);
+      expect(
+        coverage.filter(({ property }) => property === "flex-wrap").map(({ outcome }) => outcome)
+      ).toEqual(["literal"]);
+      expect(
+        coverage.filter(({ outcome }) => outcome === "unmapped").map(({ property }) => property)
+      ).toEqual(unmapped);
+    }
+  );
+
+  it("draws a row whose items start their lines as a WRAP row that sets them at its line's top", async () => {
+    // `items-start` sets an 8px item at the top of its 20px line, as Figma's MIN does (WR4).
+    const { variant, coverage } = await build(
+      `flex flex-wrap items-start w-[200px] ${GAPS}`,
+      fills([0, 0, 80, 8, 80], [90, 0, 80, 20, 80], [0, 24, 80, 20, 80]),
+      W,
+      "w-[80px] h-[8px]"
+    );
+    expect([variant?.root.lineGap, variant?.root.counterAlign]).toEqual([literal(4), "MIN"]);
+    expect(coverage.filter(({ outcome }) => outcome === "unmapped")).toEqual([]);
+  });
+
+  // Each row below breaks lines a Figma WRAP row of its layers does not draw, or that the capture or
+  // the build cannot read, so no Figma row draws it. The reason names what refuses it.
+  it.each([
+    // The capture's own refusals.
+    ["the lines in some modes only", ROW, { flexLines: "some-modes" }, W, W, "some modes only", WRAP_GAPS],
+    ["lines it cannot read", ROW, { flexLines: "unread" }, W, W, "could not read the row's lines", WRAP_GAPS],
+    ["an item shrunk on its line", ROW, { flexLines: "shrinks" }, W, W, "flex base size", WRAP_GAPS],
+    [
+      "a break a pixel moves",
+      ROW,
+      { flexLines: "tight-break" },
+      W,
+      W,
+      "a pixel wider or narrower",
+      WRAP_GAPS,
+    ],
+    [
+      "spare height",
+      ROW,
+      { flexLines: "spare-height" },
+      W,
+      W,
+      "leaving part of the row's height over",
+      WRAP_GAPS,
+    ],
+    // A 40px item whose 140px basis CSS lays out takes the first line alone, where the build draws
+    // it 40px, from its width.
+    [
+      "a width under its basis",
+      ROW,
+      fills([0, 0, 140, 20, 40], [0, 24, 80, 20, 80], [90, 24, 80, 20, 80]),
+      W,
+      "w-[40px] basis-[140px] h-[20px]",
+      "sets a's width at 40px where CSS sets it at 140px in the mode light / dense",
+      ["flex-basis", ...WRAP_GAPS],
+    ],
+    // `flex: 2` grows the last item to fill the second line, where the build hugs it at 40px.
+    [
+      "a grow of 2",
+      ROW,
+      fills([0, 0, 80, 20, 80], [90, 0, 80, 20, 80], [0, 24, 200, 20, 40]),
+      "flex-[2] min-w-[40px] h-[20px]",
+      W,
+      "sets c's width at 40px where CSS sets it at 200px",
+      ["flex", ...WRAP_GAPS],
+    ],
+    // Two `flex-1` items: the first shares the first line's 110px over its 80px neighbour, where the
+    // build hugs both at their 80px minimum.
+    [
+      "two layers that grow",
+      ROW,
+      fills([0, 0, 110, 20, 80], [120, 0, 80, 20, 80], [0, 24, 200, 20, 80]),
+      "flex-1 min-w-[80px] h-[20px]",
+      "flex-1 min-w-[80px] h-[20px]",
+      "sets a's width at 80px where CSS sets it at 110px",
+      ["flex", "flex", ...WRAP_GAPS],
+    ],
+    // `start` sets the 8px item at its line's top, where the build reads no alignment from it and
+    // centres the item 6px down.
+    [
+      "an arbitrary start alignment",
+      `flex flex-wrap [align-items:start] w-[200px] ${GAPS}`,
+      fills([0, 0, 80, 8, 80], [90, 0, 80, 20, 80], [0, 24, 80, 20, 80]),
+      W,
+      "w-[80px] h-[8px]",
+      "sets a's top edge at 6px where CSS sets it at 0px",
+      ["align-items", ...WRAP_GAPS],
+    ],
+    // `justify-center` centres each line's items, 15px in on the first line and 60px on the second.
+    [
+      "centred layers on each line",
+      `justify-center ${ROW}`,
+      fills([15, 0, 80, 20, 80], [105, 0, 80, 20, 80], [60, 24, 80, 20, 80]),
+      W,
+      W,
+      "sets a's left edge at 0px where CSS sets it at 15px",
+      WRAP_GAPS,
+    ],
+    // `flex: 1 1 80px` grows the last item to fill the second line, where the build hugs it at its
+    // 40px minimum.
+    [
+      "growth from an 80px basis",
+      ROW,
+      fills([0, 0, 80, 20, 80], [90, 0, 80, 20, 80], [0, 24, 200, 20, 40]),
+      "flex-[1_1_80px] min-w-[40px] h-[20px]",
+      W,
+      "sets c's width at 40px where CSS sets it at 200px",
+      ["flex", ...WRAP_GAPS],
+    ],
+    // In a 150px row the second item opens the second line, and a bare `flex-1` grows from a zero
+    // basis beside it to 60px. Its FILL has no minWidth to break a line at.
+    [
+      "growth above no minimum",
+      `flex flex-wrap items-center w-[150px] ${GAPS}`,
+      fillsIn(150, [0, 0, 80, 20, 80], [0, 24, 80, 20, 80], [90, 24, 60, 20, 0]),
+      "flex-1 h-[20px]",
+      W,
+      "c fills its line with no minWidth",
+      WRAP_GAPS,
+    ],
+    // In a 150px row `flex-1` shares the first line's 60px beside the 80px item, and `flex-[2]` the
+    // second line's 150px, where the build hugs both at their 40px minimum.
+    [
+      "layers that grow by 1 and 2",
+      `flex flex-wrap items-center w-[150px] ${GAPS}`,
+      fillsIn(150, [0, 0, 60, 20, 40], [70, 0, 80, 20, 80], [0, 24, 150, 20, 40]),
+      "flex-[2] min-w-[40px] h-[20px]",
+      "flex-1 min-w-[40px] h-[20px]",
+      "sets a's width at 40px where CSS sets it at 60px",
+      ["flex", "flex", ...WRAP_GAPS],
+    ],
+    // A grow of 0.5 alone on its line takes half the line's room (§9.7 step 4), 100px.
+    [
+      "half a share of growth",
+      ROW,
+      fills([0, 0, 80, 20, 80], [90, 0, 80, 20, 80], [0, 24, 100, 20, 40]),
+      "flex-[0.5] min-w-[40px] h-[20px]",
+      W,
+      "sets c's width at 40px where CSS sets it at 100px",
+      ["flex", ...WRAP_GAPS],
+    ],
+    // `flex-auto` grows the 80px item to fill the second line, where the build fixes it at 80px.
+    [
+      "growth from an auto basis",
+      ROW,
+      fills([0, 0, 80, 20, 80], [90, 0, 80, 20, 80], [0, 24, 200, 20, 80]),
+      "flex-auto min-w-[40px] w-[80px] h-[20px]",
+      W,
+      "sets c's width at 80px where CSS sets it at 200px",
+      ["flex", ...WRAP_GAPS],
+    ],
+    // A percentage minimum maps to no `minWidth`, and no probe read where such a FILL breaks.
+    [
+      "growth above a percentage minimum",
+      ROW,
+      fills([0, 0, 80, 20, 80], [90, 0, 80, 20, 80], [0, 24, 200, 20, 100]),
+      "flex-1 min-w-[50%] h-[20px]",
+      W,
+      "c fills its line with no minWidth",
+      ["min-width", ...WRAP_GAPS],
+    ],
+    // `direction: rtl` starts each line at the right: the first item at 120px.
+    [
+      "a right-to-left row",
+      `${ROW} [direction:rtl]`,
+      fills([120, 0, 80, 20, 80], [30, 0, 80, 20, 80], [120, 24, 80, 20, 80]),
+      W,
+      W,
+      "direction: rtl starts each line at the row's right",
+      ["direction", ...WRAP_GAPS],
+    ],
+    // A percentage gap resolves against the row's content box on its own axis (CSS Box Alignment 3
+    // §8.1): the row's height for `row-gap`, its width for `column-gap`.
+    [
+      "a percentage row gap",
+      "flex flex-wrap items-center w-[200px] gap-x-[10px] gap-y-[10%]",
+      fills([0, 0, 80, 20, 80], [90, 0, 80, 20, 80], [0, 20, 80, 20, 80]),
+      W,
+      W,
+      "row-gap of 10% is a share of the row's height",
+      WRAP_GAPS,
+    ],
+    [
+      "a percentage column gap",
+      "flex flex-wrap items-center w-[200px] gap-x-[10%] gap-y-[4px]",
+      fills([0, 0, 80, 20, 80], [100, 0, 80, 20, 80], [0, 24, 80, 20, 80]),
+      W,
+      W,
+      "column-gap of 10% is a share of the row's width",
+      WRAP_GAPS,
+    ],
+    [
+      "a gap of two values",
+      "flex flex-wrap items-center w-[200px] gap-[4px_10px]",
+      TWO_LINES,
+      W,
+      W,
+      "sets two values",
+      ["flex-wrap", "gap"],
+    ],
+  ] as const)("refuses a WRAP row for %s", async (_, row, measured, last, first, because, unmapped) => {
+    const { variant, coverage } = await build(row, measured, last, first);
+    expect([variant?.root.lineGap, variant?.root.itemSpacing]).toEqual([undefined, literal(0)]);
+    expect(
+      coverage
+        .filter(({ property }) => property === "flex-wrap")
+        .map(({ outcome, detail }) => [outcome, detail.includes(because)])
+    ).toEqual([["unmapped", true]]);
+    expect(
+      coverage
+        .filter(({ outcome }) => outcome === "unmapped")
+        .map(({ property }) => property)
+        .toSorted()
+    ).toEqual([...unmapped].toSorted());
+  });
+});

@@ -998,6 +998,12 @@ function huggedLength(state: NodeState, axis: Axis, layout: NodeState = state): 
  * flow, as they stand, packed into rows of its width less its side padding with `itemSpacing`
  * between them, each row as tall as its tallest child, `counterAxisSpacing` between the rows, and
  * its top and bottom padding.
+ *
+ * Two limits, which no test depends on: a FILL child packs at the width it stands at, where Figma
+ * breaks before it at its `minWidth` and then fills its line (WR6), so in WR6's 164px row the fake
+ * sets a FILL layer standing at 100px on a second line, where Figma sets it 64px wide on the first.
+ * And the height ignores `minHeight`, which Figma's hugging WRAP row takes at least (WR4), so a row
+ * of one 20px line with a `minHeight` of 80 reads 20px.
  */
 function wrapHeight(state: NodeState): number {
   const room = lengthOn(state, "HORIZONTAL") - inset(state, "left") - inset(state, "right");

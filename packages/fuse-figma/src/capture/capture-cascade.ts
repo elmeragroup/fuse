@@ -2174,6 +2174,7 @@ function measuredBox(
     freeAlongMain: facts?.freeAlongMain === true,
     fitsAlongMain: facts?.fitsAlongMain === true,
     oneFlexLine: facts?.oneFlexLine === true,
+    flexLines: facts?.flexLines,
     itemsAtContent: facts?.itemsAtContent === true,
     tableTiles: facts?.tableTiles === true,
     bordersCollapse: facts?.bordersCollapse === true,

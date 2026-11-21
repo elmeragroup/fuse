@@ -2,6 +2,7 @@
  * The cascade of one box, the root or a part, as the mapping reads it: its own style, and the
  * cascades of the parts and icons below it. `capture/capture-cascade.ts` runs it from a set's capture.
  */
+import type { FlexLinesFact } from "../capture/capture-format";
 import type { Cell, IconSlot, PreviewLength } from "./component-spec";
 import type { Origin } from "./coverage-log";
 import type { DrawnAt } from "./drawn-parts";
@@ -245,6 +246,12 @@ export type MeasuredBox = {
   readonly fitsAlongMain: boolean;
   /** The box is a flex container that wraps and lays its items out on one line in every mode. */
   readonly oneFlexLine: boolean;
+  /**
+   * What the capture measured of a flex row that wraps its items onto two or more lines in some
+   * mode: `fills` where they draw as a Figma WRAP row in every mode, or what keeps them from it.
+   * Undefined for a box that breaks no line.
+   */
+  readonly flexLines: FlexLinesFact | undefined;
   /** The box is a flex row whose growing items each stay at their own content width in every mode. */
   readonly itemsAtContent: boolean;
   /** The box is a table box whose parts tile it in every mode, as the capture measured. */

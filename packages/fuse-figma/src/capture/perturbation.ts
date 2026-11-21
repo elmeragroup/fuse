@@ -71,6 +71,16 @@ export type ProbedBox = {
   readonly widened: boolean;
   /** Whether the box is `display: table-cell`, whose set width is only a minimum (CSS 2.1 §17.5.2.2). */
   readonly tableCell: boolean;
+  /**
+   * Whether the box is an item of a wrapping flex row whose line holds other items in the wider run
+   * than as rendered, while in both runs the box spans the room its line leaves it, within a pixel,
+   * and its width there differs by more than a pixel. Such a box fills its line, and the wider row's
+   * room went to the items that joined or left it, as a filling input moves back beside the chips
+   * before it and narrows. A box whose width stays could hold that width whatever its line leaves. A line is the row's in-flow items from
+   * one that sits at or below the bottom of every item before it, and its room is the row's content
+   * box less its other items and the gaps between them (CSS Flexbox 1 §9.3).
+   */
+  readonly lineMoved: boolean;
 };
 
 /** One cell as the probe measured it: each root's boxes, and the gap between two roots. */
@@ -116,6 +126,7 @@ export async function probeCells(
         parent: number;
         fixed: boolean;
         tableCell: boolean;
+        line: { readonly companions: string; readonly room: number } | undefined;
       };
       const contentWidth = (element: Element | null): number => {
         if (element === null) {
@@ -176,6 +187,61 @@ export async function probeCells(
         const gap = Number.parseFloat(row.columnGap);
         return others + (Number.isNaN(gap) ? 0 : gap) * Math.max(0, flowing.length - 1);
       };
+      // Where a box sits in a wrapping flex row: the in-flow items on its line, by index, and the
+      // room that line leaves it, the row's content box less the line's other items, their margins
+      // and the gaps between them. An item opens a line where its top sits at or below the bottom
+      // of every item of the line before, whatever the row does within a line.
+      const lineOf = (element: Element): Box["line"] => {
+        const parent = element.parentElement;
+        const row = parent === null ? undefined : getComputedStyle(parent);
+        if (
+          parent === null ||
+          row === undefined ||
+          outOfFlow(getComputedStyle(element)) ||
+          !["flex", "inline-flex"].includes(row.display) ||
+          row.flexDirection !== "row" ||
+          row.flexWrap !== "wrap"
+        ) {
+          return undefined;
+        }
+        const flowing = [...parent.children].filter((child) => {
+          const style = getComputedStyle(child);
+          return style.display !== "none" && !outOfFlow(style);
+        });
+        let line = -1;
+        let bottom = Number.NEGATIVE_INFINITY;
+        const lines = flowing.map((child) => {
+          const edges = child.getBoundingClientRect();
+          if (edges.top > bottom - 0.5) {
+            line += 1;
+            bottom = edges.bottom;
+          } else {
+            bottom = Math.max(bottom, edges.bottom);
+          }
+          return line;
+        });
+        const own = lines[flowing.indexOf(element)];
+        const companions = flowing.flatMap((child, index) => (lines[index] === own ? [child] : []));
+        const others = companions
+          .filter((child) => child !== element)
+          .reduce((sum, child) => {
+            const style = getComputedStyle(child);
+            return (
+              sum +
+              child.getBoundingClientRect().width +
+              Number.parseFloat(style.marginLeft || "0") +
+              Number.parseFloat(style.marginRight || "0")
+            );
+          }, 0);
+        const gap = Number.parseFloat(row.columnGap);
+        return {
+          companions: companions.map((child) => String(flowing.indexOf(child))).join(),
+          room:
+            contentWidth(parent) -
+            others -
+            (Number.isNaN(gap) ? 0 : gap) * Math.max(0, companions.length - 1),
+        };
+      };
       const placeOf = (element: Element, root: Element, index: number): string => {
         const steps: number[] = [];
         for (let at = element; at !== root && at.parentElement !== null; at = at.parentElement) {
@@ -195,6 +261,7 @@ export async function probeCells(
           parent: roomOf(element),
           fixed: getComputedStyle(element).position === "fixed",
           tableCell: getComputedStyle(element).display === "table-cell",
+          line: lineOf(element),
         }));
       // A root's index is its selector's: the renderer names the roots in the order the capture holds them.
       const measure = () =>
@@ -424,6 +491,17 @@ export async function probeCells(
           fixedInViewport: box.fixed,
           capsAtParent: longer[at]?.[index]?.capped === true,
           widened: rootOf(box, at, index),
+          lineMoved: (() => {
+            const run = wider[at]?.[index];
+            return (
+              box.line !== undefined &&
+              run?.line !== undefined &&
+              box.line.companions !== run.line.companions &&
+              Math.abs(run.width - box.width) > 1 &&
+              Math.abs(box.width - box.line.room) <= 1 &&
+              Math.abs(run.width - run.line.room) <= 1
+            );
+          })(),
         })),
       }));
     },

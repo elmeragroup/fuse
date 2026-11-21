@@ -104,6 +104,7 @@ const PLAIN: MappedWidth = {
   hugWidth: "follows-text",
   fixedAtMeasuredWidth: false,
   cellFixedAtRenderedWidth: false,
+  lineMoved: false,
 };
 
 describe("agrees", () => {
@@ -125,6 +126,13 @@ describe("agrees", () => {
       true,
     ],
     ["a filling layer contradicts a box that does not fill", "not-fill", "fill", PLAIN, false],
+    [
+      "a filling layer of a WRAP row whose line took other items in the wider run agrees with a box that kept its width",
+      "not-fill",
+      "fill",
+      { ...PLAIN, lineMoved: true },
+      true,
+    ],
     ["a hugging layer contradicts a box that kept its width", "fixed", "hug", PLAIN, false],
     [
       "a hugging layer whose fixed layers draw the width the probe measured, as the Navigation menu popup round its w-64 list, agrees with a box that kept its width",

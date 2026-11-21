@@ -52,6 +52,16 @@ export const FREE_SPACE_CLEARANCE_PX = 24;
 export const FIT_CLEARANCE_PX = TRACK_CLEARANCE_PX;
 
 /**
+ * How far apart, in CSS pixels, one item's own width may read in two captures of a wrapping row's
+ * layout for `figma:capture --check` to count them as one (`capturesAgree` in `capture-format.ts`).
+ * Playwright's Linux image sets text on whole pixels where macOS sets it on fractions of one: on
+ * 2026-11-22 the wrapped Combobox chips field set its `Apple` chip 58.828px wide on macOS and 59px in
+ * the image, and its `Date` chip 52.734px and 52px. {@link GRID_CLEARANCE_PX} records 1.59px for one
+ * word, so the check keeps the same two pixels.
+ */
+export const OWN_WIDTH_CLEARANCE_PX = GRID_CLEARANCE_PX;
+
+/**
  * Chromium's layout unit, 1/64 of a CSS pixel: a box's width moves by at least this much when its
  * maximum narrows it, so a smaller difference between two readings of one layout is no change.
  */

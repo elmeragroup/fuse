@@ -457,7 +457,7 @@ const SELF_STRETCH =
  * less its margins (CSS Flexbox 1 §9.4 step 11), which a layer that fills the axis draws, its margin
  * box carrying the margins. That holds where the box's one line is its content length across: a
  * single-line flex box's line is (§9.4 step 15), and so is the one line of a wrapping row that
- * `wrapsOnOneLine` in `box-mapping.ts` reads. A column's unset `align-items` stretches its layers
+ * `flexLinesOf` in `flex-lines.ts` reads as measured on one line. A column's unset `align-items` stretches its layers
  * through `roomInside`. Every other room stays as it was, and an `align-self` stays unread.
  *
  * @param holder - The item's parent.

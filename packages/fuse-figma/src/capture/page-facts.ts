@@ -14,7 +14,15 @@ import {
   paddingEdges,
   stackingOf,
 } from "./containing-block.ts";
-import { flexItems, itemBox, nowrapMovesNothing, roomAlong } from "./flex-room.ts";
+import {
+  flexItems,
+  flexLinesAcross,
+  flexLinesIn,
+  itemBox,
+  nowrapMovesNothing,
+  roomAlong,
+  transformedWithin,
+} from "./flex-room.ts";
 import { gridColumns } from "./grid-facts.ts";
 import { judgedFacts } from "./judged-facts.ts";
 import type { PageFacts } from "./judged-facts.ts";
@@ -87,6 +95,20 @@ import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
  *   `translate`, `scale` or `rotate` applies to it, an item or a `display: contents` box around one,
  *   since the page reads boxes where Chromium paints them. The items' outer sizes then fit the line,
  *   so CSS collects them all into one line (CSS Flexbox 1 §9.3 step 1), which `nowrap` lays out the same.
+ * - `flexLines`: a flex row whose `flex-wrap` is `wrap` in some mode of {@link EVERY_MODE} and whose
+ *   items break onto two or more lines in some mode, once its faces have loaded, as `flexLinesIn` in
+ *   `flex-room.ts` reads each mode and `flexLinesAcross` joins them. It is `fills` where in every
+ *   mode the same items start each line with the row {@link FIT_CLEARANCE_PX} wider and narrower,
+ *   `flex-shrink: 0` on every item moves none, and with no item stretched the lines fill the row's
+ *   content height within {@link LAYOUT_UNIT_PX}, so `align-content` stretches no line (CSS Flexbox
+ *   1 §9.4) and each is as tall as its tallest item. `fills` keeps each distinct layout the modes
+ *   give, each item's border box relative to the row's content box and its width with
+ *   `flex: 0 0 auto`, with the first mode that gave it and that mode's density. Otherwise it names
+ *   what failed: `unread`, `shrinks`, `tight-break`, `spare-height`, or `some-modes` for a row that
+ *   wraps or breaks a line in some modes only. Lines are found from where the items sit across the
+ *   row, and the items must be elements with a height and no margin, `order` or transform. Any other
+ *   row records `unread` where its items' margin boxes, a run of text read by the box around its
+ *   glyphs, sit in two or more bands across it, or where the page reads no box for one of them.
  * - `freeAlongMain`: a flex container whose items hold auto margins along its direction, which does
  *   not wrap in the page's own mode or holds `oneFlexLine`, and which with those margins at zero, its
  *   items packed at its start and `flex-wrap` forced to `nowrap` leaves at least
@@ -429,7 +451,7 @@ const MEASURE_IN_PAGE = `async function (role) {
         for (const [name, value] of Object.entries(mode.root)) { html.setAttribute(name, value); }
         for (const [name, value] of Object.entries(mode.body)) { body.setAttribute(name, value); }
         await settleFonts();
-        visit();
+        visit(mode);
       }
     } finally {
       for (const [element, attributes] of saved) {
@@ -508,14 +530,31 @@ const MEASURE_IN_PAGE = `async function (role) {
   // The room a flex line leaves along its direction, as \`flex-room.ts\` measures it.
   const roomAlong = (${roomAlong.toString()});
   const itemBox = (${itemBox.toString()});
-  const flexHelpers = { withStyles, autoMargins, items: flexItemsOf, box: itemBox };
+  const transformed = (${transformedWithin.toString()});
+  const flexHelpers = { withStyles, autoMargins, items: flexItemsOf, box: itemBox, transformed };
   const nowrapMovesNothing = (${nowrapMovesNothing.toString()});
   // A wrapping container lays its items out on one line where forcing \`nowrap\` moves none of them
   // and the line keeps a clearance with its auto margins at zero, in every mode. Its auto margins then
   // take the room of that one line, the least room this sweep reads, as on a line that does not wrap.
-  const wrapping = elements.filter(({ element }) => getComputedStyle(element).display.endsWith("flex") && getComputedStyle(element).flexWrap === "wrap");
-  const oneLine = (element) => nowrapMovesNothing(element, flexHelpers, ${String(LAYOUT_UNIT_PX)}) ? roomAlong(element, flexHelpers) : undefined;
-  for (const { element, path, least } of await leastInEveryMode(wrapping, oneLine)) {
+  // A mode where the container does not wrap reads no room, so it records no such line.
+  const wraps = (element) => getComputedStyle(element).display.endsWith("flex") && getComputedStyle(element).flexWrap === "wrap";
+  const oneLine = (element) => wraps(element) && nowrapMovesNothing(element, flexHelpers, ${String(LAYOUT_UNIT_PX)}) ? roomAlong(element, flexHelpers) : undefined;
+  // The same sweep reads a wrapping row's lines in each mode, which say whether they draw as a Figma
+  // WRAP row. A row that wraps in one mode only, as a rule for one density can make it, is read in
+  // every mode, so the page sweeps every element and keeps those that wrap in some mode.
+  const flexLinesIn = (${flexLinesIn.toString()});
+  const flexLinesAcross = (${flexLinesAcross.toString()});
+  const swept = elements.map((candidate) => ({ ...candidate, least: Infinity, lines: [], wrapped: false }));
+  await inEveryMode((mode) => {
+    const named = [...Object.values(mode.root), ...Object.values(mode.body)].join(" / ");
+    for (const candidate of swept) {
+      const wrapping = wraps(candidate.element);
+      candidate.wrapped ||= wrapping;
+      candidate.least = Math.min(candidate.least, oneLine(candidate.element) ?? -Infinity);
+      candidate.lines.push({ mode: named, density: mode.root["data-density"] ?? "", reading: wrapping ? flexLinesIn(candidate.element, flexHelpers, ${String(LAYOUT_UNIT_PX)}, ${String(FIT_CLEARANCE_PX)}) : undefined });
+    }
+  });
+  for (const { element, path, least, lines } of swept.filter(({ wrapped }) => wrapped)) {
     if (least >= ${String(FIT_CLEARANCE_PX)}) {
       put(path, "oneFlexLine", true);
       if (autoMargins(element).length > 0) {
@@ -523,6 +562,8 @@ const MEASURE_IN_PAGE = `async function (role) {
         put(path, "fitsAlongMain", true);
       }
     }
+    const lined = flexLinesAcross(lines);
+    if (lined !== undefined) { put(path, "flexLines", lined); }
   }
   // One sweep measures each line that does not wrap for its least room, which each fact compares
   // with its own clearance.

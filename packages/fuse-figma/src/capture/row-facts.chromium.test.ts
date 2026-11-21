@@ -19,7 +19,8 @@ import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import type { MeasuredFacts } from "./capture-format.ts";
+import { flexLinesOutcome } from "./capture-format.ts";
+import type { FlexLinesFact, MeasuredFacts } from "./capture-format.ts";
 import { measuredFacts } from "./page-facts.ts";
 
 let browser: Browser;
@@ -335,5 +336,125 @@ describe("a wrapping flex row the capture measures on one line", () => {
       oneLine: true,
       free: true,
     });
+  });
+});
+
+/**
+ * Unit under test: the page function's `flexLines`, as `flexLinesIn` reads each mode and
+ * `flexLinesAcross` joins them. Oracle: CSS Flexbox 1 §4, §9.3, §9.4 and §9.7, worked by hand for
+ * each row of 80px by 20px items, 10px apart and 4px between lines unless a case says otherwise:
+ *
+ * - In a 200px row the third item passes 80 + 10 + 80 + 10 + 80 > 200, so it opens a second line,
+ *   and the two 20px lines and the 4px gap fill the row's 44px: `fills`, with the items at `x` 0 and
+ *   90 on the first line and 0 on the second, 24px down, each 80px wide at `flex: 0 0 auto`. Each
+ *   density gives that layout, so the fact keeps it once per density. Items of 20px, 40px and 10px
+ *   centred on their lines break the same way, the first line 40px tall.
+ * - In a 100px row no two items fit a line, so each stands on one of its own, at `x` 0: three lines
+ *   that fill the row, which reading the lines from where each line starts along the row misses.
+ * - A row 80px tall leaves 36px over, which `align-content: normal` stretches the lines into, and
+ *   two items that `align-self: stretch` with no height of their own fill their lines only through
+ *   that stretch: `spare-height` both.
+ * - In a 170px row the first line fits two items exactly, and a pixel narrower it breaks before the
+ *   second: `tight-break`.
+ * - In a 100px row of 30px, 30px and 130px items the 130px one takes a line of its own and shrinks
+ *   to the 100px line (§9.7), where with `flex-shrink: 0` it keeps 130px: `shrinks`.
+ * - An item with a margin has an outer box the line reading does not take, and the row breaks, so:
+ *   `unread`. One 40px item with a margin in a row 80px tall sits on the one line it takes, so the
+ *   row records nothing, though forcing `nowrap` moves it: `align-content` packs a wrapping row's one
+ *   line at the top, where a row that does not wrap stretches it (§9.4).
+ * - A 50px item and a run of 30 nonbreaking spaces, about 120px, in a 100px row: the run lays out in
+ *   one anonymous item (§4), which takes the second line: `unread`, which no element's box shows.
+ * - A row that widens to 300px in the comfortable density sets its three items on one line there,
+ *   and a 200px row that does not wrap in the dense density and wraps at 120px in the comfortable one
+ *   breaks a line there only: `some-modes` both.
+ * - In a 300px row the items fit one line, and in a 400px row so do items of 20px, 40px and 10px
+ *   centred on it: no fact.
+ */
+describe("a wrapping flex row the capture reads the lines of", () => {
+  /** What the root records of its lines, around items of the given styles, `fills` by its name. */
+  async function linesOf(
+    style: string,
+    items: readonly string[],
+    className = "",
+    after = ""
+  ): Promise<FlexLinesFact | undefined> {
+    const item = (extra: string) => `<div style="width:80px;height:20px;${extra}"></div>`;
+    const measured = await factsOf(
+      `<div id="root" class="${className}" style="display:flex;align-items:center;column-gap:10px;row-gap:4px;${style}">${items.map(item).join("")}${after}</div>`
+    );
+    return measured.get("")?.flexLines;
+  }
+  const named = (fact: FlexLinesFact | undefined) => {
+    const outcome = fact === undefined ? undefined : flexLinesOutcome(fact);
+    return outcome?._tag === "Fills" ? "fills" : outcome?.refusal;
+  };
+
+  it("reads lines that fill the row, and names what keeps any other row of lines from Figma's WRAP", async () => {
+    const plain = ["", "", ""];
+    // One page measures each row in turn.
+    const recorded: (FlexLinesFact | undefined)[] = [];
+    for (const [style, items, className, after] of [
+      ["flex-wrap:wrap;width:200px", plain, "", ""],
+      ["flex-wrap:wrap;width:200px", ["", "height:40px", "height:10px"], "", ""],
+      ["flex-wrap:wrap;width:100px", plain, "", ""],
+      ["flex-wrap:wrap;width:200px;height:80px", plain, "", ""],
+      [
+        "flex-wrap:wrap;width:200px;height:80px",
+        ["height:auto;align-self:stretch", "", "height:auto;align-self:stretch"],
+        "",
+        "",
+      ],
+      ["flex-wrap:wrap;width:170px", plain, "", ""],
+      ["flex-wrap:wrap;width:100px", ["width:30px", "width:30px", "width:130px"], "", ""],
+      ["flex-wrap:wrap;width:200px", ["margin-left:4px", "", ""], "", ""],
+      [
+        "flex-wrap:wrap;width:200px;height:80px;align-content:flex-start",
+        ["width:40px;margin-left:4px"],
+        "",
+        "",
+      ],
+      [
+        "flex-wrap:wrap;width:100px;height:50px;align-items:flex-start;align-content:flex-start;font:16px/20px sans-serif",
+        ["width:50px;flex:none"],
+        "",
+        "&nbsp;".repeat(30),
+      ],
+      ["flex-wrap:wrap;width:200px", plain, "widens", ""],
+      ["width:200px", plain, "wraps", ""],
+      ["flex-wrap:wrap;width:300px", plain, "", ""],
+      ["flex-wrap:wrap;width:400px", ["", "height:40px", "height:10px"], "", ""],
+    ] as const) {
+      recorded.push(await linesOf(style, items, className, after));
+    }
+    expect(recorded.map(named)).toEqual([
+      "fills",
+      "fills",
+      "fills",
+      "spare-height",
+      "spare-height",
+      "tight-break",
+      "shrinks",
+      "unread",
+      undefined,
+      "unread",
+      "some-modes",
+      "some-modes",
+      undefined,
+      undefined,
+    ]);
+    const layout = {
+      width: 200,
+      items: [0, 90, 0].map((x, index) => ({ x, y: index === 2 ? 24 : 0, width: 80, height: 20, own: 80 })),
+    };
+    const first = recorded[0];
+    const outcome = first === undefined ? undefined : flexLinesOutcome(first);
+    expect(
+      outcome?._tag === "Fills"
+        ? outcome.layouts.map(({ mode, ...kept }) => [mode.includes(kept.density), kept])
+        : outcome
+    ).toEqual([
+      [true, { density: "dense", ...layout }],
+      [true, { density: "comfortable", ...layout }],
+    ]);
   });
 });

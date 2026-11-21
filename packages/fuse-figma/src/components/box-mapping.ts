@@ -30,7 +30,6 @@ import {
   fitsRoom,
   fittingRoom,
   growingRoom,
-  hugsUncapped,
   instancePlace,
   leastContentWidth,
   lessMargins,
@@ -76,6 +75,7 @@ import { fixedPlace, placeFixed, refuseFixedPlace } from "./fixed-placement";
 import type { DrawnAmong } from "./fixed-placement";
 import { DECLARED_WIDTH } from "./flex-item-width";
 import type { DrawnWidth } from "./flex-item-width";
+import { densityLengthsOf, flexLinesOf, readFlexLines, settleWrap } from "./flex-lines";
 import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
 import { holdsEditableText, keyedCells, readGrid } from "./grid-layout";
@@ -772,8 +772,21 @@ export function mapBox(
       ? last.cascade.style
       : undefined;
   const fitsOneLine = cascade.measured?.fitsOneLine;
-  const oneLine = wrapsOnOneLine(holder, cascade.measured?.oneFlexLine === true);
-  readWraps(holder, growing, oneLine ? ONE_FLEX_LINE : fitsOneLine);
+  // A WRAP candidate settles once its layers map, and reads its coverage then.
+  const candidate = flexLinesOf(
+    holder,
+    {
+      oneFlexLine: cascade.measured?.oneFlexLine === true,
+      flexLines: cascade.measured?.flexLines,
+      fitsOneLine,
+    },
+    growing !== undefined,
+    context.variables
+  );
+  if (candidate._tag !== "Candidate") {
+    readFlexLines(reader, candidate, context.variables);
+  }
+  const oneLine = candidate._tag === "MeasuredOneLine";
   const lines =
     oneLine || normalizeCss(reader.resolved("flex-wrap") ?? "nowrap") === "nowrap" ? "one" : "several";
   const flush = SIDE_PADDINGS.every((property) => evaluateLength(reader.resolved(property) ?? "0px") === 0);
@@ -1120,8 +1133,12 @@ export function mapBox(
           context.variables
         );
   // A grid in one column spaces its rows by `row-gap`, which `gap` sets too.
+  // A WRAP row spaces its layers by the gap that wins its column axis, and a row whose lines no
+  // Figma row draws reads no gap, which stays unmapped.
   const itemSpacing =
     (grid === undefined ? undefined : ZERO) ??
+    (candidate._tag === "Candidate" ? candidate.gaps.itemSpacing : undefined) ??
+    (candidate._tag === "Refused" ? ZERO : undefined) ??
     (centred === undefined ? undefined : foldGap(reader)) ??
     space ??
     spaced ??
@@ -1172,6 +1189,25 @@ export function mapBox(
   } else if (layout.spaceBetweenUnread === true) {
     readSpaceBetween(reader, unspaced);
   }
+  // A candidate draws WRAP only where Figma's WRAP layout of its layers sets them where CSS did.
+  const flexLines =
+    candidate._tag === "Candidate"
+      ? settleWrap(
+          candidate,
+          {
+            sizing,
+            paddingLeft,
+            paddingRight,
+            stroke: paint.stroke,
+            counterAlign,
+            primaryAlign: placed?.primaryAlign ?? (centred === undefined ? "MIN" : "SPACE_BETWEEN"),
+            children,
+          },
+          densityLengthsOf(context.variables, context.modes ?? [])
+        )
+      : candidate;
+  const wrapped =
+    candidate._tag === "Candidate" ? readFlexLines(reader, flexLines, context.variables) : undefined;
   let laidOut: BoxSpec = {
     direction: grid === undefined ? layout.direction : "GRID",
     // A box whose one layer hides keeps the length that layer holds, which Figma's auto layout would
@@ -1191,12 +1227,13 @@ export function mapBox(
       number("padding-bottom", "paddingBottom") ??
       ZERO,
     paddingLeft: sections === undefined ? paddingLeft : ZERO,
-    itemSpacing,
+    itemSpacing: flexLines._tag === "Refused" ? ZERO : itemSpacing,
     // A native control's placement of its label wins over the box's own alignment.
     primaryAlign:
       placed?.primaryAlign ??
       (centred === undefined ? undefined : "SPACE_BETWEEN") ??
       (packsAtStart ||
+      wrapped !== undefined ||
       leavesRoomAtEnd(layout, sizing, placement.primaryAlign, children) ||
       unspaced !== undefined
         ? "MIN"
@@ -1209,6 +1246,9 @@ export function mapBox(
   };
   if (aspectLock !== undefined) {
     laidOut = { ...laidOut, aspectLock };
+  }
+  if (wrapped !== undefined) {
+    laidOut = { ...laidOut, lineGap: wrapped.lineGap };
   }
   // The corners read last, since a radius per corner can take its side's least length from the box
   // as laid out.
@@ -1357,94 +1397,6 @@ function spacesNothingOut(
   return flowing.some((child) => child.kind !== "icon" && child.sizing[along].kind === "fill")
     ? "grows"
     : undefined;
-}
-
-/** How the coverage table names a `flex-wrap` that {@link wrapsOnOneLine} reads. */
-const ONE_FLEX_LINE =
-  "the capture measured the row's items on one line in every mode, where forcing nowrap moves none of them, so CSS collects them into one line (CSS Flexbox 1 §9.3 step 1) and align-content stretches it to the row's height (§9.4), as a row that does not wrap lays them out, and a Figma row never wraps";
-
-/** The `align-content` values that stretch a wrapping row's lines to its height, `normal` among them (CSS Box Alignment 3 §5.1). */
-const STRETCHES_LINES: ReadonlySet<string> = new Set(["", "normal", "stretch"]);
-
-/**
- * Whether a wrapping flex row lays its items out as a row that does not wrap: the capture measured
- * them on one line in every mode (`oneFlexLine`), so CSS collects them into one line (CSS Flexbox 1
- * §9.3 step 1). A wrapping row sizes that line to its items, and `align-content: normal`, which
- * stretches in a flex container, grows it to the row's definite inner height (§9.4, "Handle
- * 'align-content: stretch'"), the one line a row that does not wrap has (§9.4 step 15). So the row
- * must be of a fixed height and leave `align-content` stretching. Its items then stretch and centre
- * across as they do in a row that does not wrap. A narrower row may break a line in CSS, where a
- * Figma row clips, which is a known limit.
- *
- * @param holder - The box.
- * @param measured - Whether the capture measured the row on one line in every mode.
- * @returns True where the row lays its items out as a row that does not wrap.
- */
-function wrapsOnOneLine(holder: Holder, measured: boolean): boolean {
-  const { style, layout, sizing } = holder;
-  return (
-    measured &&
-    layout.flex &&
-    layout.direction === "HORIZONTAL" &&
-    sizing.vertical.kind === "fixed" &&
-    normalizeCss(style.resolved("flex-wrap") ?? "") === "wrap" &&
-    STRETCHES_LINES.has(normalizeCss(style.resolved("align-content") ?? ""))
-  );
-}
-
-/**
- * Read a flex row's `flex-wrap` where the row never breaks a line. A wrapping row breaks a line only
- * where its layers overflow it (CSS Flexbox 1 §9.3), while a Figma row never wraps.
- *
- * - In a row of fixed or filling width with one layer that grows, that layer takes what the others
- *   leave, so the row breaks no line until they overflow it.
- * - A row that hugs its width with nothing bounding the width CSS gives it lays its layers out on one
- *   line, so it never runs out of room, as {@link hugsUncapped} says.
- *
- * - A row its definition measured to fit its layers on one line in every cell drops it with that
- *   measurement, as {@link BoxDefinition.fitsOneLine} says.
- *
- * Elsewhere it stays unread, so it lands unmapped. Where it drops, so does the `row-gap` beside it,
- * which spaces lines the row never breaks into.
- *
- * @param holder - The box.
- * @param growing - The place of the box's layer that grows, as `readGrowth` found it.
- * @param fitsOneLine - The measurement that the row's layers fit on one line, or undefined.
- */
-function readWraps(holder: Holder, growing: number | undefined, fitsOneLine: string | undefined): void {
-  const { style, layout } = holder;
-  if (!layout.flex || layout.direction !== "HORIZONTAL") {
-    return;
-  }
-  const detail =
-    growing === undefined && !hugsUncapped(holder)
-      ? fitsOneLine
-      : growing === undefined
-        ? "the row hugs its layers and nothing bounds the width CSS gives it, so it never runs out of room to break a line, and a Figma row never wraps"
-        : "the one layer that grows takes what the row's other layers leave, so the row breaks no line until they overflow it, and a Figma row never wraps";
-  if (detail === undefined) {
-    return;
-  }
-  const wraps = style.has("flex-wrap");
-  style.read(
-    "flex-wrap",
-    (value) => (normalizeCss(value) === "wrap" ? value : undefined),
-    () => ({ outcome: "dropped", detail }),
-    []
-  );
-  // `row-gap` spaces the lines a wrapping row breaks into (CSS Box Alignment 3 §8.1), so a row on one
-  // line leaves it nothing to space.
-  if (wraps) {
-    style.read(
-      "row-gap",
-      (value) => value,
-      () => ({
-        outcome: "dropped",
-        detail: `the row sets its layers on one line, as ${detail}, so no gap between lines shows`,
-      }),
-      []
-    );
-  }
 }
 
 /** A width a box's blocks fill, as a popup's rows fill it where `rowsAcross` sizes them. */

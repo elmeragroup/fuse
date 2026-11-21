@@ -11,6 +11,16 @@
  * - An absolute item with a `max-width: 100%` is out of the flow, so it wraps at 300px, the row's
  *   whole content box, beside the same control.
  *
+ * In a wrapping row of three 70px items 10px apart and an item that grows from a zero basis above a
+ * 64px minimum, a 256px host leaves the first line 230px, so the growing item opens a second line
+ * and fills its 256px (§9.3). The probe's 120px wider host leaves it 376 - 230 - 30 = 136px beside
+ * the three on the first line, so its line takes them, and it spans its line's room in both runs:
+ * its line moved. Each 70px item spans no line's room, and two 70px items keep their line. Fixed
+ * items of 110px, 256px and 200px 10px apart break into three lines in the 256px host, and the
+ * 256px one fills its line there. The wider host's 376px sets the first two on its first line,
+ * 110 + 10 + 256, so the 256px item's line takes the 110px one, and it spans that line's room in
+ * both runs, at 256px in each: a box that keeps its width moved no line.
+ *
  * It also holds the probe's wait for Base UI's `--anchor-width` to the property's syntax: Base UI
  * writes the anchor's width in pixels on the positioner of the popup that names `data-side`, a frame
  * or more after the anchor resizes. A positioner whose property becomes the 200px anchor's width 30
@@ -206,5 +216,43 @@ describe("the probe's wait for a popup to take its anchor's width", () => {
       "Base UI never set --anchor-width to the anchor's width in c0"
     );
     expect(await page.locator("#host").getAttribute("style")).toBe("width:200px");
+  });
+});
+
+describe("a box's line in a wrapping row", () => {
+  it("reads a filling item whose line takes other items in the wider run as moved, and a fixed item as not", async () => {
+    const item = '<div data-slot="item" style="width:70px;height:20px"></div>';
+    const row = (items: string) =>
+      `<div style="width:256px"><div data-slot="row" style="display:flex;flex-wrap:wrap;gap:10px">${items}</div></div>`;
+    await page.setContent(
+      `<style>body{margin:0}</style><div data-compare-cell="c0">${row(`${item}${item}${item}<div data-slot="fill" style="flex:1;min-width:64px;height:20px"></div>`)}</div><div data-compare-cell="c1">${row(`${item}${item}`)}</div>`
+    );
+    const cells = await probeCells(page, [
+      { id: "c0", measured: ['[data-slot="row"]'] },
+      { id: "c1", measured: ['[data-slot="row"]'] },
+    ]);
+    expect(
+      cells.map(({ boxes }) => boxes.map(({ slot, lineMoved }) => `${slot} ${String(lineMoved)}`))
+    ).toEqual([
+      ["row false", "item false", "item false", "item false", "fill true"],
+      ["row false", "item false", "item false"],
+    ]);
+    const fill = cells[0]?.boxes.find(({ slot }) => slot === "fill");
+    expect([fill?.base, fill?.wider, fill === undefined ? undefined : inferKind(fill)]).toEqual([
+      256,
+      136,
+      "not-fill",
+    ]);
+  });
+
+  it("reads an item that keeps its width while its line takes another item as not moved", async () => {
+    const fixed = (slot: string, width: number) =>
+      `<div data-slot="${slot}" style="flex:none;width:${String(width)}px;height:20px"></div>`;
+    await page.setContent(
+      `<style>body{margin:0}</style><div data-compare-cell="c0"><div style="width:256px"><div data-slot="row" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">${fixed("first", 110)}${fixed("middle", 256)}${fixed("last", 200)}</div></div></div>`
+    );
+    const [cell] = await probeCells(page, [{ id: "c0", measured: ['[data-slot="row"]'] }]);
+    const middle = cell?.boxes.find(({ slot }) => slot === "middle");
+    expect([middle?.base, middle?.wider, middle?.lineMoved]).toEqual([256, 256, false]);
   });
 });

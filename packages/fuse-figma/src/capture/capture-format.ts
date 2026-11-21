@@ -2,11 +2,15 @@
  * The capture of a component set: what Chromium rendered for each cell of the set's matrix, as the
  * capture-backed cascade reads it. A capture holds the DOM below each cell's root, each element's
  * winning authored declarations with where they came from, and where each custom property a
- * declaration reads is set. It holds no measured box, so a capture taken on macOS and one taken on
- * Linux agree, and the repository keeps it as a reviewed input under `captures/`.
+ * declaration reads is set. It holds no measured box but the item boxes of a wrapping row that
+ * fills its lines (`flexLines`), which {@link capturesAgree} compares by their structure, so a capture
+ * taken on macOS and one taken on Linux agree, and the repository keeps it as a reviewed input under
+ * `captures/`.
  */
 
 import { Result, Schema } from "effect";
+
+import { LAYOUT_UNIT_PX, OWN_WIDTH_CLEARANCE_PX } from "./page-clearances.ts";
 
 /** The format name a capture file carries. */
 export const CAPTURE_FORMAT = "fuse-kit-capture";
@@ -26,6 +30,77 @@ export const ANCHOR_WIDTH = "the anchor's width";
  * which the build resolves from the popup's alignment.
  */
 export const ANCHOR_CENTRE = "the anchor's centre";
+
+/**
+ * One item of a wrapping flex row as one mode lays it out: its border box relative to the row's
+ * content box, in CSS pixels, and `own`, its width with `flex: 0 0 auto`, which neither grows nor
+ * shrinks it from its own width or content, within its `min-width` and `max-width`.
+ */
+const FlexLineItemSchema = Schema.Struct({
+  x: Schema.Finite,
+  y: Schema.Finite,
+  width: Schema.Finite,
+  height: Schema.Finite,
+  own: Schema.Finite,
+});
+
+/** One item of a wrapping flex row as one mode lays it out, as {@link FlexLineItemSchema} lists. */
+export type FlexLineItem = typeof FlexLineItemSchema.Type;
+
+/**
+ * One layout of a wrapping flex row's items, which one or more modes give alike: `mode`, the first of
+ * them as the page stamps it, `density`, its `data-density`, `width`, the row's content width, and
+ * each item in-flow, in document order.
+ */
+const FlexLineLayoutSchema = Schema.Struct({
+  mode: Schema.String,
+  density: Schema.String,
+  width: Schema.Finite,
+  items: Schema.Array(FlexLineItemSchema),
+});
+
+/** One layout of a wrapping flex row's items, as {@link FlexLineLayoutSchema} lists. */
+export type FlexLineLayout = typeof FlexLineLayoutSchema.Type;
+
+/**
+ * What the capture records of a wrapping flex row that breaks its items onto two or more lines in
+ * some mode: where in every mode its lines keep their breaks, shrink no item and fill its height, the
+ * distinct layouts the modes give (`fills`), which the build holds a Figma WRAP row to, and otherwise
+ * the first thing that keeps them from drawing as one.
+ */
+const FlexLinesSchema = Schema.Union([
+  Schema.Literals(["unread", "shrinks", "tight-break", "spare-height", "some-modes"]),
+  Schema.Struct({ fills: Schema.NonEmptyArray(FlexLineLayoutSchema) }),
+]);
+
+/** What the capture records of a wrapping flex row's lines, as {@link FlexLinesSchema} lists it. */
+export type FlexLinesFact = typeof FlexLinesSchema.Type;
+
+/** A measurement of a wrapping row that refuses a Figma WRAP row, every {@link FlexLinesFact} but `fills`. */
+export type FlexLinesRefusal = Exclude<FlexLinesFact, { readonly fills: unknown }>;
+
+/** The layouts of a wrapping row whose lines fill it, as `fills` keeps them. */
+export type FlexLineLayouts = readonly [FlexLineLayout, ...FlexLineLayout[]];
+
+const FlexLineLayoutsSchema = Schema.NonEmptyArray(FlexLineLayoutSchema);
+
+const isFills = Schema.is(Schema.Struct({ fills: FlexLineLayoutsSchema }));
+
+/** A wrapping row's `flexLines` as the build reads it: the layouts of lines that fill it, or a refusal. */
+export type FlexLinesOutcome =
+  | { readonly _tag: "Fills"; readonly layouts: FlexLineLayouts }
+  | { readonly _tag: "Refusal"; readonly refusal: FlexLinesRefusal };
+
+/**
+ * Read a wrapping row's `flexLines`: the layouts it keeps where its lines fill it in every mode, or
+ * the measurement that refuses a Figma WRAP row.
+ *
+ * @param fact - The row's fact.
+ * @returns The outcome.
+ */
+export function flexLinesOutcome(fact: FlexLinesFact): FlexLinesOutcome {
+  return isFills(fact) ? { _tag: "Fills", layouts: fact.fills } : { _tag: "Refusal", refusal: fact };
+}
 
 /**
  * Where a declaration comes from: Fuse's stylesheet, Tailwind's preflight, the browser's default
@@ -138,6 +213,13 @@ const MeasuredFactsSchema = Schema.Struct({
    * out on one line.
    */
   oneFlexLine: Schema.optionalKey(Schema.Literal(true)),
+  /**
+   * A flex row that wraps and breaks its items onto two or more lines in some mode: `fills`, with the
+   * layouts its modes give, where in every mode its lines keep their breaks a pixel either side,
+   * shrink no item and fill its height with no item stretched, and otherwise the first thing that
+   * keeps it from drawing as a Figma WRAP row, as `flexLinesAcross` in `flex-room.ts` names it.
+   */
+  flexLines: Schema.optionalKey(FlexLinesSchema),
   /**
    * A flex row of two or more items that grow, each as wide as its own max-content width in every
    * mode, so none of them grows past its content.
@@ -531,4 +613,180 @@ export function formatCapture(capture: SetCapture): string {
     ""
   );
   return `${file}\n`;
+}
+
+/**
+ * Whether a kept capture and a fresh one agree: the same text, or the same text byte for byte outside
+ * the item boxes of each wrapping row that fills its lines (`flexLines`), whose layouts agree as
+ * {@link layoutsAgree} compares them. Those boxes follow the row's text, which Chromium sets on
+ * whole pixels in Playwright's Linux image and on fractions of one on macOS, so the two platforms
+ * record them apart, while the lines, the gaps and the packing the build reads stay the same.
+ *
+ * @param kept - The kept capture's text.
+ * @param fresh - The fresh capture's text.
+ * @returns True where they agree.
+ */
+export function capturesAgree(kept: string, fresh: string): boolean {
+  if (kept === fresh) {
+    return true;
+  }
+  const keptRows = layoutsIn(kept);
+  const freshRows = layoutsIn(fresh);
+  return (
+    keptRows !== undefined &&
+    freshRows !== undefined &&
+    keptRows.outline === freshRows.outline &&
+    keptRows.rows.length === freshRows.rows.length &&
+    keptRows.rows.every((layouts, index) => {
+      const others = freshRows.rows[index];
+      return (
+        others !== undefined &&
+        layouts.length === others.length &&
+        layouts.every((layout, at) => {
+          const other = others[at];
+          return other !== undefined && layoutsAgree(layout, other);
+        })
+      );
+    })
+  );
+}
+
+/** How {@link formatCapture} writes a `flexLines` that keeps layouts, up to its value. */
+const FILLS_FACT = '"flexLines":';
+
+const FillsSchema = Schema.Struct({ fills: FlexLineLayoutsSchema });
+
+/**
+ * A capture's text with each `flexLines` that keeps layouts set aside, in document order, and its
+ * value replaced by its index, or undefined where one does not decode. A refusal stays as written.
+ */
+function layoutsIn(
+  text: string
+): { readonly outline: string; readonly rows: readonly FlexLineLayouts[] } | undefined {
+  const rows: FlexLineLayouts[] = [];
+  let outline = "";
+  let from = 0;
+  for (let key = text.indexOf(FILLS_FACT); key !== -1; key = text.indexOf(FILLS_FACT, from)) {
+    const start = key + FILLS_FACT.length;
+    outline += text.slice(from, start);
+    from = start;
+    // A refusal, a string, stays in the outline byte for byte.
+    if (text[start] !== "{") {
+      continue;
+    }
+    const end = objectEnd(text, start);
+    if (end === undefined) {
+      return undefined;
+    }
+    from = end;
+    const decoded = Schema.decodeUnknownResult(Schema.fromJsonString(FillsSchema))(text.slice(start, end));
+    if (Result.isFailure(decoded)) {
+      return undefined;
+    }
+    rows.push(decoded.success.fills);
+    outline += String(rows.length);
+  }
+  return { outline: outline + text.slice(from), rows };
+}
+
+/**
+ * Where the JSON object that starts at `start` ends, past its closing brace, read past the brackets
+ * inside its strings. Undefined where it never closes.
+ */
+function objectEnd(text: string, start: number): number | undefined {
+  let depth = 0;
+  let quoted = false;
+  for (let at = start; at < text.length; at += 1) {
+    const char = text[at];
+    if (quoted) {
+      if (char === "\\") {
+        at += 1;
+      } else if (char === '"') {
+        quoted = false;
+      }
+    } else if (char === '"') {
+      quoted = true;
+    } else if (char === "{" || char === "[") {
+      depth += 1;
+    } else if (char === "}" || char === "]") {
+      depth -= 1;
+      if (depth === 0) {
+        return at + 1;
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * The line each item of a layout sits on, counted from 0: an item opens a line where its top sits at
+ * or below the bottom of every item of the line before.
+ */
+function linesOf(layout: FlexLineLayout): readonly number[] {
+  let line = -1;
+  let bottom = Number.NEGATIVE_INFINITY;
+  return layout.items.map(({ y, height }) => {
+    if (y > bottom - LAYOUT_UNIT_PX / 2) {
+      line += 1;
+      bottom = y + height;
+    } else {
+      bottom = Math.max(bottom, y + height);
+    }
+    return line;
+  });
+}
+
+/**
+ * Whether two captures of one wrapping row's layout agree on what the build reads: the same modes,
+ * content width and items, each item on the same line at the same height and top, the same gap
+ * after the item before it on its line or the same start of its line, as wide as its own width in
+ * both or in neither, and ending at the row's end in both or in neither. An item at its own width
+ * keeps it within {@link OWN_WIDTH_CLEARANCE_PX}, the width a layer that hugs it draws. Any other
+ * item's own width reads nothing the build draws, as an `<input>` that grows from its intrinsic width,
+ * 146px on macOS and 160px in the Linux image, which its average character width sets. Each other
+ * length agrees within {@link LAYOUT_UNIT_PX}.
+ */
+function layoutsAgree(kept: FlexLineLayout, fresh: FlexLineLayout): boolean {
+  const near = (left: number, right: number): boolean => Math.abs(left - right) < LAYOUT_UNIT_PX;
+  const keptLines = linesOf(kept);
+  const freshLines = linesOf(fresh);
+  const placing = (layout: FlexLineLayout, lines: readonly number[]) =>
+    layout.items.map((item, index) => {
+      const before = layout.items[index - 1];
+      return {
+        line: lines[index],
+        // The gap after the item before it on its line, or where its line starts.
+        lead:
+          before === undefined || lines[index - 1] !== lines[index]
+            ? item.x
+            : item.x - before.x - before.width,
+        atOwn: near(item.width, item.own),
+        atEnd: near(item.x + item.width, layout.width),
+      };
+    });
+  const keptPlaces = placing(kept, keptLines);
+  const freshPlaces = placing(fresh, freshLines);
+  return (
+    kept.mode === fresh.mode &&
+    kept.density === fresh.density &&
+    near(kept.width, fresh.width) &&
+    kept.items.length === fresh.items.length &&
+    kept.items.every((item, index) => {
+      const other = fresh.items[index];
+      const was = keptPlaces[index];
+      const now = freshPlaces[index];
+      return (
+        other !== undefined &&
+        was !== undefined &&
+        now !== undefined &&
+        was.line === now.line &&
+        was.atOwn === now.atOwn &&
+        was.atEnd === now.atEnd &&
+        near(was.lead, now.lead) &&
+        near(item.y, other.y) &&
+        near(item.height, other.height) &&
+        (!was.atOwn || Math.abs(item.own - other.own) <= OWN_WIDTH_CLEARANCE_PX)
+      );
+    })
+  );
 }

@@ -236,6 +236,12 @@ function borderLonghands(property: string): readonly string[] | undefined {
  */
 const FLEX_LONGHANDS = ["flex-grow", "flex-shrink", "flex-basis"] as const;
 
+/**
+ * The longhands `gap` sets, as Chromium lists them and the capture records them (CSS Box Alignment 3
+ * §8.3), so a later `gap-x-4` takes `column-gap` from a `gap-2` before it.
+ */
+const GAP_LONGHANDS = ["row-gap", "column-gap"] as const;
+
 /** The capture of a hand-built set, with the declarations each element wins from its classes. */
 function captureOf(
   { manifest, cells }: FixtureSet,
@@ -264,8 +270,10 @@ function captureOf(
               ? [declaration.property]
               : declaration.property === "flex"
                 ? FLEX_LONGHANDS
-                : (borderLonghands(declaration.property) ??
-                  expandShorthand(declaration.property, declaration.value).map(([longhand]) => longhand)),
+                : declaration.property === "gap"
+                  ? GAP_LONGHANDS
+                  : (borderLonghands(declaration.property) ??
+                    expandShorthand(declaration.property, declaration.value).map(([longhand]) => longhand)),
           },
         ],
       }))

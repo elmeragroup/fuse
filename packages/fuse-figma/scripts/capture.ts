@@ -1,7 +1,8 @@
 /**
  * `figma:capture`: capture the kit's capture-backed sets and the text style samples in Chromium, and
  * write each capture to `captures/<key>.json`. With `--check`, the run writes nothing and fails
- * where a fresh capture differs from the kept file.
+ * where a fresh capture differs from the kept file, the item boxes of a wrapping row compared by
+ * their lines and gaps as `capturesAgree` compares them.
  *
  *     pnpm --filter @elmeragroup/fuse-figma figma:capture [<key>…] [--check] [--repeat <n>]
  *
@@ -16,7 +17,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-import { formatCapture } from "../src/capture/capture-format.ts";
+import { capturesAgree, formatCapture } from "../src/capture/capture-format.ts";
 import { captureTargets } from "../src/capture/capture-targets.ts";
 import { captureSet } from "../src/capture/run-capture.ts";
 import { CompareBrowser } from "../src/compare/browser-render.ts";
@@ -65,7 +66,7 @@ const main = Effect.fn("capture.main")(function* () {
     const path = join(CAPTURES, `${target.key}.json`);
     if (values.check) {
       const committed = yield* fs.readFileString(path).pipe(Effect.orElseSucceed(() => ""));
-      if (committed !== first) {
+      if (!capturesAgree(committed, first)) {
         yield* Console.error(`${target.key}: the capture differs from ${path}`);
         failed = true;
       }

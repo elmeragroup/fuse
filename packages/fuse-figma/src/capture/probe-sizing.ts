@@ -112,6 +112,14 @@ export type MappedWidth = {
    * fixed cell, which the probe does not see.
    */
   readonly cellFixedAtRenderedWidth: boolean;
+  /**
+   * Whether the layer sits in a row the kit draws with `layoutWrap` WRAP, one whose spec holds a
+   * `lineGap`, and the probe measured its line holding other items in the wider run while it spanned
+   * the room its line leaves it in both runs, at another width (`lineMoved`). The wider row's room
+   * then went to the items that joined its line, in CSS and in Figma alike (WR5, WR6), so a filling
+   * layer did not widen with it.
+   */
+  readonly lineMoved: boolean;
 };
 
 /**
@@ -120,7 +128,9 @@ export type MappedWidth = {
  * that resizes with its parent agrees with a box that fills, and a filling layer held at its maximum
  * agrees with a box that kept its width, as does a hugging layer that holds only fixed widths. Such
  * a hug draws one width whatever its text, so it agrees with no box that outgrew that width. A
- * table cell that grows with its text agrees with a layer fixed at the width it renders.
+ * table cell that grows with its text agrees with a layer fixed at the width it renders. A filling
+ * layer of a WRAP row whose line took other items in the wider run agrees with a box that kept its
+ * width there, and a filling layer whose line kept its items does not.
  *
  * @param inferred - The inferred kind.
  * @param mapped - The layer's horizontal sizing.
@@ -146,7 +156,7 @@ export function agrees(inferred: InferredKind, mapped: SizeSpec, root: boolean, 
         (mapped.kind === "hug" && width.hugWidth === "kept")
       );
     case "not-fill":
-      return mapped.kind !== "fill";
+      return mapped.kind !== "fill" || width.lineMoved;
     case "tracks":
       return mapped.kind !== "fixed" || width.fixedAtMeasuredWidth;
     case "overflows":
@@ -155,6 +165,22 @@ export function agrees(inferred: InferredKind, mapped: SizeSpec, root: boolean, 
     case "unknown":
       return true;
   }
+}
+
+/**
+ * Whether the box that holds the layer at `path` draws with `layoutWrap` WRAP, its spec holding a
+ * `lineGap`.
+ *
+ * @param root - The variant's root.
+ * @param path - The keys of the layers from the root down to the layer, empty for the root itself.
+ * @returns True where the layer's parent wraps.
+ */
+function wrapsAround(root: ComponentRootSpec, path: readonly string[]): boolean {
+  if (path.length === 0) {
+    return false;
+  }
+  const parent = path.length === 1 ? root : layerAt(root, path.slice(0, -1));
+  return parent !== undefined && "lineGap" in parent;
 }
 
 /**
@@ -507,6 +533,7 @@ export function contradictions(
           size.kind === "fixed" &&
           rigid !== undefined &&
           Math.abs(rigid - box.base) <= CHANGED,
+        lineMoved: box.lineMoved && wrapsAround(variant.root, path),
       };
       const contradiction: Contradiction = {
         cell: variant.key,

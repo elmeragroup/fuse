@@ -782,6 +782,12 @@ export type BoxSpec = {
   readonly paddingBottom: NumberSpec;
   readonly paddingLeft: NumberSpec;
   readonly itemSpacing: NumberSpec;
+  /**
+   * The gap between the lines of a row that wraps its layers, as `row-gap` spaces a flex row's lines
+   * (CSS Box Alignment 3 §8.1) and `counterAxisSpacing` spaces a Figma WRAP row's (WR3). Present only
+   * on a row Figma lays out with `layoutWrap` WRAP, and absent on a box that keeps one line.
+   */
+  readonly lineGap?: NumberSpec;
   /** The grid a box whose `direction` is GRID lays its layers out in, absent for any other box. */
   readonly grid?: GridSpec;
   /** Where the children sit along the direction, as `justify-content` places them. */
