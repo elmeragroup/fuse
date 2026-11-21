@@ -1,13 +1,10 @@
 /**
- * Variables: the synced collections the file starts with, how a node resolves a variable through
- * the modes it reads, and the collections a subtree's bindings read.
+ * Variables: the synced collections the file starts with, the variables and collections the API
+ * exposes, and the collections a subtree's bindings read. `modes.ts` resolves a variable in the
+ * modes a node reads.
  *
  * It models these rules. The numbers run across the whole fake, and `fake-figma.ts` lists the
  * module that holds each:
- * 8. `resolveForConsumer` reads each collection in the mode the node or its nearest ancestor
- *    pins, or in the collection's default mode, and follows aliases across collections, each
- *    in the mode the node reads for the alias target's collection. `fuse-variable-set.ts`
- *    builds its theme axes on this rule.
  * 11. `resolvedVariableModes` lists only the collections the layer's subtree reads: those of
  *    the variables a field, text range, paint or effect binds somewhere under it, and those
  *    their aliases reach. The typings say "each variable collection in this file".
@@ -15,90 +12,17 @@
  *    pinned `Fuse density` to Auto beside its theme. It resolved `Fuse tokens`, which its layers
  *    bind, and the brand, segment and variant collections those tokens alias through, but
  *    neither `Fuse density`, which no Badge layer binds, nor `Fuse primitives`. The Button and
- *    Toggle previews, whose sets bind density, resolved Auto.
+ *    Toggle previews, whose sets bind density, resolved Auto. A layer's fields count with the
+ *    bindings it shows, so an instance's sublayer counts its main layer's (rule 8).
  */
 
 import type { CollectionSpec, VariableValue as SyncedValue } from "../../../src/variable-set.ts";
 import { guard } from "./guard.ts";
+import { modeFor, resolve, variableState } from "./modes.ts";
 import { shown, shownBindings } from "./overrides.ts";
 import { EFFECT_FIELD_TYPES, f32, live, storeRgba, TEXT_FIELDS } from "./state.ts";
-import type { CollectionState, FileState, Literal, NodeState, StoredValue, VariableState } from "./state.ts";
+import type { CollectionState, FileState, NodeState, StoredValue, VariableState } from "./state.ts";
 import { childrenOf } from "./tree.ts";
-
-/** The mode a node reads a collection in: the nearest pinned one, or the default. */
-export function modeFor(consumer: NodeState | undefined, collection: CollectionState): string {
-  for (let current = consumer; current !== undefined; current = current.parent) {
-    const pinned = current.explicitModes.get(collection.id);
-    if (pinned !== undefined) {
-      return pinned;
-    }
-  }
-  return collection.defaultModeId;
-}
-
-export function variableState(file: FileState, id: string): VariableState {
-  const variable = file.variables.get(id);
-  if (variable === undefined) {
-    throw new Error(`The file holds no variable with the id ${id}.`);
-  }
-  return variable;
-}
-
-/** The literal a variable takes in a node, or in the default modes without a node. */
-function resolve(file: FileState, variable: VariableState, consumer: NodeState | undefined): Literal {
-  const seen = new Set<string>();
-  let current = variable;
-  for (;;) {
-    if (seen.has(current.id)) {
-      throw new Error(`${variable.name} aliases itself.`);
-    }
-    seen.add(current.id);
-    const value = current.values.get(modeFor(consumer, current.collection));
-    if (value === undefined) {
-      throw new Error(`${current.name} has no value in the mode ${variable.name} reads.`);
-    }
-    if (value.kind !== "alias") {
-      return value;
-    }
-    current = variableState(file, value.id);
-  }
-}
-
-export function resolveColor(
-  file: FileState,
-  variable: VariableState,
-  consumer: NodeState | undefined
-): RGBA {
-  const value = resolve(file, variable, consumer);
-  if (value.kind !== "color") {
-    throw new Error(`${variable.name} resolves to a ${value.kind}, not a color.`);
-  }
-  return value.color;
-}
-
-export function resolveNumber(
-  file: FileState,
-  variable: VariableState,
-  consumer: NodeState | undefined
-): number {
-  const value = resolve(file, variable, consumer);
-  if (value.kind !== "float") {
-    throw new Error(`${variable.name} resolves to a ${value.kind}, not a number.`);
-  }
-  return value.value;
-}
-
-export function resolveString(
-  file: FileState,
-  variable: VariableState,
-  consumer: NodeState | undefined
-): string {
-  const value = resolve(file, variable, consumer);
-  if (value.kind !== "string") {
-    throw new Error(`${variable.name} resolves to a ${value.kind}, not a string.`);
-  }
-  return value.value;
-}
 
 function figmaValue(value: StoredValue): VariableValue {
   switch (value.kind) {
@@ -147,7 +71,7 @@ export function nodeBindings(state: NodeState): NonNullable<FrameNode["boundVari
   return { ...nodeFields, ...textFields };
 }
 
-/** The variable ids a layer's fields, text, paints and effects bind. */
+/** The variable ids a layer's fields, text, paints and effects bind, a field's as the layer shows it (rule 8). */
 function layerBindings(state: NodeState): string[] {
   const paints = [...shown(state, "fills"), ...shown(state, "strokes")].flatMap((paint) =>
     paint.type === "SOLID" && paint.boundVariables?.color !== undefined ? [paint.boundVariables.color.id] : []
@@ -158,7 +82,7 @@ function layerBindings(state: NodeState): string[] {
       : []
   );
   const text = state.styles.flatMap((style) => [...style.bindings.values()]);
-  return [...state.bindings.values(), ...text, ...paints, ...effects];
+  return [...shownBindings(state).values(), ...text, ...paints, ...effects];
 }
 
 /** The variable ids a layer and every layer under it bind, an instance's sublayers included. */

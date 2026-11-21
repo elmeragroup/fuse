@@ -429,6 +429,70 @@ export function isTextField(field: BindableField): field is VariableBindableText
 /** The fields that hold a corner's radius. */
 export const CORNERS: ReadonlySet<VariableBindableNodeField> = new Set(bindingTargets("cornerRadius"));
 
+/** A number field a layer stores and a binding sets, as against a width or a height, which `lengthOn` reads. */
+export type StoredNumberField =
+  | LimitField
+  | "itemSpacing"
+  | "counterAxisSpacing"
+  | "paddingTop"
+  | "paddingRight"
+  | "paddingBottom"
+  | "paddingLeft"
+  | "topLeftRadius"
+  | "topRightRadius"
+  | "bottomRightRadius"
+  | "bottomLeftRadius"
+  | "strokeTopWeight"
+  | "strokeRightWeight"
+  | "strokeBottomWeight"
+  | "strokeLeftWeight"
+  | "opacity"
+  | "gridColumnGap"
+  | "gridRowGap";
+
+const STORED_NUMBER_FIELDS: ReadonlySet<string> = new Set<StoredNumberField>([
+  "minWidth",
+  "maxWidth",
+  "minHeight",
+  "maxHeight",
+  "itemSpacing",
+  "counterAxisSpacing",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "topLeftRadius",
+  "topRightRadius",
+  "bottomRightRadius",
+  "bottomLeftRadius",
+  "strokeTopWeight",
+  "strokeRightWeight",
+  "strokeBottomWeight",
+  "strokeLeftWeight",
+  "opacity",
+  "gridColumnGap",
+  "gridRowGap",
+]);
+
+export function isStoredNumber(field: VariableBindableNodeField): field is StoredNumberField {
+  return STORED_NUMBER_FIELDS.has(field);
+}
+
+/**
+ * The key in `overridden` that makes a stored number a layer's own, so it stops showing its
+ * source's (rules 8, 38, 64): a padding side's own name, `radii` for the four corners and
+ * `strokeWeights` for the four sides, which a write sets together, and an unlisted key for the rest.
+ */
+export function numberOwner(field: StoredNumberField): string {
+  if (CORNERS.has(field)) {
+    return "radii";
+  }
+  if (bindingTargets("strokeWeight").includes(field)) {
+    return "strokeWeights";
+  }
+  return field.startsWith("padding") ? field : `own ${field}`;
+}
+
 /** The value the characters share, or `figma.mixed` when they differ (rule 10). */
 export function shared<T>(state: NodeState, read: (style: CharacterStyle) => T): T | PluginAPI["mixed"] {
   const values = new Map(state.styles.map((style) => [JSON.stringify(read(style)), read(style)] as const));

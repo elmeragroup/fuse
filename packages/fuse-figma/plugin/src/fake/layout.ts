@@ -157,8 +157,11 @@
  *    in the main's mode and 140 in the frame's, read 140 on the instance, bound and listed the same
  *    way, and followed a new value of the variable (G14). When the main unbound its width and went to
  *    90, the instance kept its last length unbound. A new binding on the main bound it again, as did
- *    `setBoundVariable("width", v)` on the instance itself (G15). The fake holds an instance's lengths
- *    at its first read where they differ from its main's, as rule 32 holds a resized one, and shows
+ *    `setBoundVariable("width", v)` on the instance itself (G15). A length that follows a binding is
+ *    no override: an instance whose width followed its main's binding, 40 beside the main, read 24
+ *    under a frame pinned Dense and 40 once back, and listed no overrides either time (FM2, on
+ *    2026-11-20). The fake holds an instance's lengths at its first read where a length that follows
+ *    no binding differs from its main's, as rule 32 holds a resized one, and shows
  *    the binding its main holds on a width or height the instance binds none of its own, its length
  *    following the variable in the instance's modes. The fake does not lay out padding, so its tests
  *    make the height differ through a bound row the main hugs (rule 32). An instance in a frame whose
@@ -260,8 +263,18 @@
  */
 
 import { newGrid, placedCell } from "./grid.ts";
+import { ownNumber, resolveNumber, shownNumber, storeNumber, variableState } from "./modes.ts";
 import { isHidden, markOverride, noteOverride } from "./overrides.ts";
-import { bindingTargets, CORNERS, f32, isAutoLayout, isTextField, sourceOf, write } from "./state.ts";
+import {
+  bindingTargets,
+  CORNERS,
+  f32,
+  isAutoLayout,
+  isStoredNumber,
+  isTextField,
+  sourceOf,
+  write,
+} from "./state.ts";
 import type {
   Axis,
   BindableField,
@@ -270,11 +283,12 @@ import type {
   NodeState,
   Sides,
   Sizing,
+  StoredNumberField,
   Transform,
 } from "./state.ts";
 import { bindWholeText, requireHeldFonts } from "./text.ts";
 import { childrenOf } from "./tree.ts";
-import { fileVariable, requireType, resolveNumber, variableState } from "./variables.ts";
+import { fileVariable, requireType } from "./variables.ts";
 
 /**
  * Resize a node, turn an auto layout frame's sizing modes to FIXED (rule 5), move its aspect lock to
@@ -424,15 +438,15 @@ export type PaddingField = keyof typeof PADDING_SIDES;
 /** An alignment field of an auto layout frame. */
 export type AlignField = "primaryAxisAlignItems" | "counterAxisAlignItems";
 
-/** The layer whose padding or alignment a layer shows (rule 64): the layer once it writes its own, else its source's. */
-function flowSource(state: NodeState, field: PaddingField | AlignField): NodeState {
+/** The layer whose alignment a layer shows (rule 64): the layer once it writes its own, else its source's. */
+function flowSource(state: NodeState, field: AlignField): NodeState {
   const source = sourceOf(state);
   return source !== undefined && !state.overridden.has(field) ? flowSource(source, field) : state;
 }
 
-/** A padding as a layer shows it, its source's until it writes its own (rule 64). */
+/** A padding as a layer shows it, its source's until it writes its own (rules 8, 64). */
 export function shownPadding(state: NodeState, field: PaddingField): number {
-  return flowSource(state, field).padding[PADDING_SIDES[field]];
+  return shownNumber(state, field);
 }
 
 /** An alignment as a layer shows it, its source's until it writes its own (rule 64). */
@@ -666,10 +680,12 @@ export function settled(state: NodeState): NodeState {
   }
   const held = (axis: Axis): boolean => state.overridden.has(lengthOverride(axis));
   const free = !held("HORIZONTAL") && !held("VERTICAL");
+  const following = new Set<Axis>();
   for (const axis of ["HORIZONTAL", "VERTICAL"] as const) {
-    const bound = state.unboundLengths.has(lengthOverride(axis))
-      ? undefined
-      : boundThrough(source, state, axis);
+    const bound = boundOfInstance(state, axis);
+    if (bound !== undefined) {
+      following.add(axis);
+    }
     if (bound !== undefined || !held(axis)) {
       const length = bound ?? ownHug(state, source, axis) ?? lengthOn(source, axis);
       if (axis === "HORIZONTAL") {
@@ -679,16 +695,26 @@ export function settled(state: NodeState): NodeState {
       }
     }
   }
-  // An instance its modes give another size than its main holds its lengths from then on (rule 56).
-  if (
-    free &&
-    state.mirrorOf === undefined &&
-    (state.width !== lengthOn(source, "HORIZONTAL") || state.height !== lengthOn(source, "VERTICAL"))
-  ) {
+  // An instance its modes give another size than its main holds its lengths from then on (rule 56),
+  // unless the length that differs follows a binding (FM2).
+  const differs = (axis: Axis): boolean =>
+    !following.has(axis) && (axis === "HORIZONTAL" ? state.width : state.height) !== lengthOn(source, axis);
+  if (free && state.mirrorOf === undefined && (differs("HORIZONTAL") || differs("VERTICAL"))) {
     ownSize(state);
     state.heldByModes = true;
   }
   return state;
+}
+
+/**
+ * The length an instance shows bound through its main, in its own modes, unless it unbound that
+ * axis itself (rules 47, 56). A hugging parent measures an instance by it as a read gives it (rule 8).
+ */
+function boundOfInstance(state: NodeState, axis: Axis): number | undefined {
+  const source = sourceOf(state);
+  return state.type !== "INSTANCE" || source === undefined || state.unboundLengths.has(lengthOverride(axis))
+    ? undefined
+    : boundThrough(source, state, axis);
 }
 
 /**
@@ -775,7 +801,8 @@ function hugsInstances(state: NodeState, axis: Axis): boolean {
  * child that does not fill that axis and its padding. A hidden layer, by a property or a write, leaves the
  * layout, as it did on a real file (PB), and so does an absolute one (rule 24). An instance lays out
  * its own children by its main's layout as that stands, so `layout` names the node whose direction,
- * padding, spacing and stroke apply (rule 47).
+ * direction and stroke apply (rule 47). Its padding and spacing are the numbers it shows, each
+ * bound one in its own modes (rule 8).
  */
 function huggedLength(state: NodeState, axis: Axis, layout: NodeState = state): number {
   const flow = childrenOf(state).filter(
@@ -783,11 +810,11 @@ function huggedLength(state: NodeState, axis: Axis, layout: NodeState = state): 
   );
   const padding =
     axis === "HORIZONTAL"
-      ? inset(layout, "left") + inset(layout, "right")
-      : inset(layout, "top") + inset(layout, "bottom");
+      ? inset(state, "left", layout) + inset(state, "right", layout)
+      : inset(state, "top", layout) + inset(state, "bottom", layout);
   if (layout.layoutMode === axis) {
     const lengths = flow.reduce((sum, child) => sum + lengthOn(child, axis), 0);
-    return padding + lengths + layout.itemSpacing * Math.max(0, flow.length - 1);
+    return padding + lengths + shownNumber(state, "itemSpacing") * Math.max(0, flow.length - 1);
   }
   const across = flow.filter((child) => !fills(child, axis)).map((child) => lengthOn(child, axis));
   return padding + Math.max(0, ...across);
@@ -801,6 +828,7 @@ function huggedLength(state: NodeState, axis: Axis, layout: NodeState = state): 
  */
 function wrapHeight(state: NodeState): number {
   const room = state.width - inset(state, "left") - inset(state, "right");
+  const spacing = shownNumber(state, "itemSpacing");
   const rows: number[] = [];
   let rowWidth = 0;
   let rowHeight = 0;
@@ -811,20 +839,20 @@ function wrapHeight(state: NodeState): number {
     }
     const width = lengthOn(child, "HORIZONTAL");
     const height = lengthOn(child, "VERTICAL");
-    if (count > 0 && rowWidth + state.itemSpacing + width > room) {
+    if (count > 0 && rowWidth + spacing + width > room) {
       rows.push(rowHeight);
       rowWidth = 0;
       rowHeight = 0;
       count = 0;
     }
-    rowWidth += (count > 0 ? state.itemSpacing : 0) + width;
+    rowWidth += (count > 0 ? spacing : 0) + width;
     rowHeight = Math.max(rowHeight, height);
     count += 1;
   }
   if (count > 0) {
     rows.push(rowHeight);
   }
-  const between = Math.max(0, rows.length - 1) * (state.counterAxisSpacing ?? 0);
+  const between = Math.max(0, rows.length - 1) * (shownNumber(state, "counterAxisSpacing") ?? 0);
   return inset(state, "top") + rows.reduce((sum, row) => sum + row, 0) + between + inset(state, "bottom");
 }
 
@@ -833,12 +861,22 @@ function wrapHeight(state: NodeState): number {
  * that side while `strokesIncludedInLayout` is true (rule 46, PS). A frame without a stroke keeps its
  * padding alone: in PS4 a stroke-less hugging row with the field true, padding 0, around a fixed
  * 20 × 20 child measured 20 × 20 at weight 1 and at weight 4, and the same row with a SOLID INSIDE
- * stroke of weight 4 measured 28 × 28.
+ * stroke of weight 4 measured 28 × 28. The padding and weight are the numbers the layer shows (rule
+ * 8), and `layout` names the layer whose strokes apply, an instance's main's layer (rule 47).
  */
-function inset(state: NodeState, side: keyof Sides): number {
-  const stroked = state.strokesIncludedInLayout && state.strokes.length > 0;
-  return state.padding[side] + (stroked ? state.strokeWeights[side] : 0);
+function inset(state: NodeState, side: keyof Sides, layout: NodeState = state): number {
+  const stroked = layout.strokesIncludedInLayout && layout.strokes.length > 0;
+  const [padding, weight] = INSET_FIELDS[side];
+  return shownNumber(state, padding) + (stroked ? shownNumber(state, weight) : 0);
 }
+
+/** The padding and the stroke weight each side of an auto layout keeps clear. */
+const INSET_FIELDS = {
+  top: ["paddingTop", "strokeTopWeight"],
+  right: ["paddingRight", "strokeRightWeight"],
+  bottom: ["paddingBottom", "strokeBottomWeight"],
+  left: ["paddingLeft", "strokeLeftWeight"],
+} as const satisfies Record<keyof Sides, readonly [PaddingField, StoredNumberField]>;
 
 /**
  * A node's length on an axis: the height a wrapping row that hugs it sizes to from its children
@@ -858,7 +896,10 @@ export function lengthOn(state: NodeState, axis: Axis): number {
   ) {
     return wrapHeight(state);
   }
-  const given = boundLength(state, state, axis) ?? (axis === "HORIZONTAL" ? state.width : state.height);
+  const given =
+    boundLength(state, state, axis) ??
+    boundOfInstance(state, axis) ??
+    (axis === "HORIZONTAL" ? state.width : state.height);
   const grid =
     state.layoutMode === "GRID" && state.type !== "INSTANCE" && state[modeOn(state, axis)] === "AUTO"
       ? huggedGrid(state, axis)
@@ -1052,7 +1093,7 @@ function gridTracks(grid: NodeState, axis: Axis): number[] {
       .map((child) => lengthOn(child, axis));
     return setting.length === 0 ? (held[track] ?? 0) : Math.max(...setting);
   });
-  const gap = across ? grid.grid.columnGap : grid.grid.rowGap;
+  const gap = shownNumber(grid, across ? "gridColumnGap" : "gridRowGap");
   const padding = across
     ? inset(grid, "left") + inset(grid, "right")
     : inset(grid, "top") + inset(grid, "bottom");
@@ -1087,7 +1128,7 @@ function huggedGrid(grid: NodeState, axis: Axis): number | undefined {
     return undefined;
   }
   const tracks = gridTracks(grid, axis);
-  const gap = axis === "HORIZONTAL" ? grid.grid.columnGap : grid.grid.rowGap;
+  const gap = shownNumber(grid, axis === "HORIZONTAL" ? "gridColumnGap" : "gridRowGap");
   const padding =
     axis === "HORIZONTAL"
       ? inset(grid, "left") + inset(grid, "right")
@@ -1135,7 +1176,7 @@ export function setLimit(state: NodeState, field: LimitField, value: number | nu
   }
 }
 
-/** Write the number a node field takes, as a binding or a literal write does. */
+/** Write the number a node field takes, as a binding does: a length resizes and a limit is checked. */
 function setNumberField(state: NodeState, field: VariableBindableNodeField, value: number): void {
   switch (field) {
     case "width":
@@ -1150,60 +1191,28 @@ function setNumberField(state: NodeState, field: VariableBindableNodeField, valu
     case "maxHeight":
       storeLimit(state, field, value);
       return;
-    case "itemSpacing":
-      state.itemSpacing = f32(value);
-      return;
-    case "counterAxisSpacing":
-      state.counterAxisSpacing = f32(value);
-      return;
-    case "paddingTop":
-      state.padding.top = f32(value);
-      return;
-    case "paddingRight":
-      state.padding.right = f32(value);
-      return;
-    case "paddingBottom":
-      state.padding.bottom = f32(value);
-      return;
-    case "paddingLeft":
-      state.padding.left = f32(value);
-      return;
-    case "topLeftRadius":
-      state.radii.topLeft = f32(value);
-      return;
-    case "topRightRadius":
-      state.radii.topRight = f32(value);
-      return;
-    case "bottomRightRadius":
-      state.radii.bottomRight = f32(value);
-      return;
-    case "bottomLeftRadius":
-      state.radii.bottomLeft = f32(value);
-      return;
-    case "strokeTopWeight":
-      state.strokeWeights.top = f32(value);
-      return;
-    case "strokeRightWeight":
-      state.strokeWeights.right = f32(value);
-      return;
-    case "strokeBottomWeight":
-      state.strokeWeights.bottom = f32(value);
-      return;
-    case "strokeLeftWeight":
-      state.strokeWeights.left = f32(value);
-      return;
-    case "opacity":
-      state.opacity = f32(value);
-      return;
-    case "gridColumnGap":
-      state.grid.columnGap = f32(value);
-      return;
-    case "gridRowGap":
-      state.grid.rowGap = f32(value);
-      return;
     default:
-      throw new Error(`The fake Figma file does not model binding ${field}.`);
+      if (!isStoredNumber(field)) {
+        throw new Error(`The fake Figma file does not model binding ${field}.`);
+      }
+      storeNumber(state, field, value);
   }
+}
+
+/**
+ * The numbers a layer shows on the fields a binding's targets cover, before a write makes them its
+ * own: each target, and all four corners where one is a corner, as the corners turn its own
+ * together (rule 38).
+ */
+export function keptNumbers(
+  state: NodeState,
+  targets: readonly VariableBindableNodeField[]
+): [StoredNumberField, number][] {
+  const fields = targets.some((target) => CORNERS.has(target)) ? [...targets, ...CORNERS] : targets;
+  return [...new Set(fields)].filter(isStoredNumber).flatMap((field): [StoredNumberField, number][] => {
+    const value = shownNumber(state, field);
+    return value === null ? [] : [[field, value]];
+  });
 }
 
 /** Bind or unbind a field of a layer that is not text. */
@@ -1214,6 +1223,8 @@ export function bindNodeField(
 ): void {
   const targets = bindingTargets(field);
   const length = state.type === "INSTANCE" && (field === "width" || field === "height") ? field : undefined;
+  // An unbind keeps the numbers the layer shows as its own (rule 8), the four corners together.
+  const kept = variable === null ? keptNumbers(state, targets) : [];
   // A padding the layer binds or unbinds is its own from then on (rule 64).
   for (const target of targets) {
     if (Object.hasOwn(PADDING_SIDES, target)) {
@@ -1227,6 +1238,10 @@ export function bindNodeField(
     }
     for (const target of targets) {
       state.bindings.delete(target);
+    }
+    for (const [target, value] of kept) {
+      storeNumber(state, target, value);
+      ownNumber(state, target);
     }
     if (length !== undefined) {
       state.unboundLengths.add(length);
