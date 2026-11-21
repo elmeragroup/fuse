@@ -641,8 +641,8 @@ class FakeFrameLikeNode extends FakeSceneNode {
 
   set strokeTopWeight(value: number) {
     const state = live(this);
-    write(state, "strokeTopWeight");
     writeStrokeSide(state, "top", value);
+    write(state, "strokeTopWeight");
   }
 
   get strokeRightWeight(): number {
@@ -651,8 +651,8 @@ class FakeFrameLikeNode extends FakeSceneNode {
 
   set strokeRightWeight(value: number) {
     const state = live(this);
-    write(state, "strokeRightWeight");
     writeStrokeSide(state, "right", value);
+    write(state, "strokeRightWeight");
   }
 
   get strokeBottomWeight(): number {
@@ -661,8 +661,8 @@ class FakeFrameLikeNode extends FakeSceneNode {
 
   set strokeBottomWeight(value: number) {
     const state = live(this);
-    write(state, "strokeBottomWeight");
     writeStrokeSide(state, "bottom", value);
+    write(state, "strokeBottomWeight");
   }
 
   get strokeLeftWeight(): number {
@@ -671,8 +671,8 @@ class FakeFrameLikeNode extends FakeSceneNode {
 
   set strokeLeftWeight(value: number) {
     const state = live(this);
-    write(state, "strokeLeftWeight");
     writeStrokeSide(state, "left", value);
+    write(state, "strokeLeftWeight");
   }
 
   get strokeAlign(): FrameNode["strokeAlign"] {

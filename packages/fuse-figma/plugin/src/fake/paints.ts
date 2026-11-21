@@ -53,15 +53,19 @@
  *    was written (rule 49), reads `strokeWeight` mixed while the sides differ, and the frames it lays
  *    out (rule 32) keep each side's weight clear beside the padding while the stroke counts in the
  *    layout. It places no child.
- * 49. A 0 side weight on a stroke whose weight was never written. On 2026-10-25 the owner's Apply wrote
+ * 49. A side weight on a stroke whose weight was never written. On 2026-10-25 the owner's Apply wrote
  *    sides top 0, right 0 and bottom 0 on a new Sidebar sub menu variant and left the left side, which
  *    read the default 1, and the file read every side 0. Frames, auto layout frames and components
  *    whose `strokeWeight` was never written read `[1,1,1,1]`, and top 0 turned them to `[0,0,0,0]`,
  *    with a plain or a bound stroke. After an explicit `strokeWeight`, or after that spill, each side
  *    wrote alone: from `[1,1,1,1]` top 0 read `[0,1,1,1]`, and from `[0,0,0,0]` left 1 read `[0,0,0,1]`
- *    (PS2). So the fake spills the first 0 to every side, then writes each side alone, and throws for a
- *    nonzero side written first, which no probe read. A side binding neither spills nor counts as a
- *    write, which no probe read either.
+ *    (PS2). On 2026-11-20 a frame, an auto layout frame and a component, each with one SOLID stroke
+ *    and no weight written, read `[1,1,1,1]`, and top 2 read `[2,0,0,0]` and left 2 read `[0,0,0,2]`,
+ *    with `strokeWeight` mixed and no error (FS1). So the first side write, of any non-negative
+ *    weight, sets the other sides to 0 and its own side to its weight, and each side after it writes alone. A side
+ *    binding neither spills nor counts as a write, and no probe read a binding as the first write.
+ *    The typings require a non-negative side weight, so the fake throws for a negative one before it
+ *    changes any side.
  */
 
 import { sha1Hex } from "../../../src/components/sha1.ts";
@@ -154,22 +158,20 @@ export function storeEffect(state: NodeState, effect: Effect, held: ReadonlySet<
 }
 
 /**
- * Write one side's stroke weight (rule 49). On a node whose weight was never written, a 0 sets every
- * side to 0, and a nonzero weight throws, as no probe read one.
+ * Write one side's stroke weight (rule 49). On a node whose weight was never written, the other sides
+ * first drop to 0 (PS2, FS1).
+ *
+ * @throws When the weight is negative or NaN, which the typings rule out, before any side changes.
  */
 export function writeStrokeSide(state: NodeState, side: keyof Sides, value: number): void {
-  const weight = f32(value);
-  if (state.strokeWeightWritten) {
-    state.strokeWeights[side] = weight;
-    return;
+  if (!(value >= 0)) {
+    throw new Error(`A ${side} stroke weight must be non-negative, not ${value}.`);
   }
-  if (weight !== 0) {
-    throw new Error(
-      `The fake Figma file does not model a nonzero ${side} weight on a never-written stroke weight (PS2).`
-    );
+  if (!state.strokeWeightWritten) {
+    state.strokeWeights = { top: 0, right: 0, bottom: 0, left: 0 };
+    state.strokeWeightWritten = true;
   }
-  state.strokeWeights = { top: 0, right: 0, bottom: 0, left: 0 };
-  state.strokeWeightWritten = true;
+  state.strokeWeights[side] = f32(value);
 }
 
 const BASE64_DIGITS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
