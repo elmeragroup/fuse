@@ -197,6 +197,8 @@ const ROLE_TINTS = [
   ["error", 5],
   ["error", 10],
   ["error", 20],
+  // A failed Attachment's border, `data-[state=error]:border-error/30`.
+  ["error", 30],
   ["success", 5],
   ["success", 10],
   ["success", 20],

@@ -492,11 +492,11 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "table-caption", name: "Table caption", variants: 1, previewed: 1 },
     ],
   },
-  // The docs default demo's row at each size, at rest and waiting to upload.
+  // The docs default demo's row at each size, at rest, waiting to upload and failed.
   {
     slug: "attachment",
     name: "Attachment",
-    sets: [{ key: "attachment", name: "Attachment", variants: 6, previewed: 6 }],
+    sets: [{ key: "attachment", name: "Attachment", variants: 9, previewed: 9 }],
   },
   // The docs default demo's first Item, first or after another, with dividers or without, and the
   // demo's list of five Items with dividers or without.
