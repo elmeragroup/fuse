@@ -1115,6 +1115,8 @@ describe("a height in lh", () => {
     // A length times a length over a length is a length, so the line height is 48px whatever the font size.
     ["text-[16px] leading-[calc(24px*16px/8px)] h-lh", 48],
     ["text-[16px] leading-[calc(24px*2px/1px)] h-lh", 48],
+    // A percentage line height is a share of the font size of the box that declares it.
+    ["text-[16px] leading-[150%] h-lh", 24],
   ])("draws %s %spx tall", async (classes, height) => {
     const { variant } = await buildChip(classes);
     expect(variant?.root.sizing.vertical).toEqual(fixed(literal(height)));
@@ -1141,11 +1143,11 @@ describe("a height in lh", () => {
   // under Figma's 0.01px resize minimum, 1lh - 100% depends on the viewport's height, and beside a
   // negative line height, which CSS clamps to zero (CSS Inline 3, `line-height`), Chromium draws
   // 1lh + 12px 12px tall. A line height of 24px times 2px is an area, which no line height holds,
-  // and one line of 0.004px is under the 0.01px too. A percentage line height computes against the
-  // font size where it is declared, which the build does not follow.
+  // and one line of 0.004px is under the 0.01px too. Chromium divides 24px times 16px by 100% to
+  // 3.84px at a 20px font size, which no share of the font size gives, where 100% of 20px gives 19.2px.
   it.each([
     ["leading-[0.004px] h-lh", {}],
-    ["text-[16px] leading-[150%] h-lh", {}],
+    ["text-[20px] leading-[calc(24px*16px/100%)] h-lh", {}],
     ["leading-[24px] h-[calc(1lh-32px)]", {}],
     ["leading-[24px] h-[calc(1lh-23.996px)]", {}],
     ["fixed leading-[24px] h-[calc(1lh-100%)]", { viewport: { width: 100, height: 100 } }],
@@ -1167,6 +1169,16 @@ describe("a height in lh", () => {
       part: frameOf(variant?.root)?.sizing.vertical,
       rows: notesOf(coverage, "h-lh").map(([property, outcome]) => [property, outcome]),
     }).toEqual({ part: HUG, rows: [["height", "unmapped"]] });
+  });
+
+  // A percentage line height computes on the element that declares it too, so the part inherits the
+  // parent's 150% of 20px, 30px, where 150% of its own 16px would give 24px.
+  it("draws a part that inherits a percentage line height at the parent's length", async () => {
+    const { variant, coverage } = await buildWithDot("text-[20px] leading-[150%]", "text-[16px] h-lh");
+    expect({
+      part: frameOf(variant?.root)?.sizing.vertical,
+      rows: notesOf(coverage, "text-[20px]").map(([property, outcome]) => [property, outcome]),
+    }).toEqual({ part: fixed(literal(30)), rows: [["font-size", "literal"]] });
   });
 
   it("stays unmapped beside a normal line height", async () => {

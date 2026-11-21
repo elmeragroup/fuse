@@ -11,7 +11,6 @@ import {
   evaluateLengthOf,
   evaluateNumber,
   evaluatePercentage,
-  evaluateLineHeight,
   inViewport,
   normalizeCss,
   readNumber,
@@ -51,6 +50,7 @@ import type { PercentBasis } from "./sizing-value";
 import { spannedWidth, spansBesideBlocks, spansParent, SPANS_HUGGING_PARENT } from "./spanning-block";
 import { subgridCellRoom } from "./subgrid-row";
 import type { SubgridCell } from "./subgrid-row";
+import { computedLineHeight } from "./typography";
 import { limitsNeverMoveVariable } from "./variable-limits";
 
 /** What a box's parent gives it on one axis. */
@@ -2399,10 +2399,13 @@ function readLength(
   }
   // CSS computes an `lh` length where it is declared, so a length a box inherits from its parent
   // is the parent's line height, which the box's own does not give; it stays unmapped.
-  const line =
+  const computed =
     LINE_LENGTH.test(reader.resolved(axis.length) ?? "") && !reader.inherits(axis.length)
-      ? ownLineHeight(reader, variables)
+      ? computedLineHeight(reader, variables)
       : undefined;
+  // A percent of a synced font size is no length a fixed size holds, so a length in `lh` beside it
+  // stays unmapped, as beside `normal`.
+  const line = computed?.line.kind === "percent" ? undefined : computed?.line;
   const feed = [...reader.feed("sizing"), ...inside];
   const describe = ({ size, share }: LengthRead): CoverageNote => {
     switch (size.kind) {
@@ -2441,7 +2444,7 @@ function readLength(
           return size.length.kind === "literal"
             ? {
                 outcome: "literal",
-                detail: `${String(size.length.value)}px, the lh length at the box's own ${describeLine(line.length)} line height`,
+                detail: `${String(size.length.value)}px, the lh length at the box's own ${describeLine(line)} line height`,
               }
             : describeNumber(size.length);
         }
@@ -2474,7 +2477,7 @@ function readLength(
     axis.length,
     (value): LengthRead | undefined => {
       if (LINE_LENGTH.test(value)) {
-        return line === undefined ? undefined : linesTall(value, line.length);
+        return line === undefined ? undefined : linesTall(value, line);
       }
       // `auto` is a length's initial value, which sizes the axis as no length does.
       if (normalizeCss(value) === "auto") {
@@ -2497,16 +2500,17 @@ function readLength(
     describe,
     feed
   )?.size;
-  if (line !== undefined && read?.kind === "fixed") {
-    for (const property of line.reads) {
+  if (computed !== undefined && line !== undefined && read?.kind === "fixed") {
+    for (const property of computed.reads) {
       reader.read(
         property,
         (value) => value,
         () => ({
-          outcome: line.length.kind === "variable" ? "bound" : "literal",
-          detail: `the box's line height is ${describeLine(line.length)}, which the ${axis.length}'s lh length reads`,
+          outcome: line.kind === "variable" ? "bound" : "literal",
+          detail: `the box's line height is ${describeLine(line)}, which the ${axis.length}'s lh length reads`,
         }),
-        reader.feed("sizing")
+        reader.feed("sizing"),
+        property === "line-height" ? computed.also : []
       );
     }
   }
@@ -2542,9 +2546,8 @@ const FIGMA_LEAST_SIZE_PX = 0.01;
 
 /**
  * A length that is a plain count of lines, as a fixed sizing: the line height times the count. A
- * synced line height binds a length of exactly one line, which no other count of lines does. CSS
- * clamps a negative line height to zero (CSS Inline 3, `line-height`), and a length under
- * {@link FIGMA_LEAST_SIZE_PX} does not read.
+ * synced line height binds a length of exactly one line, which no other count of lines does. A length
+ * under {@link FIGMA_LEAST_SIZE_PX} does not read.
  *
  * @param value - The resolved length, which holds `lh`.
  * @param lineHeight - The box's own line height.
@@ -2560,44 +2563,10 @@ function linesTall(value: string, lineHeight: NumberSpec): LengthRead | undefine
       ? { size: { kind: "fixed", length: lineHeight }, share: undefined }
       : undefined;
   }
-  const pixels = Number(count) * Math.max(0, lineHeight.value);
+  const pixels = Number(count) * lineHeight.value;
   return pixels >= FIGMA_LEAST_SIZE_PX
     ? { size: { kind: "fixed", length: { kind: "literal", value: pixels } }, share: undefined }
     : undefined;
-}
-
-/**
- * The box's own computed line height, which `1lh` stands for, and the properties it reads: the font
- * size too where the line height multiplies it. A synced line height binds its variable. A length,
- * or a number over a font size in pixels, is a literal. `normal`, which the face's metrics set, a
- * percentage, which CSS computes against the font size where it is declared, and a number over a
- * synced font size stay unread, so a length in `lh` beside them stays unmapped.
- *
- * @param reader - The box's style.
- * @param variables - The synced variables a line height or font size can bind.
- * @returns The line height and the properties that set it, or undefined where none reads.
- */
-function ownLineHeight(
-  reader: LayerStyle,
-  variables: VariableIndex
-): { readonly length: NumberSpec; readonly reads: readonly string[] } | undefined {
-  const line = reader.resolved("line-height");
-  if (line === undefined) {
-    return undefined;
-  }
-  const bound = variables.lookup(line);
-  if (bound !== undefined) {
-    return { length: { kind: "variable", variable: bound }, reads: ["line-height"] };
-  }
-  const read = evaluateLineHeight(line);
-  if (read?.kind === "length") {
-    return { length: { kind: "literal", value: read.px }, reads: ["line-height"] };
-  }
-  const size = reader.resolved("font-size");
-  const font = size === undefined ? undefined : readNumber(size, variables);
-  return read === undefined || font?.kind !== "literal"
-    ? undefined
-    : { length: { kind: "literal", value: read.factor * font.value }, reads: ["line-height", "font-size"] };
 }
 
 /** A line height as the coverage table names it: its pixels, or its variable. */
