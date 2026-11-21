@@ -15,8 +15,8 @@
  *    variables or some bind none, while `boundVariables` lists each alias any character binds.
  *    Writing `characters` gives every new character the first character's style. A range
  *    binding or font write restyles only its range, and a layer-wide write or binding every
- *    character, apart from a layer-wide binding (rules 54 and 55). Rule 50 says which family
- *    bindings a font write keeps. A `fontWeight` binding gives each character of its range the style its
+ *    character, apart from the characters rules 54 and 55 leave. Rule 50 says which bindings a
+ *    font write keeps. A `fontWeight` binding gives each character of its range the style its
  *    family names for the weight, which needs that font loaded, as Figma's guide to
  *    typography variables says. The fake names the style by `WEIGHT_STYLES`, Thin for 100
  *    up to Black for 900, and throws for another weight or a held style the table lacks.
@@ -63,12 +63,12 @@
  *    changes, and binds no character. On `⌘K` a range binding of `⌘` to a STRING variable holding
  *    Inter gave `⌘` Inter bound to it, a range write of Inter Regular kept that binding, and a null
  *    range binding then left `⌘` Inter unbound and `K` Roboto bound to `font-sans` (G11). So a null
- *    range binding unbinds its range and keeps the font. A whole `fontName` write over a text whose
- *    `fontWeight` bound a FLOAT variable dropped that binding on 2026-11-18 (PG8), and a range write
- *    drops it on its range, which PG13's whole-text binding written after the range writes, binding
- *    every range, points to, as the fake models it; no probe has written a range's font after binding
- *    its weight. No probe wrote a font over a bound `fontStyle`,
- *    so that binding stays. `getStyledTextSegments` splits the
+ *    range binding unbinds its range and keeps the font. A font write drops a `fontWeight` or
+ *    `fontStyle` binding on what it writes. A whole `fontName` write over a text whose `fontWeight`
+ *    bound a FLOAT variable dropped that binding on 2026-11-18 (PG8). On 2026-11-20, on `AB` with
+ *    `fontStyle` bound to a STRING `Bold`, a whole write of Roboto Medium dropped it, and a range write
+ *    of Roboto Medium or Inter Regular on `A` dropped it on `A` alone; with `fontWeight` bound to 700
+ *    instead, the range write did the same (FT3). `getStyledTextSegments` splits the
  *    characters where the fields it is asked for differ. It reads `fontName`, `fontSize` and
  *    `boundVariables` alone and throws for another field.
  * 51. Linking a text's characters resets it to its base style. On 2026-10-26, in a component, writing
@@ -79,43 +79,87 @@
  *    character's (G7). The fake keeps that base style beside the characters' styles: a text starts
  *    with the style a new text types in, and each whole-text write or binding, of the font, size or
  *    line height, changes it as it changes every character, while a range write and a range binding
- *    leave it. On `⌘K` with `⌘` Inter, a whole `fontSize` of 20 and `lineHeight` of 28px reset with
- *    the link to Roboto Regular 20/28 bound to `font-sans` (G12a), while on `⌘K` never ranged,
- *    `setRangeFontSize(1, 2, 24)` gave `K` 24 and the link reset it to 14 (G12c). The probes leave
- *    open what the base is once a range write covered every character, or after a characters write,
- *    which the fake leaves as it was.
+ *    leave it until every character holds one style. On `⌘K` with `⌘` Inter, a whole `fontSize` of 20
+ *    and `lineHeight` of 28px reset with the link to Roboto Regular 20/28 bound to `font-sans` (G12a),
+ *    while on `⌘K` never ranged, `setRangeFontSize(1, 2, 24)` gave `K` 24 and the link reset it to 14
+ *    (G12c). Once every character holds one style, the base is that style. On 2026-11-20, on `AB` in
+ *    Roboto Regular 14, range sizes of 20 on `A` and then `B`, one on both, and a range Roboto Bold
+ *    on both each reset with the link to that style, and so did a `characters` write after a range
+ *    size or font on `A`, which gave every character `A`'s style (FT1). The fake makes the style every
+ *    character holds the base style after any write that restyles characters, leaving out range fills
+ *    (rule 65), the moment rule 54's family state clears. FT1 ran range font and size writes
+ *    and `characters` writes on a main component's text. The fake does the same after range bindings
+ *    and range fills and on an instance's text sublayer, which no probe read.
  * 52. A TEXT property write resets the linked text of the instance. On 2026-10-26
  *    `setProperties({ [textProperty]: '⌘B' })` on an instance whose main drew `⇧⌘P` in two segments
  *    left its text sublayer one segment, Roboto bound to `font-sans`, and so did `'⇧⌘K'` and `'⇧⌘P'`,
  *    the default (G5), and `'B⌘'` on an instance of `P⌘` (G7). An instance at the default that took no
  *    write showed the main's segments (G4, G7). So `setProperties` gives each text the TEXT property
- *    links below the instance its base style (rule 51), which a sublayer takes from its main layer when
- *    the instance is made, over the characters it then shows, whatever the value.
+ *    links below the instance its base style (rule 51), which a sublayer shows from its main layer
+ *    until a text write on it, over the characters it then shows, whatever the value. An instance at its
+ *    default follows the ranges its main adds later: on 2026-11-20, after an instance of a component
+ *    labeled `Save` was made, the main's label took a range Roboto Bold on `S` and a range size of 20
+ *    on `a`, and the instance's label read the same three segments, with no override listed (FT5). So
+ *    a text sublayer shows its main layer's styles and base style until a text write on it gives it
+ *    its own. Only range writes were probed, and the fake has a sublayer follow every write.
  * 53. A range font write on an instance's text holds until the next TEXT write. On 2026-10-26, after
  *    rule 52's write, `setRangeFontName(0, 1, Inter Regular)` on the instance's text sublayer read
- *    `[0,1)` Inter unbound and `[1,2)` Roboto bound, `overrides` listed the sublayer with `width` and
- *    `height` alone, and the next `setProperties` reset it as rule 52 says (G6). So the fake's range
- *    write on a sublayer restyles the characters it shows and lists no override. It does not measure
- *    text, so it lists no size either.
- * 54. A whole-text family binding binds only the characters already in the variable's family, and
- *    changes no font. On 2026-10-26 `setBoundVariable('fontFamily', font-sans)` changed nothing on
- *    `⇧⌘P` with `⇧⌘` Inter unbound and `P` bound, nor on `⌘K` likewise. With null it unbound `K` too,
- *    and `font-sans` then bound `K` again and left `⌘` Inter unbound (G10). A range binding of
- *    `font-sans` on a `⌘` Roboto unbound bound it (G9). No probe bound a range or a whole text whose
- *    family differs from the variable's value across every character, so the fake keeps the range
- *    binding's font change of rule 10 and gives a whole-text binding the rule G10 read.
- * 55. A whole-text binding of another field binds only the characters in the base style's family. On
- *    2026-10-26, in a component, `setBoundVariable('fontSize', v)` with a FLOAT `v` of 18 on `⌘K`
- *    with `⌘` Inter unbound gave `⌘` 18 with no `fontSize` binding and `K` 18 bound to `v`, and the
- *    link then reset the text to Roboto Regular 18 bound to `v`, its family bound to `font-sans`
- *    (G12b). So the binding gives every character and the base style its value, and binds the
- *    characters whose family is the base style's, and the base style. The probe bound `fontSize`
- *    alone, and the fake treats `lineHeight` and `fontStyle` the same. It left open whether Figma
- *    tells the characters apart by their family or by the family binding they lost. A `fontWeight`
- *    binding binds every character: on 2026-11-18 a whole-text binding of a 400/500 FLOAT variable on
- *    `⌘K Search`, its `⌘` set to Inter Regular by `setRangeFontName` first, bound every range, and a
- *    mode switch moved `⌘` to Inter Medium and the rest to Roboto Medium, each in its own family
- *    (PG13). A range binding bound only its range, which a mode switch then moved alone (PG13).
+ *    `[0,1)` Inter unbound and `[1,2)` Roboto bound, `overrides` listed `width` and `height` alone,
+ *    and the next `setProperties` reset it as rule 52 says (G6). Those were the instance's. On
+ *    2026-11-20, on an instance of a hugging row around `Save`, a range size equal to the one the text
+ *    held and a range fill listed no override, and a range Roboto Bold on `S` grew the label from 30
+ *    to 31 wide and listed the instance itself with `height` and `width`, not the label (FT4). So a
+ *    range write lists no override of its own, only the size of an instance it resizes. The fake's
+ *    range write on a sublayer restyles the characters it shows and lists no override of the text.
+ *    It measures text by size alone (rule 31), so a range size write or size binding that changes the
+ *    label's width resizes an instance whose main hugs it and lists the instance's `width` and
+ *    `height`, while a range font write, Bold on `S` included, changes no width in the fake and lists
+ *    nothing.
+ * 54. A whole-text family binding gives every character the variable's family, in its own style, and
+ *    binds it, apart from a character with a family state of its own while the characters still
+ *    differ, which keeps its font and its binding or none. On 2026-10-26
+ *    `setBoundVariable('fontFamily', font-sans)` changed nothing on `⇧⌘P` with `⇧⌘` Inter unbound and
+ *    `P` bound, nor on `⌘K` likewise, where a range write of Inter had dropped the binding. With null
+ *    it unbound `K` too, and `font-sans` then bound `K` again and left `⌘` Inter unbound (G10). On
+ *    2026-11-20 a whole binding of `Roboto` on `AB` in Inter Regular, never bound, gave both Roboto
+ *    Regular bound, and Inter Bold went to Roboto Bold. On `AB` in Roboto with `A` set to Inter by a
+ *    range write and never bound, whole bindings of `Inter`, `Arial` and `Roboto` each gave both
+ *    characters that family, bound. The G10 sequence read `⌘` Inter unbound again, while a text that
+ *    took the same range write with no binding before it, then null, then the binding, read both
+ *    Roboto bound (FT2). So Figma tells the characters apart by the family state they hold, not by
+ *    their family. From `⌘K` bound whole and then `⌘` set to Inter by a range write, a whole Roboto
+ *    Regular left `⌘` Roboto unbound and `K` bound, and a whole binding then left `⌘` unbound. A whole
+ *    Inter Regular gave both Inter unbound, and `characters = '⌘B'` gave both `⌘`'s Inter unbound, and
+ *    a whole binding then bound both. A range Roboto on `⌘` left it unbound through the binding. A
+ *    range binding of `⌘` to Roboto gave both Roboto bound, and a null range binding of `⌘` then left
+ *    it unbound through a whole binding (FT6). From the same start, a range binding of `⌘` to an Inter
+ *    variable kept `⌘` Inter bound to it through a whole Roboto binding, and so did a null range
+ *    binding after it leave `⌘` unbound. On `⌘K` in Roboto never bound, a range binding of `⌘` to Inter
+ *    gave `⌘` Inter bound and left `K` unbound, and a whole Roboto binding then left `⌘` bound to Inter
+ *    and bound `K` (FT7). A range font write on a never-bound character set no state (T2f). So a
+ *    character takes a family state of its own from a range family binding, and from a range font
+ *    write or a null range binding that drops its family binding. It keeps the state through font
+ *    writes, whole or on a range, and through null and whole bindings, and every character loses it
+ *    once every character holds one style, apart from the state itself and range fills, the moment
+ *    rule 51 makes that style the base. A range binding gives its range the variable's family and
+ *    binds it: a range binding of `font-sans` on a `⌘` Roboto unbound bound it (G9), and a range
+ *    binding of `Roboto` on `A` of `AB` in Inter gave `A` Roboto bound and left `B` Inter unbound
+ *    (FT2).
+ * 55. A whole-text binding of another field gives every character its value and binds every
+ *    character but one with a family state of its own as rule 54 says. On 2026-10-26, in a component,
+ *    `setBoundVariable('fontSize', v)` with a FLOAT `v` of 18 on `⌘K` with `⌘` Inter unbound gave `⌘`
+ *    18 with no `fontSize` binding and `K` 18 bound to `v`, and the link then reset the text to Roboto
+ *    Regular 18 bound to `v`, its family bound to `font-sans` (G12b). On 2026-11-20 a `⌘` set to Inter
+ *    and never bound took 18 and the binding, and a `⌘` that lost its `Roboto` binding to the range
+ *    write took 18 without it (FT2). So the binding gives every character and the base style its
+ *    value, and binds the base style and every character without a family state of its own. The
+ *    probes bound `fontSize` alone, over a character that lost its binding, and the fake treats
+ *    `lineHeight` and `fontStyle`, and a character a range family binding gave the state, the same. A
+ *    `fontWeight` binding binds every character: on 2026-11-18 a whole-text binding of a 400/500
+ *    FLOAT variable on `⌘K Search`, its `⌘` set to Inter Regular by `setRangeFontName` first, bound
+ *    every range, and a mode switch moved `⌘` to Inter Medium and the rest to Roboto Medium, each in
+ *    its own family (PG13). A range binding bound only its range, which a mode switch then moved alone
+ *    (PG13).
  * 65. A text's fills are per character, as the typings' `setRangeFills` and `getRangeFills` and the
  *    `fills` of a `StyledTextSegment` say. A range write needs the range's fonts loaded, as the
  *    typings say, gives its characters the paints, and leaves the base style. A whole `fills` write
@@ -125,7 +169,7 @@
  *    file's range fills, each bound to a variable, read back through `getStyledTextSegments(['fills'])`
  *    as merged runs, each paint with its variable. They survived `fontSize` and `fontName` writes,
  *    followed the frame's light and dark modes, and showed on an instance, which followed later range
- *    writes on its main. A whole `fills` write reset them, and a `characters` write, even of the same
+ *    writes on its main (rule 52). A whole `fills` write reset them, and a `characters` write, even of the same
  *    text, gave every character the first character's fill. The fake keeps them through every write
  *    but those two and the writes that give every character one style: a text style link (rule 60)
  *    and a TEXT link or write (rules 51 and 52). Its characters write gives every character the first
@@ -155,9 +199,9 @@
  *    did not read after one.
  */
 
-import { resolveNumber, resolveString } from "./modes.ts";
-import { nearestInstance, propertyValue, rootMain } from "./overrides.ts";
-import { f32, SHARED_DATA_SEPARATOR, write } from "./state.ts";
+import { ownNumber, resolveNumber, resolveString } from "./modes.ts";
+import { charactersOf, shownStyles } from "./overrides.ts";
+import { baseStyleOf, f32, SHARED_DATA_SEPARATOR, write } from "./state.ts";
 import type { CharacterStyle, FileState, NodeState } from "./state.ts";
 import { alias, fileVariable, requireType } from "./variables.ts";
 
@@ -186,7 +230,7 @@ export function distinctFonts(styles: readonly CharacterStyle[]): FontName[] {
 
 /** The fonts a text layer holds (rule 7). */
 export function heldFonts(state: NodeState): readonly FontName[] {
-  return distinctFonts(state.styles);
+  return distinctFonts(shownStyles(state));
 }
 
 export function requireHeldFonts(state: NodeState, what: string): void {
@@ -195,20 +239,121 @@ export function requireHeldFonts(state: NodeState, what: string): void {
   }
 }
 
-/** Restyle the characters from `start` to `end` (rule 10). */
+/**
+ * Give a sublayer the styles and base style it shows from its main layer as its own, which a text
+ * write on it then changes (rule 52), and give a text one style for each character it shows.
+ */
+function holdStyles(state: NodeState): void {
+  if (!state.ownStyles) {
+    state.baseStyle = baseStyleOf(state);
+  }
+  state.styles = shownStyles(state);
+  state.ownStyles = true;
+}
+
+/**
+ * Apply an update to some styles, once for each distinct record, so characters that shared a record
+ * share its update too.
+ */
+function updateEach(
+  styles: readonly CharacterStyle[],
+  update: (style: CharacterStyle) => CharacterStyle
+): readonly CharacterStyle[] {
+  const updated = new Map<CharacterStyle, CharacterStyle>();
+  return styles.map((style) => {
+    const known = updated.get(style);
+    if (known !== undefined) {
+      return known;
+    }
+    const next = update(style);
+    updated.set(style, next);
+    return next;
+  });
+}
+
+/**
+ * Restyle the characters from `start` to `end` (rule 10). Once every character holds one style, that
+ * style is the base style, and no character keeps a family state of its own (rules 51 and 54).
+ */
 export function restyle(
   state: NodeState,
   start: number,
   end: number,
   update: (style: CharacterStyle) => CharacterStyle
 ): void {
-  state.styles = state.styles.map((style, index) => (index >= start && index < end ? update(style) : style));
+  holdStyles(state);
+  const sized = sizesOf(state.styles);
+  const within = updateEach(state.styles.slice(start, end), update);
+  state.styles = [...state.styles.slice(0, start), ...within, ...state.styles.slice(end)];
+  settle(state);
+  // A size write or binding changes the width of a text that hugs its characters (rule 31).
+  if (sizesOf(state.styles) !== sized) {
+    remeasure(state);
+  }
 }
 
 /** Restyle every character and the base style, as a whole-text write does (rules 10 and 51). */
 export function restyleWhole(state: NodeState, update: (style: CharacterStyle) => CharacterStyle): void {
-  restyle(state, 0, state.styles.length, update);
+  holdStyles(state);
   state.baseStyle = update(state.baseStyle);
+  restyle(state, 0, state.styles.length, update);
+}
+
+/** The key each style record compares by, computed once per record. */
+const styleKeys = new WeakMap<CharacterStyle, string>();
+
+/** What characters holding one style share, apart from range fills and their family state (rules 51, 54). */
+function styleKey(style: CharacterStyle): string {
+  const known = styleKeys.get(style);
+  if (known !== undefined) {
+    return known;
+  }
+  const key = JSON.stringify([
+    fontKey(style.font),
+    style.fontSize,
+    style.lineHeight,
+    [...style.bindings].sort(([left], [right]) => left.localeCompare(right)),
+  ]);
+  styleKeys.set(style, key);
+  return key;
+}
+
+/**
+ * Once every character holds one style, make it the base style and clear each character's own family
+ * state (rule 51, FT1; rule 54, FT6). Range fills stay on their characters and off the base, which a
+ * link resets (rule 65).
+ */
+function settle(state: NodeState): void {
+  const [first, ...rest] = state.styles;
+  if (first === undefined) {
+    return;
+  }
+  const key = styleKey(first);
+  if (rest.some((style) => style !== first && styleKey(style) !== key)) {
+    return;
+  }
+  const { fills: _ranged, ownFamily: _own, ...style } = first;
+  state.baseStyle = style;
+  state.styles = updateEach(state.styles, ({ ownFamily: _cleared, ...kept }) => kept);
+}
+
+/**
+ * Give every character the first one's style, as a `characters` write does (rule 10), which makes it
+ * the base style (rule 51).
+ *
+ * @param state - The text.
+ * @param length - The number of characters written.
+ * @returns The style every character takes.
+ */
+export function restyleAsFirst(state: NodeState, length: number): CharacterStyle {
+  holdStyles(state);
+  const [first] = state.styles;
+  if (first === undefined) {
+    throw new Error(`${state.id} holds no character style.`);
+  }
+  state.styles = Array.from({ length: Math.max(1, length) }, () => first);
+  settle(state);
+  return first;
 }
 
 function withBinding(
@@ -268,24 +413,36 @@ export function bindTextRange(
   variable: Variable | null
 ): void {
   if (variable === null) {
-    restyle(state, start, end, (style) => ({ ...style, bindings: withBinding(style, field, undefined) }));
+    // A null range binding that drops a family binding gives the character a family state of its
+    // own, as a range font write does (rule 54, FT6).
+    restyle(state, start, end, (style) => {
+      const unbound = { ...style, bindings: withBinding(style, field, undefined) };
+      return field === "fontFamily" && style.bindings.has(field) ? { ...unbound, ownFamily: true } : unbound;
+    });
     write(state, `unbind ${field}`);
     return;
   }
   const { update, id } = boundUpdate(state, field, variable);
-  const restyled = state.styles.slice(start, end).map(update);
+  const restyled = shownStyles(state).slice(start, end).map(update);
   for (const font of distinctFonts(restyled)) {
     requireFont(state, font, field);
   }
-  restyle(state, start, end, (style) => ({ ...update(style), bindings: withBinding(style, field, id) }));
+  // A range family binding gives its characters a family state of their own (rule 54, FT7).
+  const own = field === "fontFamily" ? ({ ownFamily: true } as const) : {};
+  restyle(state, start, end, (style) => ({
+    ...update(style),
+    bindings: withBinding(style, field, id),
+    ...own,
+  }));
   write(state, `bind ${field}`);
 }
 
 /**
- * Bind or unbind a text field of every character and of the base style (rules 10 and 51). A family
- * binding binds only the characters whose family is already the variable's value, and changes no font
- * (rule 54). Another field's binding gives every character its value, and binds only those in the base
- * style's family (rule 55). Null unbinds every character.
+ * Bind or unbind a text field of every character and of the base style (rules 10 and 51). The binding
+ * gives each character its value and binds it, apart from a character with a family state of its own
+ * (rule 54): a family binding leaves that one as it is, and another field's gives it the value alone
+ * (rules 54 and 55). A weight binding binds that character too (PG13). Null unbinds every
+ * character.
  */
 export function bindWholeText(
   state: NodeState,
@@ -297,29 +454,17 @@ export function bindWholeText(
     write(state, `unbind ${field}`);
     return;
   }
-  if (field === "fontFamily") {
-    requireHeldFonts(state, field);
-    const bound = fileVariable(state.file, variable);
-    requireType(bound, "STRING", field);
-    const family = resolveString(state.file, bound, state);
-    restyleWhole(state, (style) =>
-      style.font.family === family ? { ...style, bindings: withBinding(style, field, bound.id) } : style
-    );
-    write(state, `bind ${field}`);
-    return;
-  }
   const { update, id } = boundUpdate(state, field, variable);
-  for (const font of distinctFonts(state.styles.map(update))) {
+  const bind = (style: CharacterStyle): CharacterStyle => {
+    if (field === "fontWeight" || style.ownFamily !== true) {
+      return { ...update(style), bindings: withBinding(style, field, id) };
+    }
+    return field === "fontFamily" ? style : update(style);
+  };
+  for (const font of distinctFonts(shownStyles(state).map(bind))) {
     requireFont(state, font, field);
   }
-  const { family } = state.baseStyle.font;
-  // A weight binds every character, each in its own family (PG13); another field only the base
-  // family's (G12b).
-  restyleWhole(state, (style) => ({
-    ...update(style),
-    bindings:
-      field === "fontWeight" || style.font.family === family ? withBinding(style, field, id) : style.bindings,
-  }));
+  restyleWhole(state, bind);
   write(state, `bind ${field}`);
 }
 
@@ -376,47 +521,40 @@ function boundUpdate(state: NodeState, field: VariableBindableTextField, variabl
 
 /**
  * A character's style once a font is written over it, which keeps its family binding only where its
- * family stays and drops its weight binding (rule 50, PG8).
+ * family stays and drops its weight and style bindings (rule 50, PG8, FT3).
  */
 export function withFont(style: CharacterStyle, font: FontName): CharacterStyle {
-  return {
-    ...style,
-    font: { family: font.family, style: font.style },
-    bindings: withBinding(
-      {
-        ...style,
-        bindings:
-          style.font.family === font.family ? style.bindings : withBinding(style, "fontFamily", undefined),
-      },
-      "fontWeight",
-      undefined
-    ),
-  };
+  const bindings = new Map(style.bindings);
+  if (style.font.family !== font.family) {
+    bindings.delete("fontFamily");
+  }
+  bindings.delete("fontWeight");
+  bindings.delete("fontStyle");
+  return { ...style, font: { family: font.family, style: font.style }, bindings };
+}
+
+/** Write a font to every character and the base style, needing only that font loaded (rules 7, 10, 50). */
+export function writeWholeFont(state: NodeState, font: FontName): void {
+  requireFont(state, font, "fontName");
+  write(state, "fontName");
+  restyleWhole(state, (style) => withFont(style, font));
 }
 
 /**
- * Write a font to the characters from `start` to `end`, which needs only that font loaded
- * (rules 7, 10 and 50). `label` names the write in the log.
+ * Write a font to the characters from `start` to `end`, which needs only that font loaded (rules 7,
+ * 10 and 50). A character whose family binding the write drops takes a family state of its own
+ * (rules 54 and 55).
  */
-export function writeFont(state: NodeState, start: number, end: number, font: FontName, label: string): void {
+export function writeRangeFont(state: NodeState, start: number, end: number, font: FontName): void {
+  const label = `fontName ${start}-${end}`;
   requireFont(state, font, label);
   write(state, label);
-  restyle(state, start, end, (style) => withFont(style, font));
-}
-
-/**
- * The characters a text shows (rule 34): a sublayer whose main layer links a TEXT property shows the
- * value the nearest instance sets, and otherwise its main layer's, until a designer overrides them.
- */
-export function charactersOf(state: NodeState): string {
-  const source = state.mirrorOf;
-  if (source === undefined || state.overridden.has("characters")) {
-    return state.characters;
-  }
-  const id = rootMain(state).propertyReferences?.characters;
-  const instance = nearestInstance(state);
-  const value = id === undefined || instance === undefined ? undefined : propertyValue(instance, id);
-  return value === undefined || value === true || value === false ? charactersOf(source) : value;
+  restyle(state, start, end, (style) => {
+    const written = withFont(style, font);
+    return style.bindings.has("fontFamily") && !written.bindings.has("fontFamily")
+      ? { ...written, ownFamily: true }
+      : written;
+  });
 }
 
 /**
@@ -437,25 +575,14 @@ export function requireRange(state: NodeState, start: number, end: number): void
   }
 }
 
-/**
- * The style of each character a text shows. A sublayer that shows a TEXT property's characters gives
- * each its first character's style, as written characters take it (rules 10 and 34), unless a write
- * styled each of them (rules 52 and 53).
- */
-export function shownStyles(state: NodeState): readonly CharacterStyle[] {
-  const shown = charactersOf(state);
-  const [first] = state.styles;
-  return shown === state.characters ||
-    first === undefined ||
-    state.styles.length === Math.max(1, shown.length)
-    ? state.styles
-    : Array.from({ length: Math.max(1, shown.length) }, () => first);
-}
-
 /** Give every character a text shows its base style, as a link or a TEXT write does (rules 51, 52). */
 export function resetStyles(state: NodeState): void {
+  holdStyles(state);
   const base = state.baseStyle;
   state.styles = Array.from({ length: Math.max(1, charactersOf(state).length) }, () => base);
+  // A reset follows a TEXT write or a link, which can change the characters a text shows as well as
+  // their sizes, so a text that hugs them takes their width again (rule 31).
+  remeasure(state);
 }
 
 /** What a segment compares of a character: the fields asked for, with the fills it paints with (rules 50 and 65). */
@@ -491,14 +618,24 @@ export function fontUnavailable(file: FileState, font: FontNameInput): boolean {
 }
 
 /**
- * The width the fake gives a text that hugs its characters. It measures no glyphs, so each
- * character takes half the font size, an approximation that keeps widths deterministic, and an
- * empty text is 0 wide, as a real one is (rule 31).
+ * Give a text that hugs its characters the width they take (rule 31). The fake measures no glyphs,
+ * so each character takes half its font size, an approximation that keeps widths deterministic, and
+ * an empty text is 0 wide, as a real one is.
  *
- * @param characters - The text's characters.
- * @param fontSize - Their font size.
- * @returns The width.
+ * @param state - The text.
  */
-export function measuredWidth(characters: string, fontSize: number): number {
-  return f32(characters.length * fontSize * 0.5);
+export function remeasure(state: NodeState): void {
+  if (state.textAutoResize !== "WIDTH_AND_HEIGHT") {
+    return;
+  }
+  const { length } = charactersOf(state);
+  const sizes = shownStyles(state).slice(0, length);
+  state.width = f32(sizes.reduce((width, style) => width + style.fontSize * 0.5, 0));
+  // The measured width is the text's own, which a sublayer no longer shows from its main layer (rule 8).
+  ownNumber(state, "width");
+}
+
+/** The font size of each character, as text two runs of styles share where their sizes agree. */
+function sizesOf(styles: readonly CharacterStyle[]): string {
+  return styles.map((style) => style.fontSize).join();
 }

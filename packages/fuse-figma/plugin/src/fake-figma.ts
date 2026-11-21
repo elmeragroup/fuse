@@ -26,7 +26,9 @@
  * the same day. Rule 65 takes its writes and reads from the typings and names what probes on a
  * scratch file showed of range fills on 2026-11-19. Rule 66 takes a text's link from the typings
  * alone. Rule 67 names FD1, FD2 and FD3, run through the Plugin API on a scratch file on
- * 2026-11-20. Rule 8 names FM1 and FM2, and rule 56 FM2, from the same file and day.
+ * 2026-11-20. Rule 8 names FM1 and FM2, and rule 56 FM2, from the same file and day. Rules 50 to 55
+ * name FT1 to FT7, run through the Plugin API on a private draft file the same day and recorded on
+ * #522.
  *
  * Each rule's probe notes sit beside the code that models it. `fake/paints.ts` models rules 1, 2,
  * 3, 22, 23, 27, 33, 46, 49. `fake/overrides.ts` models rules 36, 37, 38, 48. `fake/instances.ts`

@@ -39,6 +39,12 @@ export type CharacterStyle = {
   readonly bindings: ReadonlyMap<VariableBindableTextField, string>;
   /** The fills a range write gave the character, absent where it shows the layer's (rule 65). */
   readonly fills?: readonly Paint[];
+  /**
+   * Set where the character holds a family state of its own: a range family binding set it, or a range
+   * font write or a null range binding dropped its family binding. A whole-text binding then skips it,
+   * until every character holds one style (rules 54 and 55).
+   */
+  readonly ownFamily?: true;
 };
 
 /** A TEXT, BOOLEAN or INSTANCE_SWAP property of a component set or a component. */
@@ -249,13 +255,21 @@ export type NodeState = {
   /** The lengths an instance unbound itself, which no longer show its source's binding (rule 56). */
   readonly unboundLengths: Set<"width" | "height">;
   characters: string;
-  /** The style of each character, or of the one a text layer without characters types in. */
+  /**
+   * The style of each character, or of the one a text layer without characters types in. A sublayer
+   * that holds no styles of its own shows its main layer's instead (`stylesOf`).
+   */
   styles: readonly CharacterStyle[];
   /**
    * The style the whole-text writes leave, which a link or a TEXT write resets every character to
    * (rule 51).
    */
   baseStyle: CharacterStyle;
+  /**
+   * Whether a text sublayer holds styles and a base style of its own, which a text write on it gives
+   * it. Until then it shows its main layer's (rule 52).
+   */
+  ownStyles: boolean;
   textDecoration: TextDecoration;
   /** The text's letter spacing, one for the whole layer (rule 28). */
   letterSpacing: LetterSpacing;
@@ -500,9 +514,25 @@ export function isOwnKey(key: string): boolean {
   return key.startsWith(OWN_PREFIX);
 }
 
-/** The value the characters share, or `figma.mixed` when they differ (rule 10). */
-export function shared<T>(state: NodeState, read: (style: CharacterStyle) => T): T | PluginAPI["mixed"] {
-  const values = new Map(state.styles.map((style) => [JSON.stringify(read(style)), read(style)] as const));
+/**
+ * The style of each character of a text: its own, or its main layer's where it is a sublayer that no
+ * text write gave styles of its own (rule 52).
+ */
+export function stylesOf(state: NodeState): readonly CharacterStyle[] {
+  return state.mirrorOf === undefined || state.ownStyles ? state.styles : stylesOf(state.mirrorOf);
+}
+
+/** A text's base style, its main layer's where it shows that layer's styles (rules 51 and 52). */
+export function baseStyleOf(state: NodeState): CharacterStyle {
+  return state.mirrorOf === undefined || state.ownStyles ? state.baseStyle : baseStyleOf(state.mirrorOf);
+}
+
+/** The value some characters share, or `figma.mixed` when they differ (rule 10). */
+export function shared<T>(
+  styles: readonly CharacterStyle[],
+  read: (style: CharacterStyle) => T
+): T | PluginAPI["mixed"] {
+  const values = new Map(styles.map((style) => [JSON.stringify(read(style)), read(style)] as const));
   const [value, ...others] = values.values();
   return value === undefined || others.length > 0 ? MIXED : value;
 }
@@ -526,6 +556,7 @@ export type UncopiedField =
   | "sharedData"
   | "loaded"
   | "mirrorOf"
+  | "ownStyles"
   | "overridden"
   | "unboundLengths"
   | "heldByModes"

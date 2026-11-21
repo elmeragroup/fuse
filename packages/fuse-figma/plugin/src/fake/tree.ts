@@ -36,7 +36,7 @@
  *      a sublayer swapped to a removed component stays in place.
  */
 
-import { BLACK, NEW_TEXT_STYLE, sourceOf, STATES, WHITE, write } from "./state.ts";
+import { baseStyleOf, BLACK, NEW_TEXT_STYLE, sourceOf, STATES, stylesOf, WHITE, write } from "./state.ts";
 import type { FileState, NodeState, NodeType, UncopiedField } from "./state.ts";
 
 /** The children a node shows, an instance's sublayers included. */
@@ -239,8 +239,8 @@ function copiedFields(source: NodeState): Omit<NodeState, UncopiedField> {
     propertyReferences: source.propertyReferences === null ? null : { ...source.propertyReferences },
     main: source.main,
     characters: source.characters,
-    styles: source.styles,
-    baseStyle: source.baseStyle,
+    styles: stylesOf(source),
+    baseStyle: baseStyleOf(source),
     textDecoration: source.textDecoration,
     letterSpacing: { ...source.letterSpacing },
     textDecorationOffset: source.textDecorationOffset === null ? null : { ...source.textDecorationOffset },
@@ -368,6 +368,7 @@ export function createNode(file: FileState, type: NodeType, name: string, id?: s
     propertyValues: new Map(),
     exposedInstance: false,
     mirrorOf: undefined,
+    ownStyles: false,
     overridden: new Set(),
     unboundLengths: new Set(),
     heldByModes: false,
@@ -458,6 +459,7 @@ export function forkFile(source: FileState): FileState {
       sharedData: new Map(state.sharedData),
       loaded: state.loaded,
       mirrorOf: undefined,
+      ownStyles: state.ownStyles,
       overridden: new Set(state.overridden),
       unboundLengths: new Set(state.unboundLengths),
       heldByModes: state.heldByModes,

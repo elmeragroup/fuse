@@ -39,18 +39,11 @@
  */
 
 import { guard } from "./guard.ts";
-import { ownNumber, resolveNumber, resolveString } from "./modes.ts";
+import { resolveNumber, resolveString } from "./modes.ts";
 import { f32, SHARED_DATA_SEPARATOR } from "./state.ts";
 import { write } from "./state.ts";
 import type { FileState, NodeState, TextStyleState } from "./state.ts";
-import {
-  fontLoaded,
-  measuredWidth,
-  requireFont,
-  requireHeldFonts,
-  restyleWhole,
-  weightedStyle,
-} from "./text.ts";
+import { fontLoaded, remeasure, requireFont, requireHeldFonts, restyleWhole, weightedStyle } from "./text.ts";
 import { alias, fileVariable, requireType } from "./variables.ts";
 
 /** What a real file stored each of these characters in a description as (PT1). */
@@ -388,8 +381,5 @@ export function linkTextStyle(state: NodeState, styleId: string): void {
   state.textDecoration = "NONE";
   state.textDecorationOffset = null;
   // A text that hugs its characters takes their width at the style's size (rule 31).
-  if (state.textAutoResize === "WIDTH_AND_HEIGHT") {
-    state.width = measuredWidth(state.characters, style.fontSize);
-    ownNumber(state, "width");
-  }
+  remeasure(state);
 }

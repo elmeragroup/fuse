@@ -57,8 +57,8 @@
 
 import { deepFrozen } from "../../../test/frozen.ts";
 import { shownBinding } from "./modes.ts";
-import { EFFECT_FIELD_TYPES, isStoredNumber, numberOwner, sourceOf } from "./state.ts";
-import type { NodeState, StoredNumberField } from "./state.ts";
+import { EFFECT_FIELD_TYPES, isStoredNumber, numberOwner, sourceOf, stylesOf } from "./state.ts";
+import type { CharacterStyle, NodeState, StoredNumberField } from "./state.ts";
 
 /** The fields an instance or a sublayer shows from its source until it overrides them (rule 38). */
 type ShownField = "fills" | "strokes" | "effects";
@@ -305,4 +305,32 @@ function hiddenByWrite(state: NodeState): boolean {
  */
 export function isHidden(state: NodeState): boolean {
   return hiddenByProperty(state) || hiddenByWrite(state);
+}
+
+/**
+ * The characters a text shows (rule 34): a sublayer whose main layer links a TEXT property shows the
+ * value the nearest instance sets, and otherwise its main layer's, until a designer overrides them.
+ */
+export function charactersOf(state: NodeState): string {
+  const source = state.mirrorOf;
+  if (source === undefined || state.overridden.has("characters")) {
+    return state.characters;
+  }
+  const id = rootMain(state).propertyReferences?.characters;
+  const instance = nearestInstance(state);
+  const value = id === undefined || instance === undefined ? undefined : propertyValue(instance, id);
+  return value === undefined || value === true || value === false ? charactersOf(source) : value;
+}
+
+/**
+ * The style of each character a text shows, one for each. A sublayer whose styles number otherwise,
+ * as one that shows a TEXT property's characters or a main whose label changed length, gives each
+ * character its first style, as written characters take it (rules 10 and 34), unless a write styled
+ * each of them (rules 52 and 53).
+ */
+export function shownStyles(state: NodeState): readonly CharacterStyle[] {
+  const length = Math.max(1, charactersOf(state).length);
+  const styles = stylesOf(state);
+  const [first] = styles;
+  return first === undefined || styles.length === length ? styles : Array.from({ length }, () => first);
 }

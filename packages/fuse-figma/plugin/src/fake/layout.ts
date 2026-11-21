@@ -96,7 +96,9 @@
  *    and FILL left it 0 wide after its characters arrived and after FILL was written again. Writing
  *    the characters first gave it 364. `resize(1, height)` on the 0-wide filling text kept FILL and
  *    reflowed it to 364 (PZ). The fake gives a text that hugs its characters a width when they are
- *    written, half its font size a character, since it measures no glyphs, and 0 for none. A fill
+ *    written and when their sizes change, by a write, a binding or a reset, half each character's
+ *    font size, since it measures no glyphs, and 0 for none. It resolves a bound size when the text
+ *    binds it and not again when the text's modes change, so a mode change leaves the width. A fill
  *    keeps a text's width, so one that was 0 wide reads 0 across, and a positive resize of such a
  *    text keeps its fill. The fake does not lay out, so the text keeps the width written.
  * 32. An instance takes its main component's new size only when it is read. On 2026-10-23, after an
@@ -649,6 +651,37 @@ function ownLength(state: NodeState, field: "width" | "height"): void {
   } else {
     ownNumber(state, field);
   }
+}
+
+/**
+ * Resize the instance a text sublayer sits in where a range write changed the text's width and the
+ * instance's main hugs its content, and hold the instance's size, as a real file listed `width` and
+ * `height` on the instance after a range write grew its label (rule 53, FT4).
+ *
+ * @param text - The text sublayer.
+ * @param before - Its width before the write.
+ */
+export function fitInstanceToText(text: NodeState, before: number): void {
+  const instance = text.parent;
+  const source = instance === undefined ? undefined : sourceOf(instance);
+  if (text.width === before || instance?.type !== "INSTANCE" || source === undefined) {
+    return;
+  }
+  const owner = layoutOwner(source);
+  if (!isAutoLayout(owner)) {
+    return;
+  }
+  for (const axis of ["HORIZONTAL", "VERTICAL"] as const) {
+    if (owner[modeOn(owner, axis)] === "AUTO") {
+      const length = huggedLength(instance, axis, owner);
+      if (axis === "HORIZONTAL") {
+        instance.width = length;
+      } else {
+        instance.height = length;
+      }
+    }
+  }
+  ownSize(instance);
 }
 
 /** The override that holds an instance's own length on an axis (rule 32). */

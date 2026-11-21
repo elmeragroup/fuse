@@ -480,8 +480,8 @@ function bindsFamily(run: Run, text: TextNode, variable: Variable, rewrites: boo
  * modes as the rest of it takes, and then its weight binding. A weight binding gives every character
  * the face its family names for the weight in the label's modes, the face the font writes give it, so
  * it changes no font the run did not load (rule 10). A `fontName` write drops it (PG8), and so does a
- * range font write on its range, so a label whose font or glyph ranges the run writes binds it again,
- * after the characters and glyph ranges and before the layout, which the face it shows sizes. A
+ * range font write on its range (FT3), so a label whose font or glyph ranges the run writes binds it
+ * again, after the characters and glyph ranges and before the layout, which the face it shows sizes. A
  * whole-text binding written after the ranges binds every range, a glyph range in the glyph font's
  * family included (PG13). A label an instance shows takes the same, after a TEXT write on the
  * instance resets it (G5).
@@ -514,9 +514,14 @@ export function planGlyphFaces(
 
 /**
  * Plan a text's typography, its characters among them, then the glyph font on its glyph ranges, which
- * a font write or new or linked characters before it reset (G3, G8). A family binding binds only the
- * characters already in the variable's family and changes no font (G10), so it comes after the font
- * write `planFont` plans, and leaves the ranges as they are.
+ * a font write or new or linked characters before it reset (G3, G8). A family binding gives every
+ * character the variable's family and binds it, apart from a character with a family state of its
+ * own: a range family binding set it, or a range font write or a null range binding dropped its
+ * binding, and every character does not yet hold one style (G10, FT2, FT6, FT7). It comes after
+ * the font write `planFont` plans. `planGlyphRanges` compares the ranges as they read before the
+ * binding runs, which holds only while each glyph range it leaves alone lost its binding to the range
+ * write that drew it after an earlier binding. A glyph range in the glyph font that never held a
+ * binding would take the label's family.
  *
  * @param replaced - Whether the plan writes the label's font first.
  */
