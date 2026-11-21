@@ -95,15 +95,15 @@ const NO_FIGMA_FORM = new Map([
  * The properties a child inherits from its parent, as CSS passes them down. Custom properties
  * inherit too, unless their `@property` says `inherits: false`. `white-space` and `text-wrap` are
  * shorthands, which `expandShorthand` splits: `white-space-collapse`, `text-wrap-mode` and
- * `text-wrap-style` inherit (CSS Text 4 §3.1 and §6.1), so a `truncate` on a box keeps the label of a
- * part below it on one line, while the `overflow` and `text-overflow` it also sets stay on the box,
- * and a part's label wraps as Empty's `text-balance` on the root says. `text-align` inherits too, and
- * `overflow-wrap` (CSS Text 3 §5.5), so each label below the box that sets it decides whether it
- * breaks a word there. A list's `list-style-type`, `list-style-image` and `list-style-position` inherit
- * (CSS Lists 3 §3), so an item reads the marker its list sets. `cursor` inherits (CSS UI 4 §5.1), so
- * a box that generates no box, as a `display: contents` label, still sets the pointer over its parts.
- * `direction` inherits (CSS Writing Modes 4 §2.1), so a label below a right-to-left box reads `start`
- * and `end` at the right and the left.
+ * `text-wrap-style` inherit (CSS Text 4 §3.1 and §6.1), while the `overflow` and `text-overflow` a
+ * `truncate` also sets stay on its box. `text-align` inherits (CSS Text 3 §6.1), and so do
+ * `word-break`, `line-break`, `hyphens` and `overflow-wrap` (§5.1 to §5.4) and `text-transform`
+ * (§2.1). `text-underline-offset` inherits (CSS Text Decoration 4 §2.8), as an absolute length
+ * computed where it is declared. A list's `list-style-type`, `list-style-image` and
+ * `list-style-position` inherit (CSS Lists 3 §3), so an item reads the marker its list sets.
+ * `cursor` inherits (CSS UI 4 §5.1), so a box that generates no box, as a `display: contents`
+ * label, still sets the pointer over its parts. `direction` inherits (CSS Writing Modes 4 §2.1), so
+ * a label below a right-to-left box reads `start` and `end` at the right and the left.
  */
 const INHERITED_PROPERTIES = new Set([
   "color",
@@ -120,6 +120,11 @@ const INHERITED_PROPERTIES = new Set([
   "text-wrap-style",
   "text-align",
   "overflow-wrap",
+  "word-break",
+  "line-break",
+  "hyphens",
+  "text-transform",
+  "text-underline-offset",
   "list-style",
   "list-style-type",
   "list-style-image",
@@ -523,7 +528,8 @@ export class CellLedger {
   #overrider(around: Layer, property: string): string | undefined {
     for (const id of around.children) {
       const child = this.#layers[id];
-      const source = child?.style.get(property)?.source;
+      // An `inherit` or `unset` takes the value it overrides, so the declaration it took counts.
+      const source = valueDeclaration(child?.style.get(property)?.source, (layer) => this.#layers[layer]);
       if (child === undefined || source === undefined) {
         continue;
       }
@@ -690,22 +696,44 @@ export class LayerStyle {
   }
 
   /**
-   * The computed value of `other` on the element that declared `property`, with Tailwind's variables
-   * substituted, without recording a read. CSS computes a relative length where it is declared, so
-   * an inherited `em` letter spacing is a share of the declaring element's font size, which this
-   * names.
+   * The value a declaration of the property has as written, before any substitution, as a
+   * `var(--x, inherit)` stays a `var()` where its substitution leaves `inherit`.
+   */
+  written(property: string): string | undefined {
+    return this.#layer.style.get(property)?.source.value;
+  }
+
+  /**
+   * The computed value of `other` on the element whose declaration gives `property` its value, with
+   * the declarations that value reads. An `inherit`, or an `unset` on an inherited property, takes
+   * the parent's computed value (CSS Cascade 4 §7.3), so the element is the one that declared the
+   * value it took. CSS computes a relative length where it is declared, so an inherited `em` is a
+   * share of that element's font size, which this names.
    *
    * @param property - The property whose declaring element to read.
    * @param other - The property to read there.
-   * @returns The value, or undefined where nothing sets `property` or that element has no `other`.
+   * @returns The value, its declarations, and whether the element is this layer, or undefined where
+   *   no declaration gives `property` a value or that element has no `other`.
    */
-  resolvedWhereDeclared(property: string, other: string): string | undefined {
-    const source = this.#layer.style.get(property)?.source.layer;
-    const declaring = source === undefined ? undefined : this.#ledger.layer(source);
+  whereValueDeclared(
+    property: string,
+    other: string
+  ):
+    | {
+        readonly value: string | undefined;
+        readonly sources: readonly Provenance[];
+        readonly here: boolean;
+      }
+    | undefined {
+    const source = valueDeclaration(this.#layer.style.get(property)?.source, (id) => this.#ledger.layer(id));
+    const declaring = source === undefined ? undefined : this.#ledger.layer(source.layer);
     const entry = declaring?.style.get(other);
-    return declaring === undefined || entry === undefined
-      ? undefined
-      : substitute(declaring, this.#ledger.scope.context, entry, noReads());
+    if (declaring === undefined || entry === undefined) {
+      return undefined;
+    }
+    const read = noReads();
+    const value = substitute(declaring, this.#ledger.scope.context, entry, read);
+    return { value, sources: sourcesOf(declaring, entry, read), here: declaring === this.#layer };
   }
 
   /**
@@ -776,15 +804,18 @@ export class LayerStyle {
    * @param describe - What the mapped value became, for the coverage table.
    * @param feed - The spec fields the mapped value fills, which an instance part built in place uses
    *   to tell which of its fields a declaration sets.
+   * @param also - Declarations the mapping reads besides the property's own, as the font size an `em`
+   *   takes, which the read notes with the same outcome.
    * @returns The mapped value, or undefined when the property is unset or does not map.
    */
   read<T>(
     property: string,
     map: (value: string) => T | undefined,
     describe: (mapped: T) => CoverageNote,
-    feed: Feed
+    feed: Feed,
+    also: readonly Provenance[] = []
   ): T | undefined {
-    return this.#read(property, map, describe, feed, undefined);
+    return this.#read(property, map, describe, feed, undefined, also);
   }
 
   /**
@@ -824,7 +855,8 @@ export class LayerStyle {
     map: (value: string) => T | undefined,
     describe: (mapped: T) => CoverageNote,
     feed: Feed,
-    holder: { readonly layer: Layer; readonly feed: Feed } | undefined
+    holder: { readonly layer: Layer; readonly feed: Feed } | undefined,
+    also: readonly Provenance[] = []
   ): T | undefined {
     const entry = this.#layer.style.get(property);
     if (entry === undefined) {
@@ -841,7 +873,7 @@ export class LayerStyle {
             detail: `no Figma field reads ${resolved ?? entry.value ?? "an invalid value"}`,
           }
         : describe(mapped);
-    for (const source of [...sourcesOf(this.#layer, entry, read), ...consumed]) {
+    for (const source of [...sourcesOf(this.#layer, entry, read), ...consumed, ...also]) {
       holder?.layer.inPlace?.fed(source, holder.feed);
       this.#ledger.noteRead(source, note, feed, this.#layer, holder?.feed);
     }
@@ -1109,7 +1141,8 @@ function importance(value: string) {
 
 /**
  * `inherit` computes to the parent's value of the property, inherited or not (CSS Cascade 4 §7.3),
- * as a meter fill's `height: inherit` takes its bar's height. The entry keeps the declaration as its
+ * as a meter fill's `height: inherit` takes its bar's height, and so does `unset` on a property in
+ * {@link INHERITED_PROPERTIES}. The entry keeps the declaration as its
  * source and reads the parent's declaration, so the declaration lands in the coverage table with
  * what it resolved to, or with the invalid value a failed substitution outside left, which a read
  * leaves unmapped. Only where nothing outside holds an entry for the property does it take the
@@ -1122,7 +1155,7 @@ function inheritedKeyword(
   source: Provenance,
   parentOf: (property: string) => StyleEntry | undefined
 ): StyleEntry | undefined {
-  if (normalizeCss(source.value) !== "inherit") {
+  if (!takesParent(source)) {
     return undefined;
   }
   const parent = parentOf(source.property);
@@ -1131,6 +1164,34 @@ function inheritedKeyword(
   }
   const initial = INITIAL_VALUES.get(source.property);
   return initial === undefined ? undefined : { value: initial, source, consumed: [], computed: true };
+}
+
+/**
+ * Whether a declaration takes the parent's computed value: an `inherit`, or an `unset` on a property
+ * in {@link INHERITED_PROPERTIES} (CSS Cascade 4 §7.3).
+ */
+function takesParent(source: Provenance): boolean {
+  const keyword = normalizeCss(source.value).toLowerCase();
+  return keyword === "inherit" || (keyword === "unset" && INHERITED_PROPERTIES.has(source.property));
+}
+
+/**
+ * The declaration that gives a value: the source itself, or, past each {@link takesParent} keyword,
+ * the declaration the keyword took its parent's value from. Undefined where a keyword found no
+ * value outside to take.
+ *
+ * @param source - The declaration a layer's entry holds.
+ * @param layerOf - The layer of an id, whose entry for the property holds what a keyword took.
+ */
+function valueDeclaration(
+  source: Provenance | undefined,
+  layerOf: (id: number) => Layer | undefined
+): Provenance | undefined {
+  let current = source;
+  while (current !== undefined && takesParent(current)) {
+    current = layerOf(current.layer)?.style.get(current.property)?.consumed[0];
+  }
+  return current;
 }
 
 /**
