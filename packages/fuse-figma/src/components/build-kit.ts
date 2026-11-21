@@ -48,6 +48,7 @@ import type {
   SetLabelsSpec,
   TextStyleSpec,
 } from "./kit-spec";
+import { TEXT_STYLE_CAPTURE } from "./text-style-samples";
 import { buildTextStyles } from "./text-styles";
 import { compileUtilities } from "./utility-css";
 
@@ -396,21 +397,17 @@ function modeViews(
 }
 
 /**
- * Map the registry's sets, in order. The mapping throws `KitUnmappable` from deep in the cascade and
- * the part mappers, where a definition asks for what Figma cannot draw, and this is the one place
- * that catches it, as `checkKitSpec` catches `KitContradiction`.
+ * Run a mapping that throws `KitUnmappable` from deep in the cascade and the part mappers, where a
+ * definition or a capture asks for what Figma cannot draw. This is the one place that catches it,
+ * for the component sets and the text styles alike, as `checkKitSpec` catches `KitContradiction`.
  *
- * @param registry - The sets to build.
- * @param context - What the mapping reads.
- * @returns Each entry and its built set, or the `KitUnmappable` the mapping threw.
+ * @param map - The mapping.
+ * @returns What the mapping returned, or the `KitUnmappable` it threw.
  * @throws Any other error, a defect of the mapping.
  */
-function mapSets(
-  sources: readonly SetSource[],
-  context: Parameters<typeof buildSetsInOrder>[1]
-): Result.Result<ReturnType<typeof buildSetsInOrder>, KitUnmappable> {
+function caughtUnmappable<Mapped>(map: () => Mapped): Result.Result<Mapped, KitUnmappable> {
   try {
-    return Result.succeed(buildSetsInOrder(sources, context));
+    return Result.succeed(map());
   } catch (thrown) {
     if (thrown instanceof KitUnmappable) {
       return Result.fail(thrown);
@@ -419,17 +416,32 @@ function mapSets(
   }
 }
 
+/**
+ * The kept capture `captures/<key>.json`.
+ *
+ * @param key - The capture's key.
+ * @param reader - What reads the capture, such as a set's name, which the message names where it is
+ *   missing.
+ * @returns The capture, `KitUnmappable` where the repository keeps none, or `CaptureUnreadable` for a
+ *   file the schema rejects.
+ */
+function keptCaptureOf(
+  key: string,
+  reader: string
+): Result.Result<SetCapture, CaptureUnreadable | KitUnmappable> {
+  return (
+    keptCapture(key) ??
+    Result.fail(
+      new KitUnmappable({
+        message: `${reader} reads its capture, and captures/${key}.json does not exist; run figma:capture`,
+      })
+    )
+  );
+}
+
 /** What builds an entry's set, or `CaptureUnreadable` for a kept capture the schema rejects. */
 function setSource({ manifest }: KitEntry): Result.Result<SetSource, CaptureUnreadable | KitUnmappable> {
-  const capture = keptCapture(manifest.key);
-  if (capture === undefined) {
-    return Result.fail(
-      new KitUnmappable({
-        message: `${manifest.name} is switched to its capture, and captures/${manifest.key}.json does not exist; run figma:capture`,
-      })
-    );
-  }
-  return Result.flatMap(capture, (read) =>
+  return Result.flatMap(keptCaptureOf(manifest.key, manifest.name), (read) =>
     Result.map(openPlacement(manifest), (open): SetSource => {
       const definition = positionedByBaseUi(withMeasuredHost(manifestDefinition(manifest), read), read);
       const source: SetSource = {
@@ -539,18 +551,28 @@ function capturedClasses(captures: readonly SetCapture[]): ReadonlySet<string> {
   return classes;
 }
 
+/**
+ * Build the registry's sets in one compile of every class their captures and `others` record, since
+ * Tailwind emits a theme value and an `@property` registration only for a utility it compiles, which
+ * says which custom properties inherit.
+ *
+ * @param others - Captures beside the sets' that the build reads with the same context, such as the
+ *   text style samples'.
+ * @returns The sets, in the registry's order and on their pages, and the context the mapping read.
+ */
 const buildSets = Effect.fnUntraced(function* (
   { variables, modes }: KitVariables,
-  registry: readonly KitEntry[]
+  registry: readonly KitEntry[],
+  others: readonly SetCapture[]
 ) {
   const sources: SetSource[] = [];
   for (const entry of registry) {
     sources.push(yield* Effect.fromResult(setSource(entry)));
   }
-  // Tailwind emits a theme value and an `@property` registration only for a utility it compiles, so
-  // the build compiles every class a capture records, which says which custom properties inherit.
-  const compiled = yield* compileUtilities([...capturedClasses(sources.map(({ capture }) => capture))]);
-  const mapped = yield* Effect.fromResult(mapSets(sources, { compiled, variables, modes }));
+  const captures = [...sources.map(({ capture }) => capture), ...others];
+  const compiled = yield* compileUtilities([...capturedClasses(captures)]);
+  const context = { compiled, variables, modes };
+  const mapped = yield* Effect.fromResult(caughtUnmappable(() => buildSetsInOrder(sources, context)));
   // The builder returns one set per source, in the registry's order.
   const sets: readonly KitComponentSet[] = registry.flatMap(({ page }, index) => {
     const set = mapped[index];
@@ -558,7 +580,7 @@ const buildSets = Effect.fnUntraced(function* (
       ? []
       : [{ ...set, componentSet: { ...set.componentSet, page: pageSpec(page).key } }];
   });
-  return sets;
+  return { sets, context };
 });
 
 /**
@@ -569,7 +591,7 @@ const buildSets = Effect.fnUntraced(function* (
  *   `KitSourceInvalid` or `KitToolFailed`, as {@link buildKit} does.
  */
 export const buildComponentSets = Effect.fn("buildComponentSets")(function* () {
-  return yield* buildSets(yield* Effect.fromResult(kitVariables()), KIT);
+  return (yield* buildSets(yield* Effect.fromResult(kitVariables()), KIT, [])).sets;
 });
 
 /** The kit spec the plugin bundles, and the coverage of every recipe declaration. */
@@ -593,7 +615,8 @@ export type BuiltKit = {
 export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitEntry[] = KIT) {
   const kitVariableSet = yield* Effect.fromResult(kitVariables());
   const { collections, variables } = kitVariableSet;
-  const built = yield* buildSets(kitVariableSet, registry);
+  const samples = yield* Effect.fromResult(keptCaptureOf(TEXT_STYLE_CAPTURE.key, "Text styles"));
+  const { sets: built, context } = yield* buildSets(kitVariableSet, registry, [samples]);
   const glyphColor = readColor("var(--foreground)", variables);
   if (glyphColor === undefined) {
     return yield* new KitSourceInvalid({ message: "the variable set has no foreground for the icon glyphs" });
@@ -648,7 +671,7 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
     })
   );
 
-  const textStyles = yield* buildTextStyles(variables);
+  const textStyles = yield* Effect.fromResult(caughtUnmappable(() => buildTextStyles(samples, context)));
   const look = yield* Effect.fromResult(docsLook(variables, textStyles));
   const docs: PageDocsSpec[] = [];
   for (const page of componentPages) {

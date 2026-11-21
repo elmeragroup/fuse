@@ -1,11 +1,13 @@
 /**
- * `figma:capture`: capture the kit's capture-backed sets in Chromium and write each set's capture
- * to `captures/<set>.json`, or, with `--check`, fail where a fresh capture differs from the file.
+ * `figma:capture`: capture the kit's capture-backed sets and the text style samples in Chromium, and
+ * write each capture to `captures/<key>.json`. With `--check`, the run writes nothing and fails
+ * where a fresh capture differs from the kept file.
  *
- *     pnpm --filter @elmeragroup/fuse-figma figma:capture [<set>…] [--check] [--repeat <n>]
+ *     pnpm --filter @elmeragroup/fuse-figma figma:capture [<key>…] [--check] [--repeat <n>]
  *
- * With no set named, the run captures every set whose kit entry is switched to the capture.
- * `--repeat` captures each set n times and fails unless every run writes the same bytes.
+ * With no key named, the run captures every set whose kit entry is switched to the capture, then the
+ * text style samples, whose key is `text-styles`. `--repeat` takes each capture n times and fails
+ * unless every run writes the same bytes.
  */
 
 import { NodeRuntime, NodeServices } from "@effect/platform-node";

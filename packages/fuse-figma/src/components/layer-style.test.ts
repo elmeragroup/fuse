@@ -33,7 +33,6 @@ function registering(inherits: boolean): BuildContext {
       rules: new Map(),
       themeValues: new Map(),
       registeredProperties: new Map([["--x", { initialValue: "3px", inherits }]]),
-      below: new Map(),
     },
     variables: makeVariableIndex([]),
   };

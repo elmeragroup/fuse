@@ -4,8 +4,8 @@
  *
  * The build's own checks return `KitSourceInvalid` as a `Result`, and `buildKit` lifts each where
  * it orchestrates. `runTool` turns a tool's rejection into `KitToolFailed`. The mapping throws
- * `KitUnmappable` from deep inside, and `mapSets` in `build-kit.ts` catches it in one place and
- * returns it as a `Result`.
+ * `KitUnmappable` from deep inside, and `caughtUnmappable` in `build-kit.ts` catches it in one place
+ * and returns it as a `Result`.
  */
 
 import { Data, Effect } from "effect";
@@ -16,7 +16,7 @@ import type { KitContradiction } from "./kit-check.ts";
  * A recipe or a kit definition asks for a layer, part or property the build cannot map to Figma,
  * such as two labels that give one TEXT property two defaults. The mapping throws it from deep
  * inside the CSS cascade and the part mappers, class constructors and per-cell callbacks among
- * them, and `mapSets` in `build-kit.ts` returns it as a `Result`, so `buildKit` fails with it.
+ * them, and `caughtUnmappable` in `build-kit.ts` returns it as a `Result`, so `buildKit` fails with it.
  */
 export class KitUnmappable extends Data.TaggedError("KitUnmappable")<{
   readonly message: string;

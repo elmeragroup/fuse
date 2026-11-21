@@ -1,148 +1,35 @@
 /**
  * The local text styles the plugin keeps in the file: one per type the Text, Heading and Span
- * recipes draw. The kit draws no component set for these three, so designers set their type with
+ * components draw. The kit draws no component set for these three, so designers set their type with
  * these styles.
  *
- * Each style's classes come from the recipe itself, called once per size and weight it exposes, and
- * Heading's from `headingClass`, which merges a level's theme roles over the recipe as `Heading`
- * renders them. Tailwind compiles the classes, the kit's layer style (`layer-style.ts`) computes the
- * style of an element that carries them, and `readType` in `typography.ts` reads its type as it reads a kit
- * label's. The style also takes the element's `text-transform`, `text-decoration-line` and
- * `text-wrap-style`, each Figma's default where the classes set none.
+ * Each style's type comes from `captures/text-styles.json`. `figma:capture` takes it in Chromium from
+ * the samples `text-style-samples.ts` lists, one real `Text`, `Span` or `Heading` per recipe
+ * combination. The capture cascade (`capture-cascade.ts`) applies the winning declarations of each
+ * sample's root over what the page passes down, as it does for the root of a component set.
+ * `readType` in `typography.ts` reads the resulting type with the reads a kit label uses. The style
+ * also takes the root's `text-transform`, `text-decoration-line` and `text-wrap-style`, each Figma's
+ * default where the cascade sets none.
  *
  * Names follow the scheme `<Component>/<size>/<weight>`, with the recipe's `default` size named for
  * the `base` step it draws and the weight named for its Figma style in lowercase, such as
  * `Text/base/regular`. Heading's three themed levels are `Heading/1` to `Heading/3`, whose size,
- * line height and weight follow the theme. Two values of an axis that draw the same type, such as
- * Text's `bold`, which caps body text at `medium`, give one style.
+ * line height and weight follow the theme. Two samples that draw the same type, such as Text's
+ * `bold`, which caps body text at `medium`, give one style.
  */
-import { Effect } from "effect";
-
-import {
-  headingClass,
-  headingVariants,
-  spanVariants,
-  textVariants,
-  THEMED_HEADING_LEVELS,
-} from "@elmeragroup/fuse/recipe-catalog";
-
+import { CaptureSetCascade } from "../capture/capture-cascade";
+import type { SetCapture } from "../capture/capture-format";
 import { KitUnmappable } from "./build-errors";
 import type { BuildContext } from "./component-spec";
-import type { Origin } from "./coverage-log";
 import { normalizeCss } from "./css-values";
-import type { VariableIndex } from "./css-values";
 import { TEXT_STYLE_KEY_PREFIX } from "./kit-spec";
 import type { TextStyleSpec } from "./kit-spec";
-import { CellLedger, LayerStyle } from "./layer-style";
-import type { Applied } from "./layer-style";
-import { ownKey } from "./own-key";
+import type { LayerStyle } from "./layer-style";
+import { sampleCell, TEXT_STYLE_CAPTURE, TEXT_STYLE_SAMPLES } from "./text-style-samples";
+import type { TextStyleSample } from "./text-style-samples";
 import { readType } from "./typography";
-import { compileUtilities, elementReach } from "./utility-css";
-import type { CompiledUtilities } from "./utility-css";
 
-/** One style before its classes are read: where it sits and the recipe classes it draws. */
-type StyleSource = {
-  /**
-   * The name's segments, such as `["Text", "sm"]`. A literal weight's segment follows them, and a
-   * themed Heading level, whose weight binds a variable, has none.
-   */
-  readonly path: readonly string[];
-  readonly description: string;
-  readonly classes: string;
-};
-
-/** The name of a recipe size in a style name: `default` draws the `base` step. */
-function sizeName(size: string): string {
-  return size === "default" ? "base" : size;
-}
-
-/** The keys of a recipe axis that are its own, in the recipe's order. */
-function axisKeys<Table extends object>(table: Table): Extract<keyof Table, string>[] {
-  return Object.keys(table).filter((key) => ownKey(table, key));
-}
-
-/** Each style the Text and Span recipes draw, one per size and weight, in recipe order. */
-function bodySources(
-  component: "Text" | "Span",
-  recipe: typeof textVariants | typeof spanVariants
-): StyleSource[] {
-  // Span extends Text, so the two share Text's size and weight axes.
-  return axisKeys(textVariants.variants.size).flatMap((size) =>
-    axisKeys(textVariants.variants.weight).map((weight) => ({
-      path: [component, sizeName(size)],
-      description: `${component} with the size ${size} and the weight ${weight}.`,
-      classes: recipe({ size, weight }),
-    }))
-  );
-}
-
-/** Each style the Heading draws: its themed levels, then each recipe size and weight. */
-function headingSources(): StyleSource[] {
-  const levels = THEMED_HEADING_LEVELS.map((level) => ({
-    path: ["Heading", String(level)],
-    description: `Heading at level ${level}, whose size, line height and weight follow the theme.`,
-    classes: headingClass({ level }),
-  }));
-  // A Heading with both `size` and `font` set reads no theme role at any level.
-  const sizes = axisKeys(headingVariants.variants.size).flatMap((size) =>
-    axisKeys(headingVariants.variants.font).map((font) => ({
-      path: ["Heading", sizeName(size)],
-      description: `Heading with the size ${size} and the font ${font}.`,
-      classes: headingClass({ level: 2, size, font }),
-    }))
-  );
-  return [...levels, ...sizes];
-}
-
-/** The classes of a class string, in order. */
-function splitClasses(classes: string): string[] {
-  return classes.split(/\s+/).filter((className) => className !== "");
-}
-
-/** The text styles keep no coverage rows: the component sets' table covers the recipes' classes. */
-const NO_COVERAGE: Origin = { record: () => undefined };
-
-/**
- * What a style's classes apply to an element in no state, in the order the stylesheet holds their
- * rules, as the browser's cascade orders rules of one specificity. `elementReach` reads each class's
- * compiled rule: a plain rule applies, and a rule that styles only the children or descendants, as
- * `*:` and `**:` compile, applies nothing to the element. Any other class fails the build, since
- * reading it would take evaluating its selector or its condition.
- *
- * @returns The rules, or `KitUnmappable` naming the style, the class and why it cannot be read.
- */
-function appliedOf(
-  label: string,
-  classes: string,
-  compiled: CompiledUtilities
-): Effect.Effect<Applied[], KitUnmappable> {
-  return Effect.gen(function* () {
-    const order = new Map([...compiled.rules.keys()].map((utility, index) => [utility, index]));
-    const applied: Applied[] = [];
-    for (const className of splitClasses(classes)) {
-      const reach = elementReach(compiled, className);
-      if (reach.kind === "unread") {
-        return yield* new KitUnmappable({
-          message: `the text style ${label}: the class \`${className}\` cannot be read, because ${reach.reason}`,
-        });
-      }
-      if (reach.kind === "own") {
-        applied.push({
-          part: "text style",
-          className,
-          origin: NO_COVERAGE,
-          rank: 0,
-          order: order.get(className) ?? 0,
-          at: undefined,
-          declarations: reach.rule.declarations,
-        });
-      }
-    }
-    return applied;
-  });
-}
-
-/** Each `text-transform` a recipe can set, as the text case Figma holds. */
+/** Each `text-transform` the cascade can give, as the text case Figma holds. */
 const TEXT_CASES = new Map<string, TextStyleSpec["textCase"]>([
   ["none", "ORIGINAL"],
   ["uppercase", "UPPER"],
@@ -150,14 +37,14 @@ const TEXT_CASES = new Map<string, TextStyleSpec["textCase"]>([
   ["capitalize", "TITLE"],
 ]);
 
-/** Each `text-decoration-line` a recipe can set, as the decoration Figma holds. */
+/** Each `text-decoration-line` the cascade can give, as the decoration Figma holds. */
 const TEXT_DECORATIONS = new Map<string, TextStyleSpec["textDecoration"]>([
   ["none", "NONE"],
   ["underline", "UNDERLINE"],
   ["line-through", "STRIKETHROUGH"],
 ]);
 
-/** Each `text-wrap-style` a recipe can set, as the wrap style Figma holds. */
+/** Each `text-wrap-style` the cascade can give, as the wrap style Figma holds. */
 const TEXT_WRAP_STYLES = new Map<string, TextStyleSpec["textWrapStyle"]>([
   ["auto", "AUTO"],
   ["balance", "BALANCE"],
@@ -168,7 +55,7 @@ const TEXT_WRAP_STYLES = new Map<string, TextStyleSpec["textWrapStyle"]>([
 const NO_SPACING = { unit: "PERCENT", value: 0 } as const;
 
 /**
- * Read a keyword property into a Figma field: the field for its initial value where the classes set
+ * Read a keyword property into a Figma field: the field for its initial value where the cascade sets
  * none, and undefined for a value the table lacks.
  */
 function readKeyword<Field>(
@@ -190,63 +77,57 @@ function readKeyword<Field>(
 }
 
 /**
- * Read one style's type from its classes, through the layer style the kit's component sets read
- * through, as an element on a page that sets nothing of its own.
+ * Read one style's type from its sample's captured root, through the layer style the kit's component
+ * sets read through.
  *
- * @returns The style, or `KitUnmappable` where the classes give a field the kit cannot draw.
+ * @returns The style.
+ * @throws `KitUnmappable` where the capture lacks the sample's cell or the sample gives a field the
+ *   kit cannot draw.
  */
-function readStyle(source: StyleSource, context: BuildContext): Effect.Effect<TextStyleSpec, KitUnmappable> {
-  const label = source.path.join("/");
-  return Effect.gen(function* () {
-    // A text style draws no cell, so no state holds, and the element sits on a page that sets nothing.
-    const ledger = new CellLedger({
-      cell: {},
-      context,
-      origin: NO_COVERAGE,
-      record: NO_COVERAGE.record,
-      inPlace: undefined,
+function readStyle(
+  sample: TextStyleSample,
+  cascade: CaptureSetCascade,
+  context: BuildContext
+): TextStyleSpec {
+  const label = sample.path.join("/");
+  const style = cascade.cell(sampleCell(sample)).root("text style").style;
+  const type = readType(style, context.variables, []);
+  const textCase = readKeyword(style, "text-transform", TEXT_CASES, "ORIGINAL");
+  const textDecoration = readKeyword(style, "text-decoration-line", TEXT_DECORATIONS, "NONE");
+  const textWrapStyle = readKeyword(style, "text-wrap-style", TEXT_WRAP_STYLES, "AUTO");
+  const { fontFamily, fontSize, lineHeight, fontWeight } = type;
+  if (
+    fontFamily === undefined ||
+    fontSize === undefined ||
+    lineHeight === undefined ||
+    fontWeight === undefined ||
+    textCase === undefined ||
+    textDecoration === undefined ||
+    textWrapStyle === undefined
+  ) {
+    throw new KitUnmappable({
+      message: `the text style ${label}: its sample gives no font family, size, line height, weight, case, decoration or wrap the kit can draw`,
     });
-    const applied = yield* appliedOf(label, source.classes, context.compiled);
-    const style = new LayerStyle(ledger, ledger.add(new Map(), applied, undefined), []);
-    const type = readType(style, context.variables, []);
-    const textCase = readKeyword(style, "text-transform", TEXT_CASES, "ORIGINAL");
-    const textDecoration = readKeyword(style, "text-decoration-line", TEXT_DECORATIONS, "NONE");
-    const textWrapStyle = readKeyword(style, "text-wrap-style", TEXT_WRAP_STYLES, "AUTO");
-    const { fontFamily, fontSize, lineHeight, fontWeight } = type;
-    if (
-      fontFamily === undefined ||
-      fontSize === undefined ||
-      lineHeight === undefined ||
-      fontWeight === undefined ||
-      textCase === undefined ||
-      textDecoration === undefined ||
-      textWrapStyle === undefined
-    ) {
-      return yield* new KitUnmappable({
-        message: `the text style ${label}: its classes give no font family, size, line height, weight, case, decoration or wrap the kit can draw`,
-      });
-    }
-    if (style.has("letter-spacing") && type.letterSpacing === undefined) {
-      return yield* new KitUnmappable({
-        message: `the text style ${label}: its letter spacing does not map`,
-      });
-    }
-    const name = fontWeight.kind === "literal" ? `${label}/${fontWeight.style.toLowerCase()}` : label;
-    const spec: TextStyleSpec = {
-      key: `${TEXT_STYLE_KEY_PREFIX}${name.toLowerCase()}`,
-      name,
-      description: source.description,
-      fontFamily,
-      fontWeight,
-      fontSize,
-      lineHeight,
-      letterSpacing: type.letterSpacing ?? NO_SPACING,
-      textCase,
-      textDecoration,
-      textWrapStyle,
-    };
-    return spec;
-  });
+  }
+  // `normal` is the font's own spacing, which `readType` leaves undefined and Figma draws as none.
+  const normalSpacing = normalizeCss(style.resolved("letter-spacing") ?? "") === "normal";
+  if (style.has("letter-spacing") && !normalSpacing && type.letterSpacing === undefined) {
+    throw new KitUnmappable({ message: `the text style ${label}: its letter spacing does not map` });
+  }
+  const name = fontWeight.kind === "literal" ? `${label}/${fontWeight.style.toLowerCase()}` : label;
+  return {
+    key: `${TEXT_STYLE_KEY_PREFIX}${name.toLowerCase()}`,
+    name,
+    description: sample.description,
+    fontFamily,
+    fontWeight,
+    fontSize,
+    lineHeight,
+    letterSpacing: type.letterSpacing ?? NO_SPACING,
+    textCase,
+    textDecoration,
+    textWrapStyle,
+  };
 }
 
 /** Whether two styles draw the same type. */
@@ -257,32 +138,30 @@ function sameType(left: TextStyleSpec, right: TextStyleSpec): boolean {
 }
 
 /**
- * Build the text styles from the Text, Heading and Span recipes.
+ * Build the text styles from the capture of the Text, Heading and Span samples. No component set
+ * draws the samples, so the coverage table holds no row for them.
  *
- * @param variables - The synced variables, by code syntax.
- * @returns Heading's styles, then Text's, then Span's. Two axis values that draw the same type, and
- *   so get the same name, give one style. The Effect fails with `KitUnmappable` where a recipe gives a
- *   type the kit cannot draw or two types one name, and as `compileUtilities` does.
+ * @param capture - The kept capture of the samples.
+ * @param context - The context the component sets were built with, whose compile holds the
+ *   capture's classes.
+ * @returns Heading's styles, then Text's, then Span's. Two samples that draw the same type, and so
+ *   get the same name, give one style.
+ * @throws `KitUnmappable` where the capture lacks a sample, where a sample gives a type the kit
+ *   cannot draw, or where two samples give one name two types. `buildKit` catches it.
  */
-export const buildTextStyles = Effect.fnUntraced(function* (variables: VariableIndex) {
-  const sources = [
-    ...headingSources(),
-    ...bodySources("Text", textVariants),
-    ...bodySources("Span", spanVariants),
-  ];
-  const compiled = yield* compileUtilities(sources.flatMap((source) => splitClasses(source.classes)));
-  const context: BuildContext = { compiled, variables };
+export function buildTextStyles(capture: SetCapture, context: BuildContext): readonly TextStyleSpec[] {
+  const cascade = new CaptureSetCascade({ capture, definition: TEXT_STYLE_CAPTURE, context });
   const styles = new Map<string, TextStyleSpec>();
-  for (const source of sources) {
-    const style = yield* readStyle(source, context);
+  for (const sample of TEXT_STYLE_SAMPLES) {
+    const style = readStyle(sample, cascade, context);
     const named = styles.get(style.key);
     if (named === undefined) {
       styles.set(style.key, style);
     } else if (!sameType(named, style)) {
-      return yield* new KitUnmappable({
-        message: `the text style ${style.name}: two of the recipe's values draw different types under one name`,
+      throw new KitUnmappable({
+        message: `the text style ${style.name}: two of its samples draw different types under one name`,
       });
     }
   }
   return [...styles.values()];
-});
+}

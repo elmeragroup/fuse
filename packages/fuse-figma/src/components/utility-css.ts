@@ -15,8 +15,7 @@ import { compileAst } from "tailwindcss";
 import { KitSourceInvalid, runTool } from "./build-errors";
 import type { KitToolFailed } from "./build-errors";
 import { splitClassName } from "./class-name";
-import { belowClass, leadingClass } from "./css-selector";
-import type { BelowReach } from "./css-selector";
+import { leadingClass } from "./css-selector";
 
 /**
  * A node of Tailwind's syntax tree. Tailwind exports `compileAst` but not its node types, so
@@ -35,11 +34,6 @@ export type UtilityDeclaration = {
 export type UtilityRule = {
   readonly utility: string;
   readonly declarations: readonly UtilityDeclaration[];
-  /**
-   * Whether the rule's block nests a condition or a rule that `declarations` leaves out, such as an
-   * `@media` query. The `@supports` block that tests `color-mix()` is not one: its declarations count.
-   */
-  readonly nested: boolean;
 };
 
 /** What the compile produced for a set of classes. */
@@ -49,11 +43,7 @@ export type CompiledUtilities = {
   /** The theme variables Tailwind emitted on `:root`, such as `--font-weight-medium: 500`. */
   readonly themeValues: ReadonlyMap<string, string>;
   /** Each custom property Tailwind registered with `@property`, such as `--tw-ring-offset-width`. */
-  readonly registeredProperties: ReadonlyMap<
-    string,
-    RegisteredProperty
-  > /** Each class whose rule styles only the elements below its own, as `*:` and `**:` compile. */;
-  readonly below: ReadonlyMap<string, BelowReach>;
+  readonly registeredProperties: ReadonlyMap<string, RegisteredProperty>;
 };
 
 /**
@@ -236,7 +226,6 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
   const rules = new Map<string, UtilityRule>();
   const themeValues = new Map<string, string>();
   const registeredProperties = new Map<string, RegisteredProperty>();
-  const below = new Map<string, BelowReach>();
   const visit = (node: AstNode): void => {
     if (node.kind === "at-rule") {
       if (node.name === "@property") {
@@ -265,20 +254,11 @@ function readCompiledUtilities(nodes: readonly AstNode[]): CompiledUtilities {
     }
     const leading = leadingClass(node.selector);
     if (leading?.rest === "") {
-      rules.set(leading.name, {
-        utility: leading.name,
-        declarations: effectiveDeclarations(node.nodes),
-        nested: node.nodes.some((child) => child.kind !== "declaration" && !mixesColor(child)),
-      });
-      return;
-    }
-    const reached = belowClass(node.selector);
-    if (reached !== undefined) {
-      below.set(reached.name, reached.reach);
+      rules.set(leading.name, { utility: leading.name, declarations: effectiveDeclarations(node.nodes) });
     }
   };
   nodes.forEach(visit);
-  return { rules, themeValues, registeredProperties, below };
+  return { rules, themeValues, registeredProperties };
 }
 
 /**
@@ -307,42 +287,4 @@ function effectiveDeclarations(nodes: readonly AstNode[]): readonly UtilityDecla
     }
     return declarationsOf([node]);
   });
-}
-
-/** How a class's compiled rule styles the element that carries it, in no state. */
-export type ElementReach =
-  | { readonly kind: "own"; readonly rule: UtilityRule }
-  | { readonly kind: "below"; readonly reach: BelowReach }
-  | { readonly kind: "unread"; readonly reason: string };
-
-/**
- * How a class styles the element that carries it, read from its compiled rule. `own` is a rule that
- * selects the class alone, outside any condition, with nothing nested, for a class with no variant.
- * `below` is a rule that styles only the element's children or descendants. Every other class is
- * `unread`, with the reason, since applying it would take evaluating its selector or its condition.
- * A variant counts even where Tailwind prints a plain rule for it, as for `[&]:uppercase`.
- *
- * @param compiled - The compile that holds the class.
- * @param className - The class.
- * @returns What the class's rule reaches.
- */
-export function elementReach(compiled: CompiledUtilities, className: string): ElementReach {
-  const reach = compiled.below.get(className);
-  if (reach !== undefined) {
-    return { kind: "below", reach };
-  }
-  const { variants } = splitClassName(className);
-  if (variants.length > 0) {
-    return { kind: "unread", reason: `it carries the variant \`${variants.join(":")}:\`` };
-  }
-  const rule = compiled.rules.get(className);
-  if (rule === undefined) {
-    return {
-      kind: "unread",
-      reason: "Tailwind compiles no rule that selects it alone, outside any condition",
-    };
-  }
-  return rule.nested
-    ? { kind: "unread", reason: "its rule nests a condition or a selector" }
-    : { kind: "own", rule };
 }

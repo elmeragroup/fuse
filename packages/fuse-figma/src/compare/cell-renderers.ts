@@ -11,7 +11,7 @@
  *
  * A renderer's element comes from a module that imports the Fuse build, which exists only after
  * `pnpm --filter @elmeragroup/fuse build`. This module lists each renderer's set and the build
- * entry its module imports, so `page-assets.ts` can check the build first, and imports the
+ * entries its module imports, so `page-assets.ts` can check the build first, and imports the
  * modules only in {@link loadRenderers}.
  *
  * To compare a new definition, add a module beside this one whose renderings build its element,
@@ -35,12 +35,18 @@ import type { ElmeraIconProps } from "../../../fuse/dist/icons.js";
 import type { Cell } from "../components/component-spec.ts";
 import type { Highlight } from "./cells.ts";
 
+/** A module of the Fuse build, such as `dist/button.js`. */
+type BuildEntry = `dist/${string}.js`;
+
 /** Renders the cells of one kit definition with the real Fuse component. */
 export type CellRenderer = {
-  /** The key of the kit definition whose cells it renders, such as `button`. */
+  /**
+   * The key of the kit definition whose cells it renders, such as `button`, or `text-styles` for the
+   * text style samples.
+   */
   readonly set: string;
-  /** The Fuse build output `element` imports, which the run checks for before loading it. */
-  readonly entry: `dist/${string}.js`;
+  /** The Fuse build output `element` imports, or each one, which the run checks for before loading it. */
+  readonly entry: BuildEntry | readonly BuildEntry[];
   /**
    * The real Fuse element for a parsed cell, with the states the markup draws set by props, and with
    * the part behind each BOOLEAN property rendered exactly where `turnedOn` names the property, one
@@ -752,10 +758,15 @@ const SOURCES: readonly RendererSource[] = [
     entry: "dist/sheet.js",
     module: { url: new URL("sheet-cell.ts", import.meta.url), name: "sheetContent" },
   },
+  {
+    set: "text-styles",
+    entry: ["dist/text.js", "dist/span.js", "dist/heading.js"],
+    load: async () => (await import("./text-style-cell.ts")).textStyles,
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */
-export const RENDERER_ENTRIES: readonly string[] = SOURCES.map((source) => source.entry);
+export const RENDERER_ENTRIES: readonly string[] = SOURCES.flatMap((source) => [source.entry].flat());
 
 /**
  * Load every renderer, or only those of the sets `only` names. Each one imports the Fuse build, so
