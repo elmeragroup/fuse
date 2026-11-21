@@ -49,7 +49,7 @@ import type {
 import { booleanPropertiesOf, optionalParts } from "./optional-parts";
 import { partName, prepareParts } from "./part-preparation";
 import { placeRoot } from "./placement";
-import { clipsInCss, rootClips } from "./root-clip";
+import { clipsInCss, rootClips, wrapHanging } from "./root-clip";
 import { PaintedInstances } from "./stacking";
 
 /** What a set builds from: the definition the mapping walks, and the capture its cascade reads. */
@@ -81,13 +81,13 @@ export function buildSetsInOrder(
   const built = new Map<string, InnerSet>();
   return sources.map(({ definition, capture, open }) => {
     const instancedIn = holders.get(definition.key) ?? new Set<string>();
-    const set = buildComponentSet(definition, context, built, {
+    const { wrappedRoots, ...set } = buildComponentSet(definition, context, built, {
       capture,
       open,
       instancedIn,
       captureOf: (key) => captures.get(key),
     });
-    built.set(definition.key, set.componentSet);
+    built.set(definition.key, { ...set.componentSet, wrappedRoots });
     return set;
   });
 }
@@ -101,7 +101,8 @@ export function buildSetsInOrder(
  * @param captured - The set's capture, which its cascade reads, how an open composite places its
  *   cells' roots, the root slots of the sets that hold it as an instance, and the captures of the
  *   sets before it.
- * @returns The component set, its coverage and the font styles its text uses.
+ * @returns The component set, its coverage and the font styles its text uses, and the keys of the
+ *   variants whose root `wrapHanging` wrapped.
  * @throws When an instance part shows a set `inner` lacks, or a cell does not build.
  */
 function buildComponentSet(
@@ -109,7 +110,7 @@ function buildComponentSet(
   context: BuildContext,
   inner: ReadonlyMap<string, InnerSet>,
   captured: CapturedSource
-): BuiltComponent {
+): BuiltComponent & { readonly wrappedRoots: ReadonlySet<string> } {
   const coverage = new Map<string, CoverageRow>();
   const fonts = new Map<string, FontSpec>();
   // Each captured declaration a recorded row accounts for, by cell; the table keeps none of them.
@@ -135,6 +136,7 @@ function buildComponentSet(
   const scaling = partsThatScaleIn(captured.capture, definition.parts ?? []);
   // Each cell's drawn parts, by the variant's key, as `drawn-parts.ts` records them.
   const drawnParts = new Map<string, readonly DrawnPart[]>();
+  const wrappedRoots = new Set<string>();
   const recordedParts = (cell: string): readonly DrawnPart[] => {
     const parts = drawnParts.get(cell);
     if (parts === undefined) {
@@ -193,7 +195,7 @@ function buildComponentSet(
         message: `${definition.name}: a root that leaves its layers unclipped must cast no shadow, and ${variantKey(definition, cell)} casts one`,
       });
     }
-    const root: ComponentRootSpec = {
+    const clipped: ComponentRootSpec = {
       name: definition.slot,
       ...mapped,
       clips: rootClips(
@@ -201,25 +203,32 @@ function buildComponentSet(
         { overflowVisible: definition.rootOverflow === "visible", castsShadowOrClips: setClips }
       ),
     };
-    placeRoot(rootCascade.style, room, context.variables, root.children, definition.viewport);
+    placeRoot(rootCascade.style, room, context.variables, clipped.children, definition.viewport);
+    const wrapped = wrapHanging(clipped, clipsInCss(rootCascade.style), definition.slot);
+    const root = wrapped ?? clipped;
+    if (wrapped !== undefined) {
+      wrappedRoots.add(variantKey(definition, cell));
+    }
     drawnParts.set(
       variantKey(definition, cell),
       drawn.resolve(root, rootCascade.drawnAt, variantKey(definition, cell))
     );
-    if (root.clips && !clipsInCss(rootCascade.style)) {
+    if (clipped.clips && !clipsInCss(rootCascade.style)) {
       const shadowsOf = (layer: InstanceLayerSpec): readonly ShadowSpec[] =>
         rootEffects(layer) ??
         inner.get(layer.componentSet)?.variants.find((variant) => variant.key === layer.variant)?.root
           .shadows ??
         [];
-      for (const clipped of clippedShadows(root, shadowsOf, context.variables, context.modes ?? [])) {
+      // A wrapped root's hanging layers cast no shadow (`wrapHanging`), so the clipped root's cuts are
+      // those of the frame that draws its box.
+      for (const cut of clippedShadows(clipped, shadowsOf, context.variables, context.modes ?? [])) {
         record({
-          part: clipped.part,
+          part: cut.part,
           className: "",
           property: "effects",
-          value: `${clipped.reach}px`,
+          value: `${cut.reach}px`,
           outcome: "dropped",
-          detail: clippedDetail(variantKey(definition, cell), clipped),
+          detail: clippedDetail(variantKey(definition, cell), cut),
         });
       }
     }
@@ -249,6 +258,7 @@ function buildComponentSet(
     variants,
   };
   return {
+    wrappedRoots,
     // A set without an optional part leaves the field out, so a set built before it keeps its spec.
     componentSet: booleans.length === 0 ? componentSet : { ...componentSet, booleanProperties: booleans },
     coverage: [...coverage.values()],

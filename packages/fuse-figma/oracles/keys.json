@@ -1637,6 +1637,7 @@
     "pagination-link/size=xs,isActive=true,state=rest",
     "pagination-row/pages=3",
     "popover-content/content=basic",
+    "popover-content/content=basic,showArrow=true",
     "popover-open/side=bottom",
     "radio-group/orientation=horizontal,state=disabled",
     "radio-group/orientation=horizontal,state=invalid",
