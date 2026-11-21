@@ -10,9 +10,20 @@
  * - Each text is the docs default demo's, and a TEXT property sets it: `Title`, `Description`,
  *   `Content` and `Footer`.
  *
- * The set draws no `direction="horizontal"` card, whose parts share a wrapping row by weighted flex
- * growth that a Figma auto layout cannot share out, and no `Card.Action`, `Card.Tag`, `Card.Section`
- * or `Card.SectionButton`.
+ * The set draws no `Card.Action`, `Card.Tag`, `Card.Section` or `Card.SectionButton`.
+ *
+ * It draws no `direction="horizontal"` card either, a known limit (#922). That card's header,
+ * content and footer share a wrapping row as `flex: 2 1 16rem`, `1 1 12rem` and `1 1 8rem`, gapped
+ * by the card's tier. At the set's 448px width the row wraps in every mode, and it holds one line in
+ * every mode only from 674px. On that line each part takes its basis and its weight's share of the
+ * free space, so at every width the header is twice as wide as the footer and the content is 64px
+ * wider than the footer. A Figma row gives the layers that fill it equal widths, and a grid shares
+ * its room among FLEX tracks by their shares with no basis (PG12), so neither keeps the 64px. A grid
+ * could keep it only with the content spanning a 64px track and a FLEX track, and the tier in
+ * spacer tracks between the parts. The build draws no grid from a flex row and no spanning layer,
+ * and no probe has drawn a span. Literal widths would hold at one card width in one mode only: at
+ * 768px the default card's header is 327px dense and 319px comfortable, and the lg card's 319px and
+ * 303px.
  */
 import type { LabelManifest, PartManifest, SetManifest } from "../capture/manifest";
 import type { Cell } from "./component-spec";
