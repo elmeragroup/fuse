@@ -24,7 +24,7 @@
  * compares it with the synced `button-label-px-min`.
  */
 import { NodeServices } from "@effect/platform-node";
-import { Effect, Result } from "effect";
+import { Effect } from "effect";
 import { TestConsole } from "effect/testing";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
@@ -37,27 +37,14 @@ import { builtKit, variantRoot } from "../../test/built-kit.ts";
 import type { BuiltSets } from "../../test/built-kit.ts";
 import { FILE_KEY, run, TOKEN } from "../../test/cli-fixture.ts";
 import { InMemoryFigma } from "../../test/in-memory-figma.ts";
+import { everyPin, pinName, pinStamps } from "../../test/mode-pins.ts";
+import type { Pin } from "../../test/mode-pins.ts";
 import { labelButton } from "../compare/button-cell.ts";
 import { locateFuseBuild, readPageAssets } from "../compare/page-assets.ts";
 import { STYLES_LAYERS } from "../compare/preview-page.ts";
-import { parsePreviewTheme, themeStamps } from "../compare/preview-theme.ts";
 import type { ThemeStamps } from "../compare/preview-theme.ts";
 import { BUTTON_LABEL_SIZES } from "./button-kit.ts";
 import type { NumberSpec } from "./kit-spec.ts";
-
-/** A frame's mode for each collection of the file, by collection name. */
-type Pin = Readonly<Record<string, string>>;
-
-/** Every combination of the file's collection modes, one mode per collection. */
-function everyPin(figma: InMemoryFigma): readonly Pin[] {
-  return figma
-    .collectionNames()
-    .reduce<readonly Pin[]>(
-      (pins, collection) =>
-        pins.flatMap((pin) => figma.modeNames(collection).map((mode) => ({ ...pin, [collection]: mode }))),
-      [{}]
-    );
-}
 
 /**
  * A FLOAT field as the file resolves it under a frame's pin. A variable that resolves to no number
@@ -214,13 +201,7 @@ beforeAll(async () => {
     run(figma, ["--file-key", FILE_KEY, "sync"]).pipe(Effect.provide(TestConsole.layer))
   );
   pins = everyPin(figma);
-  const stamps = pins.map((pin) => {
-    const theme = parsePreviewTheme(Object.entries(pin).map(([collection, mode]) => ({ collection, mode })));
-    if (Result.isFailure(theme)) {
-      throw new Error(theme.failure.message);
-    }
-    return themeStamps(theme.success);
-  });
+  const stamps = pins.map(pinStamps);
   const assets = await Effect.runPromise(
     Effect.gen(function* () {
       return yield* readPageAssets(yield* locateFuseBuild(), new Map());
@@ -235,11 +216,6 @@ beforeAll(async () => {
 afterAll(async () => {
   await browser?.close();
 });
-
-/** A pin's modes, joined for a mismatch line. */
-function pinName(pin: Pin): string {
-  return Object.values(pin).join(" / ");
-}
 
 describe("the Button set's side paddings", () => {
   it.each(CASES)(

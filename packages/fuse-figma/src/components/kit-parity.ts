@@ -31,9 +31,6 @@ export type KitParityRow =
 /** The open issue that tracks the component sets, variants and axes the kit does not draw yet. */
 const MISSING_SETS = 524;
 
-/** The open issue that tracks the native Calendar and RangeCalendar day set. */
-const CALENDAR_DAY = 677;
-
 /** The open issue whose Figma kit item tracks Skeleton reveal frames. */
 const SKELETON_REVEAL = 535;
 
@@ -99,8 +96,8 @@ export const KIT_PARITY = {
     kind: "partial",
     sets: ["calendar", "calendar-day"],
     missing:
-      "The card's fill clipped inside a translucent border; more than one month, a month of four or six weeks, and a disabled calendar; and a day both unavailable and focused or hovered.",
-    issue: CALENDAR_DAY,
+      "More than one month, a month of four or six weeks, and a disabled calendar; and a day both unavailable and focused or hovered.",
+    issue: MISSING_SETS,
   },
   card: {
     kind: "partial",
@@ -226,7 +223,10 @@ export const KIT_PARITY = {
   // reads the panels' `shadow-[shadow:0_var(--frame-shadow-y,1px)_…]/5` as
   // `0 1px 2px 0  oklab(0% 0 0 / .05)`, which no Figma field reads. And the root and the panels clip
   // their fill at the border, whose `--border` is translucent in the neutral dark theme, as Sheet
-  // content's is.
+  // content's is. `padding-box-fill.ts` rounds the root's fill with the corner inside its 1px border
+  // around `rounded-xl` once `BORDER_INNER_CORNERS` in `fuse-variable-set.ts` lists `radius-xl`. The
+  // panels' fill needs their corner less 1px, and no synced variable holds an inner corner of a corner
+  // that reads `surface-pad-sm`, so the panels' clip would stay unmapped.
   frame: { kind: "issue", issue: MISSING_SETS },
   heading: { kind: "excluded", reason: TEXT_STYLE },
   input: {
@@ -303,8 +303,8 @@ export const KIT_PARITY = {
     kind: "partial",
     sets: ["range-calendar", "calendar-day"],
     missing:
-      "The card's fill clipped inside a translucent border; more than one month, a month of four or six weeks, and a disabled calendar; a day both unavailable and focused or hovered; and the band a hovered day draws while the user picks a range's end.",
-    issue: CALENDAR_DAY,
+      "More than one month, a month of four or six weeks, and a disabled calendar; a day both unavailable and focused or hovered; and the band a hovered day draws while the user picks a range's end.",
+    issue: MISSING_SETS,
   },
   "scroll-area": { kind: "issue", issue: MISSING_SETS },
   // No Input group form holds the leading search icon and the trailing clear button together.

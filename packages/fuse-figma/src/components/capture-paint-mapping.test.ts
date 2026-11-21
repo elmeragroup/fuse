@@ -19,12 +19,22 @@ import {
   rest,
 } from "../../test/capture-fixtures";
 import { makeVariableIndex } from "./css-values";
+import { diffInstance } from "./instance-diff";
 
-// Oracle: CSS Backgrounds 3 §3.7 and the Figma plugin typings. `padding-box` paints the background
-// inside the border only, where Figma paints a fill under the whole frame and an INSIDE stroke over
-// it: the two draw alike where the box has no border, or a solid border that hides the fill under it
-// because it is opaque. A translucent or dashed border shows what the clip leaves out.
+// Oracle: CSS Backgrounds 3 §3.7 and §5.2, and the Figma plugin typings. `padding-box` paints the
+// background inside the border only, and the corner there is the outer radius less the border width,
+// at least 0. Figma paints a frame's fill under the whole frame and an INSIDE stroke over it: the two
+// draw alike where the box has no border, or a solid border that hides the fill under it because it
+// is opaque. A translucent or dashed border shows what lies behind the box, so the fill draws on a
+// layer inset by the border, unless its corner would be elliptical, which no Figma radius holds.
 describe("background-clip: padding-box", () => {
+  const WHITE = { kind: "literal", color: { r: 1, g: 1, b: 1, a: 1 } } as const;
+  const PLACED = { horizontal: { kind: "placed" }, vertical: { kind: "placed" } } as const;
+  const DRAWN =
+    "the fill draws on the `padding box` layer, inset by the border under the stroke, so the border shows what lies behind the box";
+  const EMPTY =
+    "the border leaves no padding box at the length the main component takes, so an instance resized larger would have no layer to fill inside the border";
+
   it.each([
     [
       "bg-clip-padding bg-[#ffffff]",
@@ -36,36 +46,308 @@ describe("background-clip: padding-box", () => {
       "dropped",
       "the box's border draws as a solid stroke, opaque in every mode, over the fill beneath it",
     ],
-    [
-      "bg-clip-padding bg-[#ffffff] border border-[#00000080]",
-      "unmapped",
-      "no Figma field reads padding-box",
-    ],
-    [
-      "bg-clip-padding bg-[#ffffff] border border-dashed border-[#000000]",
-      "unmapped",
-      "no Figma field reads padding-box",
-    ],
-    [
-      "bg-clip-padding bg-[#ffffff] border-0 border-s border-[#00000080]",
-      "unmapped",
-      "no Figma field reads padding-box",
-    ],
   ])("on %s is %s", async (classes, outcome, detail) => {
-    const { coverage } = await buildChip(classes);
+    const { coverage, variant } = await buildChip(classes);
     expect(notesOf(coverage, "bg-clip-padding")).toEqual([["background-clip", outcome, detail]]);
+    expect(variant?.root.fill).toEqual(WHITE);
+  });
+
+  it.each([
+    ["border border-[#00000080]", { top: 1, right: 1, bottom: 1, left: 1 }, literal(0)],
+    ["border border-dashed border-[#000000]", { top: 1, right: 1, bottom: 1, left: 1 }, literal(0)],
+    ["border-0 border-s border-[#00000080]", { top: 0, right: 0, bottom: 0, left: 1 }, literal(0)],
+    ["rounded-[8px] border-2 border-[#00000080]", { top: 2, right: 2, bottom: 2, left: 2 }, literal(6)],
+    ["rounded-[1px] border-2 border-[#00000080]", { top: 2, right: 2, bottom: 2, left: 2 }, literal(0)],
+  ])("beside %s draws the fill inside the border", async (border, insets, corner) => {
+    const { coverage, variant } = await buildChip(`bg-clip-padding bg-[#ffffff] ${border} size-[40px]`);
+    expect(notesOf(coverage, "bg-clip-padding")).toEqual([["background-clip", "literal", DRAWN]]);
+    const layer = frameOf(variant?.root);
+    expect(variant?.root.fill).toBeUndefined();
+    expect({
+      key: layer?.key,
+      fill: layer?.fill,
+      placement: layer?.placement,
+      sizing: layer?.sizing,
+      cornerRadius: layer?.cornerRadius,
+    }).toEqual({
+      key: "padding box",
+      fill: WHITE,
+      placement: {
+        kind: "edges",
+        within: "parent",
+        horizontal: { kind: "stretch", start: insets.left, end: insets.right },
+        vertical: { kind: "stretch", start: insets.top, end: insets.bottom },
+      },
+      sizing: PLACED,
+      cornerRadius: corner,
+    });
+  });
+
+  it("stays unmapped beside a round corner between borders of two widths, whose inner corner is elliptical", async () => {
+    const { coverage, variant } = await buildChip(
+      "bg-clip-padding bg-[#ffffff] rounded-[8px] border-0 border-s border-[#00000080]"
+    );
+    expect(notesOf(coverage, "bg-clip-padding")).toEqual([
+      [
+        "background-clip",
+        "unmapped",
+        "a round corner between borders of two widths has an elliptical inner corner (CSS Backgrounds 3 §5.2), which no Figma corner radius holds",
+      ],
+    ]);
+    expect(variant?.root.fill).toEqual(WHITE);
+  });
+
+  // CSS Box Sizing 3 §4.1: under `border-box` the content box is the width less the borders, at
+  // least 0. A 2px box with 2px borders and a 4px one both leave no padding box, and an `inline-flex`
+  // box with no content and no padding hugs its 1px borders, 2px across. Nothing paints inside the
+  // border there, but an instance resized wider paints inside it, where a main with no layer has none
+  // to stretch, so the box keeps its fill.
+  it.each([
+    "border-2 border-[#00000080] size-[2px]",
+    "border-2 border-[#00000080] size-[4px]",
+    "inline-flex h-[100px] border border-[#00000080]",
+  ])("stays unmapped beside borders that leave the box %s no padding box", async (classes) => {
+    const { coverage, variant } = await buildChip(`bg-clip-padding bg-[#ffffff] ${classes}`);
+    expect(notesOf(coverage, "bg-clip-padding")).toEqual([["background-clip", "unmapped", EMPTY]]);
+    expect(variant?.root.fill).toEqual(WHITE);
+    expect(variant?.root.children).toEqual([]);
+  });
+
+  // CSS Box Sizing 3 §4.1: at a 16px font `p-[1em]` pads each side 16px, so `size-[4px] p-[1em]
+  // border-2` lays out a 36px box whose padding box Chromium fills 32px across. The kit reads no `em`
+  // padding, so it cannot tell that the padding box is not empty.
+  it("stays unmapped beside a padding the box does not read, which could leave room inside the border", async () => {
+    const { coverage, variant } = await buildChip(
+      "bg-clip-padding bg-[#ffffff] border-2 border-[#00000080] p-[1em] size-[4px]"
+    );
+    expect(notesOf(coverage, "bg-clip-padding")).toEqual([
+      [
+        "background-clip",
+        "unmapped",
+        "the box sets a padding the kit does not read, which could lay the box out larger than the length its frame takes, so the kit cannot size the padding box",
+      ],
+    ]);
+    expect(variant?.root.fill).toEqual(WHITE);
+  });
+
+  // CSS Backgrounds 3 §4.3: a side whose style is `none` or `hidden` has a border width of 0, so
+  // Chromium paints the fill out to that edge, where the stroke's one weight would inset it there.
+  it.each([
+    "[border-left-style:none]",
+    "[border-left-style:hidden]",
+    "[border-inline-start-style:none]",
+    "[border-block-end-style:hidden]",
+  ])("stays unmapped beside %s, which leaves that side no border", async (side) => {
+    const { coverage, variant } = await buildChip(
+      `bg-clip-padding bg-[#ffffff] border-2 border-[#00000080] ${side} size-[40px]`
+    );
+    expect(notesOf(coverage, "bg-clip-padding")).toEqual([
+      [
+        "background-clip",
+        "unmapped",
+        "a side's own border style draws no border on that side, so the kit cannot tell where the padding box starts on it",
+      ],
+    ]);
+    expect(variant?.root.fill).toEqual(WHITE);
+    expect(variant?.root.children).toEqual([]);
+  });
+
+  // CSS Box Sizing 3 §4.1: under `border-box` the padding and borders floor the used size, so
+  // `size-[4px] p-[2px] border-2` lays out an 8px box, and its 4px padding box paints. The frame keeps
+  // the 4px the box sets, so the kit cannot draw that padding box.
+  it("stays unmapped where the padding and borders lay out a box larger than its size", async () => {
+    const { coverage, variant } = await buildChip(
+      "bg-clip-padding bg-[#ffffff] border-2 border-[#00000080] p-[2px] size-[4px]"
+    );
+    expect(notesOf(coverage, "bg-clip-padding")).toEqual([
+      [
+        "background-clip",
+        "unmapped",
+        "the padding and borders lay the box out larger than the length its frame takes, so the kit cannot size the padding box",
+      ],
+    ]);
+    expect(variant?.root.fill).toEqual(WHITE);
+    expect(variant?.root.children).toEqual([]);
+  });
+
+  it("draws the fill in a box that hugs its padding inside its borders", async () => {
+    const { coverage, variant } = await buildChip(
+      "bg-clip-padding bg-[#ffffff] inline-flex h-[100px] px-[2px] border border-[#00000080]"
+    );
+    expect(notesOf(coverage, "bg-clip-padding")).toEqual([["background-clip", "literal", DRAWN]]);
+    expect(frameOf(variant?.root)?.key).toBe("padding box");
+  });
+
+  // At device scale 1 Chromium draws both a 0.5px and a 1.5px border 1px wide, where the capture holds
+  // the authored width, so the kit cannot tell where the padding box starts.
+  it.each(["border-[0.5px]", "border-[1.5px]"])(
+    "stays unmapped beside a %s border, which Chromium snaps to whole device pixels",
+    async (border) => {
+      const { coverage, variant } = await buildChip(
+        `bg-clip-padding bg-[#ffffff] ${border} border-[#00000080] size-[40px]`
+      );
+      expect(notesOf(coverage, "bg-clip-padding")).toEqual([
+        [
+          "background-clip",
+          "unmapped",
+          "Chromium snaps a fractional border width to whole device pixels, and the capture holds the authored width, so the kit cannot tell where the padding box starts",
+        ],
+      ]);
+      expect(variant?.root.fill).toEqual(WHITE);
+    }
+  );
+
+  // CSS Backgrounds 3 §5.2: inside 1px borders a 20px top left corner is 19px, on a padding box 22px
+  // wide beside a 17px right border. Figma caps a corner at half the shorter side (probe P10), 11px
+  // there, where CSS draws all 19px. A 12px corner leaves 11px inside, which Figma draws as written.
+  it("stays unmapped where Figma would cap the corner inside the border", async () => {
+    const { coverage, variant } = await buildChip(
+      "bg-clip-padding bg-[#ffffff] border-0 border-t border-b border-l border-r-[17px] border-[#00000080] rounded-tl-[20px] size-[40px]"
+    );
+    expect(notesOf(coverage, "bg-clip-padding")).toEqual([
+      [
+        "background-clip",
+        "unmapped",
+        "the corner inside the border is more than half the padding box's shorter side, which Figma caps it at",
+      ],
+    ]);
+    expect(variant?.root.fill).toEqual(WHITE);
+  });
+
+  it("rounds the fill by a corner inside the border within half the padding box", async () => {
+    const { variant } = await buildChip(
+      "bg-clip-padding bg-[#ffffff] border-0 border-t border-b border-l border-r-[17px] border-[#00000080] rounded-tl-[12px] size-[40px]"
+    );
+    expect(frameOf(variant?.root)?.cornerRadius).toEqual({
+      kind: "corners",
+      topLeft: literal(11),
+      topRight: literal(0),
+      bottomRight: literal(0),
+      bottomLeft: literal(0),
+    });
+  });
+
+  // Figma's STRETCH constraint resizes the layer with its parent, so an instance of a 160px component
+  // resized to 240px carries no override for the layer, and nothing about it stays unmapped.
+  it("draws a layer that an instance at another width resizes with no override", async () => {
+    const classes = "bg-clip-padding bg-[#ffffff] border border-[#00000080] h-[40px]";
+    const component = await buildChip(`${classes} w-[160px]`);
+    const resized = await buildChip(`${classes} w-[240px]`);
+    const [main, inPlace] = [component.variant?.root, resized.variant?.root];
+    if (main === undefined || inPlace === undefined) {
+      throw new Error("the chip set builds no variant");
+    }
+    expect(frameOf(main)).toMatchObject({ key: "padding box", fill: WHITE });
+    const diff = diffInstance(inPlace, main);
+    expect({ overrides: diff.overrides, unmapped: diff.unmapped }).toEqual({ overrides: [], unmapped: [] });
+  });
+
+  // CSS Box Sizing 3 §4.1: under `content-box` a 40px width sets the content box, so 2px borders make
+  // the box 44px and its padding box 40px.
+  it("insets the fill by the border of a content box, around the 40px it sets", async () => {
+    const { coverage, variant } = await buildChip(
+      "flex",
+      [
+        {
+          slot: "chip-dot",
+          classes: "box-content size-[40px] border-2 border-[#00000080] bg-clip-padding bg-[#ffffff]",
+        },
+      ],
+      { parts: [part()] }
+    );
+    expect(notesOf(coverage, "bg-clip-padding")).toEqual([["background-clip", "literal", DRAWN]]);
+    const dot = frameOf(variant?.root);
+    expect(dot?.children.map((child) => child.key)).toEqual(["padding box", "content"]);
+    const [layer, content] = dot?.children ?? [];
+    expect({
+      outer: dot?.sizing,
+      placement: layer?.kind === "frame" ? layer.placement : layer,
+      content: content?.kind === "frame" ? content.sizing : content,
+    }).toEqual({
+      outer: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
+      placement: {
+        kind: "edges",
+        within: "parent",
+        horizontal: { kind: "stretch", start: 2, end: 2 },
+        vertical: { kind: "stretch", start: 2, end: 2 },
+      },
+      content: fixedSize(literal(40), literal(40)),
+    });
+  });
+
+  // A root draws no inner frame for its content box, so its 40px frame is the content box, where the
+  // border box CSS insets the fill from is 44px (CSS Box Sizing 3 §4.1).
+  it("stays unmapped on a content box root, whose frame is not its border box", async () => {
+    const { coverage, variant } = await buildChip(
+      "box-content size-[40px] border-2 border-[#00000080] bg-clip-padding bg-[#ffffff]"
+    );
+    expect(notesOf(coverage, "bg-clip-padding").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["background-clip", "unmapped"],
+    ]);
+    expect(variant?.root.fill).toEqual(WHITE);
+  });
+
+  // CSS Backgrounds 3 §5.2: the padding box sits in by each side's border width, 4px on the left
+  // under `border-l-4`, and a 50% corner on a 40px box is 20px, 18px inside a 2px border. Where the
+  // kit cannot read the width or the corner that shapes the padding box, it cannot draw the clip.
+  it.each([
+    "border-2 border-l-4 border-l-[#00000080] border-[#00000080]",
+    "rounded-[50%] border-2 border-[#00000080]",
+  ])("stays unmapped where %s shapes the padding box in a way the box does not map", async (border) => {
+    const { coverage, variant } = await buildChip(`bg-clip-padding bg-[#ffffff] ${border} size-[40px]`);
+    expect(notesOf(coverage, "bg-clip-padding").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["background-clip", "unmapped"],
+    ]);
+    expect(variant?.root.fill).toEqual(WHITE);
+    expect(variant?.root.children).toEqual([]);
+  });
+
+  // CSS Logical Properties 1 §6.2: on a left-to-right page `rounded-ss-*` rounds the top left corner.
+  // The corner inside a 1px border is that radius less 1px, at least 0 (CSS Backgrounds 3 §5.2),
+  // which the synced variable spelling that binds.
+  it("binds the inner corner of a radius a logical longhand sets", async () => {
+    const variables = makeVariableIndex([
+      {
+        ref: { collection: "Fuse tokens", name: "radius" },
+        webSyntax: "var(--radius)",
+        minimum: 4,
+        maximum: 16,
+      },
+      {
+        ref: { collection: "Fuse tokens", name: "radius-inner/border" },
+        webSyntax: "max(0px, var(--radius) - 1px)",
+        minimum: 3,
+        maximum: 15,
+      },
+    ]);
+    const { coverage, variant } = await buildCaptured(
+      chip(),
+      rest({
+        slot: "chip",
+        classes: "bg-clip-padding bg-[#ffffff] border border-[#00000080] size-[40px] rounded-ss-(--radius)",
+      }),
+      { variables }
+    );
+    expect(notesOf(coverage, "bg-clip-padding")).toEqual([["background-clip", "literal", DRAWN]]);
+    expect(frameOf(variant?.root)?.cornerRadius).toEqual({
+      kind: "corners",
+      topLeft: { kind: "variable", variable: { collection: "Fuse tokens", name: "radius-inner/border" } },
+      topRight: literal(0),
+      bottomRight: literal(0),
+      bottomLeft: literal(0),
+    });
   });
 
   it.each([
     [true, "dropped"],
-    [false, "unmapped"],
+    [false, "literal"],
   ])("beside a border bound to a variable opaque in every mode (%s) is %s", async (opaque, outcome) => {
     const variables = makeVariableIndex([
       { ref: { collection: "Fuse tokens", name: "border" }, webSyntax: "var(--border)", opaque },
     ]);
     const { coverage } = await buildCaptured(
       chip(),
-      rest({ slot: "chip", classes: "bg-clip-padding bg-[#ffffff] border border-(--border)" }),
+      rest({ slot: "chip", classes: "bg-clip-padding bg-[#ffffff] border border-(--border) size-[40px]" }),
       { variables }
     );
     expect(notesOf(coverage, "bg-clip-padding").map(([, read]) => read)).toEqual([outcome]);

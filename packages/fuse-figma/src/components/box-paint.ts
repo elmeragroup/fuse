@@ -24,6 +24,7 @@ import type {
   NumberSpec,
   ShadowSpec,
   SideStroke,
+  StrokeSide,
 } from "./kit-spec";
 import type { CoverageNote, LayerStyle } from "./layer-style";
 
@@ -93,7 +94,8 @@ function readBackgroundBlur(reader: LayerStyle): NumberSpec | undefined {
  *   borders no box sharing their edges contests, as the capture read it, so its border takes no
  *   room, on every side or on some, as {@link COLLAPSED} says. A row or row group without it leaves
  *   its border unmapped, as {@link unownedRowBorder} says.
- * @returns The box's fill, stroke and shadows.
+ * @returns The box's fill, stroke and shadows, and the border's widths where the fill draws inside
+ *   the border on a layer of its own, as {@link readBackgroundClip} says.
  * @throws When a box that shows a picture sets no `object-fit`, as {@link readImage} says.
  */
 export function readPaint(
@@ -102,7 +104,7 @@ export function readPaint(
   variables: VariableIndex,
   variant: string,
   collapsed: boolean
-): BoxPaint {
+): { readonly paint: BoxPaint; readonly paddingBox?: PaddingBoxInsets } {
   const sided = BORDER_SIDES.some((side) => setsSide(reader, side));
   const border = unownedRowBorder(reader, variables, sided, collapsed)
     ? undefined
@@ -127,10 +129,12 @@ export function readPaint(
       : readImage(reader, image, variant);
   // `border-0` beside a side's own width, as `border-0 border-s`, leaves that side's stroke.
   const borderless = !bordered || (!sided && zeroesEverySide(reader, variables));
-  readBackgroundClip(reader, borderless ? NO_BORDER : border, variables);
-  const paint = { fill: fill === NO_FILL ? undefined : fill, stroke, shadows };
+  const shown = fill === NO_FILL ? undefined : fill;
+  const paddingBox = readBackgroundClip(reader, borderless ? NO_BORDER : border, shown, sided, variables);
+  const paint = { fill: shown, stroke, shadows };
   const backgroundBlur = readBackgroundBlur(reader);
-  return backgroundBlur === undefined ? paint : { ...paint, backgroundBlur };
+  const blurred = backgroundBlur === undefined ? paint : { ...paint, backgroundBlur };
+  return paddingBox === undefined ? { paint: blurred } : { paint: blurred, paddingBox };
 }
 
 /**
@@ -444,31 +448,111 @@ const NO_BORDER = "none";
  * - The border draws as a solid stroke in a color that is opaque in every mode, a literal or a
  *   synced variable, so the stroke hides the fill beneath it.
  *
- * A translucent, dashed or unmapped border shows what the clip leaves out, so the clip stays
- * unmapped there, and so does any other value.
+ * Beside a translucent or dashed stroke that takes its room in the layout, with literal widths, a
+ * box that fills with a color draws its fill on a layer of its own inside the border instead, which
+ * `padding-box-fill.ts` builds and reads the clip for. A stroke of one weight beside a side's own
+ * width, as `border-2 border-l-4`, leaves that side's width unread, so the stroke's weight is not
+ * where the padding box starts, and the clip stays unmapped there. So it does beside a side's own
+ * style of `none` or `hidden`, which leaves that side no border, and beside a fractional width, which
+ * Chromium snaps to whole device pixels. Any other border or value leaves the clip
+ * unmapped too.
  *
  * @param reader - The box's style.
  * @param border - The stroke the box's border draws, undefined where it does not map, or
  *   {@link NO_BORDER} for a box with no border.
+ * @param fill - The box's fill, undefined for none.
+ * @param sided - Whether the box sets a border width on a side of its own.
  * @param variables - The synced variables, which say whether a color is opaque in every mode.
+ * @returns The border's width on each side, where the fill draws inside it, or undefined.
  */
 function readBackgroundClip(
   reader: LayerStyle,
   border: StrokeFromBorder | typeof NO_BORDER,
+  fill: BoxPaint["fill"],
+  sided: boolean,
   variables: VariableIndex
-): void {
+): PaddingBoxInsets | undefined {
   const detail =
     border === NO_BORDER
       ? "the box has no border, so its padding box is its border box"
       : border !== undefined && !("dashPattern" in border) && opaqueIn(border.color, variables)
         ? "the box's border draws as a solid stroke, opaque in every mode, over the fill beneath it"
         : undefined;
+  const clipped = normalizeCss(reader.resolved("background-clip") ?? "") === "padding-box";
+  const insets =
+    detail === undefined && clipped && border !== NO_BORDER && fill?.kind !== "image" && fill !== undefined
+      ? strokeWidths(border)
+      : undefined;
+  if (insets !== undefined && sided && border !== NO_BORDER && border !== undefined && "weight" in border) {
+    reader.mark("background-clip", "unmapped", UNREAD_SIDE, []);
+    return undefined;
+  }
+  if (insets !== undefined && BORDER_SIDES.some((side) => insets[side] > 0 && suppressesSide(reader, side))) {
+    reader.mark("background-clip", "unmapped", SUPPRESSED_SIDE, []);
+    return undefined;
+  }
+  if (insets !== undefined && Object.values(insets).some((width) => !Number.isInteger(width))) {
+    reader.mark("background-clip", "unmapped", FRACTIONAL, []);
+    return undefined;
+  }
+  if (insets !== undefined) {
+    return insets;
+  }
   reader.read(
     "background-clip",
     (value) => (detail !== undefined && normalizeCss(value) === "padding-box" ? value : undefined),
     () => ({ outcome: "dropped", detail: detail ?? "" }),
     []
   );
+  return undefined;
+}
+
+/** Why a clip stays unmapped beside a side's own width that the stroke of one weight leaves unread. */
+const UNREAD_SIDE =
+  "a side's own border width beside the border's width stays unread, so the kit cannot tell where the padding box starts on that side";
+
+/**
+ * Whether a box sets a side's own border style, by its physical or its logical name, that draws no
+ * border there. A side whose style is `none` or `hidden` has a border width of 0 (CSS Backgrounds 3
+ * §4.3), so the padding box reaches that edge.
+ */
+function suppressesSide(reader: LayerStyle, side: BorderSide): boolean {
+  return [side, LOGICAL_SIDE[side]].some((name) => {
+    const style = normalizeCss(reader.resolved(`border-${name}-style`) ?? "");
+    return style === "none" || style === "hidden";
+  });
+}
+
+/** Why a clip stays unmapped beside a side's own style that draws no border there. */
+const SUPPRESSED_SIDE =
+  "a side's own border style draws no border on that side, so the kit cannot tell where the padding box starts on it";
+
+/**
+ * Why a clip stays unmapped beside a fractional border width. At device scale 1 Chromium draws a
+ * 0.5px and a 1.5px border 1px wide, and the capture holds the width as authored, not as drawn.
+ */
+const FRACTIONAL =
+  "Chromium snaps a fractional border width to whole device pixels, and the capture holds the authored width, so the kit cannot tell where the padding box starts";
+
+/** The width in pixels of a box's border on each side, as its stroke draws it. */
+export type PaddingBoxInsets = Readonly<Record<StrokeSide, number>>;
+
+/**
+ * The width of a stroke on each side, where each is a literal and the stroke takes its room in the
+ * layout, as a CSS border does. Undefined for no stroke, a bound weight, or a stroke drawn out of the
+ * layout.
+ */
+function strokeWidths(stroke: StrokeFromBorder): PaddingBoxInsets | undefined {
+  if (stroke === undefined || stroke.inLayout === false) {
+    return undefined;
+  }
+  if ("sides" in stroke) {
+    return stroke.sides;
+  }
+  const { weight } = stroke;
+  return weight.kind === "literal"
+    ? { top: weight.value, right: weight.value, bottom: weight.value, left: weight.value }
+    : undefined;
 }
 
 /** The stroke a box's border draws, on every side or some, or undefined where it does not map. */
