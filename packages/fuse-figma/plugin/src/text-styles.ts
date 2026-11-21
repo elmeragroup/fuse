@@ -6,8 +6,9 @@
  * dropped.
  *
  * The plugin owns every field a text style applies. The spec gives the font, size, line height,
- * letter spacing, case, decoration and wrap from the recipe, and the plugin holds the rest at
- * Figma's defaults, so a style a designer named like a kit style draws the kit's type once adopted.
+ * letter spacing, case, decoration and wrap from the captured sample, and the plugin holds the rest
+ * at Figma's defaults, so a style a designer named like a kit style draws the kit's type once
+ * adopted.
  *
  * A bound field reads the collection's first mode on the style, and a layer that uses the style
  * reads it in its frame's modes (PT1). So the plan compares a bound field by its binding alone, and
