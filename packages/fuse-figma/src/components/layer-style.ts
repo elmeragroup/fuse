@@ -374,10 +374,13 @@ export class CellLedger {
   ): Layer {
     const id = this.#layers.length;
     const { context } = this.scope;
+    const style = new Map(
+      computeStyle(id, inherited, applied, (property) => parentValue(parent, context, property))
+    );
     const layer: Layer = {
       id,
       inPlace: this.scope.inPlace,
-      style: computeStyle(id, inherited, applied, (property) => parentValue(parent, context, property)),
+      style,
       inherited,
       read: new Set(),
       marks: new Map(),
@@ -385,6 +388,7 @@ export class CellLedger {
       around: around !== undefined,
       undrawn: around?.undrawn,
     };
+    substitutedParentFontSize(layer, style, context, (property) => parentValue(parent, context, property));
     this.#layers.push(layer);
     parent?.children.push(id);
     return layer;
@@ -1132,6 +1136,37 @@ function computeStyle(
     );
   }
   return style;
+}
+
+/**
+ * A `font-size` whose `var()`s substitute to `1em` or `100%` computes to the parent's font size too,
+ * as Combobox's chips input falls back through `var(--entry-text, 1em)`: substitution comes before
+ * the `em` resolves (CSS Custom Properties 1 §3). The entry keeps the declaration as its source, and
+ * the custom properties the substitution read join what it consumed.
+ */
+function substitutedParentFontSize(
+  layer: Layer,
+  style: Map<string, StyleEntry>,
+  context: BuildContext,
+  parentOf: (property: string) => StyleEntry | undefined
+): void {
+  const entry = layer.style.get("font-size");
+  if (entry === undefined || entry.computed || !entry.value.includes("var(")) {
+    return;
+  }
+  const read = noReads();
+  const value = substitute(layer, context, entry, read);
+  const parent = parentOf("font-size");
+  if (value === undefined || parent === undefined || !["1em", "100%"].includes(normalizeCss(value))) {
+    return;
+  }
+  const [, ...reads] = sourcesOf(layer, entry, read);
+  style.set("font-size", {
+    value: parent.value,
+    source: entry.source,
+    consumed: [...reads, parent.source, ...parent.consumed],
+    computed: true,
+  });
 }
 
 /**
