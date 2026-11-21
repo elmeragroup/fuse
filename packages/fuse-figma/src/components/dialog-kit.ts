@@ -3,7 +3,8 @@
  * demos open, and the Basic popup open over the scrim.
  *
  * - `Dialog content` is `Dialog.Content`'s popup, `<div data-slot="dialog-content">`, basic and with
- *   the footer close: 2 cells. It is fixed in Alert dialog's viewport (`DIALOG_VIEWPORT`). It holds:
+ *   the footer close, at the sizes `md`, `sm`, `lg` and `xl` (`DIALOG_SIZES`): 8 cells. It is fixed
+ *   in Alert dialog's viewport (`DIALOG_VIEWPORT`). It holds:
  *   - the header, the title over the muted description;
  *   - the footer row: the Basic demo's outline Cancel, the `Dialog.Close` that carries the
  *     `dialog-close` slot, and the default Move reading; or the Footer close demo's default Cancel
@@ -11,10 +12,11 @@
  *   - the corner close, `Dialog.Close` rendering the ghost `icon-sm` Icon button with X at the
  *     popup's top right.
  *   The copy differs by cell, so no TEXT property sets the title or the description.
- * - `Dialog (open)` is the Basic popup over the scrim, `Dialog.Backdrop`'s overlay, which fills the
- *   viewport the popup is fixed in.
+ * - `Dialog (open)` is the Basic `md` popup over the scrim, `Dialog.Backdrop`'s overlay, which fills
+ *   the viewport the popup is fixed in.
  */
 import type { InstanceManifest, SetManifest } from "../capture/manifest";
+import { DIALOG_SIZES } from "./alert-dialog-text";
 import { BUTTON_MANIFEST, ICON_BUTTON_MANIFEST } from "./button-kit";
 import { dialogDescriptionManifest, dialogFooterManifest, dialogTitleManifest } from "./dialog-frame-kit";
 import { BASIC_COPY, DIALOG_VIEWPORT, FOOTER_CLOSE_COPY, dialogCopy } from "./dialog-text";
@@ -52,7 +54,12 @@ export const DIALOG_CONTENT_MANIFEST: SetManifest = {
   name: "Dialog content",
   api: { page: "dialog", parts: ["Dialog.Content"] },
   slot: "dialog-content",
-  axes: [{ name: "content", values: ["basic", "footer-close"] }],
+  axes: [
+    { name: "content", values: ["basic", "footer-close"] },
+    { name: "size", values: DIALOG_SIZES },
+  ],
+  // The size axis came after the set's first release, so an `md` popup keeps the key it had then.
+  addedAxes: new Set(["size"]),
   columnAxis: "content",
   viewport: DIALOG_VIEWPORT,
   label: undefined,
@@ -109,7 +116,7 @@ export const DIALOG_OPEN_MANIFEST: SetManifest = {
       kind: "instance",
       key: "content",
       of: DIALOG_CONTENT_MANIFEST,
-      cell: () => ({ content: "basic" }),
+      cell: () => ({ content: "basic", size: "md" }),
       shownIn: always,
     },
   ],

@@ -3,9 +3,9 @@
  * popup open over the scrim.
  *
  * - `Alert dialog content` is the popup, `AlertDialog.Content`'s Dialog popup, `<div role="alertdialog"
- *   data-slot="dialog-content">`, destructive and neutral, each at rest and performing its action:
- *   4 cells. It is fixed in the
- *   viewport (`ALERT_DIALOG_VIEWPORT`). It holds:
+ *   data-slot="dialog-content">`, destructive and neutral, each at rest and performing its action,
+ *   at the sizes `md`, `sm`, `lg` and `xl` (`DIALOG_SIZES`): 16 cells. It is fixed in the viewport
+ *   (`ALERT_DIALOG_VIEWPORT`). It holds:
  *   - the header row: the title, and the title line, a box one title line tall holding the icon:
  *     WarningOctagon for a destructive dialog, Info for a neutral one;
  *   - the description, muted copy;
@@ -14,11 +14,11 @@
  *   The copy is the docs demos', which differs by cell, so no TEXT property sets it (one property
  *   holds one default); the action's label is the Button instance's own. The icon differs by cell too,
  *   so no swap property picks it.
- * - `Alert dialog (open)` is the destructive popup over the scrim, `Dialog.Backdrop`'s overlay, which
- *   fills the viewport the popup is fixed in.
+ * - `Alert dialog (open)` is the destructive `md` popup over the scrim, `Dialog.Backdrop`'s overlay,
+ *   which fills the viewport the popup is fixed in.
  */
 import type { IconManifest, InstanceManifest, SetManifest } from "../capture/manifest";
-import { CANCEL_LABEL, ALERT_DIALOG_VIEWPORT, alertDialogCopy } from "./alert-dialog-text";
+import { CANCEL_LABEL, ALERT_DIALOG_VIEWPORT, DIALOG_SIZES, alertDialogCopy } from "./alert-dialog-text";
 import { BUTTON_MANIFEST } from "./button-kit";
 import type { Cell } from "./component-spec";
 import { dialogDescriptionManifest, dialogFooterManifest, dialogTitleManifest } from "./dialog-frame-kit";
@@ -73,7 +73,10 @@ export const ALERT_DIALOG_CONTENT_MANIFEST: SetManifest = {
   axes: [
     { name: "variant", values: ["destructive", "neutral"] },
     { name: "isPerformingAction", values: ["false", "true"] },
+    { name: "size", values: DIALOG_SIZES },
   ],
+  // The size axis came after the set's first release, so an `md` popup keeps the key it had then.
+  addedAxes: new Set(["size"]),
   columnAxis: "variant",
   viewport: ALERT_DIALOG_VIEWPORT,
   label: undefined,
@@ -124,7 +127,7 @@ export const ALERT_DIALOG_OPEN_MANIFEST: SetManifest = {
       kind: "instance",
       key: "content",
       of: ALERT_DIALOG_CONTENT_MANIFEST,
-      cell: () => ({ variant: "destructive", isPerformingAction: "false" }),
+      cell: () => ({ variant: "destructive", isPerformingAction: "false", size: "md" }),
       shownIn: always,
     },
   ],
