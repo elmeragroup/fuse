@@ -230,6 +230,12 @@ function borderLonghands(property: string): readonly string[] | undefined {
   return property === "border" ? [...longhands, ...BORDER_IMAGE] : longhands;
 }
 
+/**
+ * The longhands `flex` sets, as Chromium lists them and the capture records them (CSS Flexbox 1
+ * §7.2), so a later `grow-0` takes `flex-grow` from a `flex-auto` before it.
+ */
+const FLEX_LONGHANDS = ["flex-grow", "flex-shrink", "flex-basis"] as const;
+
 /** The capture of a hand-built set, with the declarations each element wins from its classes. */
 function captureOf(
   { manifest, cells }: FixtureSet,
@@ -256,8 +262,10 @@ function captureOf(
             important: false,
             longhands: declaration.property.startsWith("--")
               ? [declaration.property]
-              : (borderLonghands(declaration.property) ??
-                expandShorthand(declaration.property, declaration.value).map(([longhand]) => longhand)),
+              : declaration.property === "flex"
+                ? FLEX_LONGHANDS
+                : (borderLonghands(declaration.property) ??
+                  expandShorthand(declaration.property, declaration.value).map(([longhand]) => longhand)),
           },
         ],
       }))

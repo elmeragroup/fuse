@@ -252,7 +252,7 @@ export function readFlow(
         outOfFlow: box.outOfFlow,
       })
     : undefined;
-  if (autoMargins === "centred") {
+  if (autoMargins?.kind === "centred") {
     return {
       layout: {
         flex,
@@ -275,11 +275,12 @@ export function readFlow(
     autoMargins === undefined &&
     normalizeCss(reader.resolved("justify-content") ?? "") === "space-between";
   // A label that fills before the margin leaves no free space, so the row packs at its start, and so
-  // does a row whose layers after the first fill the rest of it in a frame of their own.
+  // does a row whose layers on one side of a margin fill the rest of it in a frame of their own.
+  const restAt = autoMargins?.kind === "rest" ? autoMargins.restAt : undefined;
   const primaryAlign =
-    autoMargins === "label-fills" || autoMargins === "rest-at-end"
+    autoMargins?.kind === "label-fills" || restAt !== undefined
       ? "MIN"
-      : autoMargins === "spaced"
+      : autoMargins?.kind === "spaced"
         ? (alignments.get("space-between")?.align ?? unset)
         : spaceBetweenUnread
           ? "SPACE_BETWEEN"
@@ -292,7 +293,7 @@ export function readFlow(
     primaryAlign,
     counterAlign,
     justify:
-      autoMargins === "rest-at-end"
+      restAt !== undefined
         ? "MIN"
         : autoMargins !== undefined
           ? "SPACE_BETWEEN"
@@ -310,11 +311,11 @@ export function readFlow(
       []
     );
   }
-  if (autoMargins === "label-fills") {
+  if (autoMargins?.kind === "label-fills") {
     return { layout: { ...layout, labelFills: true }, self };
   }
-  if (autoMargins === "rest-at-end") {
-    return { layout: { ...layout, restAtEnd: true }, self };
+  if (restAt !== undefined) {
+    return { layout: { ...layout, restAt }, self };
   }
   return { layout: spaceBetweenUnread ? { ...layout, spaceBetweenUnread: true } : layout, self };
 }
@@ -609,7 +610,7 @@ export type FlowLayers = {
   /**
    * The parts, each with whether it holds text a TEXT property sets, which a grid's tracks read, and
    * whether it shows its own text and no icon or part, which `readCentredLone` in `auto-margins.ts`
-   * reads, and whether a BOOLEAN property shows or hides it, which `readRestAtEnd` there reads, and
+   * reads, and whether a BOOLEAN property shows or hides it, which `readRest` there reads, and
    * whether it is an instance part, which a subgrid row cannot regroup into its inset.
    */
   readonly parts: readonly (FlowLayer & {

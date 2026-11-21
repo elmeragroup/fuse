@@ -1,5 +1,5 @@
 /**
- * How the build sizes and spaces a box from its flex and limit declarations: `flex: none`, logical padding, percentage limits, auto margins between two layers or after a row's first of three and a row's stretch. The unit under test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
+ * How the build sizes and spaces a box from its flex and limit declarations: `flex: none`, logical padding, percentage limits, auto margins between two layers or on a row's first or last of three and a row's stretch. The unit under test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
  * (`test/capture-fixtures.ts`). Each case names its oracle: the CSS specification that says what the
  * browser draws, or the Figma plugin typings that say what Figma draws, under the coverage contract,
  * where a declaration that does not reach Figma is `unmapped` and one with nothing to draw is
@@ -263,9 +263,16 @@ describe("an auto margin between two layers", () => {
 // apart the first sits at x 0 and the others at x 152 and x 180, with `justify-end` set or not, as
 // Tour's footer sets Skip, Back and Next. A Figma row packed at its start, holding the first layer
 // and a frame that fills the rest (172px) and packs the other two at its end 8px apart, draws them at
-// the same x. Without the measurement the margin may take nothing, so it stays unmapped and the row
-// holds its three layers.
-describe("an auto end margin on the first of a row's three layers", () => {
+// the same x. On the last of the three, an auto start margin takes the same free space before it, so
+// the first two sit at x 0 and x 28 and the last at x 180, as a Date range picker's field box sets
+// its inputs and its trigger. A row packed at its start, holding a frame that fills the 172px before
+// the last layer and packs the other two at its start 8px apart, then the last layer, draws them at
+// the same x. A first part whose `flex` shorthand sets a grow factor of 0, as `flex-[0_0_auto]`
+// does, keeps its 20px as `flex-none` would (CSS Flexbox 1 §7.2), and so does one whose `grow-0`
+// wins `flex-grow` over the `flex-auto` before it (CSS Cascade 4 §6), so the row draws the same. Without
+// the measurement the margin may take nothing, so it stays unmapped and the row holds its three
+// layers.
+describe("an auto margin on the first or the last of a row's three layers", () => {
   const THREE: Partial<SetManifest> = {
     parts: [part({ key: "a", slot: "a" }), part({ key: "b", slot: "b" }), part({ key: "c", slot: "c" })],
   };
@@ -318,33 +325,76 @@ describe("an auto end margin on the first of a row's three layers", () => {
     };
   }
 
+  /** The three parts' classes with the margin on the first part, and with it on the last. */
+  const FIRST_MARGINED = ["size-[20px] me-auto", "size-[20px]", "size-[20px]"] as const;
+  const LAST_MARGINED = ["size-[20px]", "size-[20px]", "size-[20px] ms-auto"] as const;
+
   it.each([
-    ["sets no justify-content", "flex w-[200px] items-center gap-[8px]"],
-    ["sets justify-end", "flex w-[200px] items-center justify-end gap-[8px]"],
-  ])(
-    "draws the others at the row's end in a frame that fills the rest where the row %s",
-    async (_, classes) => {
-      const { variant, coverage } = await buildThree(classes, { freeAlongMain: true });
+    [
+      "me-auto",
+      "margin-right",
+      FIRST_MARGINED,
+      "sets no justify-content",
+      "flex w-[200px] items-center gap-[8px]",
+    ],
+    [
+      "me-auto",
+      "margin-right",
+      FIRST_MARGINED,
+      "sets justify-end",
+      "flex w-[200px] items-center justify-end gap-[8px]",
+    ],
+    [
+      "ms-auto",
+      "margin-left",
+      LAST_MARGINED,
+      "sets no justify-content",
+      "flex w-[200px] items-center gap-[8px]",
+    ],
+    [
+      "ms-auto",
+      "margin-left",
+      LAST_MARGINED,
+      "sets justify-end",
+      "flex w-[200px] items-center justify-end gap-[8px]",
+    ],
+  ] as const)(
+    "draws %s's far side in a frame that fills the rest of the row where the row %s",
+    async (margin, property, parts, _, classes) => {
+      const { variant, coverage } = await buildThree(classes, { freeAlongMain: true }, parts);
+      const frame = { horizontal: FILL, itemSpacing: literal(8) };
       expect(layoutOf(variant?.root)).toEqual({
         primaryAlign: "MIN",
         itemSpacing: literal(8),
-        layers: [
-          "a",
-          {
-            key: "a end",
-            horizontal: FILL,
-            primaryAlign: "MAX",
-            itemSpacing: literal(8),
-            layers: ["b", "c"],
-          },
-        ],
+        layers:
+          margin === "me-auto"
+            ? ["a", { ...frame, key: "a end", primaryAlign: "MAX", layers: ["b", "c"] }]
+            : [{ ...frame, key: "c start", primaryAlign: "MIN", layers: ["a", "b"] }, "c"],
       });
-      expect(notesOf(coverage, "me-auto").map(([property, outcome]) => [property, outcome])).toEqual([
-        ["margin-right", "literal"],
+      expect(notesOf(coverage, margin).map(([read, outcome]) => [read, outcome])).toEqual([
+        [property, "literal"],
       ]);
       expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
     }
   );
+
+  it.each([
+    ["flex shorthand sets a grow factor of 0", "size-[20px] flex-[0_0_auto] me-auto"],
+    ["grow-0 wins its flex-grow over flex-auto", "size-[20px] flex-auto grow-0 me-auto"],
+  ])("draws the frame where the margined part's %s", async (_, first) => {
+    const { variant, coverage } = await buildThree(
+      "flex w-[200px] items-center gap-[8px]",
+      { freeAlongMain: true },
+      [first, "size-[20px]", "size-[20px]"]
+    );
+    expect(layoutOf(variant?.root).layers).toEqual([
+      "a",
+      { key: "a end", horizontal: FILL, itemSpacing: literal(8), primaryAlign: "MAX", layers: ["b", "c"] },
+    ]);
+    expect(notesOf(coverage, "me-auto").map(([read, outcome]) => [read, outcome])).toEqual([
+      ["margin-right", "literal"],
+    ]);
+  });
 
   // Oracle: CSS Flexbox 1 §9.4 step 15. A row 100px tall has one line 100px tall, so a `self-stretch`
   // item with no height of its own is 100px tall while a 20px item centres in the line, as Chromium
@@ -368,32 +418,63 @@ describe("an auto end margin on the first of a row's three layers", () => {
   const NONE: MeasuredFacts = {};
   const FREE: MeasuredFacts = { freeAlongMain: true };
 
-  // Oracle: CSS Flexbox 1 §8.1 and §9.4. Without the measurement the margin may take nothing. An
-  // auto start margin on the last part shares the free space with the first's, so CSS sets the
-  // second part in the middle of the row, at x 90 in Chromium, where no frame that packs the parts at
-  // its end draws it. In a row that hugs its height, a `self-stretch` part beside a 40px first part
-  // and a 20px last part stretches to 40px, the line's height, as Chromium lays it out, while the
-  // frame that hugs the two parts after the first is 20px tall and the part fills only that. Each
-  // leaves the margin unmapped and the row's three layers as they are.
+  // Oracle: CSS Flexbox 1 §8.1, §9.4 and §9.7. Without the measurement the margin may take nothing,
+  // on the first part or the last. An auto start margin on the last part shares the free space with
+  // the first's, so CSS sets the second part in the middle of the row, at x 90 in Chromium, where no
+  // frame that packs the parts at its end draws it. In a row that hugs its height, a `self-stretch`
+  // part beside a 40px first part and a 20px last part stretches to 40px, the line's height, as
+  // Chromium lays it out, while the frame that hugs the two parts after the first is 20px tall and
+  // the part fills only that. A first part that grows up to a 140px cap takes the free space before
+  // its margin does, so in a 240px row before two 20px parts 8px apart it grows to 140px and its
+  // margin takes the 44px left, which puts the second part at x 192, while a frame that fills beside
+  // a part that fills splits the 232px between them. A `flex-auto` after a `grow-0` wins `flex-grow`
+  // (CSS Cascade 4 §6), so that part grows the same. Each leaves the margin unmapped and the row's three layers
+  // as they are.
   it.each([
-    ["without the measurement", "flex w-[200px] items-center justify-end gap-[8px]", NONE, undefined],
     [
+      "me-auto",
+      "without the measurement",
+      "flex w-[200px] items-center justify-end gap-[8px]",
+      NONE,
+      FIRST_MARGINED,
+    ],
+    ["ms-auto", "without the measurement", "flex w-[200px] items-center gap-[8px]", NONE, LAST_MARGINED],
+    [
+      "me-auto",
       "where a later part sets an auto start margin",
       "flex w-[200px] items-center gap-[8px]",
       FREE,
-      ["size-[20px] me-auto", "size-[20px]", "size-[20px] ms-auto"] as const,
+      ["size-[20px] me-auto", "size-[20px]", "size-[20px] ms-auto"],
     ],
     [
+      "me-auto",
       "where a part stretches across a row that hugs its height",
       "flex w-[200px] items-center gap-[8px]",
       FREE,
-      ["w-[20px] h-[40px] me-auto", "w-[20px] self-stretch", "size-[20px]"] as const,
+      ["w-[20px] h-[40px] me-auto", "w-[20px] self-stretch", "size-[20px]"],
     ],
-  ])("leaves the margin unmapped and the three layers in the row %s", async (_, classes, measured, parts) => {
-    const { variant, coverage } = await buildThree(classes, measured, parts);
-    expect(variant?.root.children.map((child) => child.key)).toEqual(["a", "b", "c"]);
-    expect(notesOf(coverage, "me-auto").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
-  });
+    [
+      "me-auto",
+      "where the first part grows up to a cap",
+      "flex w-[240px] items-center gap-[8px]",
+      FREE,
+      ["h-[20px] flex-1 max-w-[140px] me-auto", "size-[20px]", "size-[20px]"],
+    ],
+    [
+      "me-auto",
+      "where the first part's flex-auto wins its flex-grow over the grow-0 before it",
+      "flex w-[240px] items-center gap-[8px]",
+      FREE,
+      ["h-[20px] max-w-[140px] grow-0 flex-auto me-auto", "size-[20px]", "size-[20px]"],
+    ],
+  ] as const)(
+    "leaves %s unmapped and the three layers in the row %s",
+    async (margin, _, classes, measured, parts) => {
+      const { variant, coverage } = await buildThree(classes, measured, parts);
+      expect(variant?.root.children.map((child) => child.key)).toEqual(["a", "b", "c"]);
+      expect(notesOf(coverage, margin).map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+    }
+  );
 
   // Oracle: CSS Flexbox 1 §8.1 and §9.4. A first part a BOOLEAN property hides takes its auto margin
   // out of the row, so the others follow `justify-content`: with none set, Chromium lays them out at

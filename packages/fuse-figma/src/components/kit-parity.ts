@@ -170,11 +170,11 @@ export const KIT_PARITY = {
     missing: "The calendar popup; the `sm` size, the trigger at the start, and a date and time.",
     issue: MISSING_SETS,
   },
-  // Each date input sits in a `display: contents` wrapper, which stays unmapped. The field box wraps
-  // its row (`flex-wrap`), which keeps its inputs' `self-stretch` unproven, and the trigger's `ms-auto`
-  // too, since the capture measures `freeAlongMain` only on a row that does not wrap. The root's
-  // `@container/picker` and the error's and description's blocks around a text span map to nothing
-  // yet.
+  // #802: the field box wraps its row (`flex-wrap`), which keeps its inputs' `self-stretch` unproven,
+  // and the capture measures `freeAlongMain` for the trigger's `ms-auto` only on a row that does not
+  // wrap. The root's `@container/picker` sits beside its `w-full`, the Label instance's `w-fit` fills
+  // its stretching column where the Label set's text hugs, and the text spans inside the label, error
+  // and description reach no coverage row.
   "date-range-picker": { kind: "issue", issue: MISSING_SETS },
   "description-list": {
     kind: "partial",
