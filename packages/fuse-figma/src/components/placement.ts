@@ -214,7 +214,7 @@ export function placeParts<Part extends PlacedPart>(
     }
     if (layer.kind === "instance") {
       const position = normalizeCss(style.resolved("position") ?? "");
-      // A fixed instance's place is `placeCentredFixed`'s to read, and stays unmapped where it reads none.
+      // A fixed instance's place is `placeFixed`'s to read, and stays unmapped where it reads none.
       if (position === "fixed") {
         return kept;
       }

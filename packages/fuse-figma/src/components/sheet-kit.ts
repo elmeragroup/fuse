@@ -1,5 +1,6 @@
 /**
- * Sheet, as one component set on a page of its own: the panel the docs "No close button" demo opens.
+ * Sheet, as two component sets on a page of their own: the panel the docs "No close button" demo
+ * opens, and that panel open over the scrim.
  *
  * `Sheet content` is `Sheet.Content`'s popup, `<div data-slot="sheet-content">`, with
  * `showCloseButton={false}`, on the right side at the md size: 1 cell. It is fixed in a 640×448
@@ -10,8 +11,11 @@
  * false by default. Its containing block is the popup, which the column spans, so it draws in the
  * column's frame, as `absolute-placement.ts` says.
  *
- * The set draws no body, and no panel open over the scrim, whose Backdrop the kit places only around
- * a centred or top popup.
+ * `Sheet (open)` is that panel over the scrim, `Sheet.Overlay`, which renders Base UI's
+ * `Drawer.Backdrop` and fills the viewport the panel is fixed in, on the right side the docs default
+ * demo opens it from, with the corner close the default demo shows: 1 cell.
+ *
+ * The sets draw no body.
  */
 import type { InstanceManifest, LabelManifest, PartManifest, SetManifest } from "../capture/manifest";
 import { BUTTON_MANIFEST, ICON_BUTTON_MANIFEST } from "./button-kit";
@@ -102,6 +106,34 @@ export const SHEET_CONTENT_MANIFEST: SetManifest = {
         },
         CORNER_CLOSE,
       ],
+    },
+  ],
+  swapProperties: [],
+};
+
+/**
+ * The open Sheet's manifest, which the capture-backed build reads with `captures/sheet-open.json`:
+ * the Backdrop and the panel over it, against the right edge of the viewport the panel is fixed in.
+ */
+export const SHEET_OPEN_MANIFEST: SetManifest = {
+  key: "sheet-open",
+  name: "Sheet (open)",
+  api: { page: "sheet", parts: ["Sheet.Content", "Sheet.Root"] },
+  slot: "sheet-open",
+  axes: [{ name: "side", values: ["right"] }],
+  columnAxis: "side",
+  viewport: SHEET_VIEWPORT,
+  union: ["sheet-overlay", "sheet-content"],
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "content",
+      of: SHEET_CONTENT_MANIFEST,
+      cell: () => ({ side: "right" }),
+      properties: () => ({ boolean: { [SHEET_CORNER_CLOSE_PROPERTY]: true } }),
+      shownIn: always,
     },
   ],
   swapProperties: [],

@@ -102,7 +102,7 @@ import { SELECT_ITEM_MANIFEST, SELECT_OPEN_MANIFEST, SELECT_POPUP_MANIFEST } fro
 import { SELECT_TRIGGER_MANIFEST } from "./select-trigger-kit";
 import { SELECTION_ITEM_MANIFEST } from "./selection-item-kit";
 import { SEPARATOR_MANIFEST } from "./separator-kit";
-import { SHEET_CONTENT_MANIFEST } from "./sheet-kit";
+import { SHEET_CONTENT_MANIFEST, SHEET_OPEN_MANIFEST } from "./sheet-kit";
 import {
   SIDEBAR_GROUP_LABEL_MANIFEST,
   SIDEBAR_MENU_BADGE_MANIFEST,
@@ -309,8 +309,8 @@ const DATE_PICKER_PAGE: KitPage = { slug: "date-picker", name: "Date picker", ex
 /** The page Tabs trigger and Tabs list share. */
 const TABS_PAGE: KitPage = { slug: "tabs", name: "Tabs", example: "tabs-list" };
 
-/** The page Sheet content sits on alone. */
-const SHEET_PAGE: KitPage = { slug: "sheet", name: "Sheet", example: "sheet-content" };
+/** The page of Sheet: the panel, and the panel open over its scrim. */
+const SHEET_PAGE: KitPage = { slug: "sheet", name: "Sheet", example: "sheet-open" };
 
 /** The page Table's head, cell, row and caption share. */
 const TABLE_PAGE: KitPage = { slug: "table", name: "Table", example: "table-row" };
@@ -919,6 +919,11 @@ export const KIT: readonly KitEntry[] = [
     page: SHEET_PAGE,
     previewCells: possibleCells(SHEET_CONTENT_MANIFEST),
     manifest: SHEET_CONTENT_MANIFEST,
+  },
+  {
+    page: SHEET_PAGE,
+    previewCells: possibleCells(SHEET_OPEN_MANIFEST),
+    manifest: SHEET_OPEN_MANIFEST,
   },
   {
     page: CALENDAR_PAGE,

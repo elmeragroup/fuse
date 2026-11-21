@@ -1006,7 +1006,7 @@ export class CaptureCellCascade {
     const layout = modalLayout(this.#detachedStyle(popup), open.viewport);
     if (layout === undefined) {
       throw new KitUnmappable({
-        message: `the popup of ${this.#cell.key} is fixed neither at the viewport's centre nor a length below its top and centred across, which the Backdrop cannot place`,
+        message: `the popup of ${this.#cell.key} is fixed neither at the viewport's centre, nor a length below its top and centred across, nor against its right edge, which the Backdrop cannot place`,
       });
     }
     // The popup portals beside the Backdrop, which the composite draws it over.
