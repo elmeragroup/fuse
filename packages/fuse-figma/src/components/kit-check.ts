@@ -506,6 +506,7 @@ function checkInstances(kit: KitSpec): void {
         }
         checkInstanceProperties(where, layer, inner, kit.icons);
         checkNestedValues(where, layer, shown, kit);
+        checkInstanceLengths(where, layer, shown);
         const overridden = new Set<string>();
         for (const override of layer.overrides ?? []) {
           const target = layerAt(shown.root, override.path);
@@ -535,6 +536,41 @@ function checkInstances(kit: KitSpec): void {
       }
     }
   });
+}
+
+/**
+ * Refuse an instance that fixes a literal length outside a literal limit it keeps on that axis: its
+ * own `minWidth` or `maxWidth`, or else its inner root's. Figma clamps a fixed length to a limit, so
+ * the plan would write the length on every run. An instance that carries a literal width limit keeps
+ * its height limits apart from its main's, and the plan writes the main's on it (MH), so a change
+ * of the main's limits can reach a fixed instance. The spec holds no value a variable takes in a
+ * mode, so the check accepts a bound length or limit, as Button's `control-h-md` under a 60px cap.
+ */
+function checkInstanceLengths(where: string, layer: InstanceLayerSpec, shown: VariantSpec): void {
+  const own = {
+    minWidth: layer.minWidth,
+    maxWidth: layer.maxWidth,
+    minHeight: undefined,
+    maxHeight: undefined,
+  };
+  for (const { axis, length, limits } of AXES) {
+    const fixed = fixedLength(layer.sizing[axis]);
+    if (fixed?.kind !== "literal") {
+      continue;
+    }
+    for (const field of limits) {
+      const limit = own[field] ?? shown.root.limits[field];
+      if (limit?.kind !== "literal") {
+        continue;
+      }
+      const outside = field.startsWith("min") ? fixed.value < limit.value : fixed.value > limit.value;
+      if (outside) {
+        throw contradiction(
+          `${where} fixes its ${length} at ${fixed.value}, outside its ${field} of ${limit.value}, and Figma clamps a fixed length to its limits, so the plan would write the ${length} on every run.`
+        );
+      }
+    }
+  }
 }
 
 /**

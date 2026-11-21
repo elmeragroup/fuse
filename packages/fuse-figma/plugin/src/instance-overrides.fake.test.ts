@@ -7,8 +7,10 @@
  * border, an operator's `font-normal` shows Regular where Button's label is Medium and a value's
  * `max-w-56` caps it at 224px, and what a real file's `overrides` listed on 2026-11-20: each side a
  * write changed, a text's `fontName` and an instance's `maxWidth`, each kept listed after the main's
- * value was written back (SW). The fonts each write needs and leaves follow the fake's text rules 7, 10,
- * 50 and 51 (PG8, PG13). No real file has run the plugin's writes yet: the owner's Apply is their
+ * value was written back (SW). On 2026-11-21 a literal width limit's write kept the paired height
+ * limit the instance showed through a change of the main's literal, and the instance showed a
+ * binding the main held (MH). The fonts each write needs and leaves follow the fake's text rules 7,
+ * 10, 50 and 51 (PG8, PG13). No real file has run the plugin's writes yet: the owner's Apply is their
  * check.
  */
 import { describe, expect, it } from "vitest";
@@ -18,6 +20,8 @@ import type {
   ComponentSetSpec,
   InstanceOverride,
   KitSpec,
+  LimitsSpec,
+  NumberSpec,
   TextLayerSpec,
   VariantSpec,
 } from "../../src/components/kit-spec.ts";
@@ -199,6 +203,15 @@ function withButtonRoots(kit: KitSpec, edit: (root: VariantSpec["root"]) => Vari
         : { ...set, variants: set.variants.map((variant) => ({ ...variant, root: edit(variant.root) })) }
     ),
   };
+}
+
+/** `kit` with every Button root hugging its height within the limits `edit` gives it. */
+function huggingButtons(kit: KitSpec, edit: (root: VariantSpec["root"]) => LimitsSpec): KitSpec {
+  return withButtonRoots(kit, (root) => ({
+    ...root,
+    sizing: { ...root.sizing, vertical: { kind: "hug" } },
+    limits: edit(root),
+  }));
 }
 
 /** `kit` with every Button variant's stroke of one weight dashed by `dashPattern`. */
@@ -519,10 +532,56 @@ describe("an instance label's face on an applied file", () => {
   });
 });
 
-describe("an instance's widest width on an applied file", () => {
-  // A `maxWidth` write also lists `maxHeight` among the instance's overrides (SW), and the fake keeps
-  // an instance's own limits through a change of the main's, as an override keeps its value (N3), so
-  // the instance shows the main's height cap only once the plan writes it.
+describe("an instance's width limits on an applied file", () => {
+  // A literal `minWidth` write also lists `minHeight` among the instance's overrides (PH3), and the
+  // instance keeps the number it showed then through a change of the main's literal, while a binding
+  // the main holds shows through (MH). So the instance shows a changed literal of the main's only once
+  // the plan writes it.
+  it("carries the instance's minimum, follows the main's minimum height through a literal, a binding and none, and each next Plan lists nothing", async () => {
+    const { kit } = await kitFixture();
+    // A minimum height holds on a main that hugs its height, which the kit check asks of it.
+    const tall = (minHeight: (root: VariantSpec["root"]) => NumberSpec | undefined) => (base: KitSpec) =>
+      huggingButtons(base, (root) => ({ ...root.limits, minHeight: minHeight(root) }));
+    const literal = (value: number) => tall(() => ({ kind: "literal", value }));
+    const carried = (base: KitSpec) =>
+      onFirstRowButton(base, (layer) => ({ ...layer, minWidth: { kind: "literal", value: 120 } }));
+    // Each Button variant binds its root's left padding, a number variable the main's minimum can take.
+    const bound = tall((root) => root.paddingLeft);
+    const { file, button } = await firstRow();
+    const main = await button.getMainComponentAsync();
+    const steps: (readonly [number | null, number | null, string | undefined, readonly string[]])[] = [];
+    // The second Apply carries the minimum and changes the main's height in one run.
+    for (const each of [
+      literal(40)(kit),
+      carried(literal(56)(kit)),
+      carried(literal(64)(kit)),
+      carried(bound(kit)),
+      carried(literal(72)(kit)),
+      carried(tall(() => undefined)(kit)),
+    ]) {
+      await reconcile(file, each, true);
+      steps.push([
+        button.minWidth,
+        button.minHeight,
+        button.boundVariables?.minHeight?.id,
+        await reconcile(file, each),
+      ]);
+    }
+    const padding = main?.boundVariables?.paddingLeft?.id;
+    expect(padding).toBeDefined();
+    expect(steps).toEqual([
+      [null, 40, undefined, []],
+      [120, 56, undefined, []],
+      [120, 64, undefined, []],
+      [120, main?.paddingLeft, padding, []],
+      [120, 72, undefined, []],
+      [120, null, undefined, []],
+    ]);
+  });
+
+  // A `maxWidth` write also lists `maxHeight` among the instance's overrides (SW), and the instance
+  // keeps the height cap it showed then through a change of the main's literal (MH), so the instance
+  // shows the main's height cap only once the plan writes it.
   it("caps the instance, follows the main's height cap, goes back to the main's width cap where the kit drops it, and each next Plan lists nothing", async () => {
     const { kit } = await kitFixture();
     // A main with a cap of its own tells going back to it from clearing the instance's.
@@ -535,10 +594,9 @@ describe("an instance's widest width on an applied file", () => {
       maxWidth: { kind: "literal", value: 224 },
     }));
     // A height cap holds on a main that hugs its height, which the kit check asks of it.
-    const tall = withButtonRoots(capped, (root) => ({
-      ...root,
-      sizing: { ...root.sizing, vertical: { kind: "hug" } },
-      limits: { ...root.limits, maxHeight: { kind: "literal", value: 60 } },
+    const tall = huggingButtons(capped, (root) => ({
+      ...root.limits,
+      maxHeight: { kind: "literal", value: 60 },
     }));
     const { file, button } = await firstRow();
     const steps: (readonly [number | null, number | null, readonly string[]])[] = [];

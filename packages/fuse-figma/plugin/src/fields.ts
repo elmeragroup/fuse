@@ -487,8 +487,15 @@ function boundColor(run: Run, ref: VariableRef, node: SceneNode): RGBA {
   return boundValue(run, ref, node) as RGBA;
 }
 
-/** A length in a node: the literal, or the value its variable takes there. */
-function lengthIn(run: Run, spec: NumberSpec, node: SceneNode): number {
+/**
+ * A length in a node: the literal, or the value its variable takes there.
+ *
+ * @param run - The run, whose variables resolve a bound length.
+ * @param spec - The length.
+ * @param node - The node whose modes pick a variable's value.
+ * @returns The length in pixels.
+ */
+export function lengthIn(run: Run, spec: NumberSpec, node: SceneNode): number {
   // SAFETY: the kit check confirmed that every variable the kit binds to a length is a FLOAT
   // variable, which resolves to a number.
   return spec.kind === "literal" ? spec.value : (boundValue(run, spec.variable, node) as number);
