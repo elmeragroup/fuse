@@ -75,7 +75,12 @@ import { axisValues } from "./kit-spec";
 import type { AxisSpec } from "./kit-spec";
 import { LABEL_MANIFEST } from "./label-kit";
 import { LINK_MANIFEST } from "./link-kit";
-import { LIST_DETAIL_MANIFEST, LIST_DETAIL_PANE_MANIFEST } from "./list-detail-kit";
+import {
+  LIST_DETAIL_MANIFEST,
+  LIST_DETAIL_OPEN_MANIFEST,
+  LIST_DETAIL_PANE_MANIFEST,
+  LIST_DETAIL_SHEET_MANIFEST,
+} from "./list-detail-kit";
 import { LOADER_MANIFEST } from "./loader-kit";
 import { MENU_GROUP_LABEL_MANIFEST, MENU_SEPARATOR_MANIFEST } from "./menu-kit";
 import { METER_MANIFEST } from "./meter-kit";
@@ -1019,6 +1024,16 @@ export const KIT: readonly KitEntry[] = [
     page: LIST_DETAIL_PAGE,
     previewCells: possibleCells(LIST_DETAIL_MANIFEST),
     manifest: LIST_DETAIL_MANIFEST,
+  },
+  {
+    page: LIST_DETAIL_PAGE,
+    previewCells: possibleCells(LIST_DETAIL_SHEET_MANIFEST),
+    manifest: LIST_DETAIL_SHEET_MANIFEST,
+  },
+  {
+    page: LIST_DETAIL_PAGE,
+    previewCells: possibleCells(LIST_DETAIL_OPEN_MANIFEST),
+    manifest: LIST_DETAIL_OPEN_MANIFEST,
   },
   {
     page: DATA_TABLE_FILTER_PAGE,

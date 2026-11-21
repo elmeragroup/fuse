@@ -67,7 +67,9 @@ import kbdGroup from "../../captures/kbd-group.json" with { type: "json" };
 import kbd from "../../captures/kbd.json" with { type: "json" };
 import label from "../../captures/label.json" with { type: "json" };
 import link from "../../captures/link.json" with { type: "json" };
+import listDetailOpen from "../../captures/list-detail-open.json" with { type: "json" };
 import listDetailPane from "../../captures/list-detail-pane.json" with { type: "json" };
+import listDetailSheet from "../../captures/list-detail-sheet.json" with { type: "json" };
 import listDetail from "../../captures/list-detail.json" with { type: "json" };
 import loader from "../../captures/loader.json" with { type: "json" };
 import menuGroupLabel from "../../captures/menu-group-label.json" with { type: "json" };
@@ -206,6 +208,8 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["description-list", descriptionList],
   ["list-detail-pane", listDetailPane],
   ["list-detail", listDetail],
+  ["list-detail-sheet", listDetailSheet],
+  ["list-detail-open", listDetailOpen],
   ["data-table-filter-bar", dataTableFilterBar],
   ["tour-popup", tourPopup],
   ["tour-step", tourStep],

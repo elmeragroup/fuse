@@ -774,6 +774,16 @@ const SOURCES: readonly RendererSource[] = [
     entry: ["dist/text.js", "dist/span.js", "dist/heading.js"],
     load: async () => (await import("./text-style-cell.ts")).textStyles,
   },
+  {
+    set: "list-detail-sheet",
+    entry: "dist/list-detail.js",
+    module: { url: new URL("list-detail-open-cell.ts", import.meta.url), name: "listDetailSheet" },
+  },
+  {
+    set: "list-detail-open",
+    entry: "dist/list-detail.js",
+    module: { url: new URL("list-detail-open-cell.ts", import.meta.url), name: "listDetailOpen" },
+  },
 ];
 
 /** The Fuse build output each renderer imports, with repeats where renderers share one. */
