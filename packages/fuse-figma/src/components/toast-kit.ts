@@ -14,6 +14,14 @@
  *
  * The close, `Toast.Close` at `absolute top-2 right-2`, stays out (#820): its containing block is the
  * root, which pads the content that holds it, so no placement rule draws it where CSS puts it.
+ *
+ * The set draws no stack of several toasts (#922). In the demo's bottom placement a collapsed toast
+ * behind the frontmost one takes the frontmost toast's height, hides its content (`data-behind`), and
+ * scales by `max(0, 1 - 0.1 × index)` about its bottom center, so 12px per index of it shows above the
+ * frontmost toast. The scale shrinks its corner radius, ring and shadow too, which the kit draws only
+ * at full size, so that strip cannot match Chromium. The expanded stack is a column of toasts 12px
+ * apart (`--gap`), but an open composite's capture places an anchored popup or a modal one, not a
+ * column of several roots that share one `data-slot`, so the kit builds no expanded set.
  */
 import type { IconManifest, LabelManifest, PartManifest, SetManifest } from "../capture/manifest";
 import type { Cell } from "./component-spec";
