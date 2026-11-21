@@ -5,17 +5,20 @@
  * Appendix E and CSS Flexbox 1 §5.4.1, at the centre of an `actions` box that a `cover` overlaps:
  * an absolute box over the whole root, or a flex item of the root at the actions' level. The page
  * records the fact where Chromium paints the actions topmost and no layer after them exists: a
- * `z-index: 20` over a cover at `auto`, or over a cover at the same level that comes first in the
- * tree. It records nothing where Chromium paints a box over the actions: a cover at a higher level,
- * a cover's `::before` at a higher level, positioned, a static flex item of the cover, or a flex item
- * of the root where the cover has `display: contents`, the root's static `::before` at a higher
- * level as a flex or a grid item, a `z-index` on a box it does not apply to, a negative level, a
- * cover one density or the dark scheme raises to a higher level, actions in a wrapper whose opacity
- * forms a stacking context at level zero, under a cover at a lower level than the actions', and a
- * flex item cover at the same level that an `order` paints after the actions: the cover's `order:
- * 1`, light and dark, its `order: 1` in the dark scheme only, and the actions' `order: -1`. Nor where
- * a layer follows the actions while Chromium paints them topmost: a later sibling, later text and
- * the root's `::after`.
+ * `z-index: 20` over a cover at `auto`, over a cover at the same level that comes first in the
+ * tree, or over the absolute `::before` at `auto` of a `display: contents` cover whose `z-index`
+ * applies to no box. It records nothing where Chromium paints a box over the actions: a cover at a
+ * higher level, a static cover at a higher level that is an item of the root's `-webkit-box`, to
+ * which Chromium applies `z-index` as to a flex item, a cover's `::before` at a higher level,
+ * positioned, a static flex item of the cover, or a flex item of the root where the cover has
+ * `display: contents`, the root's static `::before` at a higher level as a flex or a grid item, a
+ * `z-index` on a box it does not apply to, a negative level, a cover one density or the dark scheme
+ * raises to a higher level, actions in a wrapper whose opacity forms a stacking context at level
+ * zero, under a cover at a lower level than the actions', static actions in a `display: contents`
+ * wrapper whose `z-index` applies to no box, and a flex item cover at the same level that an
+ * `order` paints after the actions: the cover's `order: 1`, light and dark, its `order: 1` in the
+ * dark scheme only, and the actions' `order: -1`. Nor where a layer follows the actions while
+ * Chromium paints them topmost: a later sibling, later text and the root's `::after`.
  */
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
@@ -95,6 +98,13 @@ describe("measuredFacts paintsLast", () => {
   it.each([
     ["a cover at `auto`", {}],
     ["a cover at the same level, which comes first in the tree", { cover: `${COVER}; z-index: 20` }],
+    [
+      "an earlier `display: contents` cover at a higher level, which generates no box, whose absolute ::before at `auto` covers the root",
+      {
+        cover: "display: contents; z-index: 30",
+        head: `#cover::before { content: ""; position: absolute; inset: 0; background: blue }`,
+      },
+    ],
   ])("records the actions over %s, which Chromium paints under them", async (_name, options) => {
     expect(await measure(options)).toEqual({ last: ["actions"], topmost: "actions" });
   });
@@ -154,6 +164,20 @@ describe("measuredFacts paintsLast", () => {
     [
       "actions at the same level whose `order` puts them before a flex item cover",
       { cover: ORDERED_COVER, actions: `${ACTIONS}; order: -1` },
+    ],
+    [
+      "a static cover at a higher level, an item of the root's `-webkit-box`",
+      {
+        root: "position: relative; display: -webkit-box; width: 200px; height: 40px",
+        cover: "z-index: 30; width: 200px; margin-right: -200px; background: blue",
+      },
+    ],
+    [
+      "static actions in a `display: contents` wrapper with a level, which generates no box",
+      {
+        wrapper: "display: contents; z-index: 20",
+        actions: ACTIONS.replace("relative; z-index: 20", "static"),
+      },
     ],
   ])("records nothing for %s, where Chromium paints the cover over the actions", async (_name, options) => {
     expect(await measure(options)).toEqual({ last: [], topmost: "cover" });

@@ -15,6 +15,7 @@ import { paintsLast } from "./paints-last.ts";
 import { parentSpansBlock } from "./parent-spans-block.ts";
 import { paints, pseudoBox, pseudoPaintOf } from "./pseudo-boxes.ts";
 import type { PseudoPaint } from "./pseudo-boxes.ts";
+import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
 
 /**
  * Measure a root's tree in the page and keep what holds on any platform, by each element's
@@ -839,14 +840,16 @@ const MEASURE_IN_PAGE = `async function () {
       put(path, "pseudoPaint", { ...(out[path]?.pseudoPaint ?? {}), [name]: pseudoPaintOf(element, pseudo) });
     }
   }
+  // The paint-order reads both facts below make, as \`stacking.ts\` decides them.
+  const stacking = { containerDisplay: (${containerDisplay.toString()}), appliedLevel: (${appliedLevel.toString()}), keepsTreeOrder: (${keepsTreeOrder.toString()}) };
   // An absolute element whose parent spans its containing block, in every mode.
   const parentSpansBlock = (${parentSpansBlock.toString()});
-  const spanned = elements.filter(({ element }) => element !== root && parentSpansBlock(element, root));
-  for (const { path } of await holdsInEveryMode(spanned, (each) => parentSpansBlock(each, root))) { put(path, "parentSpansBlock", true); }
+  const spanned = elements.filter(({ element }) => element !== root && parentSpansBlock(element, root, stacking));
+  for (const { path } of await holdsInEveryMode(spanned, (each) => parentSpansBlock(each, root, stacking))) { put(path, "parentSpansBlock", true); }
   // A child of the root that paints over every other box of the root by its z-index, in every mode.
   const paintsLast = (${paintsLast.toString()});
-  const raised = elements.filter(({ element }) => paintsLast(element, root));
-  for (const { path } of await holdsInEveryMode(raised, (each) => paintsLast(each, root))) { put(path, "paintsLast", true); }
+  const raised = elements.filter(({ element }) => paintsLast(element, root, stacking));
+  for (const { path } of await holdsInEveryMode(raised, (each) => paintsLast(each, root, stacking))) { put(path, "paintsLast", true); }
   // An element that sets a transform which computes to the identity matrix, in every mode.
   const identityMatrix = (element) => ["matrix(1, 0, 0, 1, 0, 0)", "matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)"].includes(getComputedStyle(element).transform);
   const unmoved = elements.filter(({ element }) => identityMatrix(element));
