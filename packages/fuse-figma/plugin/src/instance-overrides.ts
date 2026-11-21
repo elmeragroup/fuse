@@ -6,6 +6,7 @@
  * sublayer has run.
  */
 
+import type { CornerRadiusSpec, CornersSpec } from "../../src/components/corner-spec.ts";
 import { layerAt, ringFill, rootOnlyOverride, shownLabel } from "../../src/components/kit-spec.ts";
 import type {
   ComponentRootSpec,
@@ -244,7 +245,7 @@ function innerValue(
           : { field: "strokeWeight", weight: stroke.weight };
       }
       case "cornerRadius":
-        return { field, value: layer.cornerRadius };
+        return { field, value: eachCorner(layer.cornerRadius) };
       case "effects":
         return { field, shadows: layer.shadows };
       case "primaryAlign":
@@ -275,6 +276,18 @@ function innerValue(
   return undefined;
 }
 
+/**
+ * A corner radius as a length on each corner, so the plan compares and writes each corner on its
+ * own. On 2026-11-21 a real file's instance kept following the main on each corner it had not
+ * overridden (CR2), so a corner the plan leaves alone keeps following the main, where a write of all
+ * four would make each the instance's own.
+ */
+function eachCorner(spec: CornerRadiusSpec): CornersSpec {
+  return spec.kind === "corners"
+    ? spec
+    : { kind: "corners", topLeft: spec, topRight: spec, bottomRight: spec, bottomLeft: spec };
+}
+
 /** The override fields a held override of a layer's Figma field stands for. */
 function fieldsOf(
   node: SceneNode,
@@ -296,8 +309,7 @@ function fieldsOf(
         fields.add("fontStyle");
       }
     } else if (node.type === "FRAME" || node.type === "INSTANCE") {
-      const field = BOX_FIELDS.get(name);
-      if (field !== undefined) {
+      for (const field of BOX_FIELDS.get(name) ?? []) {
         fields.add(field);
       }
     }
@@ -305,31 +317,43 @@ function fieldsOf(
   return [...fields];
 }
 
-/** The box fields the kit overrides, by the Figma fields `overrides` lists for them (N3). */
-const BOX_FIELDS: ReadonlyMap<NodeChangeProperty, InstanceOverride["field"]> = new Map<
+/**
+ * The box fields the kit overrides, by the Figma fields `overrides` lists for them (N3). A binding
+ * lists `boundVariables` alone: on 2026-11-21 a real file's instance listed no corner after a corner
+ * bound to another variable, and no padding after `paddingLeft` bound to one (CR1, CR6). So
+ * `boundVariables` stands for the corners and the paddings, which the kit binds on an instance, and
+ * the plan compares each with the inner variant's, which plans nothing where the two agree.
+ */
+const BOX_FIELDS: ReadonlyMap<NodeChangeProperty, readonly InstanceOverride["field"][]> = new Map<
   NodeChangeProperty,
-  InstanceOverride["field"]
+  readonly InstanceOverride["field"][]
 >([
-  ["fills", "fill"],
-  ["strokes", "strokeColor"],
+  ["fills", ["fill"]],
+  ["strokes", ["strokeColor"]],
   // Each side lists alone, the top one as `stokeTopWeight`, the typings' spelling (SW). A whole
   // `strokeWeight` write lists `strokeWeight` beside the four sides (FM3), though SW saw none listed,
   // so the plan reads the sides alone.
-  ["stokeTopWeight", "strokeSides"],
-  ["strokeRightWeight", "strokeSides"],
-  ["strokeBottomWeight", "strokeSides"],
-  ["strokeLeftWeight", "strokeSides"],
-  ["effects", "effects"],
-  ["cornerRadius", "cornerRadius"],
-  ["topLeftRadius", "cornerRadius"],
-  ["topRightRadius", "cornerRadius"],
-  ["bottomLeftRadius", "cornerRadius"],
-  ["bottomRightRadius", "cornerRadius"],
-  ["primaryAxisAlignItems", "primaryAlign"],
-  ["paddingTop", "paddingTop"],
-  ["paddingRight", "paddingRight"],
-  ["paddingBottom", "paddingBottom"],
-  ["paddingLeft", "paddingLeft"],
+  ["stokeTopWeight", ["strokeSides"]],
+  ["strokeRightWeight", ["strokeSides"]],
+  ["strokeBottomWeight", ["strokeSides"]],
+  ["strokeLeftWeight", ["strokeSides"]],
+  ["effects", ["effects"]],
+  ["cornerRadius", ["cornerRadius"]],
+  ["topLeftRadius", ["cornerRadius"]],
+  ["topRightRadius", ["cornerRadius"]],
+  ["bottomLeftRadius", ["cornerRadius"]],
+  ["bottomRightRadius", ["cornerRadius"]],
+  ["primaryAxisAlignItems", ["primaryAlign"]],
+  ["paddingTop", ["paddingTop"]],
+  ["paddingRight", ["paddingRight"]],
+  ["paddingBottom", ["paddingBottom"]],
+  ["paddingLeft", ["paddingLeft"]],
+  // SAFETY: CR1 and CR6 read `boundVariables` among an instance's overridden fields, which the
+  // typings' NodeChangeProperty does not name.
+  [
+    "boundVariables" as NodeChangeProperty,
+    ["cornerRadius", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft"],
+  ],
 ]);
 
 /** An override write on a layer of the instance. */

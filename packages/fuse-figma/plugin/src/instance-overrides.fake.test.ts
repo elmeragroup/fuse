@@ -1,8 +1,8 @@
 /**
- * The overrides a chip segment needs on its Button instance, on the in-memory file in
- * `fake-figma.ts`: the stroke's side weights on the root, the label's face and the root's widest
- * width. Unit under test: `instance-overrides.ts` and the sizing stage of `instance-layers.ts`, through
- * `reconcileKit` on a synced file. Oracle: the kit spec, here List detail's first row Button with an
+ * The overrides a chip segment and a group member need on a Button instance, on the in-memory file in
+ * `fake-figma.ts`: the stroke's side weights on the root, its corners, a bound padding, the label's
+ * face and the root's widest width. Unit under test: `instance-overrides.ts` and the sizing stage of
+ * `instance-layers.ts`, through `reconcileKit` on a synced file. Oracle: the kit spec, here List detail's first row Button with an
  * override added, as a chip segment's `border-0 border-s` keeps only its start edge of Button's 1px
  * border, an operator's `font-normal` shows Regular where Button's label is Medium and a value's
  * `max-w-56` caps it at 224px, and what a real file's `overrides` listed on 2026-11-20: each side a
@@ -264,6 +264,117 @@ describe("an instance's stroke weights on an applied file", () => {
       [button.strokeTopWeight, button.strokeRightWeight, button.strokeBottomWeight, button.strokeLeftWeight],
       await reconcile(file, dashed),
     ]).toEqual([[1, 1, 1, 1], []]);
+  });
+});
+
+/** Each corner of a layer, as its variable's name where it binds one, else its radius. */
+async function cornersOf(file: FakeFigma, node: InstanceNode): Promise<readonly (string | number)[]> {
+  const fields = ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"] as const;
+  return Promise.all(
+    fields.map(async (field) => {
+      const id = node.boundVariables?.[field]?.id;
+      return id === undefined
+        ? node[field]
+        : ((await file.figma.variables.getVariableByIdAsync(id))?.name ?? id);
+    })
+  );
+}
+
+const RADIUS_MD = { kind: "variable", variable: { collection: "Fuse tokens", name: "radius-md" } } as const;
+
+const RADIUS_BUTTON = {
+  kind: "variable",
+  variable: { collection: "Fuse tokens", name: "radius-button" },
+} as const;
+
+const SQUARE = { kind: "literal", value: 0 } as const;
+
+const BUTTON = "List detail / content=empty / list-detail-list / row-1 / button";
+
+/** The main component an instance shows. */
+async function mainOf(instance: InstanceNode): Promise<ComponentNode> {
+  const main = await instance.getMainComponentAsync();
+  if (main === null) {
+    throw new Error(`${instance.name} shows no main`);
+  }
+  return main;
+}
+
+// Oracle: probes CR1 to CR3 on a real file on 2026-11-21. An instance took a literal and a bound
+// corner each on its own, the corners it left kept following the main through the main's later
+// edits, and a corner written back to the main's binding stayed the instance's own. A bound corner
+// listed `boundVariables` alone, so the plan reads that field to take a dropped binding back to the
+// main's.
+describe("an instance's corners on an applied file", () => {
+  // A horizontal group's first member keeps the main's rounding on its left and squares its right.
+  const FIRST_MEMBER: InstanceOverride = {
+    path: [],
+    field: "cornerRadius",
+    value: {
+      kind: "corners",
+      topLeft: RADIUS_BUTTON,
+      topRight: SQUARE,
+      bottomRight: SQUARE,
+      bottomLeft: RADIUS_BUTTON,
+    },
+  };
+
+  it("override the main's corner by corner, and go back to it corner by corner where the kit drops them", async () => {
+    const { kit } = await kitFixture();
+    const member = withOverride(kit, FIRST_MEMBER);
+    const { file, button } = await firstRow();
+    await reconcile(file, member, true);
+    expect([await cornersOf(file, button), await reconcile(file, member)]).toEqual([
+      ["radius-button", 0, 0, "radius-button"],
+      [],
+    ]);
+    const dropped = await reconcile(file, kit);
+    await reconcile(file, kit, true);
+    const again = await reconcile(file, kit);
+    const main = await mainOf(button);
+    main.setBoundVariable("topLeftRadius", null);
+    main.topLeftRadius = 7;
+    expect([
+      dropped.filter((line) => line.startsWith(`${BUTTON}: `)),
+      again,
+      await cornersOf(file, button),
+    ]).toEqual([
+      [`${BUTTON}: topRightRadius → radius-button`, `${BUTTON}: bottomRightRadius → radius-button`],
+      [],
+      [7, "radius-button", "radius-button", "radius-button"],
+    ]);
+  });
+
+  it("go back to the main's binding where the kit drops a corner override bound to another variable", async () => {
+    const { kit } = await kitFixture();
+    const { file, button } = await firstRow();
+    await reconcile(file, withOverride(kit, { path: [], field: "cornerRadius", value: RADIUS_MD }), true);
+    await reconcile(file, kit, true);
+    expect([await cornersOf(file, button), await reconcile(file, kit)]).toEqual([
+      ["radius-button", "radius-button", "radius-button", "radius-button"],
+      [],
+    ]);
+  });
+});
+
+// Oracle: probe CR6, where a real file's instance listed `boundVariables` alone after a bound
+// padding. A group member's `[--button-px-floor:0px]` binds its padding to the plain inset.
+describe("an instance's bound padding on an applied file", () => {
+  it("takes a dropped padding binding back to the main's", async () => {
+    const { kit } = await kitFixture();
+    const plain = {
+      kind: "variable",
+      variable: { collection: "Fuse density", name: "control-px-button-md" },
+    } as const;
+    const { file, button } = await firstRow();
+    await reconcile(file, withOverride(kit, { path: [], field: "paddingLeft", value: plain }), true);
+    expect(await reconcile(file, kit)).toContain(`${BUTTON}: paddingLeft → button-label-px/md`);
+    await reconcile(file, kit, true);
+    const id = button.boundVariables?.paddingLeft?.id;
+    expect([
+      id === undefined ? undefined : (await file.figma.variables.getVariableByIdAsync(id))?.name,
+      await reconcile(file, kit),
+    ]).toEqual(["button-label-px/md", []]);
   });
 });
 

@@ -1433,13 +1433,13 @@ export function keptNumbers(
 }
 
 /**
- * Make the fields a binding or an unbind sets the layer's own, once it has set them: a padding
- * listed as an override from then on (rule 64), and each number and a sublayer's length apart from
- * its source's (rule 8).
+ * Make the fields a binding or an unbind sets the layer's own, once it has set them: each number and
+ * a sublayer's length apart from its source's (rule 8), and a padding an unbind sets listed as an
+ * override from then on (rule 64). A padding's binding lists `boundVariables` alone (CR6).
  */
-function ownTargets(state: NodeState, targets: readonly VariableBindableNodeField[]): void {
+function ownTargets(state: NodeState, targets: readonly VariableBindableNodeField[], named: boolean): void {
   for (const target of targets) {
-    if (Object.hasOwn(PADDING_SIDES, target)) {
+    if (named && Object.hasOwn(PADDING_SIDES, target)) {
       markOverride(state, target);
     }
     if (
@@ -1487,7 +1487,7 @@ function bindField(state: NodeState, field: VariableBindableNodeField, variable:
     for (const target of targets) {
       state.bindings.delete(target);
     }
-    ownTargets(state, targets);
+    ownTargets(state, targets, true);
     for (const [target, value] of kept) {
       storeNumber(state, target, value);
     }
@@ -1504,7 +1504,7 @@ function bindField(state: NodeState, field: VariableBindableNodeField, variable:
         state.overridden.add(field);
       }
     }
-    listNumbers(state, targets.filter(isStoredNumber));
+    listNumbers(state, targets.filter(isStoredNumber), true);
     write(state, `unbind ${field}`);
     return;
   }
@@ -1527,8 +1527,8 @@ function bindField(state: NodeState, field: VariableBindableNodeField, variable:
     }
     state.bindings.set(target, bound.id);
   }
-  ownTargets(state, targets);
-  listNumbers(state, targets.filter(isStoredNumber));
+  ownTargets(state, targets, false);
+  listNumbers(state, targets.filter(isStoredNumber), false);
   write(state, `bind ${field}`);
 }
 
