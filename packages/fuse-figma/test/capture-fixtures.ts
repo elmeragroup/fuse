@@ -71,6 +71,8 @@ export type FixtureElement = {
   readonly slot?: string;
   /** The element's `data-icon`, the side a wrapper around an icon marks, as a pending Button's spinner span. */
   readonly dataIcon?: string;
+  /** The element's `href`, as an `<a>` inside a label links its text. */
+  readonly href?: string;
   readonly text?: string;
   /** How many element children precede the element's own text, as the capture records it. */
   readonly textIndex?: number;
@@ -274,6 +276,9 @@ function captureOf(
     }
     if (fixture.dataIcon !== undefined) {
       attributes["data-icon"] = fixture.dataIcon;
+    }
+    if (fixture.href !== undefined) {
+      attributes.href = fixture.href;
     }
     const captured: CapturedElement = {
       tag: fixture.tag ?? "div",

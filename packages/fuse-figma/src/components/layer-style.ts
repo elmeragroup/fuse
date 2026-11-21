@@ -92,6 +92,16 @@ const NO_FIGMA_FORM = new Map([
 ]);
 
 /**
+ * Why a property draws nothing in a static Figma frame, as a `cursor` sets only the pointer.
+ *
+ * @param property - The property.
+ * @returns The reason, or undefined for a property Figma may draw.
+ */
+export function noFigmaForm(property: string): string | undefined {
+  return NO_FIGMA_FORM.get(property);
+}
+
+/**
  * The properties a child inherits from its parent, as CSS passes them down. Custom properties
  * inherit too, unless their `@property` says `inherits: false`. `white-space` and `text-wrap` are
  * shorthands, which `expandShorthand` splits: `white-space-collapse`, `text-wrap-mode` and

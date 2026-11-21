@@ -62,6 +62,7 @@ import type {
   Layer,
   Recorder,
 } from "../components/layer-style.ts";
+import { linkTarget } from "../components/link-target.ts";
 import { percentHeightBasis, stretchedToHost } from "../components/percent-height.ts";
 import { ANCHOR_CENTRE, ANCHOR_WIDTH } from "./capture-format.ts";
 import type {
@@ -1768,6 +1769,11 @@ class CaptureBoxCascade implements BoxCascade {
     ) {
       return undefined;
     }
+    // An element beside text of the box's own, as `Open. <a>Pay</a>` under `[&>a]:underline`, styles
+    // only its own run of the label, which `textRuns` reads.
+    if (this.#labelNodes(box.element).some((node) => node.within[0] !== held && node.text.trim() !== "")) {
+      return undefined;
+    }
     this.#claimed.add(held);
     const placed = [...this.#placed, placedBelow(this.#placed, held, undrawnName(held), box.origin)];
     const layer = this.#ledger.add(
@@ -1808,17 +1814,27 @@ class CaptureBoxCascade implements BoxCascade {
     // An element below the box that sets a declaration of its own styles the text it holds. The
     // element the label is held in sets the label's own style.
     const holder = this.#labelHolder;
+    const below = (within: readonly CapturedElement[]): readonly CapturedElement[] =>
+      within.filter((element) => element !== holder?.element);
     const styled = nodes.some((node) =>
-      node.within.some(
-        (element) =>
-          element !== holder?.element &&
-          element.declarations.some((index) => {
-            const declaration = this.#read.declarations[index];
-            return declaration !== undefined && !isBase(declaration);
-          })
+      below(node.within).some((element) =>
+        element.declarations.some((index) => {
+          const declaration = this.#read.declarations[index];
+          return declaration !== undefined && !isBase(declaration);
+        })
       )
     );
-    if (box === undefined || !styled) {
+    // A link styles nothing of its own past the base layers, as a bare `<a>` under preflight, and
+    // still gives its range a target. The innermost `<a>` between the box and the text links it, the
+    // label's own element included.
+    const targets = new Map(
+      nodes.map((node) => [
+        node,
+        linkTarget(node.within.findLast((element) => element.tag === "a")?.attributes.href),
+      ])
+    );
+    const linked = [...targets.values()].some((target) => target !== undefined);
+    if (box === undefined || !(styled || linked)) {
       return undefined;
     }
     // Each element cascades once, over the element above it, in document order. The label's own
@@ -1827,7 +1843,8 @@ class CaptureBoxCascade implements BoxCascade {
       CapturedElement,
       { readonly placed: readonly Placed[]; readonly layer: Layer; readonly style?: LayerStyle }
     >(holder === undefined ? [] : [[holder.element, holder]]);
-    return nodes.map(({ text, within }) => {
+    return nodes.map((node) => {
+      const { text, within } = node;
       let placed: readonly Placed[] = this.#placed;
       let layer = this.#layer;
       const elements: LayerStyle[] = [];
@@ -1850,7 +1867,7 @@ class CaptureBoxCascade implements BoxCascade {
         cascaded.set(held, { placed, layer, style });
         elements.push(style);
       }
-      return { text, elements };
+      return { text, elements, hyperlink: targets.get(node) };
     });
   }
 

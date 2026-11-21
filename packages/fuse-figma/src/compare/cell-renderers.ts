@@ -520,6 +520,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./timeline-list-cell.ts")).timelineList,
   },
   {
+    set: "timeline-list-links",
+    entry: "dist/timeline-list.js",
+    load: async () => (await import("./timeline-list-cell.ts")).timelineListLinks,
+  },
+  {
     set: "table-head",
     entry: "dist/table.js",
     load: async () => (await import("./table-cell.ts")).tableHead,

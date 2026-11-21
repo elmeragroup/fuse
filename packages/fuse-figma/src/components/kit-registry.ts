@@ -129,7 +129,7 @@ import { TABS_CONTENT_MANIFEST, TABS_LIST_MANIFEST, TABS_TRIGGER_MANIFEST } from
 import { TEXT_FIELD_MANIFEST } from "./text-field-kit";
 import { TEXTAREA_FIELD_MANIFEST } from "./textarea-field-kit";
 import { TEXTAREA_MANIFEST } from "./textarea-kit";
-import { TIMELINE_LIST_MANIFEST } from "./timeline-list-kit";
+import { TIMELINE_LIST_LINKS_MANIFEST, TIMELINE_LIST_MANIFEST } from "./timeline-list-kit";
 import { TOAST_MANIFEST } from "./toast-kit";
 import { TOGGLE_GROUP_MANIFEST } from "./toggle-group-kit";
 import { ICON_TOGGLE_MANIFEST, TOGGLE_MANIFEST } from "./toggle-kit";
@@ -315,7 +315,7 @@ const SHEET_PAGE: KitPage = { slug: "sheet", name: "Sheet", example: "sheet-cont
 /** The page Table's head, cell, row and caption share. */
 const TABLE_PAGE: KitPage = { slug: "table", name: "Table", example: "table-row" };
 
-/** The page Timeline list sits on alone. */
+/** The page Timeline list and its links list share. */
 const TIMELINE_LIST_PAGE: KitPage = {
   slug: "timeline-list",
   name: "Timeline list",
@@ -956,6 +956,11 @@ export const KIT: readonly KitEntry[] = [
     page: TIMELINE_LIST_PAGE,
     previewCells: possibleCells(TIMELINE_LIST_MANIFEST),
     manifest: TIMELINE_LIST_MANIFEST,
+  },
+  {
+    page: TIMELINE_LIST_PAGE,
+    previewCells: possibleCells(TIMELINE_LIST_LINKS_MANIFEST),
+    manifest: TIMELINE_LIST_LINKS_MANIFEST,
   },
   {
     page: SELECTION_ITEM_PAGE,

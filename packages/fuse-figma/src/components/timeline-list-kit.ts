@@ -1,6 +1,6 @@
 /**
- * Timeline list, as one component set on a page of its own: the docs default demo's three events,
- * 1 cell.
+ * Timeline list, as two component sets on a page of their own: the docs default demo's three events,
+ * and the links demo's two events, each description ending in a link. 1 cell each.
  *
  * - The root is the `<ol data-slot="timeline-list">`. Its sample renders in a 512px host.
  * - Each event is an `<li data-slot="timeline-list-item">` around its dot, a `<span>` the item
@@ -8,6 +8,9 @@
  *   description, a `<div>`.
  * - Each text is the docs default demo's, and a TEXT property sets it, numbered by event: `Title 1`,
  *   `Time 1`, `Description 1` and so on.
+ * - A links description holds its sentence, a space and an `<a>`, which the text draws as an
+ *   underlined range. It has no TEXT property, since a TEXT write gives every character the first
+ *   one's style, so Code's text has none either.
  */
 import type { LabelManifest, PartManifest, SetManifest } from "../capture/manifest";
 import { always } from "./popup-facts";
@@ -45,6 +48,30 @@ export const TIMELINE_EVENTS: readonly TimelineEvent[] = [
   },
 ];
 
+/** An event of the docs links demo, whose description ends in a link. */
+type TimelineLinkEvent = TimelineEvent & {
+  /** The link after the description's sentence and a space. */
+  readonly link: { readonly text: string; readonly href: string };
+};
+
+/** The docs links demo's events, in order. */
+export const TIMELINE_LINK_EVENTS: readonly TimelineLinkEvent[] = [
+  {
+    title: "Invoice issued",
+    date: "2026-04-01",
+    time: "1 April 2026",
+    description: "NOK 2 310,00 ready for payment.",
+    link: { text: "View invoice 4821", href: "#invoice-4821" },
+  },
+  {
+    title: "Reminder sent",
+    date: "2026-04-15",
+    time: "15 April 2026",
+    description: "Payment still open.",
+    link: { text: "Pay now", href: "#pay-4821" },
+  },
+];
+
 /** A text the given property sets. */
 function text(characters: string, textProperty: string): LabelManifest {
   return { key: "text", name: "text", characters, textProperty, shownIn: always };
@@ -55,8 +82,16 @@ function textPart(key: string, slot: string, characters: string, textProperty: s
   return { key, slot, shownIn: always, label: text(characters, textProperty), iconsFor: () => [] };
 }
 
-/** An event's item, around its dot, title, time and description. */
-function item(event: TimelineEvent, index: number): PartManifest {
+/**
+ * An event's item, around its dot, title, time and description.
+ *
+ * @param description - The description part for the event's number.
+ */
+function item(
+  event: TimelineEvent,
+  index: number,
+  description: (number: string) => PartManifest
+): PartManifest {
   const number = String(index + 1);
   return {
     key: `item-${number}`,
@@ -68,7 +103,7 @@ function item(event: TimelineEvent, index: number): PartManifest {
       { key: "dot", slot: "timeline-list-dot", shownIn: always, label: undefined, iconsFor: () => [] },
       textPart("title", "timeline-list-title", event.title, `Title ${number}`),
       textPart("time", "timeline-list-time", event.time, `Time ${number}`),
-      textPart("description", "timeline-list-description", event.description, `Description ${number}`),
+      description(number),
     ],
   };
 }
@@ -93,6 +128,40 @@ export const TIMELINE_LIST_MANIFEST: SetManifest = {
   previewWidth: TIMELINE_LIST_PREVIEW_WIDTH,
   label: undefined,
   iconsFor: () => [],
-  parts: TIMELINE_EVENTS.map(item),
+  parts: TIMELINE_EVENTS.map((event, index) =>
+    item(event, index, (number) =>
+      textPart("description", "timeline-list-description", event.description, `Description ${number}`)
+    )
+  ),
   swapProperties: [],
+};
+
+/** A links demo description's characters: its sentence, a space and its link's text. */
+export function linkDescription(event: TimelineLinkEvent): string {
+  return `${event.description} ${event.link.text}`;
+}
+
+/**
+ * The links demo's list, which the capture-backed build reads with
+ * `captures/timeline-list-links.json`. Its descriptions hold no TEXT property.
+ */
+export const TIMELINE_LIST_LINKS_MANIFEST: SetManifest = {
+  ...TIMELINE_LIST_MANIFEST,
+  key: "timeline-list-links",
+  name: "Timeline list links",
+  parts: TIMELINE_LINK_EVENTS.map((event, index) =>
+    item(event, index, () => ({
+      key: "description",
+      slot: "timeline-list-description",
+      shownIn: always,
+      label: {
+        key: "text",
+        name: "text",
+        characters: linkDescription(event),
+        textProperty: undefined,
+        shownIn: always,
+      },
+      iconsFor: () => [],
+    }))
+  ),
 };

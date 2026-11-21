@@ -186,8 +186,15 @@
  *    fills as they were; the link stays through a `characters` write, of the same text or a
  *    new one, and through `setTextStyleIdAsync` and a `fontSize` write;
  *    `setRangeHyperlink` on part of a linked text makes the whole read `figma.mixed`. The fake
- *    keeps one link for the whole text, which the plugin writes whole, and so never reads
- *    `figma.mixed`; it keeps the link through every write and changes no fill or decoration with it.
+ *    keeps a link per character, a range's or the whole text's (RH1, RH7). A range write links its
+ *    characters alone, or unlinks them with null (RH1, RH3), and takes only an absolute `http` or
+ *    `https` URL, refusing a fragment and a path as `Unsupported or invalid hyperlink url` (RH2) and
+ *    every other scheme and a node, which no probe wrote. A whole write gives every character its
+ *    link, so a null clears every range's (RH6). Fills, decoration and size writes keep a range's
+ *    link (RH4); a `characters` write, a text style link and a TEXT link or write treat it as they
+ *    treat a range fill (RH5). The whole `hyperlink` reads `figma.mixed` where the characters
+ *    differ. A range link write on a sublayer an instance shows lists the overrides a range
+ *    decoration write lists (rule 68, RD8), by analogy, since no probe wrote one. The package README records the probes.
  *    A link write in a fresh run raised no error without a `loadFontAsync` call, but the font may
  *    have stayed loaded from earlier, so the fake still requires the text's fonts, as for
  *    `textAutoResize` (rule 20), and Plan fails where Apply might. The same file showed (live probe
@@ -197,12 +204,30 @@
  *    `Text/sm/regular` sets no decoration; and an offset of 2.8px reads back as 2.799999952. The
  *    fake resets those two fields on a style link and leaves the thickness and color, which the probe
  *    did not read after one.
+ * 68. A text's decoration is per character, as the typings' `setRangeTextDecoration`, its offset,
+ *    thickness and color range writes, and the decoration fields of a `StyledTextSegment` say. The
+ *    fake keeps each character's line and the underline fields it remembers, and the whole text's,
+ *    which a character without a decoration of its own shows. A field reads only while its
+ *    character is underlined, as `AUTO` where never written (RD1). A range field write, and a whole
+ *    one, on characters with no underline throws `Cannot set text decoration offset on a
+ *    non-underlined text range` (RD1b, RD13b). Font and size writes keep a range's line and fields
+ *    (RD2); a `characters` write, a text style link and a TEXT link or write treat them as they
+ *    treat a range fill (RD3). A whole line write gives every character the line and keeps the
+ *    fields each remembers (RD4, RD4b, RD10). A whole field write goes to every character and to
+ *    the text (RD9, RD11, RD12). The whole fields read the value the underlined characters share,
+ *    `figma.mixed` where they differ, and null where none is underlined (RD1, RD11). A sublayer
+ *    shows its main's lines and follows its main's writes (RD5 to RD7, rule 52); a range decoration
+ *    write on it gives it styles of its own and lists `characters` and `styledTextSegments`
+ *    overrides (RD8), which `removeOverrides` drops, so it shows its main's again. A bound
+ *    underline color reads its variable's value in the text's modes and keeps its binding (RD14).
+ *    The fake does not model `textDecorationStyle`, which a range holds too (RD1, RD10) and the
+ *    plugin neither writes nor reads. The package README records the probes.
  */
 
 import { ownNumber, resolveNumber, resolveString } from "./modes.ts";
 import { charactersOf, shownStyles } from "./overrides.ts";
-import { baseStyleOf, f32, SHARED_DATA_SEPARATOR, write } from "./state.ts";
-import type { CharacterStyle, FileState, NodeState } from "./state.ts";
+import { baseStyleOf, f32, SHARED_DATA_SEPARATOR, textLayerOf, write } from "./state.ts";
+import type { CharacterDecoration, CharacterStyle, FileState, NodeState } from "./state.ts";
 import { alias, fileVariable, requireType } from "./variables.ts";
 
 export function fontKey(font: FontNameInput): string {
@@ -240,12 +265,19 @@ export function requireHeldFonts(state: NodeState, what: string): void {
 }
 
 /**
- * Give a sublayer the styles and base style it shows from its main layer as its own, which a text
- * write on it then changes (rule 52), and give a text one style for each character it shows.
+ * Give a sublayer the styles, base style, whole-text decoration and link it shows from its main
+ * layer as its own, which a text write on it then changes (rules 52 and 68), and give a text one
+ * style for each character it shows.
  */
-function holdStyles(state: NodeState): void {
+export function holdStyles(state: NodeState): void {
   if (!state.ownStyles) {
     state.baseStyle = baseStyleOf(state);
+    const layer = textLayerOf(state);
+    state.textDecoration = layer.textDecoration;
+    state.textDecorationOffset = layer.textDecorationOffset;
+    state.textDecorationThickness = layer.textDecorationThickness;
+    state.textDecorationColor = layer.textDecorationColor;
+    state.hyperlink = layer.hyperlink;
   }
   state.styles = shownStyles(state);
   state.ownStyles = true;
@@ -332,7 +364,7 @@ function settle(state: NodeState): void {
   if (rest.some((style) => style !== first && styleKey(style) !== key)) {
     return;
   }
-  const { fills: _ranged, ownFamily: _own, ...style } = first;
+  const { fills: _ranged, decoration: _decorated, hyperlink: _linked, ownFamily: _own, ...style } = first;
   state.baseStyle = style;
   state.styles = updateEach(state.styles, ({ ownFamily: _cleared, ...kept }) => kept);
 }
@@ -585,16 +617,26 @@ export function resetStyles(state: NodeState): void {
   remeasure(state);
 }
 
-/** What a segment compares of a character: the fields asked for, with the fills it paints with (rules 50 and 65). */
+/**
+ * What a segment compares of a character: the fields asked for, with the fills it paints with, the
+ * decoration it shows and its link (rules 50, 65, 66 and 68).
+ */
 export function segmentKey(
   style: CharacterStyle,
   fills: readonly Paint[],
+  decoration: CharacterDecoration,
+  hyperlink: HyperlinkTarget | null,
   fields: readonly string[]
 ): string {
   return JSON.stringify([
     fields.includes("fontName") ? fontKey(style.font) : "",
     fields.includes("fontSize") ? style.fontSize : "",
     fields.includes("fills") ? fills : "",
+    fields.includes("textDecoration") ? decoration.line : "",
+    fields.includes("textDecorationOffset") ? decoration.offset : "",
+    fields.includes("textDecorationThickness") ? decoration.thickness : "",
+    fields.includes("textDecorationColor") ? decoration.color : "",
+    fields.includes("hyperlink") ? hyperlink : "",
     fields.includes("boundVariables")
       ? [...style.bindings].sort(([left], [right]) => left.localeCompare(right))
       : [],
