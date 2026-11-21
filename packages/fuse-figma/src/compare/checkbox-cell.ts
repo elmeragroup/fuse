@@ -8,6 +8,7 @@
  *   checkbox's validity from, which then marks it `aria-invalid="true"` and `data-invalid`.
  *   The field is horizontal because the vertical one stretches its children to its width, which in
  *   the compare page's unsized cell slot collapses the checkbox to its content width.
+ * - `invalid-focus` renders the invalid cell, and the page forces focus on the checkbox.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.
@@ -18,6 +19,7 @@ import type { ComponentProps } from "react";
 
 import { Checkbox } from "../../../fuse/dist/checkbox.js";
 import { Field } from "../../../fuse/dist/field.js";
+import { isInvalid } from "../components/axis-vocabulary.ts";
 import type { Cell } from "../components/component-spec.ts";
 import type { CellRendering } from "./cell-renderers.ts";
 
@@ -34,7 +36,7 @@ export const checkbox: CellRendering = {
       disabled: cell.state === "disabled",
     };
     const box = createElement(Checkbox, props);
-    return cell.state === "invalid"
+    return isInvalid(cell)
       ? createElement(Field.Root, { invalid: true, orientation: "horizontal" }, box)
       : box;
   },

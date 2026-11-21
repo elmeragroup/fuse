@@ -1,6 +1,6 @@
 /**
- * Checkbox, as one component set: unchecked, checked and indeterminate, in four states, with no
- * label: 12 cells. `checked` and `indeterminate` are its props, and the set holds no cell with both,
+ * Checkbox, as one component set: unchecked, checked and indeterminate, in five states, with no
+ * label: 15 cells. `checked` and `indeterminate` are its props, and the set holds no cell with both,
  * which draws as indeterminate.
  *
  * - The root is Base UI's checkbox `<span data-slot="checkbox">`.
@@ -8,7 +8,8 @@
  *   mounts it only while the box is checked or indeterminate, so the unchecked cells have no layer
  *   inside the box. It holds `Check` when checked and `Minus` when indeterminate. The state picks the icon, so the set
  *   has no swap property.
- * - Invalid renders the checkbox in an invalid Field.
+ * - Invalid renders the checkbox in an invalid Field. Invalid focus renders it there with focus
+ *   forced, where the recipe draws its error ring.
  */
 import type { IconManifest, SetManifest } from "../capture/manifest";
 import type { Cell } from "./component-spec";
@@ -44,7 +45,7 @@ export const CHECKBOX_MANIFEST: SetManifest = {
   axes: [
     { name: "checked", values: ["false", "true"] },
     { name: "indeterminate", values: ["false", "true"] },
-    { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
+    { name: "state", values: ["rest", "focus", "disabled", "invalid", "invalid-focus"] },
   ],
   impossible: [
     {
