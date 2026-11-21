@@ -1,7 +1,7 @@
 /**
  * Sidebar's desktop panel, as one component set on the Sidebar page, built from instances of its
- * section sets: `Sidebar`, the `sidebar` and `inset` variants, expanded and collapsed to the icon
- * rail, 4 cells. The manifest names the panel's parts and section instances, and the build reads
+ * section sets: `Sidebar`, the `sidebar`, `inset` and `floating` variants, expanded and collapsed to
+ * the icon rail, 6 cells. The manifest names the panel's parts and section instances, and the build reads
  * the rest from `captures/sidebar.json`.
  *
  * - The root is `sidebar-container`, the rail box, holding `sidebar-inner`, the surface, which holds
@@ -15,11 +15,14 @@
  * - The `sidebar` variant draws its 1px edge border on the end side, so its sections draw 255px
  *   wide, or 47px in the rail. The `inset` variant pads 8px instead, on the `sidebar` fill the
  *   Provider's wrapper paints behind it, so its sections draw 240px wide, or 50px in the rail.
+ * - The `floating` variant pads 8px as `inset` does, with the same 66px rail, and its surface rounds
+ *   `radius-lg` inside a 1px `sidebar-border` ring and `shadow-sm`. Its sections are the section
+ *   sets' `floating=true` variants, which pad `surface-pad-sm` and round their rows inside the
+ *   surface's corner.
  * - The separator is inset 8px from each side of the content.
  * - It is as tall as the app frame demo's 28rem frame, which the Root's `h-full` takes.
  *
- * The gap beside the panel is a flow spacer and the Rail paints only on hover, so neither draws. No
- * docs demo shows a floating Sidebar, so the set has no `floating` variant.
+ * The gap beside the panel is a flow spacer and the Rail paints only on hover, so neither draws.
  */
 import type { InstanceManifest, SetManifest } from "../capture/manifest";
 import type { Cell } from "./component-spec";
@@ -40,7 +43,7 @@ export const SIDEBAR_ROOT_CLASS = "h-full";
 export const SIDEBAR_PROVIDER_CLASS = "min-h-full";
 
 /** The panel's variants the docs demos show, the recipe's default first. */
-const PANEL_VARIANTS = ["sidebar", "inset"] as const;
+const PANEL_VARIANTS = ["sidebar", "inset", "floating"] as const;
 
 type PanelVariant = (typeof PANEL_VARIANTS)[number];
 
@@ -63,13 +66,19 @@ export function panelVariant(cell: Cell): PanelVariant {
   return variant;
 }
 
-/** A section as an instance of its set, expanded or collapsed with the panel, outside a floating surface. */
+/**
+ * A section as an instance of its set, expanded or collapsed with the panel, and in a floating
+ * surface where the panel floats.
+ */
 function sectionManifest(key: string, of: SetManifest): InstanceManifest {
   return {
     kind: "instance",
     key,
     of,
-    cell: (outer) => ({ collapsed: outer.collapsed ?? "false", floating: "false" }),
+    cell: (outer) => ({
+      collapsed: outer.collapsed ?? "false",
+      floating: outer.variant === "floating" ? "true" : "false",
+    }),
     shownIn: always,
     exposed: true,
   };

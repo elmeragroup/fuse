@@ -320,8 +320,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
         variants: 2,
         previewed: 2,
       },
-      // The sidebar and inset variants, expanded and collapsed.
-      { key: "sidebar", name: "Sidebar", variants: 4, previewed: 4 },
+      // The sidebar, inset and floating variants, expanded and collapsed.
+      { key: "sidebar", name: "Sidebar", variants: 6, previewed: 6 },
     ],
   },
   {

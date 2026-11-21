@@ -1967,6 +1967,8 @@
     "sidebar-menu-sub-button/size=sm,isActive=true,state=hover",
     "sidebar-menu-sub-button/size=sm,isActive=true,state=rest",
     "sidebar-menu-sub/rows=3",
+    "sidebar/variant=floating,collapsed=false",
+    "sidebar/variant=floating,collapsed=true",
     "sidebar/variant=inset,collapsed=false",
     "sidebar/variant=inset,collapsed=true",
     "sidebar/variant=sidebar,collapsed=false",
