@@ -163,10 +163,10 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     slug: "pagination",
     name: "Pagination",
     sets: [
-      // Current off and on, in 3 states.
-      { key: "pagination-link", name: "Pagination link", variants: 6, previewed: 6 },
-      // Previous and next, in 3 states.
-      { key: "pagination-edge", name: "Pagination edge", variants: 6, previewed: 6 },
+      // Eight sizes, current off and on, in 3 states.
+      { key: "pagination-link", name: "Pagination link", variants: 48, previewed: 48 },
+      // Four label sizes, previous and next, in 3 states.
+      { key: "pagination-edge", name: "Pagination edge", variants: 24, previewed: 24 },
       // The md square alone.
       { key: "pagination-ellipsis", name: "Pagination ellipsis", variants: 1, previewed: 1 },
       // The docs Basic demo's previous, pages 1 to 3 and next.
