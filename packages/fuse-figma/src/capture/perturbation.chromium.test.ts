@@ -165,7 +165,7 @@ describe("the place of each box", () => {
 describe("the probe's wait for a popup to take its anchor's width", () => {
   /**
    * Probe an anchor in a 200px host and a popup below it whose absolute positioner carries `style`,
-   * as Base UI's positioner holds the popup that names `data-side`. Where `delay` is a number, the page sets
+   * as Base UI's positioner, which names `data-side` as its popup does, holds it. Where `delay` is a number, the page sets
    * the positioner's `--anchor-width` to the anchor's width in pixels once, that many frames after it
    * loads, as Base UI writes it a frame or more after its anchor resizes.
    */
@@ -179,7 +179,7 @@ describe("the probe's wait for a popup to take its anchor's width", () => {
         ? ""
         : `<script>(() => { let frame = 0; const tick = () => { frame += 1; if (frame < ${String(options.delay)}) { requestAnimationFrame(tick); return; } document.querySelector("#positioner").style.setProperty("--anchor-width", document.querySelector('[data-slot="anchor"]').getBoundingClientRect().width + "px"); }; requestAnimationFrame(tick); })();</script>`;
     await page.setContent(
-      `<div data-compare-cell="c0"><div id="host" style="width:200px"><div data-slot="anchor" style="${options.anchor};height:24px"></div></div><div id="positioner" style="position:absolute;${options.style}"><div data-slot="popup" data-side="bottom" style="width:var(--anchor-width);height:24px"></div></div></div>${late}`
+      `<div data-compare-cell="c0"><div id="host" style="width:200px"><div data-slot="anchor" style="${options.anchor};height:24px"></div></div><div id="positioner" data-side="bottom" style="position:absolute;${options.style}"><div data-slot="popup" data-side="bottom" style="width:var(--anchor-width);height:24px"></div></div></div>${late}`
     );
     return probeCells(page, [{ id: "c0", measured: ['[data-slot="anchor"]', '[data-slot="popup"]'] }]);
   };

@@ -98,6 +98,7 @@ import selectTrigger from "../../captures/select-trigger.json" with { type: "jso
 import selectionItem from "../../captures/selection-item.json" with { type: "json" };
 import separator from "../../captures/separator.json" with { type: "json" };
 import sheetContent from "../../captures/sheet-content.json" with { type: "json" };
+import sheetOpen from "../../captures/sheet-open.json" with { type: "json" };
 import sidebarFooter from "../../captures/sidebar-footer.json" with { type: "json" };
 import sidebarGroupLabel from "../../captures/sidebar-group-label.json" with { type: "json" };
 import sidebarGroup from "../../captures/sidebar-group.json" with { type: "json" };
@@ -197,6 +198,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["checkbox-card", checkboxCard],
   ["action-bar", actionBar],
   ["sheet-content", sheetContent],
+  ["sheet-open", sheetOpen],
   ["code", code],
   ["attachment", attachment],
   ["description-list-item", descriptionListItem],

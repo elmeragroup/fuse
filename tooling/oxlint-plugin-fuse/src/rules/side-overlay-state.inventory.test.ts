@@ -63,6 +63,7 @@ const PORTALS = new Set([
   "DropdownMenu.Content",
   "DropdownMenu.Portal",
   "DropdownMenu.SubContent",
+  "ListDetail.Detail",
   "Popover.Content",
   "Select.Content",
   "Sheet.Content",
