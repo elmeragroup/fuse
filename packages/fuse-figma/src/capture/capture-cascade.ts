@@ -25,6 +25,7 @@ import { childSpacingNote } from "../components/box-cascade.ts";
 import type {
   BoxCascade,
   CapturedText,
+  IconCascade,
   TextRun,
   ChildSpacing,
   InstanceScope,
@@ -49,6 +50,7 @@ import type { CapturedAt } from "../components/coverage.ts";
 import { exceptLastChildClass } from "../components/css-selector.ts";
 import { evaluateLength, evaluatePercentage, normalizeCss, readColor } from "../components/css-values.ts";
 import type { VariableIndex, Viewport } from "../components/css-values.ts";
+import type { DrawnAt, DrawnPart } from "../components/drawn-parts.ts";
 import { modalLayout } from "../components/fixed-placement.ts";
 import type { NumberSpec } from "../components/kit-spec.ts";
 import { CellLedger, inheritance, inheritsProperty, LayerStyle } from "../components/layer-style.ts";
@@ -69,6 +71,7 @@ import type {
   CapturedRoot,
   SetCapture,
 } from "./capture-format.ts";
+import { placesOf } from "./capture-places.ts";
 import { declarationOrigin, isBase, isReset, rendersNothing, twinClaims } from "./instance-twin.ts";
 import { PseudoBoxCascade, pseudoVerdict, withBorderLonghands } from "./pseudo-elements.ts";
 
@@ -189,28 +192,9 @@ export type InstancePlace = { readonly place: string; readonly set: string; read
 export type CellAccounting = {
   readonly accounted: ReadonlySet<string>;
   readonly instances: readonly InstancePlace[];
+  /** Each part the cell draws or leaves out, and the layer that draws it, as `drawn-parts.ts` records it. */
+  readonly parts: readonly DrawnPart[];
 };
-
-/**
- * Each captured element of a cell by its place, as {@link CellAccounting} names places.
- *
- * @param cell - The captured cell.
- * @returns Each element's place.
- */
-export function placesOf(cell: CapturedCell): Map<CapturedElement, string> {
-  const places = new Map<CapturedElement, string>();
-  const below = (element: CapturedElement, place: string): void => {
-    places.set(element, place);
-    element.children.forEach((child, index) => {
-      below(child, `${place}/${String(index)}`);
-    });
-  };
-  cell.roots.forEach(({ around, root }, index) => {
-    around.forEach((element, at) => places.set(element, `${String(index)}/around/${String(at)}`));
-    below(root, `${String(index)}/root`);
-  });
-  return places;
-}
 
 /** The properties whose winning value can keep an element from rendering, as `rendersNothing` reads them. */
 const HIDING = new Set(["display", "clip-path"]);
@@ -1425,6 +1409,8 @@ class CaptureBoxCascade implements BoxCascade {
   readonly #rooted: ReadonlyMap<string, readonly CapturedElement[]>;
   /** How many element children the box's element holds in the capture. */
   readonly elementChildren: number | undefined;
+  /** Where the box's element sits in the capture, and its `data-slot`. */
+  readonly drawnAt: DrawnAt | undefined;
   /** The tag of the box's element in the capture. */
   readonly elementTag: string | undefined;
   /** The text the box's element holds as its own in the capture. */
@@ -1483,6 +1469,11 @@ class CaptureBoxCascade implements BoxCascade {
       ({ pseudo, style }) => ({ pseudo, cascade: new PseudoBoxCascade(style, ledger.scope.inPlace) })
     );
     this.elementChildren = own?.element.children.length;
+    const place = own === undefined ? undefined : read.places.get(own.element);
+    this.drawnAt =
+      own === undefined || place === undefined
+        ? undefined
+        : { place, slot: own.element.attributes["data-slot"] };
     this.elementTag = own?.element.tag;
     this.elementText = own?.element.text;
     // The capture records a `::marker` only where it sets such a `content`.
@@ -1829,7 +1820,7 @@ class CaptureBoxCascade implements BoxCascade {
     return nodes;
   }
 
-  icon(slot: IconSlot): LayerStyle {
+  icon(slot: IconSlot): IconCascade {
     this.#icons ??= iconPaths(this.#placed.at(-1)?.element);
     // An icon is an `<svg>` the box holds itself, or one inside a wrapper, as a pending Button's
     // spinner sits in a span, and it marks its side with `data-icon` where the slot names one.
@@ -1857,7 +1848,15 @@ class CaptureBoxCascade implements BoxCascade {
     if (at >= 0) {
       this.#checkTextSide(found[0], `the icon ${slot.name}`, slot.side === "start" ? "before" : "after");
     }
-    return this.#below(found, slot.name, this.#ledger, [...this.path, slot.key]).style;
+    const style = this.#below(found, slot.name, this.#ledger, [...this.path, slot.key]).style;
+    // The icon layer draws the `<svg>`'s own box, so the record names the `<svg>`'s place. A wrapper
+    // around it draws no layer, and its box holds the `<svg>`'s margins too.
+    const svg = found.at(-1);
+    const place = svg === undefined ? undefined : this.#read.places.get(svg);
+    return {
+      style,
+      drawnAt: place === undefined ? undefined : { place, slot: svg?.attributes["data-slot"] },
+    };
   }
 
   /**

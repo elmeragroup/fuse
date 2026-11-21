@@ -30,6 +30,9 @@ import type {
 /** A literal length. */
 const literal = (value: number): NumberSpec => ({ kind: "literal", value });
 
+/** A placed instance as its parent holds it: the wrapper, and the copy of the instance inside it. */
+export type PlacedWrapper = { readonly layer: FrameLayerSpec; readonly held: InstanceLayerSpec };
+
 /**
  * Draw an instance placed at its parent's end across and its start down in a wrapper that keeps both
  * offsets, as the module comment says.
@@ -37,14 +40,14 @@ const literal = (value: number): NumberSpec => ({ kind: "literal", value });
  * @param instance - The instance layer, as its parent would hold it without a place.
  * @param placement - The instance's place: `end` across and `start` down.
  * @param wrapped - The parent's outer width, where the room knows it.
- * @returns The wrapper, which holds the instance.
+ * @returns The wrapper, and the instance it holds.
  * @throws When the place is not the end across and the start down, a defect of the plan.
  */
 export function wrapPlaced(
   instance: InstanceLayerSpec,
   placement: EdgePlacementSpec<InstanceAxisPlacementSpec>,
   wrapped: Wrapped
-): FrameLayerSpec {
+): PlacedWrapper {
   const { horizontal: end, vertical: start } = placement;
   if (end.kind !== "end" || start.kind !== "start") {
     throw new Error(
@@ -53,7 +56,7 @@ export function wrapPlaced(
   }
   const { placement: _place, ...held } = instance;
   const key = `${instance.key} placement`;
-  return {
+  const layer: FrameLayerSpec = {
     kind: "frame",
     key,
     name: key,
@@ -85,4 +88,5 @@ export function wrapPlaced(
     opacity: 1,
     children: [held],
   };
+  return { layer, held };
 }

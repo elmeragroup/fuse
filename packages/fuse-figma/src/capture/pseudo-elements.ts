@@ -1,4 +1,4 @@
-import type { BoxCascade, CapturedText, PseudoCascade } from "../components/box-cascade.ts";
+import type { BoxCascade, CapturedText, IconCascade, PseudoCascade } from "../components/box-cascade.ts";
 import type { IconSlot } from "../components/component-spec.ts";
 /**
  * What a box's `::before` and `::after` paint, read from their cascaded style: the border
@@ -254,6 +254,7 @@ export class PseudoBoxCascade implements BoxCascade {
   readonly elementText = undefined;
   readonly markerContent = false;
   readonly measured = undefined;
+  readonly drawnAt = undefined;
   readonly pseudoElements: readonly PseudoCascade[] = [];
 
   /**
@@ -294,7 +295,7 @@ export class PseudoBoxCascade implements BoxCascade {
     return undefined;
   }
 
-  icon(slot: IconSlot): LayerStyle {
+  icon(slot: IconSlot): IconCascade {
     throw new Error(`a pseudo-element holds no icon, yet the mapping asked it for ${slot.key}`);
   }
 }

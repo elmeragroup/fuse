@@ -106,7 +106,7 @@ function place(
   const placement = read.placement as EdgePlacementSpec<InstanceAxisPlacementSpec>;
   return read.wrapped === undefined
     ? { kind: "placed" as const, layer: { ...CLOSE, placement } }
-    : { kind: "wrapped" as const, layer: wrapPlaced(CLOSE, placement, read.wrapped) };
+    : { kind: "wrapped" as const, layer: wrapPlaced(CLOSE, placement, read.wrapped).layer };
 }
 
 describe("an absolute instance at its parent's end", () => {

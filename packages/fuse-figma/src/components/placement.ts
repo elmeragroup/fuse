@@ -124,6 +124,8 @@ type RowSize = {
 export type PlacedPart = {
   readonly style: LayerStyle;
   readonly layer: FrameLayerSpec | InstanceLayerSpec;
+  /** The layer that draws the part's border box: the layer itself, or one inside it. */
+  readonly border: FrameLayerSpec | InstanceLayerSpec;
 };
 
 /** The box that holds the parts, as far as placing them needs to know. */
@@ -143,10 +145,27 @@ export type ParentBox = {
   readonly positionedBy: string | undefined;
 };
 
-/** Where a box places its parts: its primary alignment, and each part's layer, absolute where it sits outside the flow. */
-export type Placement = {
+/**
+ * A part where its box places it: the part as mapped, the layer that draws it there, absolute where it
+ * sits outside the flow, and the layer that draws its border box.
+ *
+ * @template Part - The part as the box mapped it.
+ */
+export type PlacedLayer<Part extends PlacedPart> = {
+  readonly source: Part;
+  readonly layer: FrameLayerSpec | InstanceLayerSpec;
+  readonly border: FrameLayerSpec | InstanceLayerSpec;
+};
+
+/**
+ * Where a box places its parts: its primary alignment, and each part with its placed layer.
+ *
+ * @template Part - The part as the box mapped it.
+ */
+export type Placement<Part extends PlacedPart> = {
   readonly primaryAlign: PrimaryAlignSpec;
-  readonly layers: readonly (FrameLayerSpec | InstanceLayerSpec)[];
+  /** Each part with the layer that places it, in the order of the parts. */
+  readonly placed: readonly PlacedLayer<Part>[];
 };
 
 /**
@@ -156,6 +175,7 @@ export type Placement = {
  * row's alignment. An instance sits where the flow puts it, so only its `relative` maps, or by its
  * parent's edges or centre, as `absolute-placement.ts` reads it.
  *
+ * @template Part - The part as the box mapped it, which each placed layer carries back.
  * @param parent - The box that holds the parts.
  * @param parts - The parts the cell renders in it, as mapped.
  * @param inFlowEnd - The style of the absolute part that draws in flow at the row's end, as
@@ -163,16 +183,25 @@ export type Placement = {
  * @param plans - The places `absolute-placement.ts` planned for the box's absolute parts, frames and
  *   instances, by each part's style.
  * @returns The box's primary alignment, the translate's where one maps, else the layout's, and the
- *   parts' layers in order.
+ *   parts with their placed layers in order.
  */
-export function placeParts(
+export function placeParts<Part extends PlacedPart>(
   parent: ParentBox,
-  parts: readonly PlacedPart[],
+  parts: readonly Part[],
   inFlowEnd: LayerStyle | undefined,
   plans: ReadonlyMap<LayerStyle, PlacementPlan> = new Map()
-): Placement {
+): Placement<Part> {
   const centering = centersAlone(parent, parts) ? "centers-its-one-layer" : "other";
-  const layers = parts.map(({ style, layer }) => {
+  // A copy of a part's layer with its place draws the part's border box where the layer did, and a
+  // placement wrapper holds a copy of the instance that does.
+  const placed = parts.map((source): PlacedLayer<Part> => {
+    const { style, layer, border } = source;
+    const kept = { source, layer, border };
+    const copied = (copy: FrameLayerSpec | InstanceLayerSpec) => ({
+      source,
+      layer: copy,
+      border: border === layer ? copy : border,
+    });
     if (style === inFlowEnd) {
       style.read(
         "position",
@@ -180,46 +209,48 @@ export function placeParts(
         () => ({ outcome: "literal", detail: IN_FLOW_END }),
         style.feed("placement")
       );
-      return layer;
+      return kept;
     }
     if (layer.kind === "instance") {
       const position = normalizeCss(style.resolved("position") ?? "");
       // A fixed instance's place is `placeCentredFixed`'s to read, and stays unmapped where it reads none.
       if (position === "fixed") {
-        return layer;
+        return kept;
       }
       const plan = plans.get(style);
       if (plan === undefined) {
         readPosition(style, "other", undefined);
-        return layer;
+        return kept;
       }
       const read = readPlacement(style, plan);
       const placement = read.kind === "placed" ? instancePlacement(read.placement) : undefined;
       if (placement === undefined) {
         leaveUnplaced(style, read.kind === "refused" ? read.why : UNSIZED_INSTANCE);
-        return layer;
+        return kept;
       }
-      return read.kind === "placed" && read.wrapped !== undefined
-        ? wrapPlaced(layer, placement, read.wrapped)
-        : { ...layer, placement };
+      if (read.kind === "placed" && read.wrapped !== undefined) {
+        const wrapper = wrapPlaced(layer, placement, read.wrapped);
+        return { source, layer: wrapper.layer, border: border === layer ? wrapper.held : border };
+      }
+      return copied({ ...layer, placement });
     }
     if (plans.get(style) === UNPAINTABLE) {
       leaveUnplaced(style, UNPAINTABLE.why);
-      return layer;
+      return kept;
     }
     const pivot = readPivot(style, layer, parent);
     if (pivot !== undefined) {
-      return { ...layer, placement: pivot };
+      return copied({ ...layer, placement: pivot });
     }
     const plan = plans.get(style);
     const read = plan === undefined ? undefined : readPlacement(style, plan);
     if (read?.kind === "placed") {
-      return { ...layer, placement: read.placement };
+      return copied({ ...layer, placement: read.placement });
     }
     readPosition(style, centering, anchoredConstraints(layer.children));
-    return layer;
+    return kept;
   });
-  return { primaryAlign: alignAlongRow(parent, parts), layers };
+  return { primaryAlign: alignAlongRow(parent, parts), placed };
 }
 
 /**
@@ -453,15 +484,19 @@ function placeAbsoluteRoot(style: LayerStyle, widthFromContainer: boolean, fixed
   );
 }
 
+/** A part that scales as its box draws it: the slot at its layout size, and the dot the slot centers. */
+export type SlotAroundDot = { readonly slot: BoxSpec; readonly dot: FrameLayerSpec };
+
 /**
  * Draw a part that scales: a transparent slot at its layout size, centering a dot that holds the
  * part's paint and layers at the share of its size its `scale` takes, 1 where no scale applies.
  *
  * @param style - The part's style.
  * @param box - The part, mapped at its layout size.
- * @returns The slot, without its key and name.
+ * @returns The slot, without its key and name, and the dot, which draws the part's box as the
+ *   browser lays it out after its scale.
  */
-export function slotAroundDot(style: LayerStyle, box: BoxSpec): BoxSpec {
+export function slotAroundDot(style: LayerStyle, box: BoxSpec): SlotAroundDot {
   // The dot holds the part's paint and layers, and so the fields its reads filled, and the slot keeps
   // the part's size.
   style.relocateFeeds("dot", new Set(["sizing", "limits"]));
@@ -489,7 +524,7 @@ export function slotAroundDot(style: LayerStyle, box: BoxSpec): BoxSpec {
         : scaled(cornerRadius, share),
     stroke: stroke === undefined ? undefined : scaledStroke(stroke, share),
   };
-  return {
+  const slot: BoxSpec = {
     direction: "HORIZONTAL",
     sizing,
     limits,
@@ -508,6 +543,7 @@ export function slotAroundDot(style: LayerStyle, box: BoxSpec): BoxSpec {
     opacity: 1,
     children: [dot],
   };
+  return { slot, dot };
 }
 
 /**

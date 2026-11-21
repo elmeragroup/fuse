@@ -32,6 +32,8 @@ import type {
 } from "./component-spec";
 import type { CoverageRow, RecordedRow } from "./coverage";
 import { framePartsOf, instanceRootSlotOf, instancingSlots } from "./definition-parts";
+import { DrawnParts } from "./drawn-parts";
+import type { DrawnPart } from "./drawn-parts";
 import { checkInstanceOrder, InstanceParts } from "./instance-parts";
 import type { InnerSet } from "./instance-parts";
 import { iconKey, walkLayers } from "./kit-spec";
@@ -129,8 +131,20 @@ function buildComponentSet(
   const instances = new InstanceParts(context, inner, captured.captureOf, record);
   // The capture says which parts win a `scale`.
   const scaling = partsThatScaleIn(captured.capture, definition.parts ?? []);
+  // Each cell's drawn parts, by the variant's key, as `drawn-parts.ts` records them.
+  const drawnParts = new Map<string, readonly DrawnPart[]>();
+  const recordedParts = (cell: string): readonly DrawnPart[] => {
+    const parts = drawnParts.get(cell);
+    if (parts === undefined) {
+      throw new KitUnmappable({
+        message: `${definition.name}: the build recorded no drawn parts for ${cell}`,
+      });
+    }
+    return parts;
+  };
   const variants = cells.map((cell): VariantSpec => {
     const cellCascade = cascade.cell(cell);
+    const drawn = new DrawnParts();
     const plain: MapScope = {
       variant: variantKey(definition, cell),
       cell,
@@ -140,6 +154,7 @@ function buildComponentSet(
       values: NO_VALUES,
       painted: new PaintedInstances(),
       translates: new WeakMap(),
+      drawn,
     };
     const scope: MapScope =
       definition.viewport === undefined ? plain : { ...plain, viewport: definition.viewport };
@@ -181,6 +196,10 @@ function buildComponentSet(
       ),
     };
     placeRoot(rootCascade.style, room, context.variables, root.children, definition.viewport);
+    drawnParts.set(
+      variantKey(definition, cell),
+      drawn.resolve(root, rootCascade.drawnAt, variantKey(definition, cell))
+    );
     if (root.clips && !clipsInCss(rootCascade.style)) {
       const shadowsOf = (layer: InstanceLayerSpec): readonly ShadowSpec[] =>
         rootEffects(layer) ??
@@ -231,7 +250,7 @@ function buildComponentSet(
     accounting: new Map(
       [...cascade.instancePlaces()].map(([cell, instances]) => [
         cell,
-        { accounted: accounted.get(cell) ?? new Set<string>(), instances },
+        { accounted: accounted.get(cell) ?? new Set<string>(), instances, parts: recordedParts(cell) },
       ])
     ),
   };

@@ -80,7 +80,8 @@ export function adjoinsMargin(styles: readonly LayerStyle[], index: number): boo
  * @param variables - The synced variables a margin can bind.
  * @param collapses - Whether a vertical margin of the part adjoins another margin in a block parent.
  * @param clipped - Whether the parent clips what overflows it and pads nothing across.
- * @returns The frame around the part, or the layer as it was where it has no margin that maps.
+ * @returns The frame around the part, or the layer as it was where it has no margin that maps, and
+ *   the layer that draws the part's border box inside it.
  */
 export function wrapFrameMargins(
   style: LayerStyle,
@@ -89,14 +90,24 @@ export function wrapFrameMargins(
   variables: VariableIndex,
   collapses: boolean,
   clipped: boolean
-): FrameLayerSpec {
+): FrameMarginBox {
   const frame = drawMargins(style, paddedBy(style), layer, parent, variables, collapses, clipped);
   if (frame === undefined) {
-    return layer;
+    return { layer, box: layer };
   }
-  const { visibleProperty: _shown, ...box } = layer;
-  return { ...frame, children: [{ ...box, key: "box", name: "box" }] };
+  const { visibleProperty: _shown, ...rest } = layer;
+  const box: FrameLayerSpec = { ...rest, key: "box", name: "box" };
+  return { layer: { ...frame, children: [box] }, box };
 }
+
+/**
+ * A frame part as its parent holds it: the part's own frame, or a frame that draws its margins around
+ * it, and the frame that draws the part's border box either way.
+ */
+export type FrameMarginBox = {
+  readonly layer: FrameLayerSpec;
+  readonly box: FrameLayerSpec;
+};
 
 /**
  * Draw an instance part's margins, as {@link drawMargins} says. An instance has no margin box of its
@@ -151,6 +162,8 @@ export function wrapInstanceMargins(
  */
 export type IconMarginBox = {
   readonly layer: FrameLayerSpec | IconLayerSpec;
+  /** The icon layer itself, inside the frame of its margins where it has one. */
+  readonly icon: IconLayerSpec;
   /** The icon's literal size and literal margins across, or unread where one of them binds a variable. */
   readonly share: RowShare;
 };
@@ -192,10 +205,11 @@ export function wrapIconMargins(
     { kind: "pixels", value: 0 }
   );
   if (frame === undefined) {
-    return { layer: icon, share };
+    return { layer: icon, icon, share };
   }
-  const { visibleProperty: _shown, ...box } = icon;
-  return { layer: { ...frame, children: [{ ...box, key: "box", name: "box" }] }, share };
+  const { visibleProperty: _shown, ...rest } = icon;
+  const box: IconLayerSpec = { ...rest, key: "box", name: "box" };
+  return { layer: { ...frame, children: [box] }, icon: box, share };
 }
 
 /**

@@ -132,3 +132,24 @@ describe("a box whose text sits at a min-width", () => {
     ).toEqual({ kept: [300, 300], farLongerWidens: true, inferred: "fits" });
   });
 });
+
+// Unit under test: the place `probeCells` gives each box. Oracle: the capture's naming of places,
+// the root's index among the cell's measured roots, `root`, and the element child index at each step
+// down, applied by hand to this markup, where an element without a `data-slot` still counts as a
+// child.
+describe("the place of each box", () => {
+  it("names each box by its root's index and the element child index at each step down", async () => {
+    await page.setContent(
+      `<div data-compare-cell="c0"><div data-slot="popup"><span></span><div data-slot="list"><i></i><b data-slot="item">Apple</b></div></div><div data-slot="anchor">Open</div></div>`
+    );
+    const [cell] = await probeCells(page, [
+      { id: "c0", measured: ['[data-slot="popup"]', '[data-slot="anchor"]'] },
+    ]);
+    expect(cell?.boxes.map(({ slot, place }) => `${slot} ${place}`)).toEqual([
+      "popup 0/root",
+      "list 0/root/1",
+      "item 0/root/1/1",
+      "anchor 1/root",
+    ]);
+  });
+});

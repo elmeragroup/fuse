@@ -65,6 +65,7 @@ import {
   readNumber,
 } from "./css-values";
 import type { Viewport } from "./css-values";
+import type { DrawnAt, DrawnParts } from "./drawn-parts";
 import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
 import { drawRestAtEnd } from "./end-frame";
 import { drawsAtRoom, fitsRowRoom } from "./fitting-part";
@@ -377,6 +378,11 @@ export type MapScope = {
   /** The translate each box that paints and pads nothing carries up from its rows, as `translate-fold.ts` says. */
   readonly translates: CarriedTranslates;
   /**
+   * What notes the layer each part of the set's own cell draws, as `drawn-parts.ts` records it. Absent
+   * for an instance part built in place, whose layers the variant's root does not hold.
+   */
+  readonly drawn?: DrawnParts;
+  /**
    * Whether the box's parent clips what overflows it and pads nothing across, so a box that fills it
    * across clips at its own sides too, as Select's list fills its clipping popup. Absent for a root.
    */
@@ -536,7 +542,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   );
 
   const icons: MappedIcon[] = [];
-  const iconStyles = slots.map((slot) => cascade.icon(slot));
+  const iconCascades = slots.map((slot) => cascade.icon(slot));
+  const iconStyles = iconCascades.map(({ style }) => style);
   const stack = readStackedCell(
     reader,
     sizing,
@@ -557,7 +564,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     }
     const icon = mapIcon(slot, style, scope);
     if (icon !== undefined) {
-      icons.push({ side: slot.side, style, icon });
+      icons.push({ side: slot.side, style, icon, key: slot.key, at: iconCascades[place]?.drawnAt });
     }
   }
   const onSide = (side: IconSlot["side"]) => icons.filter((each) => each.side === side);
@@ -575,6 +582,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   });
   for (const { part, reason } of leftOut) {
     part.cascade.style.dropOwn(reason);
+    scope.drawn?.omit(part.cascade.drawnAt, part.key);
   }
   const empty: readonly ShownPart[] = leftOut.map(({ part }) => part);
   const inDom = orderModified(
@@ -661,11 +669,11 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const { layout } = flow;
   // An icon's margins draw once the layout says whether the box is a flex box.
   const drawIcons = (side: IconSlot["side"]): readonly DrawnIcon[] =>
-    onSide(side).map(({ style, icon }) => ({
-      style,
-      name: icon.name,
-      ...wrapIconMargins(style, icon, layout, context.variables),
-    }));
+    onSide(side).map(({ style, icon, key, at }) => {
+      const drawn = wrapIconMargins(style, icon, layout, context.variables);
+      scope.drawn?.note(at, key, drawn.icon);
+      return { style, name: icon.name, ...drawn };
+    });
   const start = drawIcons("start");
   const end = drawIcons("end");
   // A class that spaces every child but the last draws as the item spacing only where each element
@@ -915,7 +923,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     return {
       mapped:
         index === centred?.place
-          ? { ...result, layer: padCentred(result.layer, result.framed === true, centred.padding, variant) }
+          ? withLayer(result, padCentred(result.layer, result.framed === true, centred.padding, variant))
           : result,
       fit,
     };
@@ -1056,16 +1064,19 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     endInFlow,
     plans
   );
-  // Placement gives an absolute instance a new layer, which paints what the layer it replaces does,
-  // and the instance a placement wrapper holds paints it too.
-  placement.layers.forEach((layer, index) => {
-    const before = parts[index]?.layer;
-    const drawn = before?.kind === "instance" && layer !== before ? scope.painted.resolve(before) : undefined;
+  for (const { source, layer, border } of placement.placed) {
+    // Each part's border box is drawn where placement leaves it.
+    scope.drawn?.note(source.part.at, source.part.key, border);
+    // Placement gives an absolute instance a new layer, which paints what the layer it replaces does,
+    // and the instance a placement wrapper holds paints it too.
+    const before = source.layer;
+    const drawn = before.kind === "instance" && layer !== before ? scope.painted.resolve(before) : undefined;
     const [held] = layer.kind === "frame" ? layer.children : [layer];
     if (held?.kind === "instance" && drawn?.kind === "frame") {
       scope.painted.note(held, drawn);
     }
-  });
+  }
+  const placedLayers = placement.placed.map(({ layer }) => layer);
   // A Figma grid spaces its tracks by its own gaps, which `readGrid` reads.
   const grid =
     layout.grid === undefined
@@ -1093,7 +1104,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     (textBlock ? blockLineAlign(layout, sizing, limits) : layout.counterAlign);
   // The parts before the label sit first, sectioned where separators cancel the box's padding, and
   // the parts after the label last.
-  const first = placement.layers.slice(0, drawnBefore.length);
+  const first = placedLayers.slice(0, drawnBefore.length);
   const laid: readonly ChildLayerSpec[] = [
     ...(sections === undefined
       ? first
@@ -1105,7 +1116,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
           ),
         })),
     ...after,
-    ...placement.layers.slice(drawnBefore.length),
+    ...placedLayers.slice(drawnBefore.length),
   ];
   const joined = joinFlushLayers(
     reader,
@@ -1489,6 +1500,8 @@ function mapPart(
       style: part.cascade.style,
       paints: painted.fill !== undefined,
       width: DECLARED_WIDTH,
+      border: instance,
+      part: { key: part.key, at: part.cascade.drawnAt },
     };
     return instance === layer ? mapped : { ...mapped, wrapped: instance };
   }
@@ -1502,17 +1515,18 @@ function mapPart(
   // Figma draws a part's spread ring only over a visible fill with clipping on (PR2).
   const ringed = castsSpread(own.shadows) ? { ...own, fill: ringFill(own), clips: true } : own;
   const box = readContentBox(part.cascade.style, ringed, part.cascade.inPlace() !== undefined);
+  const scaled = scope.scaling.has(part.child) ? slotAroundDot(part.cascade.style, box) : undefined;
   const drawn: FrameLayerSpec = {
     kind: "frame",
     key: part.child.key,
     name: part.name,
-    ...(scope.scaling.has(part.child) ? slotAroundDot(part.cascade.style, box) : box),
+    ...(scaled?.slot ?? box),
   };
   const { optional } = part.child;
   const linked = optional === undefined ? drawn : { ...drawn, visibleProperty: optional.name };
   const rotation = readRotation(part.cascade.style);
   const turned = rotation === undefined ? linked : { ...linked, rotation };
-  const wrapped = wrapFrameMargins(
+  const { layer: wrapped, box: inMargins } = wrapFrameMargins(
     part.cascade.style,
     turned,
     layout,
@@ -1528,6 +1542,9 @@ function mapPart(
       : wrapped;
   const framed = wrapped !== turned;
   const { horizontal } = frame.sizing;
+  // The browser measures a part that scales at its scaled size, which its dot draws; any other part's
+  // border box is its own frame, inside the frame of its margins where it has one.
+  const border = scaled?.dot ?? (framed ? inMargins : layer);
   return {
     layer,
     stacked: layer,
@@ -1538,6 +1555,8 @@ function mapPart(
       horizontal.kind === "fixed" && horizontal.length.kind === "literal"
         ? { kind: "fixed", value: horizontal.length.value }
         : DECLARED_WIDTH,
+    border,
+    part: { key: part.key, at: part.cascade.drawnAt },
   };
 }
 
@@ -1619,7 +1638,7 @@ function settledParts(
   flow: Flow,
   mapped: readonly MappedPart[],
   scope: MapScope
-): readonly Pick<MappedPart, "layer" | "style">[] {
+): readonly Pick<MappedPart, "layer" | "style" | "border" | "part">[] {
   const { painted } = scope;
   const stretched = settleFlow(
     reader,
@@ -1627,16 +1646,32 @@ function settledParts(
     mapped.filter(({ style }) => !outOfFlow(style)).map(({ layer }) => layer),
     scope.context.variables
   );
-  return mapped.map(({ layer, style, stacked, wrapped }) => {
-    const placed = stretchedLayer(layer, stretched);
-    if (placed.kind === "instance") {
-      painted.note(placed, stacked);
+  return mapped.map((part) => {
+    const { layer, stacked, wrapped } = part;
+    const settled = withLayer(part, stretchedLayer(layer, stretched));
+    if (settled.layer.kind === "instance") {
+      painted.note(settled.layer, stacked);
     }
     if (wrapped !== undefined) {
       painted.note(wrapped, { ...stacked, key: wrapped.key, name: wrapped.name });
     }
-    return { style, layer: placed };
+    return settled;
   });
+}
+
+/**
+ * A part with a copy of its layer in the layer's stead: the copy draws the part's border box where
+ * the layer did, and a layer inside it still does.
+ *
+ * @param part - The part.
+ * @param copy - A copy of the part's layer with fields changed, or the layer itself.
+ * @returns The part with the copy.
+ */
+function withLayer<Part extends Pick<MappedPart, "layer" | "border">>(
+  part: Part,
+  copy: FrameLayerSpec | InstanceLayerSpec
+): Part {
+  return { ...part, layer: copy, border: part.border === part.layer ? copy : part.border };
 }
 
 /**
@@ -1658,6 +1693,10 @@ type MappedPart = {
   readonly framed?: boolean;
   /** The width the part draws, as a label beside it in a row reads it. */
   readonly width: DrawnWidth;
+  /** The layer that draws the part's border box: `layer` itself, or a layer inside it. */
+  readonly border: FrameLayerSpec | InstanceLayerSpec;
+  /** The part's key and where its element sits, which the cell's record of drawn parts notes. */
+  readonly part: { readonly key: string; readonly at: DrawnAt | undefined };
 };
 
 /**
@@ -1744,6 +1783,9 @@ type MappedIcon = {
   readonly side: IconSlot["side"];
   readonly style: LayerStyle;
   readonly icon: IconLayerSpec;
+  /** The icon's key and where the element the probe measures for it sits. */
+  readonly key: string;
+  readonly at: DrawnAt | undefined;
 };
 
 /**

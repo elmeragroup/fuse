@@ -4,6 +4,7 @@
  */
 import type { Cell, IconSlot, PreviewLength } from "./component-spec";
 import type { Origin } from "./coverage-log";
+import type { DrawnAt } from "./drawn-parts";
 import type { NumberSpec } from "./kit-spec";
 import type { CoverageNote, InPlace, LayerStyle } from "./layer-style";
 /**
@@ -39,6 +40,14 @@ export type PartElement = {
   /** Whether the part's element follows its box's text in the markup, as the definition's `after` says. */
   readonly after?: "label";
 };
+
+/**
+ * The cascade of an icon: its `<svg>`'s computed style, and the place and `data-slot` of the `<svg>`,
+ * whose box the icon layer draws. A wrapper around it, as a pending Button's spinner sits in a
+ * slotted span, draws no layer of its own. Undefined where the icon's element is not in the cell's
+ * own capture.
+ */
+export type IconCascade = { readonly style: LayerStyle; readonly drawnAt: DrawnAt | undefined };
 
 /** The cascade of one box, the root or a part, as the mapping reads it. */
 export type BoxCascade = {
@@ -135,11 +144,17 @@ export type BoxCascade = {
    * Cascade an icon this box shows, over what this box passes down.
    *
    * @param slot - The icon.
-   * @returns The icon's computed style.
+   * @returns The icon's computed style, and where the element that carries its `data-slot` sits.
    */
-  icon(slot: IconSlot): LayerStyle;
+  icon(slot: IconSlot): IconCascade;
   /** How many element children the box's element holds, or undefined where the capture holds none. */
   readonly elementChildren: number | undefined;
+  /**
+   * Where the box's element sits in the cell's capture and the `data-slot` it carries, as
+   * `drawn-parts.ts` records a drawn part, or undefined for a box with no captured element of its
+   * own, as a pseudo-element or an open composite's composed root.
+   */
+  readonly drawnAt: DrawnAt | undefined;
   /** The tag of the box's element: a form control's tag says where the browser places its text. */
   readonly elementTag: string | undefined;
   /** The text the box's element holds as its own, as the capture records it, or undefined for none. */

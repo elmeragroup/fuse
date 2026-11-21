@@ -27,6 +27,7 @@ import { makeVariableIndex, pinnedIndex, readColor } from "./css-values";
 import type { ModeView, VariableIndex } from "./css-values";
 import { readDocsPage } from "./docs-pages";
 import type { DocsPage } from "./docs-pages";
+import type { DrawnPart } from "./drawn-parts";
 import { fuseIcons, ICON_SIZE, weightedIcons } from "./icon-library";
 import { checkKitSpec } from "./kit-check";
 import { KIT } from "./kit-registry";
@@ -599,6 +600,8 @@ export type BuiltKit = {
   readonly spec: KitSpec;
   /** One coverage row per distinct outcome of each recipe declaration. */
   readonly coverage: readonly CoverageRow[];
+  /** Each cell's drawn parts, by its variant's key, as `drawn-parts.ts` records them. */
+  readonly drawn: ReadonlyMap<string, readonly DrawnPart[]>;
 };
 
 /**
@@ -692,7 +695,13 @@ export const buildKit = Effect.fn("buildKit")(function* (registry: readonly KitE
     docs,
   };
   yield* Effect.fromResult(checkKitSpec(spec, (text) => Buffer.from(text, "base64")));
-  const kit: BuiltKit = { spec, coverage: built.flatMap((set) => set.coverage) };
+  const kit: BuiltKit = {
+    spec,
+    coverage: built.flatMap((set) => set.coverage),
+    drawn: new Map(
+      built.flatMap((set) => [...set.accounting].map(([cell, { parts }]) => [cell, parts] as const))
+    ),
+  };
   return kit;
 });
 
