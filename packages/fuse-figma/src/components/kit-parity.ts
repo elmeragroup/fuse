@@ -422,8 +422,7 @@ export const KIT_PARITY = {
   toast: {
     kind: "partial",
     sets: ["toast"],
-    missing:
-      "`Toast.Action`, a stack of several toasts, a toast behind the frontmost one, and the top placements.",
+    missing: "`Toast.Action`, the top placements, and a stack of several toasts.",
     issue: NICE_TO_HAVE,
   },
   toggle: { kind: "sets", sets: ["toggle", "icon-toggle"] },
