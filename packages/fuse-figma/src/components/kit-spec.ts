@@ -675,7 +675,8 @@ export type SizeSpec =
   /**
    * The length a `stretch` placement leaves the layer between its distances to its parent's edges,
    * where the build cannot tell the parent's length: the plugin sets it once the parent's other layers
-   * are planned, and no geometry reads it. A stretch whose length the build can tell is `fixed`.
+   * are planned, and no geometry reads it. A stretch whose length the build can tell is `fixed`,
+   * except a `padding box` layer, which stretches with its box at any size an instance takes.
    */
   | { readonly kind: "placed" };
 

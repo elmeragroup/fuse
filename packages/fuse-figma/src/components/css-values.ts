@@ -25,6 +25,8 @@ export type VariableIndex = {
    * Undefined where none is, or the value is no affine length.
    */
   readonly lookupAffine: (value: string) => VariableRef | undefined;
+  /** The code syntax the sync writes for a synced variable, or undefined for one it does not know. */
+  readonly syntaxOf: (ref: VariableRef) => string | undefined;
   /** The smallest value a FLOAT variable holds in any mode, or undefined when unknown. */
   readonly minimum: (ref: VariableRef) => number | undefined;
   /** The largest value a FLOAT variable holds in any mode, or undefined when unknown. */
@@ -75,8 +77,10 @@ export function makeVariableIndex(
   const minimums = new Map<string, number>();
   const maximums = new Map<string, number>();
   const opaques = new Set<string>();
+  const syntaxes = new Map<string, string>();
   for (const { ref, webSyntax, minimum, maximum, opaque } of variables) {
     bySyntax.set(canonical(webSyntax), ref);
+    syntaxes.set(refKey(ref), webSyntax);
     if (opaque === true) {
       opaques.add(refKey(ref));
     }
@@ -99,6 +103,7 @@ export function makeVariableIndex(
         ? undefined
         : byAffine.find((entry) => sameAffine(entry.length, length))?.ref;
     },
+    syntaxOf: (ref) => syntaxes.get(refKey(ref)),
     minimum: (ref) => minimums.get(refKey(ref)),
     maximum: (ref) => maximums.get(refKey(ref)),
     owns: (customProperty) => owned.has(customProperty),
