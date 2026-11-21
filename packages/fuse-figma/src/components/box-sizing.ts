@@ -460,16 +460,24 @@ const SELF_STRETCH =
  * its height, as Radio row's label would. Where the item's
  * length across is unset or `auto` and no margin across is `auto`, it is as long as the flex line
  * less its margins (CSS Flexbox 1 §9.4 step 11), which a layer that fills the axis draws, its margin
- * box carrying the margins. That holds only in a single-line flex box, whose one line is the box's
- * content length across (§9.4 step 15). A column's unset `align-items` stretches its layers through
- * `roomInside`. Every other room stays as it was, and an `align-self` stays unread.
+ * box carrying the margins. That holds where the box's one line is its content length across: a
+ * single-line flex box's line is (§9.4 step 15), and so is the one line of a wrapping row that
+ * `wrapsOnOneLine` in `box-mapping.ts` reads. A column's unset `align-items` stretches its layers
+ * through `roomInside`. Every other room stays as it was, and an `align-self` stays unread.
  *
  * @param holder - The item's parent.
  * @param style - The item's style.
  * @param room - The room the parent gives the item.
+ * @param lines - Whether the parent lays its items out on one line as long as its content box across,
+ *   or may break them into several.
  * @returns The room, filling across where the item stretches.
  */
-export function selfStretchedRoom(holder: Holder, style: LayerStyle, room: Room): Room {
+export function selfStretchedRoom(
+  holder: Holder,
+  style: LayerStyle,
+  room: Room,
+  lines: "one" | "several"
+): Room {
   const across = holder.layout.direction === "HORIZONTAL" ? "vertical" : "horizontal";
   const length = across === "vertical" ? "height" : "width";
   const margins = across === "vertical" ? ["margin-top", "margin-bottom"] : ["margin-left", "margin-right"];
@@ -481,7 +489,7 @@ export function selfStretchedRoom(holder: Holder, style: LayerStyle, room: Room)
     !holder.style.has("align-items");
   const stretches =
     holder.layout.flex &&
-    normalizeCss(holder.style.resolved("flex-wrap") ?? "nowrap") === "nowrap" &&
+    lines === "one" &&
     (own || unset) &&
     normalizeCss(style.resolved(length) ?? "auto") === "auto" &&
     margins.every((margin) => normalizeCss(style.resolved(margin) ?? "0px") !== "auto");

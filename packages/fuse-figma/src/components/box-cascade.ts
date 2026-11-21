@@ -206,6 +206,8 @@ export type MeasuredBox = {
   readonly freeAlongMain: boolean;
   /** The box's flex line fits its items, with its auto margins at zero, in every mode. */
   readonly fitsAlongMain: boolean;
+  /** The box is a flex container that wraps and lays its items out on one line in every mode. */
+  readonly oneFlexLine: boolean;
   /** The box is a flex row whose growing items each stay at their own content width in every mode. */
   readonly itemsAtContent: boolean;
   /** The box is a table box whose parts tile it in every mode, as the capture measured. */

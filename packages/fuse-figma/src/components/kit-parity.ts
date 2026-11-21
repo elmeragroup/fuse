@@ -176,9 +176,8 @@ export const KIT_PARITY = {
     missing: "The calendar popup; the `sm` size, the trigger at the start, and a date and time.",
     issue: MISSING_SETS,
   },
-  // #802: the field box wraps its row (`flex-wrap`), which keeps its inputs' `self-stretch` unproven,
-  // and the capture measures `freeAlongMain` for the trigger's `ms-auto` only on a row that does not
-  // wrap. The text spans inside the label, error and description reach no coverage row.
+  // #802: the text spans inside the label, error and description reach no coverage row, and the
+  // ledger can name them only for a built set.
   "date-range-picker": { kind: "issue", issue: MISSING_SETS },
   "description-list": {
     kind: "partial",
