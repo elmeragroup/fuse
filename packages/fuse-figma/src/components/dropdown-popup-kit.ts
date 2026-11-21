@@ -7,9 +7,14 @@
  * - `Dropdown menu sub content` is the submenu's popup, 1 cell, holding the docs Submenu demo's three
  *   rows.
  * - `Dropdown menu (open)` is the outline Button trigger, `Open`, with the Basic demo's popup open
- *   below it, 1 cell. Base UI places the popup 4px below the trigger, aligned to its start. The
- *   submenu form stays out: the sub content's top sits 2 × `row-h` + 10px below the popup's, which no
- *   variable holds, and Figma binds no absolute `y`.
+ *   below it, 1 cell. Base UI places the popup 4px below the trigger, aligned to its start.
+ * - `Dropdown menu submenu (open)` is the Submenu demo's popup with its submenu open beside the
+ *   `Share` sub trigger, 1 cell. Base UI opens the sub content on the sub trigger's right, 3px above
+ *   its top, so the sub content's top sits 2 × `row-h` + 10px below the popup's. Figma binds no
+ *   variable to an absolute layer's `y`, so the sub content sits in a column beside the popup whose
+ *   fixed stand-ins for the rows above `Share` bind `row-h` and the separator's lengths. The
+ *   stand-ins follow the captured rows, so a row a designer adds to the popup above `Share`, or a
+ *   `New tab` label edited to wrap, does not move the sub content.
  *
  * A popup hugs its rows. The capture-backed build measures each popup's widest row, so the manifest
  * names none.
@@ -212,5 +217,42 @@ export const DROPDOWN_MENU_SUB_CONTENT_MANIFEST: SetManifest = {
   label: undefined,
   iconsFor: () => [],
   parts: partsManifest(DROPDOWN_SUBMENU, "submenu", always, undefined),
+  swapProperties: [],
+};
+
+/**
+ * The open submenu's manifest, which the capture-backed build reads with
+ * `captures/dropdown-menu-submenu-open.json`: the Submenu demo's popup and its sub content, which
+ * `capture/nested-placement.ts` puts in a column beside the popup, and `DropdownMenu.SubContent`'s
+ * `sideOffset` and `alignOffset` as the docs' API reference gives them.
+ */
+export const DROPDOWN_MENU_SUBMENU_OPEN_MANIFEST: SetManifest = {
+  key: "dropdown-menu-submenu-open",
+  name: "Dropdown menu submenu (open)",
+  api: { page: "dropdown-menu", parts: ["DropdownMenu.SubContent"] },
+  slot: "dropdown-menu-submenu-open",
+  axes: [{ name: "side", values: ["right"] }],
+  columnAxis: "side",
+  union: ["dropdown-menu-content", "dropdown-menu-sub-content"],
+  sideOffset: 0,
+  anchor: { slot: "dropdown-menu-sub-trigger", alignOffset: -3 },
+  label: undefined,
+  iconsFor: () => [],
+  parts: [
+    {
+      kind: "instance",
+      key: "popup",
+      of: DROPDOWN_MENU_POPUP_MANIFEST,
+      cell: () => ({ content: "submenu" }),
+      shownIn: always,
+    },
+    {
+      kind: "instance",
+      key: "sub-content",
+      of: DROPDOWN_MENU_SUB_CONTENT_MANIFEST,
+      cell: () => ({ content: "submenu" }),
+      shownIn: always,
+    },
+  ],
   swapProperties: [],
 };

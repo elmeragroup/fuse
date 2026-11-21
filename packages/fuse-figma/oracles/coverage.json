@@ -230,6 +230,55 @@
       "className": "truncate",
       "property": "text-overflow",
       "reason": "The value's summary span lets its text shrink and end in an ellipsis once the summary passes the room the value's 224px `max-w-56` leaves it, which the demo's `Paid` never reaches. An instance carries no text truncation override, so the value's label hugs its text as Button's does."
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "dropdown-menu-shortcut",
+      "className": "ml-auto",
+      "property": "margin-left",
+      "reason": "#773: a row's shortcut margin reads as the label filling the room before it only where the capture measured the row fitting its layers with a pixel to spare in every mode (`fitsAlongMain`). The popup is as wide as its widest row, which leaves no pixel, and a row whose shortcut the demo leaves out holds no auto margin in the popup's markup to measure, so in those rows the margin stays unmapped."
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "dropdown-menu-item",
+      "className": "",
+      "property": "sizing",
+      "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "dropdown-menu-item",
+      "className": "",
+      "property": "primaryAlign",
+      "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "dropdown-menu-item",
+      "className": "flex",
+      "property": "display",
+      "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "dropdown-menu-content",
+      "className": "",
+      "property": "instance",
+      "reason": "#922: the open submenu turns on the sub trigger's `data-popup-open` face, its accent fill and text color, on the sub trigger instance inside the popup instance. A Figma override reaches the layers of the instance it is written on, and the plugin's override walk stops at a nested instance, so the popup instance draws its sub trigger at rest."
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "dropdown-menu-sub-trigger",
+      "className": "data-popup-open:bg-accent",
+      "property": "background-color",
+      "reason": "#922: the sub trigger's `data-popup-open` face, which only the open submenu turns on, lands on the sub trigger instance inside the popup instance, which a Figma override does not reach."
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "dropdown-menu-sub-trigger",
+      "className": "data-popup-open:text-accent-foreground",
+      "property": "color",
+      "reason": "#922: the sub trigger's `data-popup-open` face, which only the open submenu turns on, lands on the sub trigger instance inside the popup instance, which a Figma override does not reach."
     }
   ],
   "unbound": [
@@ -6877,6 +6926,116 @@
       "property": "outline-style",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": ["dropdown-menu-open/side=bottom 1/around/1"]
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "dropdown-menu-portal",
+      "className": "fuse.css base layer",
+      "property": "border-color",
+      "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
+      "at": [
+        "dropdown-menu-submenu-open/side=right 0/around/0",
+        "dropdown-menu-submenu-open/side=right 1/around/0"
+      ]
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "dropdown-menu-portal",
+      "className": "fuse.css base layer",
+      "property": "border-style",
+      "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
+      "at": [
+        "dropdown-menu-submenu-open/side=right 0/around/0",
+        "dropdown-menu-submenu-open/side=right 1/around/0"
+      ]
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "dropdown-menu-portal",
+      "className": "fuse.css base layer",
+      "property": "box-sizing",
+      "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
+      "at": [
+        "dropdown-menu-submenu-open/side=right 0/around/0",
+        "dropdown-menu-submenu-open/side=right 1/around/0"
+      ]
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "div",
+      "className": "fuse.css base layer",
+      "property": "border-color",
+      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
+      "at": [
+        "dropdown-menu-submenu-open/side=right 0/around/1",
+        "dropdown-menu-submenu-open/side=right 1/around/1"
+      ]
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "div",
+      "className": "isolate",
+      "property": "isolation",
+      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
+      "at": [
+        "dropdown-menu-submenu-open/side=right 0/around/1",
+        "dropdown-menu-submenu-open/side=right 1/around/1"
+      ]
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "div",
+      "className": "outline-none",
+      "property": "--tw-outline-style",
+      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
+      "at": [
+        "dropdown-menu-submenu-open/side=right 0/around/1",
+        "dropdown-menu-submenu-open/side=right 1/around/1"
+      ]
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "div",
+      "className": "outline-none",
+      "property": "outline-style",
+      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
+      "at": [
+        "dropdown-menu-submenu-open/side=right 0/around/1",
+        "dropdown-menu-submenu-open/side=right 1/around/1"
+      ]
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "div",
+      "className": "tailwind preflight",
+      "property": "border",
+      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
+      "at": [
+        "dropdown-menu-submenu-open/side=right 0/around/1",
+        "dropdown-menu-submenu-open/side=right 1/around/1"
+      ]
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "div",
+      "className": "tailwind preflight",
+      "property": "box-sizing",
+      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
+      "at": [
+        "dropdown-menu-submenu-open/side=right 0/around/1",
+        "dropdown-menu-submenu-open/side=right 1/around/1"
+      ]
+    },
+    {
+      "set": "dropdown-menu-submenu-open",
+      "part": "div",
+      "className": "z-50",
+      "property": "z-index",
+      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
+      "at": [
+        "dropdown-menu-submenu-open/side=right 0/around/1",
+        "dropdown-menu-submenu-open/side=right 1/around/1"
+      ]
     },
     {
       "set": "combobox-open",

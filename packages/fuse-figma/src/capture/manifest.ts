@@ -122,7 +122,7 @@ export type FuseParts = {
  * its states land on, the size of the host its sample renders in, its INSTANCE_SWAP properties, and
  * what it shows. An open composite adds the `data-slot` of each element its cells measure, and an
  * anchored one its component's `sideOffset`, as the component's `api.json` declares its default, and
- * `alignItemWithTrigger`, as the sample's renderer passes it.
+ * `alignItemWithTrigger`, as the sample's renderer passes it. A nested one adds its `anchor`.
  */
 export type SetManifest = BoxManifest & {
   readonly key: string;
@@ -162,6 +162,13 @@ export type SetManifest = BoxManifest & {
   readonly union?: readonly string[];
   /** An anchored popup's distance from its anchor in pixels, its component's default. */
   readonly sideOffset?: number;
+  /**
+   * The row of a parent popup that a nested popup opens beside, as a submenu opens beside its sub
+   * trigger: the row's `data-slot`, and the nested popup's shift along the side it opens on in
+   * pixels, its component's `alignOffset` default. Set, the composite measures the parent popup and
+   * the nested popup, `sideOffset` pixels from the row.
+   */
+  readonly anchor?: { readonly slot: string; readonly alignOffset: number };
   /**
    * Whether an anchored popup opens over its anchor, as Select's does by default. The kit draws it
    * beside its anchor only, so the build reads only `false`.
@@ -212,6 +219,7 @@ export const MANIFEST_FIELDS = {
     "swapProperties",
     "union",
     "sideOffset",
+    "anchor",
     "alignItemWithTrigger",
     "label",
     "iconsFor",
@@ -267,6 +275,7 @@ export function manifestDefinition(manifest: SetManifest): ComponentDefinition {
     iconsFor: _iconsFor,
     union: _union,
     sideOffset,
+    anchor: _anchor,
     alignItemWithTrigger: _alignItemWithTrigger,
     api: _api,
     previewWidth,

@@ -208,9 +208,11 @@ export const KIT_PARITY = {
       "dropdown-menu-popup",
       "dropdown-menu-sub-content",
       "dropdown-menu-open",
+      "dropdown-menu-submenu-open",
     ],
-    missing: "The submenu form.",
-    issue: 849,
+    missing:
+      "The open sub trigger's highlight beside the open submenu, which sits on a sub trigger instance inside the popup instance, where no override of the plugin reaches. The open submenu's stand-ins follow the captured rows above `Share`, so a row a designer adds there, or a `New tab` label edited to wrap, leaves the sub content where the demo's rows put it.",
+    issue: NICE_TO_HAVE,
   },
   emoji: { kind: "excluded", reason: "It belongs to the icon library." },
   empty: {
