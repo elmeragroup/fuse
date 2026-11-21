@@ -120,11 +120,10 @@ import {
 import {
   childrenOf,
   copyNode,
-  detach,
   duplicate,
   insert,
-  markRemoved,
   placeOnCurrentPage,
+  removeNode,
   sharedDataOf,
 } from "./tree.ts";
 import { alias, boundCollections, modeFor, nodeBindings } from "./variables.ts";
@@ -242,8 +241,7 @@ class FakePage extends FakeBaseNode {
       throw new Error(`Cannot remove ${state.id}, the file's last page.`);
     }
     write(state, "remove");
-    detach(state);
-    markRemoved(state);
+    removeNode(state);
   }
 }
 
@@ -303,8 +301,7 @@ class FakeSceneNode extends FakeBaseNode {
       throw new Error(`Cannot remove ${state.id}, a layer inside an instance.`);
     }
     write(state, "remove");
-    detach(state);
-    markRemoved(state);
+    removeNode(state);
   }
 
   get x(): number {
@@ -1138,8 +1135,10 @@ class FakeInstance extends FakeFrameLikeNode {
 
   /** Rule 48: a sublayer shows its main layer's component until it swaps apart. */
   getMainComponentAsync(): Promise<ComponentNode | null> {
-    const main = shownComponent(live(this));
-    return Promise.resolve(main === undefined ? null : componentOf(main));
+    // Rule 67: a removed instance, or one whose main was removed, returns null.
+    const state = stateOf(this);
+    const main = state.removed ? undefined : shownComponent(state);
+    return Promise.resolve(main === undefined || main.removed ? null : componentOf(main));
   }
 
   /** Rule 35: the instance keeps its node and its property values. */
