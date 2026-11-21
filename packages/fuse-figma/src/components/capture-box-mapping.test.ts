@@ -379,33 +379,102 @@ describe("a grid in one column", () => {
 // box's width as if it held nothing, and so drops a flex item's content-based minimum: in a 100px
 // row, two `w-[100px]` items each holding a 200px box stay 100px wide, and with `@container` Chromium
 // shrinks them to 50px. A width a column stretches across, or a block-level root's width in its
-// block host, reads no content, so the containment changes nothing there. A box that hugs, a growing
-// flex item and a declared width read content or a share of the row, so it stays unmapped.
+// block host, reads no content, so the containment changes nothing there, and `w-auto` sets the
+// width the box takes with none, so it drops there the same way. Neither does a width of
+// the box's own that is a length, or a percentage of that host's or column's fixed width (CSS 2.1
+// §10.2): a `w-full` root in a 256px host is 256px with or without `@container`, as a Date range
+// picker's root is in its 384px host. A box that hugs, a growing flex item, a shrinkable flex item of
+// declared width, and a percentage of a parent that hugs it, which content sizes (CSS Sizing 3 §5.2),
+// read content or a share of the row, so it stays unmapped. So does a fixed width beside a minimum or
+// maximum that content sizes (CSS Sizing 3 §5.2, CSS 2.1 §10.4): Chromium lays a `w-[40px]
+// min-w-min` box around a 120px child out 120px wide without `@container` and 40px with it, and a
+// stretched box's `min-content` minimum lifts it past its column the same way. The build resolves
+// no `stretch` minimum, spelled `stretch` or `-webkit-fill-available`, so that stays unmapped too.
 describe("an inline-size container", () => {
-  it("drops the containment on a block-level root its preview's host sets the width of", async () => {
-    const { coverage } = await buildChip("@container flex flex-col", [], { previewWidth: 256 });
-    expect(notesOf(coverage, "@container")).toEqual([
-      [
-        "container-type",
-        "dropped",
-        "the root is block-level in the preview's block host, which sets its width",
-      ],
-    ]);
-  });
+  it.each(["@container flex flex-col", "@container w-auto flex flex-col"])(
+    "drops the containment on a block-level root its preview's host sets the width of: %s",
+    async (classes) => {
+      const { coverage } = await buildChip(classes, [], { previewWidth: 256 });
+      expect(notesOf(coverage, "@container")).toEqual([
+        [
+          "container-type",
+          "dropped",
+          "the root is block-level in the preview's block host, which sets its width",
+        ],
+      ]);
+    }
+  );
 
-  it("drops the containment on a part a column stretches across", async () => {
-    const { coverage } = await buildWithDot("flex flex-col w-[256px]", "@container h-[4px]");
-    expect(notesOf(coverage, "@container")).toEqual([
-      [
-        "container-type",
-        "dropped",
-        "a column, a grid in one column or a block stretches the box across, which no content sizes",
-      ],
+  it.each(["@container h-[4px]", "@container w-auto h-[4px]"])(
+    "drops the containment on a part a column stretches across: %s",
+    async (dot) => {
+      const { coverage } = await buildWithDot("flex flex-col w-[256px]", dot);
+      expect(notesOf(coverage, "@container")).toEqual([
+        [
+          "container-type",
+          "dropped",
+          "a column, a grid in one column or a block stretches the box across, which no content sizes",
+        ],
+      ]);
+    }
+  );
+
+  it.each([
+    [
+      "a block-level root of 100% width",
+      async () => {
+        const { variant, coverage } = await buildChip("@container w-full flex flex-col", [], {
+          previewWidth: 256,
+        });
+        return { coverage, width: variant?.root.sizing.horizontal };
+      },
+      256,
+    ],
+    [
+      "a part of fixed width a column stretches",
+      async () => {
+        const { variant, coverage } = await buildWithDot(
+          "flex flex-col w-[256px]",
+          "@container w-[120px] h-[4px]"
+        );
+        return { coverage, width: frameOf(variant?.root)?.sizing.horizontal };
+      },
+      120,
+    ],
+  ])("drops the containment on %s, whose width is a fixed length", async (_case, build, width) => {
+    const built = await build();
+    expect([notesOf(built.coverage, "@container").map(([, outcome]) => outcome), built.width]).toEqual([
+      ["dropped"],
+      fixed(literal(width)),
     ]);
   });
 
   it.each([
     ["a root that hugs its width", () => buildChip("@container inline-flex")],
+    [
+      "a part of 100% width in a column that hugs its width",
+      () => buildWithDot("inline-flex flex-col", "@container w-full h-[4px]"),
+    ],
+    [
+      "a part a column stretches whose minimum is its min-content width",
+      () => buildWithDot("flex flex-col w-[256px]", "@container min-w-min h-[4px]"),
+    ],
+    [
+      "a part a column stretches whose minimum is its stretch width",
+      () => buildWithDot("flex flex-col w-[256px]", "@container min-w-[stretch] h-[4px]"),
+    ],
+    [
+      "a part a column stretches whose minimum is its -webkit-fill-available width",
+      () => buildWithDot("flex flex-col w-[256px]", "@container min-w-[-webkit-fill-available] h-[4px]"),
+    ],
+    [
+      "a part of fixed width whose minimum is its min-content width",
+      () => buildWithDot("flex flex-col w-[256px]", "@container w-[40px] min-w-min h-[4px]"),
+    ],
+    [
+      "a part of fixed width whose maximum is its fit-content width",
+      () => buildWithDot("flex flex-col w-[256px]", "@container w-[40px] max-w-fit h-[4px]"),
+    ],
     ["a growing flex item", () => buildWithDot("flex w-[256px]", "@container flex-1 h-[4px]")],
     [
       "a shrinkable flex item of declared width",
