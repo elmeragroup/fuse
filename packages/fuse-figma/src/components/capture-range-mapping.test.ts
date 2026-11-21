@@ -194,6 +194,161 @@ describe("a label whose text sits in spans that color it", () => {
   });
 });
 
+// Oracles: an `<a>` with `text-decoration-line: underline` decorates its text (CSS Text Decoration 3
+// §2.1), in its own `currentColor` across every descendant, whatever color a span inside it sets
+// (§2.3, the decorating box's color). Figma links a range only to an absolute `http` or `https` URL:
+// on 2026-11-21 `setRangeHyperlink` stored `https://example.com/pay?id=4821` and refused
+// `#invoice-4821` and `/invoices/1042` (live probe RH1, RH2).
+describe("a label whose text holds a link", () => {
+  /** The classes of a root that sets its type and color, as a Timeline list description does. */
+  const BODY = "font-sans text-[14px] leading-[20px] text-[#000000]";
+  const black = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } } as const;
+  const blue = { kind: "literal", color: { r: 0, g: 0, b: 1, a: 1 } } as const;
+  const auto = { offset: undefined, thickness: undefined, color: undefined };
+
+  it("links the range of an anchor to its absolute URL", async () => {
+    const { variant } = await build("Open. Pay", {
+      classes: BODY,
+      texts: ["Open. ", ""],
+      children: [{ tag: "a", href: "https://example.com/pay?id=4821", classes: "underline", text: "Pay" }],
+    });
+    expect(textOf(variant?.root)?.ranges).toEqual([
+      { start: 6, end: 9, color: black, underline: auto, hyperlink: "https://example.com/pay?id=4821" },
+    ]);
+  });
+
+  it("links an anchor that styles nothing beyond the base layers", async () => {
+    const { variant } = await build("Open. Pay", {
+      classes: BODY,
+      texts: ["Open. ", ""],
+      children: [{ tag: "a", href: "https://example.com/pay", text: "Pay" }],
+    });
+    expect(textOf(variant?.root)?.ranges).toEqual([
+      { start: 6, end: 9, color: black, hyperlink: "https://example.com/pay" },
+    ]);
+  });
+
+  it("leaves the range of an anchor whose href names a fragment or a path unlinked", async () => {
+    const { variant } = await build("ab", {
+      classes: BODY,
+      children: [
+        { tag: "a", href: "#invoice-4821", classes: "underline", text: "a" },
+        { tag: "a", href: "/invoices/1042", classes: "underline", text: "b" },
+      ],
+    });
+    expect(textOf(variant?.root)?.ranges).toEqual([{ start: 0, end: 2, color: black, underline: auto }]);
+  });
+
+  // An ancestor's rule underlines the anchor, so the anchor's text alone draws the line.
+  it("links and underlines an anchor its parent underlines, beside the parent's own text", async () => {
+    const underline = "[&>a]:underline";
+    const { variant } = await build("Open. Pay", {
+      classes: BODY,
+      carried: underline,
+      texts: ["Open. ", ""],
+      children: [
+        { tag: "a", href: "https://example.com/pay", fromParent: underline, textIndex: 0, text: "Pay" },
+      ],
+    });
+    const text = textOf(variant?.root);
+    expect([text?.underline, text?.ranges]).toEqual([
+      undefined,
+      [{ start: 6, end: 9, color: black, underline: auto, hyperlink: "https://example.com/pay" }],
+    ]);
+  });
+
+  // The anchor holds the whole label, so it is the label's own element and links every character.
+  // The kit draws no underline of a label's own element yet, so that row stays unmapped.
+  it("links every character of a label its parent underlines through the anchor that holds it", async () => {
+    const underline = "[&>a]:underline";
+    const { variant, coverage } = await build("Pay", {
+      classes: BODY,
+      carried: underline,
+      children: [
+        { tag: "a", href: "https://example.com/pay", fromParent: underline, textIndex: 0, text: "Pay" },
+      ],
+    });
+    expect([
+      textOf(variant?.root)?.ranges,
+      coverage.find((row) => row.property === "text-decoration-line")?.outcome,
+    ]).toEqual([[{ start: 0, end: 3, color: black, hyperlink: "https://example.com/pay" }], "unmapped"]);
+  });
+
+  // CSS draws both lines (CSS Text Decoration 3 §2.1), and a Figma character holds one, so the
+  // span's own line maps to nothing.
+  it("leaves the underline of a span inside an underlined anchor unmapped", async () => {
+    const { coverage } = await build("Pay now", {
+      classes: BODY,
+      children: [
+        {
+          tag: "a",
+          classes: "underline decoration-[#0000ff] underline-offset-[2px]",
+          texts: ["Pay ", ""],
+          children: [
+            { tag: "span", classes: "underline decoration-[#ff0000] underline-offset-[5px]", text: "now" },
+          ],
+        },
+      ],
+    });
+    const outcomes = (property: string) =>
+      coverage.filter((row) => row.property === property).map((row) => `${row.value}|${row.outcome}`);
+    expect([
+      outcomes("text-decoration-line"),
+      outcomes("text-decoration-color"),
+      outcomes("text-underline-offset"),
+    ]).toEqual([
+      ["underline|literal", "underline|unmapped"],
+      ["#0000ff|literal", "#ff0000|unmapped"],
+      ["2px|literal", "5px|unmapped"],
+    ]);
+  });
+
+  it("draws a blue anchor's underline blue under a red span inside it", async () => {
+    const { variant } = await build("Pay now", {
+      classes: BODY,
+      children: [
+        {
+          tag: "a",
+          classes: "underline text-[#0000ff]",
+          texts: ["Pay ", ""],
+          children: [{ tag: "span", classes: "text-[#ff0000]", text: "now" }],
+        },
+      ],
+    });
+    expect(textOf(variant?.root)?.ranges).toEqual([
+      { start: 0, end: 4, color: blue, underline: auto },
+      {
+        start: 4,
+        end: 7,
+        color: { kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } },
+        underline: { ...auto, color: blue },
+      },
+    ]);
+  });
+  // The label draws the underline, so it keeps the label's color under the anchor's red text (CSS
+  // Text Decoration 3 §2.3), where Figma's AUTO would draw it red.
+  it("draws an underlined label's black underline under a red anchor inside it", async () => {
+    const { variant } = await build("Open. Pay", {
+      classes: `${BODY} underline`,
+      texts: ["Open. ", ""],
+      children: [{ tag: "a", href: "https://example.com/pay", classes: "text-[#ff0000]", text: "Pay" }],
+    });
+    const text = textOf(variant?.root);
+    expect([text?.underline, text?.ranges]).toEqual([
+      auto,
+      [
+        {
+          start: 6,
+          end: 9,
+          color: { kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } },
+          underline: { ...auto, color: black },
+          hyperlink: "https://example.com/pay",
+        },
+      ],
+    ]);
+  });
+});
+
 describe("a label whose family is preflight's mono stack", () => {
   it("binds font-mono through the theme's --default-mono-font-family", async () => {
     const family: Written = {

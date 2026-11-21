@@ -68,7 +68,7 @@ import {
   sizingOn,
   turnedOrigin,
 } from "./layout.ts";
-import { modeFor, ownNumber, shownNumber } from "./modes.ts";
+import { modeFor, ownNumber, resolveColor, shownNumber, variableState } from "./modes.ts";
 import {
   charactersOf,
   isHidden,
@@ -103,10 +103,12 @@ import {
   SHARED_DATA_SEPARATOR,
   sourceOf,
   stateOf,
+  textLayerOf,
   write,
 } from "./state.ts";
 import type {
   BindableField,
+  CharacterDecoration,
   CharacterStyle,
   GridChildAlign,
   Made,
@@ -125,6 +127,7 @@ import {
   requireFont,
   requireHeldFonts,
   requireRange,
+  holdStyles,
   restyle,
   restyleWhole,
   segmentBindings,
@@ -1369,6 +1372,10 @@ class FakeInstance extends FakeFrameLikeNode {
       if (layer.overridden.has("boundVariables")) {
         layer.unboundLengths.clear();
       }
+      // A sublayer whose range styles were its own shows its main's again (rule 68).
+      if (layer.overridden.has("styledTextSegments")) {
+        layer.ownStyles = false;
+      }
       const kept: ReadonlySet<string> = layer.heldByModes ? new Set(["width", "height"]) : new Set();
       for (const field of OVERRIDE_FIELDS.keys()) {
         if (!kept.has(field)) {
@@ -1398,12 +1405,157 @@ class FakeInstance extends FakeFrameLikeNode {
   }
 }
 
-/** The underline fields, which Figma holds only while the layer is underlined. */
+/** The underline fields, which a character remembers and shows while it is underlined (rule 68). */
 type UnderlineField = "textDecorationOffset" | "textDecorationThickness" | "textDecorationColor";
 
+/** The decoration field of a character that holds each underline field of the layer (rule 68). */
+const CHARACTER_FIELD = {
+  textDecorationOffset: "offset",
+  textDecorationThickness: "thickness",
+  textDecorationColor: "color",
+} as const satisfies Record<UnderlineField, keyof CharacterDecoration>;
+
+/** Each underline field as Figma's refusal names it (RD1b, RD13b). */
+const FIELD_WORD = {
+  textDecorationOffset: "offset",
+  textDecorationThickness: "thickness",
+  textDecorationColor: "color",
+} as const satisfies Record<UnderlineField, string>;
+
+/** The decoration a text's whole-text writes leave, which a character without its own shows (rule 68). */
+function layerDecoration(state: NodeState): CharacterDecoration {
+  const layer = textLayerOf(state);
+  return {
+    line: layer.textDecoration,
+    offset: layer.textDecorationOffset,
+    thickness: layer.textDecorationThickness,
+    color: layer.textDecorationColor,
+  };
+}
+
 /**
- * Write one underline field. Figma refuses `figma.mixed`, needs the text's fonts, and keeps the
- * value only while the layer is underlined.
+ * The decoration a character shows: its fields, `AUTO` for one never written, while it is
+ * underlined, and none otherwise (RD1, RD4, RD10).
+ */
+function shownDecoration(held: CharacterDecoration): CharacterDecoration {
+  return held.line === "UNDERLINE"
+    ? {
+        line: held.line,
+        offset: held.offset ?? { unit: "AUTO" },
+        thickness: held.thickness ?? { unit: "AUTO" },
+        color: held.color ?? { value: "AUTO" },
+      }
+    : { line: held.line, offset: null, thickness: null, color: null };
+}
+
+/** The decoration each character holds: the one a range write gave it, or the layer's (rule 68). */
+function heldDecorations(state: NodeState): readonly CharacterDecoration[] {
+  const layer = layerDecoration(state);
+  return shownStyles(state).map((style) => style.decoration ?? layer);
+}
+
+/** The decoration each character a text shows, a bound color in the text's modes (rule 68, RD14). */
+function characterDecorations(state: NodeState): readonly CharacterDecoration[] {
+  return heldDecorations(state).map((held) => {
+    const shown = shownDecoration(held);
+    return { ...shown, color: colorInModes(state, shown.color) };
+  });
+}
+
+/**
+ * An underline color as a text shows it: a bound paint takes its variable's value and alpha in the
+ * modes the text reads and keeps its binding (RD14).
+ */
+function colorInModes(state: NodeState, color: TextDecorationColor | null): TextDecorationColor | null {
+  const id = color === null || color.value === "AUTO" ? undefined : color.value.boundVariables?.color?.id;
+  if (color === null || color.value === "AUTO" || id === undefined) {
+    return color;
+  }
+  const { r, g, b, a } = resolveColor(state.file, variableState(state.file, id), state);
+  return { value: { ...color.value, color: { r, g, b }, opacity: a } };
+}
+
+/**
+ * Note a range decoration or link write on a sublayer an instance shows as overrides of its
+ * `characters` and `styledTextSegments`, as RD8 listed them for a range underline. The sublayer
+ * keeps the characters it shows. No probe wrote a range link on an instance, so its case follows
+ * RD8 by analogy.
+ */
+function overrideRangeStyles(state: NodeState): void {
+  if (sourceOf(state) === undefined) {
+    return;
+  }
+  state.characters = charactersOf(state);
+  markOverride(state, "characters");
+  markOverride(state, "styledTextSegments");
+}
+
+/** The value some characters share, or `figma.mixed` where any two differ. */
+function sharedValue<Value>(values: readonly Value[]): Value | PluginAPI["mixed"] {
+  const [first, ...rest] = values;
+  return first === undefined || rest.some((value) => JSON.stringify(value) !== JSON.stringify(first))
+    ? MIXED
+    : first;
+}
+
+/**
+ * An underline field the underlined characters share, `figma.mixed` where any two differ, or null
+ * where none is underlined. On 2026-11-21 a text underlined on `Pay now` alone read that range's
+ * offset as its whole `textDecorationOffset` (RD1), and two ranges' colors read mixed (RD11).
+ */
+function sharedUnderlineField<Field extends keyof Omit<CharacterDecoration, "line">>(
+  state: NodeState,
+  field: Field
+): CharacterDecoration[Field] | PluginAPI["mixed"] {
+  const underlined = characterDecorations(state).filter((decoration) => decoration.line === "UNDERLINE");
+  return underlined.length === 0 ? null : sharedValue(underlined.map((decoration) => decoration[field]));
+}
+
+/** Figma's refusal of an underline field on characters that draw no underline (RD1b, RD13b). */
+function notUnderlined(call: string, field: UnderlineField): Error {
+  return new Error(
+    `in ${call}: Cannot set text decoration ${FIELD_WORD[field]} on a non-underlined text range`
+  );
+}
+
+/**
+ * Write one underline field on a range, whose characters must all be underlined (RD1b). On
+ * 2026-11-21 the fields a range write gave stayed through `fontName` and `fontSize` writes (RD2).
+ *
+ * @param what - The write, for the font error, such as `an underline offset 3-5`.
+ */
+function writeRangeUnderlineField<Field extends UnderlineField>(
+  state: NodeState,
+  start: number,
+  end: number,
+  field: Field,
+  value: NonNullable<NodeState[Field]>,
+  what: string
+): void {
+  requireRange(state, start, end);
+  for (const font of distinctFonts(shownStyles(state).slice(start, end))) {
+    requireFont(state, font, what);
+  }
+  if (
+    heldDecorations(state)
+      .slice(start, end)
+      .some((held) => held.line !== "UNDERLINE")
+  ) {
+    throw notUnderlined(`setRangeT${field.slice(1)}`, field);
+  }
+  write(state, what);
+  overrideRangeStyles(state);
+  const layer = layerDecoration(state);
+  restyle(state, start, end, (style) => ({
+    ...style,
+    decoration: { ...(style.decoration ?? layer), [CHARACTER_FIELD[field]]: value },
+  }));
+}
+
+/**
+ * Write one underline field on the whole text. Figma refuses `figma.mixed`, needs the text's fonts,
+ * and refuses a text with no underlined character (RD13b). The text remembers the value, and so does
+ * each character with a decoration of its own, underlined or not (RD9, RD11, RD12).
  *
  * @param state - The text's state.
  * @param field - The field.
@@ -1419,11 +1571,34 @@ function writeUnderlineField<Field extends UnderlineField>(
   if (value === MIXED) {
     throw new Error(`Cannot write figma.mixed as ${what}.`);
   }
+  if (characterDecorations(state).every((decoration) => decoration.line !== "UNDERLINE")) {
+    throw notUnderlined(`set_${field}`, field);
+  }
   requireHeldFonts(state, field);
   write(state, field);
-  if (state.textDecoration === "UNDERLINE") {
-    state[field] = value;
-  }
+  holdStyles(state);
+  state[field] = value;
+  restyleWhole(state, (style) =>
+    style.decoration === undefined
+      ? style
+      : { ...style, decoration: { ...style.decoration, [CHARACTER_FIELD[field]]: value } }
+  );
+}
+
+/** The link each character a text shows: the one a range write gave it, or the layer's (rule 66). */
+function characterLinks(state: NodeState): readonly (HyperlinkTarget | null)[] {
+  const layer = textLayerOf(state).hyperlink;
+  return shownStyles(state).map((style) => (style.hyperlink === undefined ? layer : style.hyperlink));
+}
+
+/**
+ * Whether Figma takes a URL as a link: an absolute `http` or `https` URL. On 2026-11-21
+ * `setRangeHyperlink` stored `https://example.com/pay?id=4821` as written and refused `#invoice-4821`
+ * and `/invoices/1042` with `Unsupported or invalid hyperlink url` (RH1, RH2). The probe wrote no
+ * other scheme, so the fake refuses every other one.
+ */
+function isLinkUrl(value: string): boolean {
+  return /^https?:\/\/[^/?#\s]/iu.test(value);
 }
 
 /**
@@ -1508,18 +1683,45 @@ class FakeText extends FakeSceneNode {
     remeasure(state);
   }
 
-  /** The whole text's link, or null for none (rule 66). */
-  get hyperlink(): HyperlinkTarget | null {
-    const link = live(this).hyperlink;
-    return link === null ? null : { ...link };
+  /** The link every character shows, null for none, `figma.mixed` where they differ (rule 66, RH1). */
+  get hyperlink(): HyperlinkTarget | null | PluginAPI["mixed"] {
+    const link = sharedValue(characterLinks(live(this)));
+    return link === null || link === MIXED ? link : { ...link };
   }
 
-  /** Link the whole text, which needs the fonts it holds (rule 66). */
+  /**
+   * Link the whole text, which needs the fonts it holds and gives every character the link, so a
+   * null clears every range's (rule 66, RH6).
+   */
   set hyperlink(value: HyperlinkTarget | null) {
     const state = live(this);
     requireHeldFonts(state, "hyperlink");
     write(state, "hyperlink");
+    holdStyles(state);
     state.hyperlink = value === null ? null : { type: value.type, value: value.value };
+    restyleWhole(state, ({ hyperlink: _ranged, ...style }) => style);
+  }
+
+  /**
+   * Link a range, which needs the range's fonts, to an absolute `http` or `https` URL, or to none
+   * with null (rule 66, RH1 to RH3).
+   */
+  setRangeHyperlink(start: number, end: number, value: HyperlinkTarget | null): void {
+    const state = live(this);
+    requireRange(state, start, end);
+    if (value !== null && value.type !== "URL") {
+      throw new Error("The fake Figma file models no link to a node.");
+    }
+    if (value !== null && !isLinkUrl(value.value)) {
+      throw new Error("in setRangeHyperlink: Unsupported or invalid hyperlink url");
+    }
+    for (const font of distinctFonts(shownStyles(state).slice(start, end))) {
+      requireFont(state, font, `hyperlink ${start}-${end}`);
+    }
+    write(state, `hyperlink ${start}-${end}`);
+    overrideRangeStyles(state);
+    const link = value === null ? null : { type: value.type, value: value.value };
+    restyle(state, start, end, (style) => ({ ...style, hyperlink: link }));
   }
 
   /** The linked local text style's id, or the empty string for none (rule 60). */
@@ -1592,10 +1794,17 @@ class FakeText extends FakeSceneNode {
     state.letterSpacing = { unit: value.unit, value: f32(value.value) };
   }
 
+  /** The line every character draws, `figma.mixed` where the characters differ (rule 68). */
   get textDecoration(): TextDecoration | PluginAPI["mixed"] {
-    return live(this).textDecoration;
+    return sharedValue(characterDecorations(live(this)).map((decoration) => decoration.line));
   }
 
+  /**
+   * A whole write gives every character the line and keeps the underline fields each remembers. On
+   * 2026-11-21 a whole NONE cleared a range's underline, and a whole UNDERLINE then showed the range's
+   * blue color again beside `AUTO` on the rest (RD4, RD4b), and a main's whole STRIKETHROUGH reached
+   * its instance (RD7) (rule 68).
+   */
   set textDecoration(value: TextDecoration | PluginAPI["mixed"]) {
     const state = live(this);
     if (value === MIXED) {
@@ -1603,39 +1812,90 @@ class FakeText extends FakeSceneNode {
     }
     requireHeldFonts(state, "textDecoration");
     write(state, "textDecoration");
+    holdStyles(state);
     state.textDecoration = value;
-    if (value === "UNDERLINE") {
-      state.textDecorationOffset ??= { unit: "AUTO" };
-      state.textDecorationThickness ??= { unit: "AUTO" };
-      state.textDecorationColor ??= { value: "AUTO" };
-    } else {
-      state.textDecorationOffset = null;
-      state.textDecorationThickness = null;
-      state.textDecorationColor = null;
-    }
+    restyleWhole(state, (style) =>
+      style.decoration === undefined ? style : { ...style, decoration: { ...style.decoration, line: value } }
+    );
   }
 
-  /** Figma holds an underline offset only while the layer is underlined. */
+  /**
+   * The range's fonts need loading, and the write leaves the base style. A character the write
+   * underlines shows the fields it remembers, `AUTO` where it holds none (rule 68, RD1, RD10).
+   */
+  setRangeTextDecoration(start: number, end: number, value: TextDecoration): void {
+    const state = live(this);
+    requireRange(state, start, end);
+    for (const font of distinctFonts(shownStyles(state).slice(start, end))) {
+      requireFont(state, font, `textDecoration ${start}-${end}`);
+    }
+    write(state, `textDecoration ${start}-${end}`);
+    overrideRangeStyles(state);
+    const layer = layerDecoration(state);
+    restyle(state, start, end, (style) => ({
+      ...style,
+      decoration: { ...(style.decoration ?? layer), line: value },
+    }));
+  }
+
+  /** An offset written on a range, whose characters must be underlined (rule 68). */
+  setRangeTextDecorationOffset(start: number, end: number, value: TextDecorationOffset): void {
+    writeRangeUnderlineField(
+      live(this),
+      start,
+      end,
+      "textDecorationOffset",
+      value,
+      `an underline offset ${start}-${end}`
+    );
+  }
+
+  /** A thickness written on a range, whose characters must be underlined (rule 68). */
+  setRangeTextDecorationThickness(start: number, end: number, value: TextDecorationThickness): void {
+    writeRangeUnderlineField(
+      live(this),
+      start,
+      end,
+      "textDecorationThickness",
+      value,
+      `an underline thickness ${start}-${end}`
+    );
+  }
+
+  /** A color written on a range, whose characters must be underlined (rule 68). */
+  setRangeTextDecorationColor(start: number, end: number, value: TextDecorationColor): void {
+    const stored = value.value === "AUTO" ? value : { value: storeSolidPaint(value.value) };
+    writeRangeUnderlineField(
+      live(this),
+      start,
+      end,
+      "textDecorationColor",
+      stored,
+      `an underline color ${start}-${end}`
+    );
+  }
+
+  /** The underline offset the underlined characters share, null where none is underlined (rule 68). */
   get textDecorationOffset(): TextDecorationOffset | PluginAPI["mixed"] | null {
-    return live(this).textDecorationOffset;
+    return sharedUnderlineField(live(this), "offset");
   }
 
   set textDecorationOffset(value: TextDecorationOffset | PluginAPI["mixed"] | null) {
     writeUnderlineField(live(this), "textDecorationOffset", value, "an underline offset");
   }
 
-  /** Figma holds an underline thickness only while the layer is underlined. */
+  /** The underline thickness the underlined characters share, null where none is underlined (rule 68). */
   get textDecorationThickness(): TextDecorationThickness | PluginAPI["mixed"] | null {
-    return live(this).textDecorationThickness;
+    return sharedUnderlineField(live(this), "thickness");
   }
 
   set textDecorationThickness(value: TextDecorationThickness | PluginAPI["mixed"] | null) {
     writeUnderlineField(live(this), "textDecorationThickness", value, "an underline thickness");
   }
 
-  /** Figma holds an underline color only while the layer is underlined. */
+  /** The underline color the underlined characters share, null where none is underlined (rule 68). */
   get textDecorationColor(): TextDecorationColor | PluginAPI["mixed"] | null {
-    return live(this).textDecorationColor;
+    return sharedUnderlineField(live(this), "color");
   }
 
   set textDecorationColor(value: TextDecorationColor | PluginAPI["mixed"] | null) {
@@ -1749,20 +2009,42 @@ class FakeText extends FakeSceneNode {
     fitInstanceToText(state, before);
   }
 
-  /** The runs of characters whose `fontName`, `fontSize`, `boundVariables` and `fills` agree (rules 50 and 65). */
+  /**
+   * The runs of characters whose `fontName`, `fontSize`, `boundVariables`, `fills`, decoration
+   * fields and `hyperlink` agree (rules 50, 65, 66 and 68).
+   */
   getStyledTextSegments(
     fields: readonly (keyof Omit<StyledTextSegment, "characters" | "start" | "end">)[],
     start?: number,
     end?: number
   ): Pick<
     StyledTextSegment,
-    "characters" | "start" | "end" | "fontName" | "fontSize" | "boundVariables" | "fills"
+    | "characters"
+    | "start"
+    | "end"
+    | "fontName"
+    | "fontSize"
+    | "boundVariables"
+    | "fills"
+    | "textDecoration"
+    | "textDecorationOffset"
+    | "textDecorationThickness"
+    | "textDecorationColor"
+    | "hyperlink"
   >[] {
     const state = live(this);
-    const unmodelled = fields.filter(
-      (field) =>
-        field !== "fontName" && field !== "fontSize" && field !== "boundVariables" && field !== "fills"
-    );
+    const modelled: ReadonlySet<string> = new Set([
+      "fontName",
+      "fontSize",
+      "boundVariables",
+      "fills",
+      "textDecoration",
+      "textDecorationOffset",
+      "textDecorationThickness",
+      "textDecorationColor",
+      "hyperlink",
+    ]);
+    const unmodelled = fields.filter((field) => !modelled.has(field));
     if (unmodelled.length > 0) {
       throw new Error(`The fake Figma file does not model the segment fields ${unmodelled.join(", ")}.`);
     }
@@ -1775,28 +2057,34 @@ class FakeText extends FakeSceneNode {
     requireRange(state, from, to);
     const styles = shownStyles(state);
     const painted = characterFills(state);
+    const decorations = characterDecorations(state);
+    const linked = characterLinks(state);
     const segments: {
       readonly start: number;
       end: number;
       readonly style: CharacterStyle;
       readonly fills: readonly Paint[];
+      readonly decoration: CharacterDecoration;
+      readonly hyperlink: HyperlinkTarget | null;
       readonly key: string;
     }[] = [];
     for (let index = from; index < to; index += 1) {
       const style = styles[index];
       const fills = painted[index];
-      if (style === undefined || fills === undefined) {
+      const decoration = decorations[index];
+      const hyperlink = linked[index];
+      if (style === undefined || fills === undefined || decoration === undefined || hyperlink === undefined) {
         throw new Error(`${state.id} holds no style for its character ${index}.`);
       }
-      const key = segmentKey(style, fills, fields);
+      const key = segmentKey(style, fills, decoration, hyperlink, fields);
       const last = segments.at(-1);
       if (last?.key === key) {
         last.end = index + 1;
       } else {
-        segments.push({ start: index, end: index + 1, style, fills, key });
+        segments.push({ start: index, end: index + 1, style, fills, decoration, hyperlink, key });
       }
     }
-    // Each segment holds the four modelled fields, the ones asked for among them.
+    // Each segment holds every modelled field, the ones asked for among them.
     return segments.map((segment) => ({
       characters: characters.slice(segment.start, segment.end),
       start: segment.start,
@@ -1805,6 +2093,11 @@ class FakeText extends FakeSceneNode {
       fontSize: segment.style.fontSize,
       boundVariables: segmentBindings(segment.style),
       fills: [...segment.fills],
+      textDecoration: segment.decoration.line,
+      textDecorationOffset: segment.decoration.offset,
+      textDecorationThickness: segment.decoration.thickness,
+      textDecorationColor: segment.decoration.color,
+      hyperlink: segment.hyperlink === null ? null : { ...segment.hyperlink },
     }));
   }
 
