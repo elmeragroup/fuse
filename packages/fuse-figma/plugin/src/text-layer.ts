@@ -9,6 +9,7 @@ import type {
   LineHeightSpec,
   NumberSpec,
   TextLayerSpec,
+  TextRange,
   TextSizingSpec,
 } from "../../src/components/kit-spec.ts";
 import type { PropertyIds } from "./child-layers.ts";
@@ -29,7 +30,7 @@ import {
 } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
 import { fontFor, fontsOf, requireFont } from "./fonts.ts";
-import { baseCharacters, planGlyphRanges } from "./glyph-font.ts";
+import { baseCharacters, labelRuns, planGlyphRanges } from "./glyph-font.ts";
 import { change, recordsAny } from "./plan.ts";
 
 /** The text fields that pick a font's style, which the spec sets as a literal. */
@@ -74,7 +75,12 @@ function planTextNumber(
     if (binding !== run.figma.mixed && binding?.id === variable.id) {
       return;
     }
-    change(run.plan, label, `${name} → ${spec.variable.name}`, () => text.setBoundVariable(name, variable));
+    change(run.plan, label, `${name} → ${spec.variable.name}`, () => {
+      text.setBoundVariable(name, variable);
+      // A character with a family state of its own takes the value but not the binding (rule 55,
+      // FT2), so the text is bound again on any run that still lacks it.
+      bindRuns(run, text, name, variable, [{ start: 0, end: text.characters.length }]);
+    });
     return;
   }
   if (binding === null && matches(spec.value)) {
@@ -95,6 +101,8 @@ function planTextNumber(
  *
  * @param rewrites - Whether the run writes or links the label's characters, which then take the
  *   style of a character a glyph range may hold, so every character counts.
+ * @param rebinds - Whether the run binds the label's family, which needs every character in the
+ *   label's style first.
  * @returns Whether the plan replaces the label's font.
  */
 function planFont(
@@ -103,7 +111,8 @@ function planFont(
   label: string,
   spec: TextLayerSpec,
   fontName: FontName,
-  rewrites: boolean
+  rewrites: boolean,
+  rebinds: boolean
 ): boolean {
   // The glyph ranges take the glyph font, so the label's own font holds the other characters.
   const holds =
@@ -112,7 +121,13 @@ function planFont(
       : text.fontName === run.figma.mixed
         ? undefined
         : [text.fontName];
+  // A family binding gives a glyph range with no family state of its own the label's family in the
+  // range's own style (FT2), a face the run does not load where that style is not the label's. The
+  // font write gives every character the label's style first.
+  const restyles =
+    rebinds && baseCharacters(run, text, true).some((character) => character.font.style !== fontName.style);
   const differs =
+    restyles ||
     holds === undefined ||
     holds.some((font) => font.family !== fontName.family || font.style !== fontName.style);
   // The spec sets the style as a literal, and the family too unless it binds one. A variable
@@ -163,7 +178,11 @@ export function planText(
       requireFont(run, label, font);
     }
   }
-  const replaced = planFont(run, text, label, spec, fontName, writesCharacters(text, spec, propertyIds));
+  const rewrites = writesCharacters(text, spec, propertyIds);
+  const family = spec.fontFamily;
+  const rebinds =
+    family.kind === "variable" && !bindsFamily(run, text, run.variables.variable(family.variable), rewrites);
+  const replaced = planFont(run, text, label, spec, fontName, rewrites, rebinds);
   planScalar(run, label, "name", text.name, spec.name, () => {
     text.name = spec.name;
   });
@@ -487,7 +506,8 @@ function bindsFamily(run: Run, text: TextNode, variable: Variable, rewrites: boo
  * instance resets it (G5).
  *
  * @param characters - The characters the label shows once the run's earlier operations have run.
- * @param rewritten - Whether an earlier operation of the run writes the font of every character.
+ * @param rewritten - Whether an earlier operation of the run writes the font of every character or
+ *   binds the label's family.
  */
 export function planGlyphFaces(
   run: Run,
@@ -513,15 +533,67 @@ export function planGlyphFaces(
 }
 
 /**
+ * Plan the label's family binding where a character it keeps does not bind the variable, and bind
+ * on its own each run outside the glyph ranges that the whole binding leaves as it was.
+ *
+ * @returns Whether the plan binds it.
+ */
+function planFamily(
+  run: Run,
+  text: TextNode,
+  label: string,
+  family: Extract<TextLayerSpec["fontFamily"], { readonly kind: "variable" }>,
+  rewrites: boolean
+): boolean {
+  const variable = run.variables.variable(family.variable);
+  if (bindsFamily(run, text, variable, rewrites)) {
+    return false;
+  }
+  change(run.plan, label, `fontFamily → ${family.variable.name}`, () => {
+    text.setBoundVariable("fontFamily", variable);
+    // A character with a family state of its own keeps its font and its binding or none through the
+    // whole binding (FT6, FT7), so each run outside the glyph ranges is bound again where it lacks it.
+    bindRuns(run, text, "fontFamily", variable, labelRuns(run, text.characters));
+  });
+  return true;
+}
+
+/**
+ * Bind a text field on each range that still binds no variable or another one after a whole binding,
+ * as the text reads when the operation runs.
+ *
+ * @param ranges - The ranges to bind, each as one run.
+ */
+function bindRuns(
+  run: Run,
+  text: TextNode,
+  field: VariableBindableTextField,
+  variable: Variable,
+  ranges: readonly TextRange[]
+): void {
+  for (const range of ranges.filter((each) => each.end > each.start)) {
+    const bound = text.getRangeBoundVariable(range.start, range.end, field);
+    if (bound === run.figma.mixed || bound?.id !== variable.id) {
+      text.setRangeBoundVariable(range.start, range.end, field, variable);
+    }
+  }
+}
+
+/**
  * Plan a text's typography, its characters among them, then the glyph font on its glyph ranges, which
  * a font write or new or linked characters before it reset (G3, G8). A family binding gives every
  * character the variable's family and binds it, apart from a character with a family state of its
  * own: a range family binding set it, or a range font write or a null range binding dropped its
- * binding, and every character does not yet hold one style (G10, FT2, FT6, FT7). It comes after
- * the font write `planFont` plans. `planGlyphRanges` compares the ranges as they read before the
- * binding runs, which holds only while each glyph range it leaves alone lost its binding to the range
- * write that drew it after an earlier binding. A glyph range in the glyph font that never held a
- * binding would take the label's family.
+ * binding, and every character does not yet hold one style (G10, FT2, FT6, FT7). So the family, size
+ * and line height bindings come after the characters. A whole Roboto write over `⌘K` leaves `⌘`
+ * unbound and `K` bound, and `⌘` keeps its state. Writing `⌘B` then gives both characters `⌘`'s
+ * unbound style and clears the state, and the binding after it binds both (FT1, FT6). Bound before the
+ * characters, it would skip `⌘`, whose unbound style `B` would then take. A family binding can give
+ * the label's family to a glyph range that holds no state, so the run writes every glyph range again
+ * after one. A character with a state of its own keeps its family through a whole binding and takes
+ * a size or line height without the binding, so `bindRuns` binds such runs on their own after each
+ * whole binding, and `planFont` gives every character the label's style first where a glyph range
+ * holds another.
  *
  * @param replaced - Whether the plan writes the label's font first.
  */
@@ -535,34 +607,42 @@ function planTypography(
   replaced: boolean
 ): void {
   const rewrites = writesCharacters(text, spec, propertyIds);
-  if (spec.fontFamily.kind === "variable") {
-    const variable = run.variables.variable(spec.fontFamily.variable);
-    if (!bindsFamily(run, text, variable, rewrites)) {
-      change(run.plan, label, `fontFamily → ${spec.fontFamily.variable.name}`, () =>
-        text.setBoundVariable("fontFamily", variable)
-      );
-    }
+  const planSize = (): void =>
+    planTextNumber(
+      run,
+      text,
+      label,
+      "fontSize",
+      spec.fontSize,
+      (value) => text.fontSize !== run.figma.mixed && near(text.fontSize, value),
+      (value) => {
+        text.fontSize = value;
+      }
+    );
+  // A literal size or line height goes in before the characters, which a new text hugs at it.
+  if (spec.fontSize.kind !== "variable") {
+    planSize();
   }
-  planTextNumber(
-    run,
-    text,
-    label,
-    "fontSize",
-    spec.fontSize,
-    (value) => text.fontSize !== run.figma.mixed && near(text.fontSize, value),
-    (value) => {
-      text.fontSize = value;
-    }
-  );
-  planLineHeight(run, text, label, spec.lineHeight);
+  if (spec.lineHeight.kind !== "variable") {
+    planLineHeight(run, text, label, spec.lineHeight);
+  }
   planLetterSpacing(run, text, label, spec);
   planDecoration(run, text, label, spec, "read");
   // A new text hugs its characters, and an empty one is 0 wide, which a fill never widens (PZ), so
   // the characters go in before the layout.
   planCharacters(run, text, label, spec, propertyIds);
+  const bindsLabelFamily =
+    spec.fontFamily.kind === "variable" && planFamily(run, text, label, spec.fontFamily, rewrites);
+  if (spec.fontSize.kind === "variable") {
+    planSize();
+  }
+  if (spec.lineHeight.kind === "variable") {
+    planLineHeight(run, text, label, spec.lineHeight);
+  }
   // New or linked characters reset the ranges too (G3), and `planFont` then counts the ranges' glyph
-  // font among the label's own, so a text that holds a range gets a font write first.
-  planGlyphFaces(run, text, label, spec, spec.characters, replaced);
+  // font among the label's own, so a text that holds a range gets a font write first. A family
+  // binding can give a glyph range the label's family, so the ranges go on again after one.
+  planGlyphFaces(run, text, label, spec, spec.characters, replaced || bindsLabelFamily);
   planTextLayout(run, text, label, spec, parent);
   const { horizontal, vertical } = spec.align;
   planScalar(run, label, "textAlignHorizontal", text.textAlignHorizontal, horizontal, () => {
