@@ -9,7 +9,7 @@
 import { isDeepStrictEqual } from "node:util";
 
 import { HALF_TURN_MIRRORS } from "./glyph-mirrors";
-import { drawsAtOwnWidth } from "./hugging-rows";
+import type { SettledRoot } from "./hugging-rows";
 import { outOfLayout, ringFill, solidSides } from "./kit-spec";
 import type {
   BoxSpec,
@@ -99,8 +99,8 @@ type Found = {
   aligned: { readonly override: InstanceOverride; readonly at: number } | undefined;
   /** The root's widest width built in place, where only it among the root's limits differs. */
   maxWidth: NumberSpec | undefined;
-  /** The sizing of the inner root built in place, which the instance takes. */
-  readonly root: SizingSpec;
+  /** The sizing the instance takes and the text sizings that draw alike in it, settled before the walk. */
+  readonly root: SettledRoot;
   readonly text: Map<string, string>;
   readonly swap: Map<string, string>;
   readonly nested: NestedPropertiesSpec[];
@@ -136,11 +136,15 @@ type Found = {
  * - The root's widest width becomes the instance's own `maxWidth` where only it among the root's
  *   limits differs, as a chip value's `max-w-56` caps its Button, as the instance carries a popup
  *   row's `minWidth` (PH3).
- * - The root's sizing is the instance's, whatever the outer layout makes of each axis: a fill, a
- *   length or a hug (N4). The layers inside guard it, since a layer that sizes against the root's
- *   length draws another way where that length changes.
- * - A text the variant fills across, a direct child of a root the instance hugs, draws at its own
- *   width, as the text built in place hugs (PH2).
+ * - The instance takes the sizing `settleInstanceRoot` in `hugging-rows.ts` settles before the walk:
+ *   the root's built in place, whatever the outer layout makes of each axis, a fill, a length or a
+ *   hug (N4), or across the variant's where a column stretches a root around one word. The layers
+ *   inside guard it, since a layer that sizes against the root's length draws another way where that
+ *   length changes.
+ * - A text's sizing draws as the variant's where the settled root says so: a text the variant fills
+ *   across, a direct child of a root the instance hugs, draws at its own width, as the text built in
+ *   place hugs (PH2), and the one word of a root the instance hugs as the variant's does draws as
+ *   the variant's hugging text.
  * - An exposed instance inside the root that differs only in TEXT values, its own or those of exposed
  *   instances inside it, carries them as nested values at its key path, since Figma sets an exposed
  *   instance's TEXT property through exposure at any depth (PN).
@@ -155,13 +159,19 @@ type Found = {
  *
  * @param inPlace - The inner root, built below the outer parts with the outer `className` merged in.
  * @param variant - The inner variant's root, as the inner set holds it.
+ * @param root - The sizing the instance takes and the texts that draw alike, as
+ *   `settleInstanceRoot` settles them.
  * @returns The property values, overrides and sizing the instance carries, and what it cannot.
  */
-export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootSpec): InstanceDiff {
+export function diffInstance(
+  inPlace: ComponentRootSpec,
+  variant: ComponentRootSpec,
+  root: SettledRoot
+): InstanceDiff {
   const found: Found = {
     aligned: undefined,
     maxWidth: undefined,
-    root: inPlace.sizing,
+    root,
     text: new Map(),
     swap: new Map(),
     nested: [],
@@ -183,7 +193,7 @@ export function diffInstance(inPlace: ComponentRootSpec, variant: ComponentRootS
       carried === undefined
         ? found.overrides
         : [...found.overrides.slice(0, carried.at), carried.override, ...found.overrides.slice(carried.at)],
-    sizing: inPlace.sizing,
+    sizing: root.sizing,
     mirrored: found.mirrored,
     unmapped: carried === undefined ? found.unmapped : [],
   };
@@ -487,8 +497,8 @@ function diffText(
       if (!isDeepStrictEqual(inPlace.color, variant.color)) {
         found.overrides.push({ path, field: "textColor", color: inPlace.color });
       }
-    } else if (field === "sizing" && drawsAtOwnWidth(found.root, path, inPlace.sizing, variant.sizing)) {
-      // The variant's filling text draws at its own width once the instance hugs (PH2).
+    } else if (field === "sizing" && found.root.textsAlike(path, inPlace.sizing, variant.sizing)) {
+      // The two sizings draw alike inside the instance's settled sizing (PH2).
       continue;
     } else if (field === "fontStyle" && literalFace(inPlace, variant)) {
       // An operator segment's `font-normal` shows Regular where Button's label is Medium.

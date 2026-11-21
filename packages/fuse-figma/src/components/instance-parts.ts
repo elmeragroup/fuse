@@ -36,7 +36,10 @@ import type {
 } from "./component-spec";
 import type { RecordedRow } from "./coverage";
 import type { Origin } from "./coverage-log";
+import { normalizeCss } from "./css-values";
 import { instancePartsOf, instanceRootSlotOf } from "./definition-parts";
+import { settleInstanceRoot } from "./hugging-rows";
+import type { InstancePlace } from "./hugging-rows";
 import { diffInstance } from "./instance-diff";
 import type { InstanceDiff, InstanceDifference } from "./instance-diff";
 import type {
@@ -48,6 +51,7 @@ import type {
   InstancePropertiesSpec,
   VariantSpec,
 } from "./kit-spec";
+import { neverWraps } from "./label-layout";
 import type { Declaration, Feed, FeedTarget, InPlace, Recorder, SpecField } from "./layer-style";
 import { prepareParts } from "./part-preparation";
 import { PaintedInstances } from "./stacking";
@@ -271,9 +275,10 @@ export class InstanceParts {
    *
    * @param cascaded - The part, as {@link cascade} left it.
    * @param room - What the part's parent gives it on each axis.
+   * @param place - Where the part sits in its parent, which settles the instance's sizing.
    * @returns The instance layer, and what it paints.
    */
-  map(cascaded: CascadedInstance, room: Room): MappedInstance {
+  map(cascaded: CascadedInstance, room: Room, place: InstancePlace): MappedInstance {
     const { visit, cascade } = cascaded;
     const { part, variant } = visit;
     const scope: MapScope = {
@@ -286,13 +291,21 @@ export class InstanceParts {
       painted: new PaintedInstances(),
       translates: new WeakMap(),
     };
+    const built = mapBox(part.of, cascade, scope, room, prepareParts(part.of, cascade, scope));
     const root: ComponentRootSpec = {
       name: part.of.slot,
-      ...mapBox(part.of, cascade, scope, room, prepareParts(part.of, cascade, scope)),
+      ...built,
       // The inner root clips in place as its own set draws it.
       clips: variant.root.clips,
     };
-    const diff = diffInstance(root, variant.root);
+    // The sizing settles on what the root's own style clips in place.
+    const width = normalizeCss(cascade.style.resolved("width") ?? "auto");
+    const maximum = normalizeCss(cascade.style.resolved("max-width") ?? "none");
+    const settled = settleInstanceRoot({ ...root, clips: built.clips }, variant.root, place, {
+      neverWraps: (characters) => neverWraps(cascade.style, characters),
+      fitsItsLine: ["fit-content", "max-content", "min-content"].includes(width) && maximum === "none",
+    });
+    const diff = diffInstance(root, variant.root, settled);
     visit.diffs.push(diff);
     const properties = propertiesOf(diff, visit.booleans);
     const plain: InstanceLayerSpec = {

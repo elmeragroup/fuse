@@ -1345,10 +1345,14 @@ const WORD_BREAKING = ["word-break", "line-break", "hyphens", "overflow-wrap"] a
 
 /**
  * Whether a browser never wraps a text: it holds no soft wrap opportunity, and the box sets nothing
- * that breaks inside a word. Such a text sets one line at its own width whatever room the box gives
- * it.
+ * that breaks inside a word, itself or through a box around it. Such a text sets one line at its own
+ * width whatever room the box gives it.
+ *
+ * @param style - The style of the box that holds the text.
+ * @param characters - The text.
+ * @returns True where the text never wraps.
  */
-function neverWraps(style: LayerStyle, characters: string): boolean {
+export function neverWraps(style: LayerStyle, characters: string): boolean {
   return UNBREAKABLE.test(characters) && WORD_BREAKING.every((property) => !style.has(property));
 }
 
