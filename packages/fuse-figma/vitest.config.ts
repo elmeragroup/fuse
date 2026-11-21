@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 /**
  * The test and hook timeout, a hang guard rather than a speed budget: it only has to catch a test
@@ -14,14 +14,17 @@ const HANG_GUARD_MS = 600_000;
 export default defineConfig({
   test: {
     environment: "node",
-    // The suites a worker runs share one module registry, so a worker imports the kit's modules
-    // once and builds the kit twice apart: the component sets alone (`test/built-kit.ts`) and the
-    // full kit the fake-file suites apply (`plugin/src/kit-fixture.ts`), which applies the full kit
-    // and each cut kit to the fake file once. The shared kit fixtures are deep frozen
-    // (`test/frozen.ts`), each test gets a fork of an applied file (`plugin/src/kit-fixture.ts`), no
-    // suite mocks a module or stubs a global, and no module the suites import keeps state of its own
-    // between calls.
+    // The suites a worker runs share one module registry, so the component sets (`test/built-kit.ts`)
+    // and the full kit (`fullKit()` in `plugin/test-support/kit-cache.ts`) resolve once per worker.
+    // Where the kit comes from is the setup's choice (`plugin/test-support/kit-setup.ts`). Both are
+    // deep frozen (`plugin/test-support/frozen.ts`), a test that calls `appliedFile()`
+    // (`plugin/src/kit-fixture.ts`) gets its own fork of the applied file, no suite mocks a module or
+    // stubs a global, and no module the suites import keeps state of its own between calls.
     isolate: false,
+    globalSetup: ["plugin/test-support/kit-setup.ts"],
+    // The fake-file suites reach the kit cache through a path the plugin's type check does not read,
+    // and nothing imports the setup, so `vitest related` would select none of their consumers.
+    forceRerunTriggers: [...configDefaults.forceRerunTriggers, "**/plugin/test-support/kit-*.ts"],
     testTimeout: HANG_GUARD_MS,
     hookTimeout: HANG_GUARD_MS,
     include: ["src/**/*.test.ts", "test/**/*.test.ts", "plugin/src/**/*.test.ts"],

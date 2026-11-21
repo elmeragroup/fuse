@@ -55,7 +55,7 @@
  * component replaces that layer, which is the fake's reading of how Figma ties overrides to layers.
  */
 
-import { deepFrozen } from "../../../test/frozen.ts";
+import { deepFrozen } from "../../test-support/frozen.ts";
 import { shownBinding } from "./modes.ts";
 import { EFFECT_FIELD_TYPES, isStoredNumber, numberOwner, sourceOf, stylesOf } from "./state.ts";
 import type { CharacterStyle, NodeState, StoredNumberField } from "./state.ts";

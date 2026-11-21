@@ -4,12 +4,11 @@
  * has frozen, which a published library's instances follow, written by `figma:keys` and reviewed in
  * each PR that adds to it.
  */
-import { NodeServices } from "@effect/platform-node";
 import { describe, expect, it } from "@effect/vitest";
-import { Effect, Result } from "effect";
+import { Result } from "effect";
 import { readFileSync } from "node:fs";
 
-import { buildKit } from "../src/components/build-kit.ts";
+import { fullKit } from "../plugin/test-support/kit-cache.ts";
 import { appendKeys, frozenKeys, keyDrift, NO_KEYS, parseFrozenKeys } from "../src/components/frozen-keys.ts";
 import type { FrozenKeys } from "../src/components/frozen-keys.ts";
 import type { KitSpec } from "../src/components/kit-spec.ts";
@@ -23,12 +22,9 @@ function frozen(): FrozenKeys {
   return parsed.success;
 }
 
-let built: Promise<KitSpec> | undefined;
-
-/** The kit as `figma:plugin` builds it, built once for the file. */
+/** The kit as `figma:plugin` builds it, the one the fake-file suites apply. */
 async function kit(): Promise<KitSpec> {
-  built ??= Effect.runPromise(buildKit().pipe(Effect.provide(NodeServices.layer))).then(({ spec }) => spec);
-  return built;
+  return (await fullKit()).kit;
 }
 
 describe("the kit's frozen keys", () => {

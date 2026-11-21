@@ -7,6 +7,8 @@
 
 import type { Effect } from "effect";
 import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compileAst } from "tailwindcss";
 
@@ -70,20 +72,20 @@ export function buildConsumerCss(
   candidates: readonly string[],
   entry: AstNode[] = consumerEntry()
 ): Effect.Effect<AstNode[], KitSourceInvalid | KitToolFailed> {
+  // The test run's setup builds the kit in Vitest's module runner
+  // (`plugin/test-support/kit-setup.ts`), which cannot evaluate `import.meta.resolve`, so the
+  // sheets resolve through `require.resolve`. Both find the same files, because the four specifiers
+  // name plain paths with no import or require condition.
+  const { resolve } = createRequire(import.meta.url);
+  const fuseCss = resolve("@elmeragroup/fuse/css");
   const stylesheets = new Map<string, string>([
-    ["tailwindcss/theme.css", fileURLToPath(import.meta.resolve("tailwindcss/theme.css"))],
-    ["tailwindcss/preflight.css", fileURLToPath(import.meta.resolve("tailwindcss/preflight.css"))],
-    ["tailwindcss/utilities.css", fileURLToPath(import.meta.resolve("tailwindcss/utilities.css"))],
-    ["./fuse.css", fileURLToPath(import.meta.resolve("@elmeragroup/fuse/css"))],
+    ["tailwindcss/theme.css", resolve("tailwindcss/theme.css")],
+    ["tailwindcss/preflight.css", resolve("tailwindcss/preflight.css")],
+    ["tailwindcss/utilities.css", resolve("tailwindcss/utilities.css")],
+    ["./fuse.css", fuseCss],
     // `fuse.css` imports its private sheets from beside itself.
-    [
-      "./frame-variants.css",
-      fileURLToPath(new URL("frame-variants.css", import.meta.resolve("@elmeragroup/fuse/css"))),
-    ],
-    [
-      "./skeleton-reveal.css",
-      fileURLToPath(new URL("skeleton-reveal.css", import.meta.resolve("@elmeragroup/fuse/css"))),
-    ],
+    ["./frame-variants.css", join(dirname(fuseCss), "frame-variants.css")],
+    ["./skeleton-reveal.css", join(dirname(fuseCss), "skeleton-reveal.css")],
     [
       "tw-animate-css",
       fileURLToPath(new URL("../../node_modules/tw-animate-css/dist/tw-animate.css", import.meta.url)),

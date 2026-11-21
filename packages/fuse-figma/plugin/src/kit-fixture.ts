@@ -5,13 +5,9 @@
  * lists as it creates the pages and previews. `test/kit-inventory.ts` names the pages, sets and
  * previews.
  */
-import { Effect, Result } from "effect";
-import type { FileSystem, Layer } from "effect";
-
-import type { KitBuildError } from "../../src/components/build-errors.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";
-import type { AliasCycle, CollectionSpec, InvalidVariableSet, VariableSet } from "../../src/variable-set.ts";
-import { deepFrozen } from "../../test/frozen.ts";
+import type { CollectionSpec } from "../../src/variable-set.ts";
+import { deepFrozen } from "../test-support/frozen.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { keyOf } from "./identity.ts";
@@ -19,21 +15,10 @@ import { reconcileKit } from "./reconcile.ts";
 import type { ReconcileReport } from "./reconcile.ts";
 
 /**
- * The spec builder and the token sync import Node and Fuse modules that the plugin's type check
- * cannot follow, so the fixture loads them by paths the check does not read.
+ * The kit cache imports the spec builder, the token sync and Node modules, which the plugin's type
+ * check cannot follow, so the fixture loads it by a path the check does not read.
  */
-const SPEC_BUILDER = "../../src/components/build-kit.ts";
-const TOKEN_SYNC = "../../src/fuse-variable-set.ts";
-/** Node's file system for Effect, which the icon library's temporary directory needs. */
-const NODE_PLATFORM = "@effect/platform-node";
-
-type SpecBuilder = {
-  readonly buildKit: () => Effect.Effect<{ readonly spec: KitSpec }, KitBuildError, FileSystem.FileSystem>;
-};
-type NodePlatform = { readonly NodeFileSystem: { readonly layer: Layer.Layer<FileSystem.FileSystem> } };
-type TokenSync = {
-  readonly fuseVariableSet: () => Result.Result<VariableSet, InvalidVariableSet | AliasCycle>;
-};
+const KIT_CACHE = "../test-support/kit-cache.ts";
 
 /** The kit and the synced variables it binds. */
 type KitFixture = {
@@ -41,36 +26,20 @@ type KitFixture = {
   readonly collections: readonly CollectionSpec[];
 };
 
-let loaded: Promise<KitFixture> | undefined;
-
-async function load(): Promise<KitFixture> {
-  // SAFETY: the path names build-kit.ts, whose `buildKit` resolves to the kit and its coverage.
-  const builder = (await import(SPEC_BUILDER)) as SpecBuilder;
-  // SAFETY: the path names fuse-variable-set.ts, whose `fuseVariableSet` returns the set or why
-  // it does not build.
-  const sync = (await import(TOKEN_SYNC)) as TokenSync;
-  const variableSet = sync.fuseVariableSet();
-  if (Result.isFailure(variableSet)) {
-    throw new Error(`the Fuse variable set does not build: ${String(variableSet.failure)}`);
-  }
-  // SAFETY: the path names @effect/platform-node, whose NodeFileSystem.layer provides FileSystem.
-  const platform = (await import(NODE_PLATFORM)) as NodePlatform;
-  const { spec } = await Effect.runPromise(
-    builder.buildKit().pipe(Effect.provide(platform.NodeFileSystem.layer))
-  );
-  return deepFrozen({ kit: spec, collections: variableSet.success.collections });
-}
+type KitCache = { readonly fullKit: () => Promise<KitFixture> };
 
 /**
- * Build the kit and the variable set on the first call, deep frozen. The suites a Vitest worker runs
- * share one module registry (`vitest.config.ts`), so each worker builds them once.
+ * The kit `buildKit()` writes and the collections `fuseVariableSet()` syncs, deep frozen. Every call
+ * in a worker returns the same values. The run's setup decides whether the run builds them once or
+ * each worker builds its own (`plugin/test-support/kit-setup.ts`).
  *
  * @returns The kit and its collections.
- * @throws When the Fuse variable set does not build.
+ * @throws When the Fuse variable set or the kit does not build.
  */
-export function kitFixture(): Promise<KitFixture> {
-  loaded ??= load();
-  return loaded;
+export async function kitFixture(): Promise<KitFixture> {
+  // SAFETY: the path names kit-cache.ts, whose `fullKit` resolves to the kit and its collections.
+  const cache = (await import(KIT_CACHE)) as KitCache;
+  return cache.fullKit();
 }
 
 /**
