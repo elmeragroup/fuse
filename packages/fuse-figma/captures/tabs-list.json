@@ -227,7 +227,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--control-h-md":{"_tag":"element","up":4},"--muted":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--shell-inner":{"_tag":"element","up":0},"--spacing":{"_tag":"theme"}},
           "unmatched": ["data-[variant=line]:rounded-none","data-[variant=line]:p-[3px]","data-[variant=line]:[--shell-inner:initial]","group-data-vertical/tabs:h-fit","group-data-vertical/tabs:flex-col"],
-          "measured": {"coincidingAround":1,"itemsAtContent":true},
+          "measured": {"itemsAtContent":true},
           "children": [
             {
               "tag": "button",

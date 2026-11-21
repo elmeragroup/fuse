@@ -755,13 +755,22 @@ const STACKED_BACKDROP =
 const ALTERED_BACKDROP =
   "the root or an element between it and the background changes how it paints, by its opacity, corners, filter, backdrop filter, mask, clip or blend mode, which one opaque rectangular fill on the root cannot draw";
 
-/** A box's corner radii: the shorthand, which the cascade keeps whole, and each corner's longhand. */
+/**
+ * A box's corner radii: the shorthand, which the cascade keeps whole, and each corner's physical and
+ * logical longhand, as `rounded-s-full` sets `border-start-start-radius`. The capture already
+ * counts no element behind a root past one Chromium rounds, so a capture never reaches this check
+ * with a rounded element. The logical names keep the check from depending on that.
+ */
 const CORNER_RADII = [
   "border-radius",
   "border-top-left-radius",
   "border-top-right-radius",
   "border-bottom-right-radius",
   "border-bottom-left-radius",
+  "border-start-start-radius",
+  "border-start-end-radius",
+  "border-end-start-radius",
+  "border-end-end-radius",
 ] as const;
 
 /**

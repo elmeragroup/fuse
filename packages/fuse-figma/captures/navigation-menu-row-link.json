@@ -224,7 +224,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
-          "measured": {"containerWidth":256,"coincidingAround":4},
+          "measured": {"containerWidth":256},
           "children": []
         }
       }
@@ -296,7 +296,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
-          "measured": {"containerWidth":256,"coincidingAround":4},
+          "measured": {"containerWidth":256},
           "children": []
         }
       }
@@ -368,7 +368,7 @@
           "pseudo": {},
           "variables": {"--accent":{"_tag":"theme"},"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:**:text-accent-foreground"],
-          "measured": {"containerWidth":256,"coincidingAround":4},
+          "measured": {"containerWidth":256},
           "children": []
         }
       }
@@ -440,7 +440,7 @@
           "pseudo": {},
           "variables": {"--accent":{"_tag":"theme"},"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
           "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:**:text-accent-foreground"],
-          "measured": {"containerWidth":256,"coincidingAround":4},
+          "measured": {"containerWidth":256},
           "children": []
         }
       }
@@ -512,7 +512,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--ring":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-leading":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"unset"}},
           "unmatched": ["data-active:font-medium","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
-          "measured": {"containerWidth":256,"coincidingAround":4},
+          "measured": {"containerWidth":256},
           "children": []
         }
       }
@@ -584,7 +584,7 @@
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--ring":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-leading":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"unset"}},
           "unmatched": ["[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
-          "measured": {"containerWidth":256,"coincidingAround":4},
+          "measured": {"containerWidth":256},
           "children": []
         }
       }
