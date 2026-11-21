@@ -33,7 +33,7 @@
       "attributes": {"aria-hidden":"true","data-base-ui-inert":""},
       "classes": [],
       "text": "",
-      "declarations": [62,63,2,3,4,5,6],
+      "declarations": [62,63,3,4,5,6],
       "initial": [3],
       "pseudo": {},
       "variables": {"--border":{"_tag":"theme"}},

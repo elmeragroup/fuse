@@ -27,17 +27,18 @@ import {
 } from "../compare/cells.ts";
 import type { FontNotLoaded } from "../compare/font-check.ts";
 import {
+  cellRoom,
   cellSelector,
   forcedSelector,
   measuredSelectors,
   rootInCell,
   PAGE_LAYOUT,
-  slotSpan,
 } from "../compare/preview-page.ts";
 import type { CellContent } from "../compare/preview-page.ts";
 import type { PreviewTheme } from "../compare/preview-theme.ts";
 import { possibleCells, variantKey } from "../components/component-spec.ts";
 import type { ImpossibleCells } from "../components/component-spec.ts";
+import type { Viewport } from "../components/css-values.ts";
 import type { AxisSpec } from "../components/kit-spec.ts";
 import { ANCHOR_CENTRE, ANCHOR_WIDTH, CAPTURE_FORMAT, CAPTURE_VERSION } from "./capture-format.ts";
 import type {
@@ -93,6 +94,8 @@ export type CaptureTarget = {
    * the set draws each part, and its property hides it.
    */
   readonly optional?: ReadonlySet<string>;
+  /** The viewport a fixed root sits in. The renderer sizes a fixed root's host to it. */
+  readonly viewport?: Viewport;
   /** The width of the host the root sits in, in CSS pixels, or undefined for the slot's. */
   readonly previewWidthFor?: (cell: Readonly<Record<string, string>>) => number | undefined;
   /** The `data-slot` of each element an open composite's cell measures, as its manifest names them. */
@@ -155,10 +158,14 @@ export function requestOf(
   const writesHighlight = writesHighlightAttribute(cell, renderer.highlight);
   return {
     id: `c${String(index)}`,
+    name: variantKey(target, cell),
     content: content(cell),
     measured: measuredSelectors(root, target.union),
-    span: slotSpan(PAGE_LAYOUT, target.previewWidthFor?.(cell)),
-    height: undefined,
+    ...cellRoom(PAGE_LAYOUT, {
+      hostWidth: renderer.hostWidth,
+      rootWidth: target.previewWidthFor?.(cell),
+      viewport: target.viewport,
+    }),
     forcedOn: forcedSelector(root, cell),
     forced,
     writesHighlightAttribute: writesHighlight,

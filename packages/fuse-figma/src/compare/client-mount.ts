@@ -60,6 +60,9 @@ async function mount(renderings: ReadonlyMap<string, ClientCellRendering>): Prom
       throw new Error(`the client bundle renders no set ${set}`);
     }
     // The root's own element takes no box, so the trigger lays out in the slot as static markup does.
+    // It is the slot's first child, ahead of any portal a popup appends, which the page's
+    // `:first-child` rule keeps from shrinking the host inside it without writing a mark the
+    // capture would record.
     const root = document.createElement("div");
     root.style.display = "contents";
     slot.append(root);

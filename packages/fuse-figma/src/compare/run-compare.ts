@@ -33,7 +33,7 @@ import type { CompareFileFailed } from "./compare-files.ts";
 import type { FontNotLoaded } from "./font-check.ts";
 import { locateFuseBuild, readPageAssets } from "./page-assets.ts";
 import type { FuseBuild, FuseBuildMissing, PageAssets } from "./page-assets.ts";
-import { forcedSelector, measuredSelectors, rootInCell, slotSpan } from "./preview-page.ts";
+import { cellRoom, forcedSelector, measuredSelectors, rootInCell } from "./preview-page.ts";
 import type { CellContent, PageLayout } from "./preview-page.ts";
 import { parsePreviewTheme } from "./preview-theme.ts";
 import type { PreviewTheme } from "./preview-theme.ts";
@@ -151,7 +151,7 @@ export type Renderable = ComponentDefinition & { readonly renderer: AnyCellRende
  * @param renderers - The kit's renderers, by definition key.
  * @returns Each definition with its renderer.
  */
-function renderables(renderers: ReadonlyMap<string, AnyCellRenderer>): readonly Renderable[] {
+export function renderables(renderers: ReadonlyMap<string, AnyCellRenderer>): readonly Renderable[] {
   return KIT.flatMap(({ manifest }) => {
     const renderer = renderers.get(manifest.key);
     return renderer === undefined ? [] : [{ ...manifestDefinition(manifest), renderer }];
@@ -263,16 +263,14 @@ export function planCells(
       cell,
       request: {
         id: `c${String(index)}`,
+        name: instance.variant,
         content: content(cell),
         measured: measuredSelectors(root, isClientRenderer(renderer) ? renderer.union : undefined),
-        // A renderer's wider host spans its slots, and a fixed root in a declared viewport takes a
-        // host as wide as the viewport.
-        span: slotSpan(
-          layout,
-          renderer.hostWidth ?? previewWidthIn(definition, cell) ?? definition.viewport?.width
-        ),
-        // and a row as tall as the viewport where that is taller than a slot.
-        height: definition.viewport?.height,
+        ...cellRoom(layout, {
+          hostWidth: renderer.hostWidth,
+          rootWidth: previewWidthIn(definition, cell),
+          viewport: definition.viewport,
+        }),
         forcedOn: forcedSelector(root, cell),
         forced,
         writesHighlightAttribute: writesHighlight,

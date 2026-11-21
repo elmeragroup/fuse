@@ -1,7 +1,8 @@
 /**
  * The renderer of the `action-bar` set: the docs default demo's real Fuse `<ActionBar.Root count={2}>`
  * around its count, Clear, separator and the Export and Delete buttons, in a positioned host as wide
- * as the demo's `max-w-xl` column, so the bar floats at its bottom as the demo shows it.
+ * as the demo's `max-w-xl` column, so the bar floats at its bottom as the demo shows it. The host is
+ * wider than one slot, so the renderer names its width in `hostWidth` and the cell spans two.
  *
  * The bar reads its count text from `LocaleProvider`, which throws without one, so the cell renders
  * in an en-US one. Its positioner centres the bar across the host, which puts a bar of fractional
@@ -33,6 +34,7 @@ const START_RULE = "[data-slot=action-bar-positioner]{justify-content:flex-start
 
 /** An `action-bar` cell: the default demo's bar at the bottom of its host. */
 export const actionBar: CellRendering = {
+  hostWidth: ACTION_BAR_HOST_WIDTH,
   element: () =>
     createElement(LocaleProvider, {
       locale: "en-US",

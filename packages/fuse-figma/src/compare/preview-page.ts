@@ -12,11 +12,17 @@
  * sets its fonts (`kit-fonts.ts`).
  *
  * Each cell sits in its own absolutely placed slot at whole CSS pixels, with its element at a
- * fixed padding from the slot's corner, so every crop starts on a device pixel. The page stops
- * every animation and transition, so a pending spinner stays at 0°.
+ * fixed padding from the slot's corner, so every crop starts on a device pixel. A slot is a flex
+ * row that never shrinks what it holds, a client cell's host inside its `display: contents` mount
+ * root included, so a host wider than its slot keeps its width and reaches past the slot, where the
+ * run's check finds it, instead of narrowing to the slot. Each slot clips what it paints to the
+ * rect it was given, so a shadow or an outline past the slot's edge, which no layout box holds,
+ * cannot paint into the next slot. The page stops every animation and transition, so a pending
+ * spinner stays at 0°.
  */
 
 import type { Cell, ComponentDefinition } from "../components/component-spec.ts";
+import type { Viewport } from "../components/css-values.ts";
 import { kitFontCss } from "../kit-fonts.ts";
 import type { ThemeStamps } from "./preview-theme.ts";
 
@@ -130,8 +136,34 @@ export function slotRect(layout: PageLayout, index: number): PageRect {
  *   definition gives its root, undefined for none.
  * @returns The span, at least 1.
  */
-export function slotSpan(layout: PageLayout, width: number | undefined): number {
+function slotSpan(layout: PageLayout, width: number | undefined): number {
   return Math.max(1, Math.ceil(((width ?? 0) + 2 * layout.padding) / layout.slotWidth));
+}
+
+/** What decides the room a cell takes on the page, each undefined for none. */
+export type CellHost = {
+  /** The width of the host the cell's renderer mounts, its `hostWidth`. */
+  readonly hostWidth: number | undefined;
+  /** The width the cell's definition gives its root, its preview width. */
+  readonly rootWidth: number | undefined;
+  /** The viewport the definition's fixed root sits in, which the renderer mounts a host as large as. */
+  readonly viewport: Viewport | undefined;
+};
+
+/**
+ * The room a cell takes on the page, which the compare and the capture both give it: as many slots
+ * across as its host needs, and the viewport's height. The host's width is the renderer's
+ * `hostWidth` where it names one, else the root's preview width, else the viewport's width.
+ *
+ * @param layout - The page layout.
+ * @param host - The widths and the viewport the cell's host takes.
+ * @returns The cell's span, as {@link slotSpan} gives it, and its height, as {@link PageCell} reads it.
+ */
+export function cellRoom(
+  layout: PageLayout,
+  { hostWidth, rootWidth, viewport }: CellHost
+): Required<Pick<PageCell, "span" | "height">> {
+  return { span: slotSpan(layout, hostWidth ?? rootWidth ?? viewport?.width), height: viewport?.height };
 }
 
 /**
@@ -383,10 +415,14 @@ export const BACKGROUND_PROBE = "[data-compare-probe]";
  */
 export const CLIENT_HIDDEN = "[data-compare-client]";
 
-function slotHtml(cell: PageCell, { x, y, width }: PageRect): string {
+function slotHtml(cell: PageCell, { x, y, width, height }: PageRect): string {
   // A wide slot gives its cell the width it spans, which beats the client slot's one-slot width.
   const wide = (cell.span ?? 1) > 1 ? `;width:${String(width)}px;box-sizing:border-box` : "";
-  const style = `left:${String(x)}px;top:${String(y)}px${wide}`;
+  // The slot's own box hugs what it holds, so the clip names the slot's rect in pixels from the
+  // box's corner, which `clip` may reach past (CSS 2.1 §11.1.2). It changes no layout and starts
+  // no stacking context, where a `clip-path` would and moved the Command palette's edge pixels.
+  const clip = `;clip:rect(0px,${String(width)}px,${String(height)}px,0px)`;
+  const style = `left:${String(x)}px;top:${String(y)}px${wide}${clip}`;
   switch (cell.content._tag) {
     case "Static":
       return `<div data-compare-cell="${cell.id}" style="${style}">${cell.content.html}</div>`;
@@ -458,6 +494,7 @@ html,body{background:transparent!important}
 ${kitFontCss("body")}
 body{margin:0;font-family:var(--font-sans);color:var(--foreground);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 [data-compare-cell]{position:absolute;display:flex;align-items:flex-start;padding:${layout.padding}px}
+[data-compare-cell]>*,${CLIENT_HIDDEN}>:first-child>*{flex-shrink:0}
 ${BACKGROUND_PROBE}{position:absolute;left:0;top:0;width:4px;height:4px;background:var(--background)}
 ${clientCss.join("\n")}
 </style>
