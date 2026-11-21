@@ -5913,93 +5913,6 @@
       ]
     },
     {
-      "set": "input-group",
-      "part": "input-group-button",
-      "className": "data-invalid:border-error",
-      "property": "border-color",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "input-group/form=caret,state=invalid 0/root/1/0",
-        "input-group/form=caret-open,state=invalid 0/root/2/0"
-      ]
-    },
-    {
-      "set": "input-group",
-      "part": "input-group-button",
-      "className": "data-invalid:ring-3",
-      "property": "--tw-ring-shadow",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "input-group/form=caret,state=invalid 0/root/1/0",
-        "input-group/form=caret-open,state=invalid 0/root/2/0"
-      ]
-    },
-    {
-      "set": "input-group",
-      "part": "input-group-button",
-      "className": "data-invalid:ring-3",
-      "property": "box-shadow",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "input-group/form=caret,state=invalid 0/root/1/0",
-        "input-group/form=caret-open,state=invalid 0/root/2/0"
-      ]
-    },
-    {
-      "set": "input-group",
-      "part": "input-group-button",
-      "className": "data-invalid:ring-error/20",
-      "property": "--tw-ring-color",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "input-group/form=caret,state=invalid 0/root/1/0",
-        "input-group/form=caret-open,state=invalid 0/root/2/0"
-      ]
-    },
-    {
-      "set": "input-group",
-      "part": "input-group-button",
-      "className": "aria-expanded:text-foreground",
-      "property": "color",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "input-group/form=caret-open,state=disabled 0/root/2/0",
-        "input-group/form=caret-open,state=focus 0/root/2/0",
-        "input-group/form=caret-open,state=invalid 0/root/2/0",
-        "input-group/form=caret-open,state=rest 0/root/2/0"
-      ]
-    },
-    {
-      "set": "text-field",
-      "part": "field-label",
-      "className": "w-fit",
-      "property": "width",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "text-field/content=placeholder,state=disabled 0/root/0/0",
-        "text-field/content=placeholder,state=focus 0/root/0/0",
-        "text-field/content=placeholder,state=invalid 0/root/0/0",
-        "text-field/content=placeholder,state=readonly 0/root/0/0",
-        "text-field/content=placeholder,state=rest 0/root/0/0",
-        "text-field/content=value,state=disabled 0/root/0/0",
-        "text-field/content=value,state=focus 0/root/0/0",
-        "text-field/content=value,state=invalid 0/root/0/0",
-        "text-field/content=value,state=readonly 0/root/0/0",
-        "text-field/content=value,state=rest 0/root/0/0"
-      ]
-    },
-    {
-      "set": "text-field",
-      "part": "input",
-      "className": "w-full",
-      "property": "width",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "text-field/content=placeholder,state=invalid 0/root/1/0/0",
-        "text-field/content=value,state=invalid 0/root/1/0/0"
-      ]
-    },
-    {
       "set": "textarea",
       "part": "textarea",
       "className": "tailwind preflight",
@@ -6025,20 +5938,6 @@
         "textarea/content=placeholder,state=invalid 0/root::placeholder",
         "textarea/content=placeholder,state=readonly 0/root::placeholder",
         "textarea/content=placeholder,state=rest 0/root::placeholder"
-      ]
-    },
-    {
-      "set": "textarea-field",
-      "part": "field-label",
-      "className": "w-fit",
-      "property": "width",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "textarea-field/state=disabled 0/root/0/0",
-        "textarea-field/state=focus 0/root/0/0",
-        "textarea-field/state=invalid 0/root/0/0",
-        "textarea-field/state=readonly 0/root/0/0",
-        "textarea-field/state=rest 0/root/0/0"
       ]
     },
     {
@@ -6084,23 +5983,6 @@
         "pagination-edge/direction=previous,state=focus 0/root/1",
         "pagination-edge/direction=previous,state=hover 0/root/1",
         "pagination-edge/direction=previous,state=rest 0/root/1"
-      ]
-    },
-    {
-      "set": "select-field",
-      "part": "field-label",
-      "className": "w-fit",
-      "property": "width",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "select-field/state=disabled,content=placeholder 0/root/0/0",
-        "select-field/state=disabled,content=value 0/root/0/0",
-        "select-field/state=focus,content=placeholder 0/root/0/0",
-        "select-field/state=focus,content=value 0/root/0/0",
-        "select-field/state=invalid,content=placeholder 0/root/0/0",
-        "select-field/state=invalid,content=value 0/root/0/0",
-        "select-field/state=rest,content=placeholder 0/root/0/0",
-        "select-field/state=rest,content=value 0/root/0/0"
       ]
     },
     {
@@ -6256,22 +6138,6 @@
       "property": "justify-content",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": ["popover-open/side=bottom 0/around/1"]
-    },
-    {
-      "set": "popover-open",
-      "part": "popover-trigger",
-      "className": "aria-expanded:bg-muted",
-      "property": "background-color",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["popover-open/side=bottom 0/root"]
-    },
-    {
-      "set": "popover-open",
-      "part": "popover-trigger",
-      "className": "aria-expanded:text-foreground",
-      "property": "color",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["popover-open/side=bottom 0/root"]
     },
     {
       "set": "popover-open",
@@ -6649,22 +6515,6 @@
     },
     {
       "set": "dropdown-menu-open",
-      "part": "dropdown-menu-trigger",
-      "className": "aria-expanded:bg-muted",
-      "property": "background-color",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["dropdown-menu-open/side=bottom 0/root"]
-    },
-    {
-      "set": "dropdown-menu-open",
-      "part": "dropdown-menu-trigger",
-      "className": "aria-expanded:text-foreground",
-      "property": "color",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["dropdown-menu-open/side=bottom 0/root"]
-    },
-    {
-      "set": "dropdown-menu-open",
       "part": "dropdown-menu-portal",
       "className": "fuse.css base layer",
       "property": "border-color",
@@ -6775,18 +6625,6 @@
       "at": ["combobox-open/side=bottom 1/around/1"]
     },
     {
-      "set": "command-item",
-      "part": "command-shortcut",
-      "className": "tailwind preflight",
-      "property": "font-size",
-      "reason": "Tailwind's preflight sets the `<kbd>` to `font-size: 1em`, the size it inherits, so the shortcut's text keeps the row's size.",
-      "at": [
-        "command-item/trailing=shortcut,state=disabled 0/root/0",
-        "command-item/trailing=shortcut,state=highlighted 0/root/0",
-        "command-item/trailing=shortcut,state=rest 0/root/0"
-      ]
-    },
-    {
       "set": "command-palette",
       "part": "span",
       "className": "tailwind preflight",
@@ -7004,77 +6842,6 @@
         "item/variant=outline,size=xs,described=true,media=icon 0/root/2/0",
         "item/variant=outline,size=xs,described=true,media=image 0/root/2/0"
       ]
-    },
-    {
-      "set": "sidebar-group",
-      "part": "sidebar-group-label",
-      "className": "group-data-[collapsible=icon]:-mt-8",
-      "property": "margin-top",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["sidebar-group/collapsed=true 0/root/0"]
-    },
-    {
-      "set": "sidebar-group",
-      "part": "sidebar-group-label",
-      "className": "group-data-[collapsible=icon]:opacity-0",
-      "property": "opacity",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["sidebar-group/collapsed=true 0/root/0"]
-    },
-    {
-      "set": "sidebar-menu-item-with-badge",
-      "part": "sidebar-menu-badge",
-      "className": "right-1",
-      "property": "right",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "sidebar-menu-item-with-badge/isActive=false 0/root/1",
-        "sidebar-menu-item-with-badge/isActive=true 0/root/1"
-      ]
-    },
-    {
-      "set": "navigation-menu-popup",
-      "part": "navigation-menu-link",
-      "className": "in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner",
-      "property": "border-radius",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "navigation-menu-popup/content=business 0/root/1/0/0/0/0",
-        "navigation-menu-popup/content=business 0/root/1/0/0/1/0",
-        "navigation-menu-popup/content=customers 0/root/1/0/0/0/0",
-        "navigation-menu-popup/content=customers 0/root/1/0/0/1/0",
-        "navigation-menu-popup/content=customers 0/root/1/0/0/2/0"
-      ]
-    },
-    {
-      "set": "number-field",
-      "part": "field-label",
-      "className": "w-fit",
-      "property": "width",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "number-field/state=disabled 0/root/0/0",
-        "number-field/state=focus 0/root/0/0",
-        "number-field/state=invalid 0/root/0/0",
-        "number-field/state=readonly 0/root/0/0",
-        "number-field/state=rest 0/root/0/0"
-      ]
-    },
-    {
-      "set": "toolbar",
-      "part": "toolbar-button",
-      "className": "aria-disabled:cursor-not-allowed",
-      "property": "cursor",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["toolbar/orientation=horizontal 0/root/2", "toolbar/orientation=vertical 0/root/2"]
-    },
-    {
-      "set": "toolbar",
-      "part": "toolbar-button",
-      "className": "aria-disabled:opacity-50",
-      "property": "opacity",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": ["toolbar/orientation=horizontal 0/root/2", "toolbar/orientation=vertical 0/root/2"]
     },
     {
       "set": "tooltip-open",
@@ -7224,72 +6991,6 @@
       ]
     },
     {
-      "set": "dialog-content",
-      "part": "dialog-close",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "dialog-content/content=basic 0/root/2::before",
-        "dialog-content/content=footer-close 0/root/2::before"
-      ]
-    },
-    {
-      "set": "dialog-content",
-      "part": "dialog-close",
-      "className": "fuse.css base layer",
-      "property": "box-sizing",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "dialog-content/content=basic 0/root/2::before",
-        "dialog-content/content=footer-close 0/root/2::before"
-      ]
-    },
-    {
-      "set": "dialog-content",
-      "part": "dialog-close",
-      "className": "fuse.css base layer",
-      "property": "border-style",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "dialog-content/content=basic 0/root/2::before",
-        "dialog-content/content=footer-close 0/root/2::before"
-      ]
-    },
-    {
-      "set": "dialog-content",
-      "part": "dialog-close",
-      "className": "fuse.css base layer",
-      "property": "border-width",
-      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
-      "at": [
-        "dialog-content/content=basic 0/root/2::before",
-        "dialog-content/content=footer-close 0/root/2::before"
-      ]
-    },
-    {
-      "set": "dialog-content",
-      "part": "dialog-close",
-      "className": "fuse.css base layer",
-      "property": "margin",
-      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
-      "at": [
-        "dialog-content/content=basic 0/root/2::before",
-        "dialog-content/content=footer-close 0/root/2::before"
-      ]
-    },
-    {
-      "set": "dialog-content",
-      "part": "dialog-close",
-      "className": "fuse.css base layer",
-      "property": "padding",
-      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
-      "at": [
-        "dialog-content/content=basic 0/root/2::before",
-        "dialog-content/content=footer-close 0/root/2::before"
-      ]
-    },
-    {
       "set": "sheet-content",
       "part": "sheet-close",
       "className": "tailwind preflight",
@@ -7298,54 +6999,6 @@
       "at": ["sheet-content/side=right 0/root/0/2::before"]
     },
     {
-      "set": "sheet-content",
-      "part": "sheet-close",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": ["sheet-content/side=right 0/root/0/2::before"]
-    },
-    {
-      "set": "sheet-content",
-      "part": "sheet-close",
-      "className": "fuse.css base layer",
-      "property": "box-sizing",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": ["sheet-content/side=right 0/root/0/2::before"]
-    },
-    {
-      "set": "sheet-content",
-      "part": "sheet-close",
-      "className": "fuse.css base layer",
-      "property": "border-style",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": ["sheet-content/side=right 0/root/0/2::before"]
-    },
-    {
-      "set": "sheet-content",
-      "part": "sheet-close",
-      "className": "fuse.css base layer",
-      "property": "border-width",
-      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
-      "at": ["sheet-content/side=right 0/root/0/2::before"]
-    },
-    {
-      "set": "sheet-content",
-      "part": "sheet-close",
-      "className": "fuse.css base layer",
-      "property": "margin",
-      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
-      "at": ["sheet-content/side=right 0/root/0/2::before"]
-    },
-    {
-      "set": "sheet-content",
-      "part": "sheet-close",
-      "className": "fuse.css base layer",
-      "property": "padding",
-      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
-      "at": ["sheet-content/side=right 0/root/0/2::before"]
-    },
-    {
       "set": "dialog-open",
       "part": "div",
       "className": "tailwind preflight",
@@ -7416,44 +7069,6 @@
       "property": "box-sizing",
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; the span `ActionBar.ButtonLabel` wraps a button's words in draws no border and has no padding, and the Button instance draws the words, so none of them changes what it draws.",
       "at": ["action-bar/state=rest 0/root/3/1", "action-bar/state=rest 0/root/4/1"]
-    },
-    {
-      "set": "date-field",
-      "part": "field-label",
-      "className": "w-fit",
-      "property": "width",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "date-field/content=placeholder,state=disabled 0/root/0/0",
-        "date-field/content=placeholder,state=focus 0/root/0/0",
-        "date-field/content=placeholder,state=invalid 0/root/0/0",
-        "date-field/content=placeholder,state=readonly 0/root/0/0",
-        "date-field/content=placeholder,state=rest 0/root/0/0",
-        "date-field/content=value,state=disabled 0/root/0/0",
-        "date-field/content=value,state=focus 0/root/0/0",
-        "date-field/content=value,state=invalid 0/root/0/0",
-        "date-field/content=value,state=readonly 0/root/0/0",
-        "date-field/content=value,state=rest 0/root/0/0"
-      ]
-    },
-    {
-      "set": "date-picker",
-      "part": "field-label",
-      "className": "w-fit",
-      "property": "width",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "date-picker/content=placeholder,state=disabled 0/root/0/0",
-        "date-picker/content=placeholder,state=focus 0/root/0/0",
-        "date-picker/content=placeholder,state=invalid 0/root/0/0",
-        "date-picker/content=placeholder,state=readonly 0/root/0/0",
-        "date-picker/content=placeholder,state=rest 0/root/0/0",
-        "date-picker/content=value,state=disabled 0/root/0/0",
-        "date-picker/content=value,state=focus 0/root/0/0",
-        "date-picker/content=value,state=invalid 0/root/0/0",
-        "date-picker/content=value,state=readonly 0/root/0/0",
-        "date-picker/content=value,state=rest 0/root/0/0"
-      ]
     },
     {
       "set": "timeline-list",
@@ -7480,90 +7095,6 @@
         "tabs-trigger/variant=line,state=focus 0/root::after",
         "tabs-trigger/variant=line,state=hover 0/root::after",
         "tabs-trigger/variant=line,state=rest 0/root::after"
-      ]
-    },
-    {
-      "set": "table-row",
-      "part": "table-cell",
-      "className": "[--table-cell-edge-pe:initial]",
-      "property": "--table-cell-edge-pe",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "table-row/row=body,selected=false,state=hover 0/root/0",
-        "table-row/row=body,selected=false,state=hover 0/root/1",
-        "table-row/row=body,selected=false,state=rest 0/root/0",
-        "table-row/row=body,selected=false,state=rest 0/root/1",
-        "table-row/row=body,selected=true,state=hover 0/root/0",
-        "table-row/row=body,selected=true,state=hover 0/root/1",
-        "table-row/row=body,selected=true,state=rest 0/root/0",
-        "table-row/row=body,selected=true,state=rest 0/root/1",
-        "table-row/row=last,selected=false,state=hover 0/root/0",
-        "table-row/row=last,selected=false,state=hover 0/root/1",
-        "table-row/row=last,selected=false,state=rest 0/root/0",
-        "table-row/row=last,selected=false,state=rest 0/root/1",
-        "table-row/row=last,selected=true,state=hover 0/root/0",
-        "table-row/row=last,selected=true,state=hover 0/root/1",
-        "table-row/row=last,selected=true,state=rest 0/root/0",
-        "table-row/row=last,selected=true,state=rest 0/root/1"
-      ]
-    },
-    {
-      "set": "table-row",
-      "part": "table-cell",
-      "className": "[--table-cell-edge-ps:initial]",
-      "property": "--table-cell-edge-ps",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "table-row/row=body,selected=false,state=hover 0/root/1",
-        "table-row/row=body,selected=false,state=hover 0/root/2",
-        "table-row/row=body,selected=false,state=rest 0/root/1",
-        "table-row/row=body,selected=false,state=rest 0/root/2",
-        "table-row/row=body,selected=true,state=hover 0/root/1",
-        "table-row/row=body,selected=true,state=hover 0/root/2",
-        "table-row/row=body,selected=true,state=rest 0/root/1",
-        "table-row/row=body,selected=true,state=rest 0/root/2",
-        "table-row/row=last,selected=false,state=hover 0/root/1",
-        "table-row/row=last,selected=false,state=hover 0/root/2",
-        "table-row/row=last,selected=false,state=rest 0/root/1",
-        "table-row/row=last,selected=false,state=rest 0/root/2",
-        "table-row/row=last,selected=true,state=hover 0/root/1",
-        "table-row/row=last,selected=true,state=hover 0/root/2",
-        "table-row/row=last,selected=true,state=rest 0/root/1",
-        "table-row/row=last,selected=true,state=rest 0/root/2"
-      ]
-    },
-    {
-      "set": "table-row",
-      "part": "table-head",
-      "className": "[--table-cell-edge-pe:initial]",
-      "property": "--table-cell-edge-pe",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "table-row/row=header,selected=false,state=hover 0/root/0",
-        "table-row/row=header,selected=false,state=hover 0/root/1",
-        "table-row/row=header,selected=false,state=rest 0/root/0",
-        "table-row/row=header,selected=false,state=rest 0/root/1",
-        "table-row/row=header,selected=true,state=hover 0/root/0",
-        "table-row/row=header,selected=true,state=hover 0/root/1",
-        "table-row/row=header,selected=true,state=rest 0/root/0",
-        "table-row/row=header,selected=true,state=rest 0/root/1"
-      ]
-    },
-    {
-      "set": "table-row",
-      "part": "table-head",
-      "className": "[--table-cell-edge-ps:initial]",
-      "property": "--table-cell-edge-ps",
-      "reason": "#754: a class the composite passes to an instance, or a variant of the inner set's own class that only the composite's markup turns on, leaves no row in the composite's coverage.",
-      "at": [
-        "table-row/row=header,selected=false,state=hover 0/root/1",
-        "table-row/row=header,selected=false,state=hover 0/root/2",
-        "table-row/row=header,selected=false,state=rest 0/root/1",
-        "table-row/row=header,selected=false,state=rest 0/root/2",
-        "table-row/row=header,selected=true,state=hover 0/root/1",
-        "table-row/row=header,selected=true,state=hover 0/root/2",
-        "table-row/row=header,selected=true,state=rest 0/root/1",
-        "table-row/row=header,selected=true,state=rest 0/root/2"
       ]
     },
     {
@@ -7783,124 +7314,12 @@
       "at": ["tour-popup/content=tip 0/root/0/1::before"]
     },
     {
-      "set": "tour-popup",
-      "part": "tour-close",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": ["tour-popup/content=tip 0/root/0/1::before"]
-    },
-    {
-      "set": "tour-popup",
-      "part": "tour-close",
-      "className": "fuse.css base layer",
-      "property": "box-sizing",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": ["tour-popup/content=tip 0/root/0/1::before"]
-    },
-    {
-      "set": "tour-popup",
-      "part": "tour-close",
-      "className": "fuse.css base layer",
-      "property": "border-style",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": ["tour-popup/content=tip 0/root/0/1::before"]
-    },
-    {
-      "set": "tour-popup",
-      "part": "tour-close",
-      "className": "fuse.css base layer",
-      "property": "border-width",
-      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
-      "at": ["tour-popup/content=tip 0/root/0/1::before"]
-    },
-    {
-      "set": "tour-popup",
-      "part": "tour-close",
-      "className": "fuse.css base layer",
-      "property": "margin",
-      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
-      "at": ["tour-popup/content=tip 0/root/0/1::before"]
-    },
-    {
-      "set": "tour-popup",
-      "part": "tour-close",
-      "className": "fuse.css base layer",
-      "property": "padding",
-      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
-      "at": ["tour-popup/content=tip 0/root/0/1::before"]
-    },
-    {
       "set": "tour-step",
       "part": "tour-close",
       "className": "tailwind preflight",
       "property": "border",
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": ["tour-step/content=step 0/root/0/1::before"]
-    },
-    {
-      "set": "tour-step",
-      "part": "tour-close",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": ["tour-step/content=step 0/root/0/1::before"]
-    },
-    {
-      "set": "tour-step",
-      "part": "tour-close",
-      "className": "fuse.css base layer",
-      "property": "box-sizing",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": ["tour-step/content=step 0/root/0/1::before"]
-    },
-    {
-      "set": "tour-step",
-      "part": "tour-close",
-      "className": "fuse.css base layer",
-      "property": "border-style",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": ["tour-step/content=step 0/root/0/1::before"]
-    },
-    {
-      "set": "tour-step",
-      "part": "tour-close",
-      "className": "fuse.css base layer",
-      "property": "border-width",
-      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
-      "at": ["tour-step/content=step 0/root/0/1::before"]
-    },
-    {
-      "set": "tour-step",
-      "part": "tour-close",
-      "className": "fuse.css base layer",
-      "property": "margin",
-      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
-      "at": ["tour-step/content=step 0/root/0/1::before"]
-    },
-    {
-      "set": "tour-step",
-      "part": "tour-close",
-      "className": "fuse.css base layer",
-      "property": "padding",
-      "reason": "Fuse's base layer zeroes the browser's own button border, margin and padding on the close, so it draws none of them; the close's own classes set what it draws.",
-      "at": ["tour-step/content=step 0/root/0/1::before"]
-    },
-    {
-      "set": "tour-step",
-      "part": "tour-prev",
-      "className": "aria-disabled:cursor-not-allowed",
-      "property": "cursor",
-      "reason": "#754: `Tour.Prev` is disabled at the first step and stays focusable, so Button styles it through its `aria-disabled:` arm, which only the composite's markup turns on and which leaves no row in the composite's coverage. The instance is Button's `state=disabled` variant, which draws the same 50% opacity and cursor from Button's `disabled:` arm.",
-      "at": ["tour-step/content=step 0/root/3/1"]
-    },
-    {
-      "set": "tour-step",
-      "part": "tour-prev",
-      "className": "aria-disabled:opacity-50",
-      "property": "opacity",
-      "reason": "#754: `Tour.Prev` is disabled at the first step and stays focusable, so Button styles it through its `aria-disabled:` arm, which only the composite's markup turns on and which leaves no row in the composite's coverage. The instance is Button's `state=disabled` variant, which draws the same 50% opacity and cursor from Button's `disabled:` arm.",
-      "at": ["tour-step/content=step 0/root/3/1"]
     },
     {
       "set": "toast",

@@ -597,6 +597,43 @@ describe("the element a captured declaration belongs to", () => {
     ]);
   });
 
+  // Oracle: the declaration's `owner`, the steps up to the element whose class its rule selects
+  // through. Tag's own sample carries `tint` on its root, one step above the label, and the composite
+  // carries it on its own root, two steps up, outside the instance, so the composite's markup turns it
+  // on and Tag's own win of the same declaration lends it nothing.
+  it("stays the composite's where its own element above the instance supplied the class", () => {
+    const tint = { ...written("tint", "color", "red"), selector: ".tint [data-slot=label]" };
+    const inner = oneCell("inner", [{ ...tint, owner: 1 }], span("inner", [], [span("label", [0])]));
+    const composite = oneCell(
+      "composite",
+      [{ ...tint, owner: 2 }],
+      span("composite", [], [span("inner", [], [span("label", [0])])])
+    );
+    const accounting = (key: string, instances: readonly InstancePlace[]) =>
+      new Map([[`${key}/state=rest`, { accounted: new Set<string>(), instances }]]);
+    const sets = new Map([
+      ["inner", { capture: inner, accounting: accounting("inner", []) }],
+      [
+        "composite",
+        {
+          capture: composite,
+          accounting: accounting("composite", [
+            { place: "0/root/0", set: "inner", cell: "inner/state=rest" },
+          ]),
+        },
+      ],
+    ]);
+    expect(unaccountedDeclarations("composite", (key) => sets.get(key))).toEqual([
+      {
+        part: "label",
+        at: "composite/state=rest 0/root/0/0",
+        className: "tint",
+        property: "color",
+        value: "red",
+      },
+    ]);
+  });
+
   // Oracle: the capture's winners. The inner set wins `text-red` on its glyph's `::before` box and the
   // composite on the glyph itself, two boxes, so the inner set's check of its pseudo-element accounts
   // for nothing the composite's glyph draws.

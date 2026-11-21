@@ -3,7 +3,8 @@
  * that check one rule of the mapping at a time. A fixture names, per cell, the elements around the
  * root and the root's tree, and for each element the classes whose declarations it wins, as the
  * browser's cascade leaves them: Tailwind's compiled declarations of each class, in the order given,
- * each winning the longhands no later declaration of the element takes. A declaration a parent's
+ * each winning the longhands the capture's cascade (`resolveWinners`) gives it, so of two
+ * declarations of one specificity the later wins. A declaration a parent's
  * child selector puts on an element, as `[&_svg]:size-4` sizes an icon, names its class with
  * `fromParent`. The build compiles every class the fixture uses, as the kit build compiles every class
  * a capture records, so a `var()` of Tailwind's theme resolves.
@@ -26,6 +27,7 @@ import type {
   PartManifest,
   SetManifest,
 } from "../src/capture/manifest.ts";
+import { UnknownLayer, resolveWinners } from "../src/capture/winners.ts";
 import { splitClassName } from "../src/components/class-name.ts";
 import { buildSetsInOrder } from "../src/components/component-builder.ts";
 import { variantKey } from "../src/components/component-spec.ts";
@@ -55,6 +57,13 @@ export type Written = {
   readonly property: string;
   readonly value: string;
   readonly source?: DeclarationSource;
+  /** The rule's selector, where it is not the class's own, as `:where(.x > :not(:last-child))`. */
+  readonly selector?: string;
+  /**
+   * The selector's specificity, as `[0, 0, 0]` for a `:where()` selector, where it is not a class
+   * selector's `[0, 1, 0]`.
+   */
+  readonly specificity?: readonly [number, number, number];
 };
 
 /** An element of a fixture's cell. */
@@ -74,6 +83,14 @@ export type FixtureElement = {
   readonly carried?: string;
   /** Declarations written out, which win after the classes' own. */
   readonly written?: readonly Written[];
+  /** Declarations written out that a parent's rule puts on this element, which win last. */
+  readonly writtenFromParent?: readonly Written[];
+  /**
+   * The properties of the element's written declarations whose value the browser computes to the
+   * property's initial value there, which the capture lists in `initial`, as a preflight
+   * `color: inherit` under a parent that sets no color.
+   */
+  readonly initial?: readonly string[];
   /** What the capture measured of the element in the browser, as `ellipsisFits`. */
   readonly measured?: MeasuredFacts;
   /**
@@ -184,17 +201,32 @@ function captureOf(
   const winners = (
     won: readonly (Written & { readonly source: DeclarationSource; readonly owner: number })[]
   ): readonly number[] => {
-    // Each longhand has one winner, the last declaration that sets it.
-    const longhandsOf = won.map(({ property, value }) =>
-      property.startsWith("--") ? [property] : expandShorthand(property, value).map(([longhand]) => longhand)
+    // Each longhand goes to the declaration the capture's own cascade ranks highest, each a rule of
+    // its own in the order given.
+    const ranked = resolveWinners(
+      won.map((declaration) => ({
+        declaration,
+        source: declaration.source,
+        layer: declaration.source === "inline" ? "" : "utilities",
+        selector: declaration.selector ?? `.${declaration.className}`,
+        specificity: declaration.specificity ?? [0, 1, 0],
+        properties: [
+          {
+            name: declaration.property,
+            value: declaration.value,
+            important: false,
+            longhands: declaration.property.startsWith("--")
+              ? [declaration.property]
+              : expandShorthand(declaration.property, declaration.value).map(([longhand]) => longhand),
+          },
+        ],
+      }))
     );
-    const indexes = won.flatMap((declaration, at) => {
-      const later = new Set(longhandsOf.slice(at + 1).flat());
-      const longhands = (longhandsOf[at] ?? []).filter((longhand) => !later.has(longhand));
-      if (longhands.length === 0) {
-        return [];
-      }
-      const { className, property, value, owner, source } = declaration;
+    if (ranked instanceof UnknownLayer) {
+      throw ranked;
+    }
+    const indexes = ranked.flatMap(({ rule: { declaration }, longhands }) => {
+      const { className, property, value, owner, source, selector } = declaration;
       return [
         declarations.push({
           property,
@@ -203,7 +235,7 @@ function captureOf(
           longhands,
           source,
           layer: source === "inline" ? "" : "utilities",
-          selector: source === "inline" ? "" : `.${className}`,
+          selector: selector ?? (source === "inline" ? "" : `.${className}`),
           className,
           owner,
         }) - 1,
@@ -220,6 +252,11 @@ function captureOf(
         compiledOf(compiled, className).map((each) => ({ ...each, source: "fuse" as const, owner: 1 }))
       ),
       ...(fixture.written ?? []).map((each) => ({ ...each, source: each.source ?? "fuse", owner: 0 })),
+      ...(fixture.writtenFromParent ?? []).map((each) => ({
+        ...each,
+        source: each.source ?? "fuse",
+        owner: 1,
+      })),
     ]);
     const pseudo = Object.fromEntries(
       Object.entries(fixture.pseudo ?? {}).map(([name, own]) => [
@@ -238,7 +275,9 @@ function captureOf(
       classes: [...words(fixture.classes), ...words(fixture.carried)],
       text: fixture.text ?? "",
       declarations: indexes,
-      initial: [],
+      initial: indexes.filter(
+        (index) => fixture.initial?.includes(declarations[index]?.property ?? "") === true
+      ),
       pseudo,
       variables: {},
       unmatched: [],

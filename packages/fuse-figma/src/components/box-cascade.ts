@@ -76,14 +76,17 @@ export type BoxCascade = {
   part(part: string, element: PartElement): BoxCascade;
   /**
    * Cascade another set's root below this box, as an instance part renders the inner component
-   * there. The classes the outer component passes it are the passed origin's, its layers' rows and
-   * the fields their reads fill go where `scope.inPlace` says, and its path starts again at the
-   * inner root.
+   * there. A declaration at or below the inner root belongs to the innermost set that claims it, as
+   * `capture/instance-twin.ts` decides. Where a chip holds a row that holds this tag, a declaration
+   * the tag does not claim belongs to the row where the row claims it, and to the chip otherwise. Its
+   * layers' rows and the fields their reads fill go where `scope.inPlace` says, and its path starts
+   * again at the inner root.
    *
    * @param part - The inner root's layer name.
    * @param element - The inner root's `data-slot`, the inner set's key, whose kept capture names the
    *   classes the composite passes, and whether it follows this box's text.
-   * @param scope - The inner cell, the in-place build and the origin of the passed classes.
+   * @param scope - The inner cell, the in-place build and the origin of the set that holds the
+   *   instance.
    * @returns The inner root's cascade.
    */
   instance(
