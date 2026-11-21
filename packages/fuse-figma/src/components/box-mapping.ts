@@ -7,6 +7,7 @@
  */
 
 import { placedRoom, planPlacement, UNPAINTABLE } from "./absolute-placement";
+import type { PlacementPlan } from "./absolute-placement";
 import type { BoxCascade, PartElement } from "./box-cascade";
 import { readCorner } from "./box-corners";
 import type { MarkerReading } from "./box-flow";
@@ -117,6 +118,7 @@ import type { FoldingBox, IconMarginBox } from "./margin-box";
 import { liftParts } from "./no-box";
 import { arrangePaint, inPaintOrder, readRaisedLevels } from "./paint-order";
 import type { PaintedLayer } from "./paint-order";
+import { planPivot } from "./pivot-part";
 import {
   endsBesideLabel,
   endsInFlow,
@@ -125,7 +127,7 @@ import {
   placeParts,
   slotAroundDot,
 } from "./placement";
-import type { Layout } from "./placement";
+import type { Layout, ParentBox, PartPlan } from "./placement";
 import { pseudoParts } from "./pseudo-layers";
 import { dropShownStackRest, readStackDisplay, readStackedCell, STACK_HIDDEN } from "./stacked-cell";
 import { stacksFirstOnTop } from "./stacking";
@@ -467,6 +469,52 @@ type ShownPart =
     }
   | CascadedInstance;
 
+/** The plan by its parent's edges that sizes a part: its own, or its fallback where it hangs by its centre. */
+function edgePlanOf(plan: PartPlan | undefined): PlacementPlan | undefined {
+  switch (plan?.kind) {
+    case "pivot":
+      return plan.fallback.edges;
+    case "pivot-refused":
+      return undefined;
+    default:
+      return plan;
+  }
+}
+
+/**
+ * A frame part's plan: by its centre where `pivot-part.ts` plans one, else by its parent's edges.
+ * Where the centre has no place, a turned part keeps the reason, since no other reader places it, and
+ * so does a pseudo-element that its edges do not place. Any other part takes its edges. A
+ * pseudo-element that declares no fixed width and height takes its edges too: its centre needs a
+ * fixed size, and the kit draws a pseudo-element only by its place, so one its layer cannot place
+ * would fail the build where an empty box with no height paints nothing.
+ *
+ * @param style - The part's style.
+ * @param drawn - Whether the kit draws the part only by its place, as a pseudo-element, or anywhere.
+ * @param parent - The box that holds it: its style and the positioned element around it, if any.
+ * @param edges - The part's plan by its parent's edges.
+ * @returns The plan, or undefined where the part is not absolute.
+ */
+function framePlan(
+  style: LayerStyle,
+  drawn: "by-place" | "anywhere",
+  parent: Pick<ParentBox, "style" | "positionedBy">,
+  edges: PlacementPlan | undefined
+): PartPlan | undefined {
+  const sized = ["width", "height"].every(
+    (property) => evaluateLength(style.resolved(property) ?? "") !== undefined
+  );
+  if (drawn === "by-place" && !sized) {
+    return edges;
+  }
+  const placesItself = drawn === "anywhere" || edges?.kind === "planned";
+  const pivot = planPivot(style, parent, { edges, unsized: placesItself ? "edges" : "fails" });
+  if (pivot?.kind !== "pivot-refused") {
+    return pivot ?? edges;
+  }
+  return pivot.turned || !placesItself ? pivot : edges;
+}
+
 /**
  * Map a box, the root or a part, and the parts and icons below it, from the cascade of each.
  *
@@ -775,21 +823,27 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
   const minimum =
     across === undefined ? undefined : rowMinimum(limits.minWidth, room, reader, context.variables);
   // An absolute part, frame or instance, is planned before it maps, so the sizing leaves a frame the
-  // length its place stretches it to, and reads its place once it maps.
+  // length its place stretches it to, and reads its place once it maps. A frame placed by its centre
+  // takes that plan, and keeps its plan by its parent's edges to size it and as its fallback.
+  const parentBox = { style: reader, positionedBy: box.positionedBy };
   const planned = new Map(
     shown.flatMap((part) => {
+      if (flowing.includes(part)) {
+        return [];
+      }
+      const edges = planPlacement(part.cascade.style, part.kind, {
+        parent: reader,
+        positionedBy: box.positionedBy,
+        parentSpansBlock: part.cascade.measured?.parentSpansBlock === true,
+        oneLength: part.cascade.measured?.oneLength ?? new Set(),
+        flow: flowing.map((each) => each.cascade.style),
+        layers: holder.layers.length,
+        paddingBox: paddingBoxOf(absoluteRoom(holder)),
+      });
       const plan =
-        flowing.indexOf(part) === -1
-          ? planPlacement(part.cascade.style, part.kind, {
-              parent: reader,
-              positionedBy: box.positionedBy,
-              parentSpansBlock: part.cascade.measured?.parentSpansBlock === true,
-              oneLength: part.cascade.measured?.oneLength ?? new Set(),
-              flow: flowing.map((each) => each.cascade.style),
-              layers: holder.layers.length,
-              paddingBox: paddingBoxOf(absoluteRoom(holder)),
-            })
-          : undefined;
+        part.kind === "frame"
+          ? framePlan(part.cascade.style, part.pseudo === true ? "by-place" : "anywhere", parentBox, edges)
+          : edges;
       return plan === undefined ? [] : [[part.cascade.style, plan] as const];
     })
   );
@@ -801,7 +855,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     ...others.map((layer) => ({ key: layer.key, placed: false, positioned: false })),
     ...trailing.map((part) => paintedPart(part, position(part))),
   ]);
-  const plans = new Map(
+  const plans = new Map<LayerStyle, PartPlan>(
     shown.flatMap((part) => {
       const plan = planned.get(part.cascade.style);
       if (arrangement.unplaceable.has(part.key)) {
@@ -811,13 +865,16 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     })
   );
   // A pseudo-element the kit draws only by its place, so one with no place draws no layer.
-  const unplaced = shown.filter(
-    (part) =>
-      part.kind === "frame" && part.pseudo === true && plans.get(part.cascade.style)?.kind !== "planned"
-  );
+  const unplaced = shown.filter((part) => {
+    const kind = plans.get(part.cascade.style)?.kind;
+    return part.kind === "frame" && part.pseudo === true && kind !== "planned" && kind !== "pivot";
+  });
   for (const part of unplaced) {
     const plan = plans.get(part.cascade.style);
-    const why = plan?.kind === "refused" ? plan.why : "the pseudo-element is not absolute";
+    const why =
+      plan?.kind === "refused" || plan?.kind === "pivot-refused"
+        ? plan.why
+        : "the pseudo-element is not absolute";
     for (const property of part.cascade.style.ownProperties()) {
       part.cascade.style.mark(
         property,
@@ -872,7 +929,7 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
     // §2.3), which `centredRoom` in `box-sizing.ts` gives it.
     const room =
       index === -1
-        ? placedRoom(absoluteRoom(holder), part.cascade.style, plans.get(part.cascade.style))
+        ? placedRoom(absoluteRoom(holder), part.cascade.style, edgePlanOf(plans.get(part.cascade.style)))
         : holder.layout.centresLone === true
           ? inFlow()
           : selfStretchedRoom(holder, part.cascade.style, lessMargins(inFlow(), part.cascade.style));

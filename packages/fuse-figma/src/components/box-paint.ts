@@ -568,11 +568,14 @@ function readSideStroke(
     "each side the box sets a width of its own on reads its own style",
     []
   );
-  root.missing(
-    "border-color",
-    `border-${sideName(root, first)}-width`,
-    "no class or base rule colors the border, so the stroke is left out"
-  );
+  const sideColors = colorsBySide(root, given);
+  if (sideColors === undefined) {
+    root.missing(
+      "border-color",
+      `border-${sideName(root, first)}-width`,
+      "no class or base rule colors the border, so the stroke is left out"
+    );
+  }
   const stroke = root.feed("stroke");
   const sides = { top: 0, right: 0, bottom: 0, left: 0 };
   let complete = true;
@@ -604,11 +607,39 @@ function readSideStroke(
       sides[side] = width;
     }
   }
-  const color = root.read("border-color", (value) => readColor(value, variables), describeColor, stroke);
+  const color =
+    sideColors === undefined
+      ? root.read("border-color", (value) => readColor(value, variables), describeColor, stroke)
+      : sideColors
+          .map((property) =>
+            root.read(property, (value) => readColor(value, variables), describeColor, stroke)
+          )
+          .reduce((first, each) => (first !== undefined && each !== undefined ? first : undefined));
   if (!complete || color === undefined) {
     return undefined;
   }
   return collapsed ? { color, sides, inLayout: false } : { color, sides };
+}
+
+/**
+ * The color longhands of a box's bordered sides, where it colors them side by side and not through
+ * `border-color`: each side the box sets a width on names its own color, and every one computes to
+ * the same value, so one stroke color draws them all. A pseudo-element's cascade splits a border
+ * shorthand into these longhands, as an arrow's `::before` splits `border-color: var(--border)`.
+ * Undefined where the box sets `border-color`, or a side lacks a color or colors differ, since one
+ * stroke draws one color.
+ */
+function colorsBySide(
+  root: LayerStyle,
+  given: readonly BorderSide[]
+): readonly [string, ...string[]] | undefined {
+  if (root.has("border-color")) {
+    return undefined;
+  }
+  const properties = given.map((side) => `border-${sideName(root, side)}-color`);
+  const [first, ...rest] = properties;
+  const values = new Set(properties.map((property) => normalizeCss(root.resolved(property) ?? "")));
+  return first === undefined || values.size !== 1 || values.has("") ? undefined : [first, ...rest];
 }
 
 /** A border style the stroke draws: the dash pattern of a dashed one, and its coverage detail. */
