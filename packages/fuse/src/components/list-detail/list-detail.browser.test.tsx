@@ -2,9 +2,10 @@
 // parts, sized through the width of the root's parent. Oracles: the documented breakpoint,
 // Tailwind's `@4xl` container size of 56rem, measured as a container query measures it, in layout
 // width with rem at the root font size; the complementary landmark and the dialog, each named by the
-// Title or else the Detail's `aria-label`; and the documented layout rules, which keep the detail
-// and focus where the user was.
-import { useState } from "react";
+// Title or else the Detail's `aria-label`; the element passed as the Detail's `container`, which
+// holds the dialog; and the documented layout rules, which keep the detail and focus where the user
+// was.
+import { createRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { flushSync } from "react-dom";
@@ -310,6 +311,30 @@ describe("ListDetail", () => {
     await userEvent.click(roleNamed("button", "Order 4012"));
     await expect.element(dialog()).toBeVisible();
     expect(mounted.at(-1)).toBe("dialog");
+  });
+
+  it("renders the dialog into the Detail's container below the breakpoint", async () => {
+    const viewport = createRef<HTMLDivElement>();
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <div ref={viewport} data-testid="viewport" />
+          <div style={{ width: SPLIT_PX - 1, height: 400, display: "flex" }}>
+            <ListDetail.Root open onOpenChange={() => undefined} className="flex-1">
+              <ListDetail.List />
+              <ListDetail.Detail container={viewport}>
+                <ListDetail.Title>Henrik Aasen</ListDetail.Title>
+              </ListDetail.Detail>
+            </ListDetail.Root>
+          </div>
+        </>
+      )
+    );
+
+    await expect
+      .element(page.getByTestId("viewport").getByRole("dialog", { name: "Henrik Aasen" }))
+      .toBeVisible();
   });
 
   describe("crossing the breakpoint", () => {

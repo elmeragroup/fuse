@@ -328,15 +328,26 @@ export type ListDetailDetailProps = Omit<useRender.ComponentProps<"aside">, "chi
    * is selected. The element props, `className`, `ref` and `render` land on whichever is mounted.
    */
   "aria-label"?: useRender.ComponentProps<"aside">["aria-label"];
-  /** The Sheet's maximum width, as on `Sheet.Content`. It applies below the breakpoint only. */
+  /**
+   * The Sheet's maximum width, as on `Sheet.Content`. It applies only while the detail shows in a
+   * Sheet.
+   */
   size?: SheetContentProps["size"];
-  /** Whether the Sheet shows its corner close button. It applies below the breakpoint only. */
+  /**
+   * Whether the Sheet shows its corner close button. It applies only while the detail shows in a
+   * Sheet.
+   */
   showCloseButton?: boolean;
   /**
    * The Sheet's corner close button's accessible name. Defaults to `overlay.close` from the locale
-   * dictionary. It applies below the breakpoint only.
+   * dictionary. It applies only while the detail shows in a Sheet.
    */
   closeLabel?: string;
+  /**
+   * The element the Sheet renders into, as on `Sheet.Content`. Defaults to the nearest enclosing
+   * `ThemeScope` element. It applies only while the detail shows in a Sheet.
+   */
+  container?: SheetContentProps["container"];
 };
 
 /**
@@ -349,6 +360,7 @@ export function ListDetailDetail({
   size,
   showCloseButton,
   closeLabel,
+  container,
   render,
   ref,
   ...props
@@ -389,6 +401,7 @@ export function ListDetailDetail({
           size,
           showCloseButton,
           closeLabel,
+          container,
           render,
           ...elementProps,
         })}
