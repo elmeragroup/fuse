@@ -63,8 +63,7 @@ export type HeadingClassOptions = VariantProps<typeof headingVariants> & {
 /**
  * The classes `Heading` renders before a consumer's `className`: the recipe's, with the level's
  * theme size and line height merged over them where `size` is unset, and the level's theme weight
- * where `font` is unset. Not exported from `@elmeragroup/fuse/heading`; the workspace-only recipe
- * catalog re-exports it for the Figma component sync, which builds the Heading text styles from it.
+ * where `font` is unset. `@elmeragroup/fuse/heading` does not export it.
  *
  * @param options - The recipe axes and the outline level.
  * @returns The merged class string.

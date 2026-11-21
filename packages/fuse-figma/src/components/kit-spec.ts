@@ -1210,9 +1210,9 @@ export type FontWeightSpec =
   | { readonly kind: "literal"; readonly style: string };
 
 /**
- * A local text style the plugin keeps in the file, built from the Text, Heading or Span recipe. The
- * plugin finds it by `key` in shared plugin data, so a designer can rename it. It sets every field a
- * Figma text style applies: these from the recipe, and the rest to Figma's defaults.
+ * A local text style the plugin keeps in the file, built from the capture of a Text, Heading or Span
+ * sample. The plugin finds it by `key` in shared plugin data, so a designer can rename it. It sets
+ * every field a Figma text style applies: these from the sample, and the rest to Figma's defaults.
  */
 export type TextStyleSpec = {
   /** The style's key, such as `text-style/text/sm/medium`. */
@@ -1225,7 +1225,7 @@ export type TextStyleSpec = {
   readonly fontWeight: FontWeightSpec;
   readonly fontSize: NumberSpec;
   readonly lineHeight: LineHeightSpec;
-  /** Letter spacing as a percent of the font size, 0 where the recipe sets none. */
+  /** Letter spacing as a percent of the font size, 0 where the sample sets none. */
   readonly letterSpacing: LetterSpacingSpec;
   readonly textCase: "ORIGINAL" | "UPPER" | "LOWER" | "TITLE";
   readonly textDecoration: "NONE" | "UNDERLINE" | "STRIKETHROUGH";
