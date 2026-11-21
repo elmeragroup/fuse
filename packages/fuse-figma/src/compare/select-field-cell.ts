@@ -5,8 +5,9 @@
  *
  * - `content=value` selects the Form demo's `pro`, whose label the trigger shows. A placeholder cell
  *   selects nothing, so Base UI marks the trigger `data-placeholder`.
- * - `disabled` sets `isDisabled`, which disables the Field root and the Select. `invalid` sets
- *   `isInvalid` and the States demo's `errorMessage`, which Base UI renders as the Field's error.
+ * - `disabled` sets `isDisabled`, which disables the Field root and the Select. `readonly` sets
+ *   `isReadOnly`, which makes the Select read-only. `invalid` sets `isInvalid` and the States demo's
+ *   `errorMessage`, which Base UI renders as the Field's error.
  * - The options popup portals in an effect, so static markup holds none of it.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
@@ -33,7 +34,7 @@ import { inFieldWidth } from "./field-text-cell.ts";
 /** The docs demos' plans, the selected one labelled as the kit draws it. */
 const PLANS = { basic: "Basic", plus: "Plus", pro: SELECT_FIELD_VALUE } as const;
 
-/** A `select-field` cell: the labelled select holding the placeholder or a plan, disabled or invalid. */
+/** A `select-field` cell: the labelled select holding the placeholder or a plan, disabled, read-only or invalid. */
 export const selectField: CellRendering = {
   element: (cell: Cell) => {
     const props: ComponentProps<typeof SelectField> = {
@@ -42,6 +43,7 @@ export const selectField: CellRendering = {
       placeholder: SELECT_FIELD_PLACEHOLDER,
       items: PLANS,
       isDisabled: cell.state === "disabled",
+      isReadOnly: cell.state === "readonly",
       isInvalid: cell.state === "invalid",
     };
     if (!showsPlaceholder(cell)) {

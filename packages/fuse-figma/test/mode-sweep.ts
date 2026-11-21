@@ -20,6 +20,7 @@ import { NodeServices } from "@effect/platform-node";
 import { Effect, Result, Schema } from "effect";
 import { TestConsole } from "effect/testing";
 
+import * as CssColor from "@elmeragroup/color/css-color";
 import { BRAND_CODES, BRANDS, THEME_IDENTITIES, THEME_SEGMENTS } from "@elmeragroup/fuse/theme-catalog";
 
 import { captureTargets } from "../src/capture/capture-targets.ts";
@@ -33,7 +34,8 @@ import { parsePreviewTheme, themeStamps } from "../src/compare/preview-theme.ts"
 import type { PreviewTheme, ThemeStamps } from "../src/compare/preview-theme.ts";
 import { possibleCells, variantKey } from "../src/components/component-spec.ts";
 import type { Cell } from "../src/components/component-spec.ts";
-import type { NumberSpec } from "../src/components/kit-spec.ts";
+import type { ColorSpec, NumberSpec } from "../src/components/kit-spec.ts";
+import type { Rgba } from "../src/variable-set.ts";
 import { FILE_KEY, run, TOKEN } from "./cli-fixture.ts";
 import { InMemoryFigma } from "./in-memory-figma.ts";
 
@@ -155,6 +157,51 @@ export function pixelsIn(figma: InMemoryFigma, length: NumberSpec, mode: SweptMo
   }
   return value;
 }
+
+const isRgba = Schema.is(
+  Schema.Struct({ r: Schema.Number, g: Schema.Number, b: Schema.Number, a: Schema.Number })
+);
+
+/**
+ * A built color under a pin: a literal, or the color its variable resolves to in the file.
+ *
+ * @throws When the variable resolves to no color.
+ */
+export function colorIn(figma: InMemoryFigma, color: ColorSpec, mode: SweptMode): Rgba {
+  if (color.kind === "literal") {
+    return color.color;
+  }
+  const value = figma.resolve(color.variable.collection, color.variable.name, mode.pin);
+  if (!isRgba(value)) {
+    throw new Error(`${color.variable.name} resolves to no color under ${named(mode)}`);
+  }
+  return value;
+}
+
+/**
+ * A computed color as sRGB, parsed through `@elmeragroup/color`.
+ *
+ * @throws When the value is no CSS color.
+ */
+export function computedColor(value: string | undefined): Rgba {
+  const parsed = CssColor.parse(value ?? "");
+  if (parsed._tag === "err") {
+    throw new Error(`Chromium computed ${value ?? "no value"}, which is no color`);
+  }
+  const { r, g, b, alpha } = CssColor.toSrgb(parsed.value);
+  return { r, g, b, a: alpha };
+}
+
+/** Whether two colors sit within `tolerance`, in `0..1`, on every channel and the alpha. */
+export function sameColor(left: Rgba, right: Rgba, tolerance: number): boolean {
+  return (["r", "g", "b", "a"] as const).every(
+    (channel) => Math.abs(left[channel] - right[channel]) <= tolerance
+  );
+}
+
+/** A color as a failure names it, each channel to six places. */
+export const rgba = ({ r, g, b, a }: Rgba): string =>
+  [r, g, b, a].map((channel) => channel.toFixed(6)).join(" ");
 
 /** One element of a cell as the page computes it under one theme. */
 export type ComputedElement = {

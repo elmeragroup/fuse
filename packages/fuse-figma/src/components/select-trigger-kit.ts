@@ -1,6 +1,6 @@
 /**
  * Select's trigger, as one component set: hugging its value or filling its container, both sizes in
- * four states, holding the placeholder or a value, closed and open, 64 cells. The root is Base UI's
+ * five states, holding the placeholder or a value, closed and open, 80 cells. The root is Base UI's
  * `<button data-slot="select-trigger">`, a native control. The popup and its rows wait for the
  * overlay sets.
  *
@@ -15,7 +15,10 @@
  *   selection.
  * - The caret is a fixed CaretDown at the trigger's end. `open=true` renders the trigger with its popup
  *   open, where the caret turns half a turn. A Select opened through `open` or `defaultOpen` stays
- *   open when it is disabled, so the set draws the open trigger disabled too.
+ *   open when it is disabled, so the set draws the open trigger disabled too. A read-only Select
+ *   opens too, since Base UI's `readOnly` blocks only a commit (`SelectRoot`, Base UI 1.9), so the set
+ *   draws the open trigger read-only as well.
+ * - `state=readonly` sets the root's `readOnly`, and the trigger takes the muted read-only fill.
  * - Only an invalid cell renders the trigger in a Field, the one source Base UI reads its validity
  *   from.
  */
@@ -73,8 +76,8 @@ const CARET: IconManifest = {
 /**
  * The trigger's manifest, which the capture-backed build reads with `captures/select-trigger.json`,
  * as `<Select.Trigger size><Select.Value placeholder /></Select.Trigger>` renders it in a
- * `Select.Root` that is disabled, holds a value or has its popup open, or inside an invalid
- * `Field.Root`.
+ * `Select.Root` that is disabled, read-only, holds a value or has its popup open, or inside an
+ * invalid `Field.Root`.
  */
 export const SELECT_TRIGGER_MANIFEST: SetManifest = {
   key: "select-trigger",
@@ -89,7 +92,7 @@ export const SELECT_TRIGGER_MANIFEST: SetManifest = {
   axes: [
     { name: "width", values: HUG_OR_FILL },
     { name: "size", values: SIZES },
-    { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
+    { name: "state", values: ["rest", "focus", "disabled", "invalid", "readonly"] },
     { name: "content", values: ["placeholder", "value"] },
     { name: "open", values: ["false", "true"] },
   ],

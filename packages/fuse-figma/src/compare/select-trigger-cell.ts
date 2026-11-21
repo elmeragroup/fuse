@@ -34,7 +34,7 @@ import type { CellRendering } from "./cell-renderers.ts";
 /** The value of the root's one item, whose label is the text the kit draws. */
 const ITEM = "choice";
 
-/** A `select-trigger` cell: a trigger holding the placeholder or a value, disabled, invalid or open. */
+/** A `select-trigger` cell: a trigger holding the placeholder or a value, disabled, read-only, invalid or open. */
 export const selectTrigger: CellRendering = {
   element: (cell: Cell) => {
     const root = createElement(
@@ -43,6 +43,7 @@ export const selectTrigger: CellRendering = {
         items: { [ITEM]: SELECT_TRIGGER_TEXT },
         defaultValue: cell.content === "value" ? ITEM : null,
         disabled: cell.state === "disabled",
+        readOnly: cell.state === "readonly",
         defaultOpen: showsOpen(cell),
       },
       createElement(

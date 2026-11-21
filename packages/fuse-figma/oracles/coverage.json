@@ -2540,10 +2540,6 @@
     "select-trigger": [
       {
         "part": "select-trigger",
-        "className": "[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted"
-      },
-      {
-        "part": "select-trigger",
         "className": "aria-disabled:cursor-not-allowed"
       },
       {
@@ -6475,6 +6471,8 @@
         "select-field/state=focus,content=value 0/root/0/0",
         "select-field/state=invalid,content=placeholder 0/root/0/0",
         "select-field/state=invalid,content=value 0/root/0/0",
+        "select-field/state=readonly,content=placeholder 0/root/0/0",
+        "select-field/state=readonly,content=value 0/root/0/0",
         "select-field/state=rest,content=placeholder 0/root/0/0",
         "select-field/state=rest,content=value 0/root/0/0"
       ]
