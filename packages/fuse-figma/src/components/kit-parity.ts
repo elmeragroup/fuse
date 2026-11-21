@@ -73,7 +73,7 @@ export const KIT_PARITY = {
     kind: "partial",
     sets: ["attachment"],
     missing:
-      "The vertical tile, the `uploading` and `processing` states (#857), image media, `Attachment.AspectRatio`, `Attachment.Trigger` and `Attachment.Group`.",
+      "The vertical tile, the animated title highlight during upload and processing, image media, `Attachment.AspectRatio`, `Attachment.Trigger` and `Attachment.Group`.",
     issue: NICE_TO_HAVE,
   },
   // The Combobox sets do not draw it: its rows keep no room for a check, and no Input group form
