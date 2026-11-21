@@ -1554,6 +1554,11 @@ type BoxSizing = Pick<BoxSpec, "sizing" | "limits" | "clips"> & {
    * room says. False where a length does not map, as `w-min` does not, and the axis hugs in its place.
    */
   readonly known: { readonly horizontal: boolean; readonly vertical: boolean };
+  /**
+   * Whether every `min-*` and `max-*` limit the box sets reaches its limits or its sizing, or drops.
+   * False where one stays unmapped, so CSS may size the box past what its sizing and limits say.
+   */
+  readonly limitsRead: boolean;
 };
 
 /**
@@ -1648,6 +1653,9 @@ export function readSizing(
     },
     clips,
     known: { horizontal: horizontal.known, vertical: vertical.known },
+    limitsRead: [horizontal, vertical].every(({ notes }) =>
+      [...notes.values()].every((note) => note !== undefined)
+    ),
     aspectLock,
     extent: {
       horizontal: usedPixels(horizontal, room.horizontal.length),

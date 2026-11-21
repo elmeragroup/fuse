@@ -51,12 +51,16 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     slug: "toggle",
     name: "Toggle",
     sets: [
-      // 2 variants in 4 states off and on, 2 at each of 3 other sizes, and 2 with each of 2 icons.
-      { key: "toggle", name: "Toggle", variants: 192, previewed: 26 },
+      // 2 variants at 4 sizes in 4 states, off and on, with 3 icon placements, alone or as one of a
+      // segmented group's 3 items: 768. The previews place the free-standing ones: 2 in 4 states off
+      // and on, 2 at each of 3 other sizes, and 2 with each of 2 icons.
+      { key: "toggle", name: "Toggle", variants: 768, previewed: 26 },
       // The same without the icons.
       { key: "icon-toggle", name: "Icon toggle", variants: 64, previewed: 22 },
       // The spaced group at 2 variants and 4 sizes.
       { key: "toggle-group", name: "Toggle group", variants: 8, previewed: 8 },
+      // The segmented group at 2 variants and 4 sizes.
+      { key: "segmented-toggle-group", name: "Segmented toggle group", variants: 8, previewed: 8 },
     ],
   },
   // 19 variants at 3 sizes.

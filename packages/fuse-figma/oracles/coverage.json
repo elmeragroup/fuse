@@ -179,22 +179,29 @@
       "set": "data-table-filter-bar",
       "part": "button",
       "className": "rounded-none",
-      "property": "border-radius",
-      "reason": "On Remove, the chip's last segment, `rounded-none` sets `border-radius` beside the end corners' longhands from `last:rounded-e-[calc(var(--radius-md)-1px)]`. Which of them wins depends on their order, which the build does not read, so `readCorners` maps no corner, and Remove takes the square fallback `mapBox` gives a box whose corners do not map, 0 on every corner. The other segments set `rounded-none` alone and map it. Remove is a transparent ghost button inside the chip's own rounded border, so its square end corners paint nothing at rest that the chip's corners do not."
+      "property": "border-top-left-radius",
+      "reason": "On Remove, the chip's last segment, `rounded-none` wins only the start corners, since the later `last:rounded-e-[calc(var(--radius-md)-1px)]` takes the end corners. A radius per corner maps on all four corners or none, and the end corners do not map, so `readCorners` maps no corner, and Remove takes the square fallback `mapBox` gives a box whose corners do not map, 0 on every corner. The other segments set `rounded-none` alone and map it. Remove is a transparent ghost button inside the chip's own rounded border, so its square end corners paint nothing at rest that the chip's corners do not."
+    },
+    {
+      "set": "data-table-filter-bar",
+      "part": "button",
+      "className": "rounded-none",
+      "property": "border-bottom-left-radius",
+      "reason": "On Remove, the chip's last segment, `rounded-none` wins only the start corners, since the later `last:rounded-e-[calc(var(--radius-md)-1px)]` takes the end corners. A radius per corner maps on all four corners or none, and the end corners do not map, so `readCorners` maps no corner, and Remove takes the square fallback `mapBox` gives a box whose corners do not map, 0 on every corner. The other segments set `rounded-none` alone and map it. Remove is a transparent ghost button inside the chip's own rounded border, so its square end corners paint nothing at rest that the chip's corners do not."
     },
     {
       "set": "data-table-filter-bar",
       "part": "button",
       "className": "last:rounded-e-[calc(var(--radius-md)-1px)]",
       "property": "border-start-end-radius",
-      "reason": "Remove, the chip's last segment, rounds its end corners at the chip's `radius-md` less its 1px border, `calc(var(--radius-md) - 1px)`. `radius-md` follows the corner identity, and no synced variable holds it less 1px, so no corner draws it in every mode. `rounded-none`'s `border-radius` beside these longhands leaves every corner unread as well, and Remove takes the square fallback `mapBox` gives a box whose corners do not map, 0 on every corner. Remove is a transparent ghost button inside the chip's own rounded border, so its square end corners paint nothing at rest that the chip's corners do not."
+      "reason": "Remove, the chip's last segment, rounds its end corners at the chip's `radius-md` less its 1px border, `calc(var(--radius-md) - 1px)`. `radius-md` follows the corner identity, and no synced variable holds it less 1px, so no corner draws it in every mode. Since these corners do not map, no corner of Remove maps, and Remove takes the square fallback `mapBox` gives a box whose corners do not map, 0 on every corner. Remove is a transparent ghost button inside the chip's own rounded border, so its square end corners paint nothing at rest that the chip's corners do not."
     },
     {
       "set": "data-table-filter-bar",
       "part": "button",
       "className": "last:rounded-e-[calc(var(--radius-md)-1px)]",
       "property": "border-end-end-radius",
-      "reason": "Remove, the chip's last segment, rounds its end corners at the chip's `radius-md` less its 1px border, `calc(var(--radius-md) - 1px)`. `radius-md` follows the corner identity, and no synced variable holds it less 1px, so no corner draws it in every mode. `rounded-none`'s `border-radius` beside these longhands leaves every corner unread as well, and Remove takes the square fallback `mapBox` gives a box whose corners do not map, 0 on every corner. Remove is a transparent ghost button inside the chip's own rounded border, so its square end corners paint nothing at rest that the chip's corners do not."
+      "reason": "Remove, the chip's last segment, rounds its end corners at the chip's `radius-md` less its 1px border, `calc(var(--radius-md) - 1px)`. `radius-md` follows the corner identity, and no synced variable holds it less 1px, so no corner draws it in every mode. Since these corners do not map, no corner of Remove maps, and Remove takes the square fallback `mapBox` gives a box whose corners do not map, 0 on every corner. Remove is a transparent ghost button inside the chip's own rounded border, so its square end corners paint nothing at rest that the chip's corners do not."
     },
     {
       "set": "data-table-filter-bar",
@@ -363,6 +370,13 @@
       "className": "group-data-[state=uploading]/attachment:shimmer",
       "property": "background-size",
       "reason": "The solid title fill matches the resting shimmer within the pixel tolerance tested for #857, except for color glyphs such as emoji."
+    },
+    {
+      "set": "toggle",
+      "part": "toggle",
+      "className": "focus-visible:z-10",
+      "property": "z-index",
+      "reason": "A focused item of a segmented Toggle group stacks above its neighbors, so Chromium paints its focus ring over the pressed neighbor's fill where the two meet. The neighbors are instances in the Segmented toggle group's row, and Figma paints a row's layers in their order, with no field that lifts one layer of an auto layout above the next, so the kit paints the later item over the ring there."
     }
   ],
   "unbound": [
@@ -2925,18 +2939,20 @@
         "className": "data-[spacing=0]:enabled-active:scale-100"
       }
     ],
+    "segmented-toggle-group": [
+      {
+        "part": "toggle-group",
+        "className": "data-vertical:flex-col"
+      },
+      {
+        "part": "toggle-group",
+        "className": "data-vertical:items-stretch"
+      }
+    ],
     "toggle": [
       {
         "part": "toggle",
         "className": "enabled-active:scale-[0.96]"
-      },
-      {
-        "part": "toggle",
-        "className": "aria-disabled:cursor-not-allowed"
-      },
-      {
-        "part": "toggle",
-        "className": "aria-disabled:opacity-50"
       },
       {
         "part": "toggle",
@@ -2993,6 +3009,26 @@
       {
         "part": "toggle",
         "className": "data-invalid:focus-visible:ring-offset-error"
+      },
+      {
+        "part": "toggle",
+        "className": "data-[spacing=0]:enabled-active:scale-100"
+      },
+      {
+        "part": "toggle",
+        "className": "group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-md"
+      },
+      {
+        "part": "toggle",
+        "className": "group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-md"
+      },
+      {
+        "part": "toggle",
+        "className": "group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0"
+      },
+      {
+        "part": "toggle",
+        "className": "group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-t"
       }
     ],
     "tooltip-content": [

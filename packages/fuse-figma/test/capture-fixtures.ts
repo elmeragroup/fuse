@@ -26,7 +26,7 @@ import type {
   PartManifest,
   SetManifest,
 } from "../src/capture/manifest.ts";
-import { UnknownLayer, resolveWinners } from "../src/capture/winners.ts";
+import { UnknownLayer, physicalLonghand, resolveWinners } from "../src/capture/winners.ts";
 import { buildSetsInOrder } from "../src/components/component-builder.ts";
 import { variantKey } from "../src/components/component-spec.ts";
 import type {
@@ -205,6 +205,9 @@ const LOGICAL_BORDER_SIDES = new Map<string, readonly string[]>([
   ["inline-end", ["right"]],
 ]);
 
+/** The physical corners of a box, clockwise from the top left. */
+const BORDER_CORNERS = ["top-left", "top-right", "bottom-right", "bottom-left"] as const;
+
 /** The longhands of a side's border, besides `border-image`'s. */
 const BORDER_PARTS = ["width", "style", "color"] as const;
 
@@ -214,10 +217,13 @@ const BORDER_IMAGE = ["source", "slice", "width", "outset", "repeat"].map((part)
 /**
  * The physical longhands a border property sets, as Chromium lists them and the capture records them
  * (CSS Backgrounds 3 §3, CSS Logical Properties 1 §4): `border-color` sets each side's color, and
- * `border-inline-start-color` the left side's. Undefined for a property no border shorthand or side
- * names, a radius included.
+ * `border-inline-start-color` the left side's, and `border-radius` each corner's radius. Undefined for
+ * a property no border shorthand, side or corner names.
  */
 function borderLonghands(property: string): readonly string[] | undefined {
+  if (property === "border-radius") {
+    return BORDER_CORNERS.map((corner) => `border-${corner}-radius`);
+  }
   const match =
     /^border(?:-(top|right|bottom|left|(?:block|inline)(?:-(?:start|end))?))?(?:-(width|style|color))?$/.exec(
       property
@@ -262,12 +268,14 @@ function captureOf(
             name: declaration.property,
             value: declaration.value,
             important: false,
+            // A logical longhand goes by its physical name, as the capture's page reads it.
             longhands: declaration.property.startsWith("--")
               ? [declaration.property]
-              : declaration.property === "flex"
-                ? FLEX_LONGHANDS
-                : (borderLonghands(declaration.property) ??
-                  expandShorthand(declaration.property, declaration.value).map(([longhand]) => longhand)),
+              : (declaration.property === "flex"
+                  ? FLEX_LONGHANDS
+                  : (borderLonghands(declaration.property) ??
+                    expandShorthand(declaration.property, declaration.value).map(([longhand]) => longhand))
+                ).map(physicalLonghand),
           },
         ],
       }))

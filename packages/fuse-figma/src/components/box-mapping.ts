@@ -23,7 +23,7 @@ import {
   stretchedLayer,
 } from "./box-flow";
 import type { Flow, UnspacedReason } from "./box-flow";
-import { describeColor, paintsAnything, readPaint } from "./box-paint";
+import { borderWidths, describeColor, paintsAnything, readPaint } from "./box-paint";
 import type { BoxPaint } from "./box-paint";
 import {
   absoluteRoom,
@@ -568,6 +568,8 @@ export function mapBox(
     variant,
     cascade.measured?.bordersCollapse === true
   );
+  // The border widths the stroke draws, which a box that hugs adds to the length it holds.
+  const borders = borderWidths(reader, context.variables);
   dropIdleOrigin(reader, cascade.measured);
   const opacity = reader.read(
     "opacity",
@@ -586,7 +588,7 @@ export function mapBox(
   const onlyText = showsOnlyText(box, cell);
   // The box's lengths and layout read before its parts map, since they decide what a part can fill.
   const fit = onlyText && drawsAlikeWide(reader, paint) ? "room" : "content";
-  const { sizing, limits, clips, extent, known, aspectLock } = readSizing(
+  const { sizing, limits, clips, extent, known, aspectLock, limitsRead } = readSizing(
     reader,
     room,
     context.variables,
@@ -961,7 +963,9 @@ export function mapBox(
     const keepsRoom: KeptRoom =
       index === -1 ||
       holder.layers.length !== 1 ||
-      (["horizontal", "vertical"] as const).some((axis) => hugs(axis) && !literalInsets(reader, axis))
+      (["horizontal", "vertical"] as const).some(
+        (axis) => hugs(axis) && !literalInsets(reader, borders, axis)
+      )
         ? { kind: "none" }
         : {
             kind: "kept",
@@ -1234,7 +1238,7 @@ export function mapBox(
     // A box whose one layer hides keeps the length that layer holds, which Figma's auto layout would
     // give back where the box hugs it.
     sizing: children.some((child) => child.kind === "frame" && child.hidden === true)
-      ? heldSizing(reader, { sizing, limits }, children)
+      ? heldSizing(reader, { sizing, limits, borders }, children)
       : sizing,
     limits,
     clips,
@@ -1276,11 +1280,12 @@ export function mapBox(
         reader,
         {
           sizing,
-          held: heldSizing(reader, { sizing, limits }, children),
+          held: heldSizing(reader, { sizing, limits, borders }, children),
           leastHeight: boxHeightBounds(
             grid === undefined ? laidOut : { ...laidOut, grid: keyedCells(grid, children) },
             context.variables
           ).min,
+          limits: limitsRead ? limits : undefined,
         },
         context.variables
       ) ?? ZERO,

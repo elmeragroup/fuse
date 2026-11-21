@@ -57,6 +57,7 @@ import { CellLedger, inheritance, inheritsProperty, LayerStyle } from "../compon
 import type {
   Applied,
   CellScope,
+  ComputedStyle,
   CoverageNote,
   InPlace,
   Layer,
@@ -64,6 +65,7 @@ import type {
 } from "../components/layer-style.ts";
 import { linkTarget } from "../components/link-target.ts";
 import { percentHeightBasis, stretchedToHost } from "../components/percent-height.ts";
+import { wonLonghands } from "./border-shorthands.ts";
 import { ANCHOR_CENTRE, ANCHOR_WIDTH } from "./capture-format.ts";
 import type {
   CapturedCell,
@@ -391,7 +393,9 @@ function appliedOf(
         ),
         rank: 0,
         order,
-        declarations: [{ property: declaration.property, value }],
+        declarations: wonLonghands(declaration.property, value, declaration.longhands) ?? [
+          { property: declaration.property, value },
+        ],
         at,
         wins: declaration.longhands,
       },
@@ -725,6 +729,31 @@ export class CaptureSetCascade {
   }
 }
 
+/**
+ * Declarations with each border shorthand split into its longhands, as `withBorderLonghands` says.
+ * A shorthand's `var()` resolves through a cascade of the declarations, unsplit, over what the
+ * element inherits, on a ledger of its own so the cell's layers stay as they are. The split asks for
+ * a resolved value only for a `border-width` that is one `var()`, so the cascade runs at the first
+ * such ask and not for an element with none. A declaration that loses its property to a later one
+ * resolves to nothing.
+ */
+function splitBorders(scope: CellScope, inherited: ComputedStyle, applied: readonly Applied[]): Applied[] {
+  let unsplit: LayerStyle | undefined;
+  const cascaded = (): LayerStyle => {
+    if (unsplit === undefined) {
+      const scratch = new CellLedger(scope);
+      unsplit = new LayerStyle(scratch, scratch.add(inherited, applied, undefined), []);
+    }
+    return unsplit;
+  };
+  return withBorderLonghands(applied, (property, value) => {
+    const style = cascaded();
+    return normalizeCss(style.raw(property) ?? "") === normalizeCss(value)
+      ? style.resolved(property)
+      : undefined;
+  });
+}
+
 /** A box's pseudo-element the mapping draws as a layer of its own, with its cascaded style. */
 export type DrawnPseudo = { readonly pseudo: "before" | "after"; readonly style: LayerStyle };
 
@@ -750,8 +779,13 @@ function readPseudoElements(
     if (pseudo === "placeholder") {
       continue;
     }
-    const applied = withBorderLonghands(appliedOf(read, indexes, placed, () => true, `::${pseudo}`));
-    const pseudoLayer = ledger.add(inheritance(layer, read.context), applied, layer);
+    const inherited = inheritance(layer, read.context);
+    const applied = splitBorders(
+      ledger.scope,
+      inherited,
+      appliedOf(read, indexes, placed, () => true, `::${pseudo}`)
+    );
+    const pseudoLayer = ledger.add(inherited, applied, layer);
     const style = new LayerStyle(ledger, pseudoLayer, [...path, `::${pseudo}`]);
     const { paints, ...note } = pseudoVerdict(style, pseudo, read.context.variables);
     if (paints && (pseudo === "before" || pseudo === "after") && boxes.has(pseudo)) {
@@ -1110,19 +1144,13 @@ export class CaptureCellCascade {
         path,
         ({ property }) => !page || (inheritsProperty(property, context) && !context.variables.owns(property))
       );
+      const inherited = parent === undefined ? new Map() : inheritance(parent, context);
       const applied = [
         ...(parent === undefined ? [initialFontSize(origin)] : []),
         // A border's sides cascade one by one, so the content height around the root reads them.
-        ...(page ? own : withBorderLonghands(own)),
+        ...(page ? own : splitBorders(this.#ledger.scope, inherited, own)),
       ];
-      parent = this.#ledger.add(
-        parent === undefined ? new Map() : inheritance(parent, context),
-        applied,
-        parent,
-        {
-          undrawn,
-        }
-      );
+      parent = this.#ledger.add(inherited, applied, parent, { undrawn });
       if (!page) {
         layers.push({ element, layer: parent });
       }
