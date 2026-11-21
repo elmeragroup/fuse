@@ -1,6 +1,6 @@
 /**
  * Attachment, as one component set on the Attachment page: the docs default demo's row at each
- * `size`, at rest and waiting to upload, 6 cells, with columns by `size`.
+ * `size`, at rest, waiting to upload and failed, 9 cells, with columns by `size`.
  *
  * - The root is a `<div data-slot="attachment">`, a horizontal row. Its sample renders in a 448px
  *   host, which the row fills, as a block-level root fills the docs demo stage.
@@ -11,8 +11,11 @@
  *   The actions' `z-index` stacks them over the rest of the row, and the kit draws them as the root's
  *   last layer.
  *
- * The set draws no vertical tile, no `error`, `uploading` or `processing` state, no
- * `Attachment.Trigger`, no image media and no `Attachment.Group`.
+ * - An `error` row tints its border `error/30` and its media `error/10`, and its media glyph and
+ *   description draw in `error`.
+ *
+ * The set draws no vertical tile, no `uploading` or `processing` state, whose `shimmer` text
+ * (#857) the kit does not draw, no `Attachment.Trigger`, no image media and no `Attachment.Group`.
  */
 import type { IconManifest, InstanceManifest, SetManifest } from "../capture/manifest";
 import { ICON_BUTTON_MANIFEST } from "./button-kit";
@@ -36,7 +39,7 @@ export const ATTACHMENT_ACTION_LABEL = "Remove meter-readings.pdf";
 const SIZES = ["default", "sm", "xs"] as const;
 
 /** The states the set draws, as `Attachment.Root` takes its `state`, its default first. */
-const STATES = ["done", "idle"] as const;
+const STATES = ["done", "idle", "error"] as const;
 
 /** A cell's size and state, as `Attachment.Root` takes them. */
 export type AttachmentLook = {
