@@ -72,7 +72,9 @@
  * 44. A `minWidth` written on an instance is an override. On 2026-10-25 a fresh instance listed
  *    `minWidth` and `minHeight` on its root after a `minWidth` write alone, with `minHeight` reading
  *    null, and kept both listed after `minWidth` went back to null (PH3). The fake lists both from the
- *    first write on. It does not lay out, so the minimum clamps no size. No probe wrote another limit
+ *    first write on. It does not lay out, so the minimum clamps no size. On 2026-11-20 a `maxWidth`
+ *    write alone listed `maxWidth` and `maxHeight`, and both stayed listed after the main's value was
+ *    written back (SW), so the fake lists both from the first write on. No probe wrote a height limit
  *    on an instance, so the fake lists none for those.
  * 45. TEXT values set through exposure two levels down. On 2026-10-25 a `Command item` row instance
  *    listed in `exposedInstances` its exposed `kbd-group` and the two exposed caps inside it, and the
@@ -385,6 +387,8 @@ export const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]>
   ["fontName", ["fontName"]],
   ["minWidth", ["minWidth"]],
   ["minHeight", ["minHeight"]],
+  ["maxWidth", ["maxWidth"]],
+  ["maxHeight", ["maxHeight"]],
   ["componentProperties", ["componentProperties"]],
   ["layoutPositioning", ["layoutPositioning"]],
   ["paddingTop", ["paddingTop"]],

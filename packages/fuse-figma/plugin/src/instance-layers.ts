@@ -494,6 +494,16 @@ const planOverridesAndSizing = Effect.fnUntraced(function* (
   }
   // An instance with no minimum of its own shows the inner variant's (PH3).
   planLimit(run, instance, label, "minWidth", spec.minWidth ?? inner.spec.root.limits.minWidth);
+  planLimit(run, instance, label, "maxWidth", spec.maxWidth ?? inner.spec.root.limits.maxWidth);
+  // A `maxWidth` write lists `maxHeight` among the instance's overrides too (SW), and an override keeps
+  // the instance's value through a change of the main's, as rule 38 of the fake keeps an instance's
+  // other overrides (N3), so an instance that holds it takes the main's by a write.
+  const heightHeld = instance.overrides.some(
+    ({ id, overriddenFields }) => id === instance.id && overriddenFields.includes("maxHeight")
+  );
+  if (heightHeld) {
+    planLimit(run, instance, label, "maxHeight", inner.spec.root.limits.maxHeight);
+  }
   planVisibleLink(run, instance, label, spec.visibleProperty, links.properties);
   const exposed = spec.exposed === true;
   planScalar(run, label, "isExposedInstance", instance.isExposedInstance, exposed, () => {
