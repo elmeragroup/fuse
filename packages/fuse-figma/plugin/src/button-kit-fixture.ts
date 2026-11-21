@@ -12,6 +12,7 @@ import type {
   ComponentRootSpec,
   FrameLayerSpec,
   IconLayerSpec,
+  InstanceLayerSpec,
   KitSpec,
   NumberSpec,
   TextLayerSpec,
@@ -300,6 +301,63 @@ export function kitWithRoot(edit: (root: ComponentRootSpec) => ComponentRootSpec
     componentSets: KIT.componentSets.map((set) => ({
       ...set,
       variants: set.variants.map((variant) => ({ ...variant, root: edit(variant.root) })),
+    })),
+  };
+}
+
+/**
+ * The Button set, whose one label links its TEXT property `Label`, and an Outer set whose one variant
+ * holds an instance of it.
+ *
+ * @param label - The label, its characters the main shows.
+ * @param shown - The value the instance gives `Label`, or none, so it shows the default.
+ * @param defaultValue - `Label`'s default, the label's characters unless a case gives another.
+ * @returns The kit.
+ * @throws When the nested kit holds no Button set.
+ */
+export function outerKit(label: TextLayerSpec, shown?: string, defaultValue = label.characters): KitSpec {
+  const base = nestedKit([{ ...label, textProperty: "Label" }]);
+  const [button] = base.componentSets;
+  if (button === undefined) {
+    throw new Error("the kit holds no Button set");
+  }
+  const inner = { ...button, textProperties: [{ name: "Label", defaultValue }] };
+  const instance: InstanceLayerSpec = {
+    kind: "instance",
+    key: "inner",
+    name: "Inner",
+    componentSet: "button",
+    variant: "button/size=md",
+    sizing: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
+  };
+  const outer = {
+    ...inner,
+    key: "outer",
+    name: "Outer",
+    textProperties: [],
+    variants: inner.variants.map((variant) => ({
+      ...variant,
+      key: "outer/size=md",
+      root: {
+        ...variant.root,
+        children: [shown === undefined ? instance : { ...instance, properties: { text: { Label: shown } } }],
+      },
+    })),
+  };
+  return {
+    ...base,
+    componentSets: [inner, outer],
+    docs: base.docs.map((doc) => ({
+      ...doc,
+      labels: [
+        ...doc.labels,
+        ...doc.labels.slice(0, 1).map((first) => ({
+          ...first,
+          key: "docs/page/labels/outer",
+          name: "Outer labels",
+          componentSet: "outer",
+        })),
+      ],
     })),
   };
 }

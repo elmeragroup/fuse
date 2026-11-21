@@ -26,7 +26,7 @@
 import { Effect } from "effect";
 
 import type { CornerRadiusSpec } from "../../src/components/corner-spec.ts";
-import { layerAt, ringFill, walkLayers } from "../../src/components/kit-spec.ts";
+import { instanceText, layerAt, linkedLabels, ringFill, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
   ComponentRootSpec,
   FillSpec,
@@ -43,7 +43,7 @@ import type { PlannedSet } from "./component-set.ts";
 import type { PluginError } from "./errors.ts";
 import { planCorners, planLimit, planPaints, planScalar, planEffects, planVisibleLink } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
-import { heldFonts, linkedLabels, requireFont } from "./fonts.ts";
+import { heldFonts, requireFont } from "./fonts.ts";
 import type { InnerSpecs } from "./fonts.ts";
 import { glyphOf } from "./icons.ts";
 import type { PlannedIcon } from "./icons.ts";
@@ -103,7 +103,10 @@ export function innerVariant(
  * @returns The lookup, which throws as {@link innerVariant} does.
  */
 export function innerSpecs(sets: ReadonlyMap<string, PlannedSet>): InnerSpecs {
-  return (layer) => innerVariant(sets, layer, layer.name).spec;
+  return (layer) => {
+    const inner = innerVariant(sets, layer, layer.name);
+    return { variant: inner.spec, textProperties: inner.set.spec.textProperties };
+  };
 }
 
 /** A property value the spec asks the instance for, and how a held value matches it. */
@@ -129,7 +132,7 @@ function desiredProperties(
   const set = inner.set.spec;
   const given = spec.properties;
   const texts = set.textProperties.map((property): DesiredProperty => {
-    const value = given?.text?.[property.name] ?? property.defaultValue;
+    const value = instanceText(spec, property);
     return {
       name: property.name,
       type: "TEXT",

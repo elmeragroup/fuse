@@ -9,6 +9,7 @@
  */
 
 import type { CornerRadiusSpec } from "./corner-spec";
+import { ownKey } from "./own-key";
 
 /** The shared plugin data namespace for every key the plugin writes. */
 export const PLUGIN_DATA_NAMESPACE = "fuse";
@@ -808,6 +809,58 @@ export type TextPropertySpec = {
   readonly defaultValue: string;
 };
 
+/**
+ * The value an instance gives a TEXT property of its set: its own, or else the property's default,
+ * which Apply writes back over a value the instance kept from an earlier spec.
+ *
+ * @param layer - The instance.
+ * @param property - The TEXT property of the instance's set.
+ * @returns The characters the property's labels show on the instance.
+ */
+export function instanceText(layer: InstanceLayerSpec, property: TextPropertySpec): string {
+  const given = layer.properties?.text;
+  // Only a value the instance gives counts, not a key its record inherits, such as `constructor`.
+  return (
+    (given !== undefined && ownKey(given, property.name) ? given[property.name] : undefined) ??
+    property.defaultValue
+  );
+}
+
+/** An inner variant an instance shows, and the TEXT properties of its set. */
+export type InnerVariantSpec = {
+  readonly variant: VariantSpec;
+  readonly textProperties: readonly TextPropertySpec[];
+};
+
+/**
+ * The labels of an inner variant that a TEXT property sets, each with the characters the instance
+ * layer shows: the value it gives the property, or the property's default, which Apply writes where
+ * it gives none. Those characters can hold the glyph font's glyphs where the inner label's own do
+ * not, and then need its faces too.
+ *
+ * @param layer - The instance layer.
+ * @param inner - The inner variant it shows, and the TEXT properties of its set.
+ * @returns The text layers that link a TEXT property, at the characters the instance shows.
+ */
+export function shownLabels(layer: InstanceLayerSpec, inner: InnerVariantSpec): readonly TextLayerSpec[] {
+  return linkedLabels(inner.variant).map((label) => {
+    const property = inner.textProperties.find((candidate) => candidate.name === label.textProperty);
+    return property === undefined ? label : { ...label, characters: instanceText(layer, property) };
+  });
+}
+
+/**
+ * The labels of a variant that a TEXT property sets, whose fonts a TEXT write on an instance needs.
+ *
+ * @param variant - The inner variant.
+ * @returns The text layers that link a TEXT property.
+ */
+export function linkedLabels(variant: VariantSpec): readonly TextLayerSpec[] {
+  return walkLayers(variant.root).filter(
+    (layer): layer is TextLayerSpec => layer.kind === "text" && layer.textProperty !== undefined
+  );
+}
+
 /** An INSTANCE_SWAP component property and the key of the icon component it starts with. */
 export type SwapPropertySpec = {
   readonly name: string;
@@ -981,7 +1034,8 @@ export function glyphRanges(characters: string, font: GlyphFontSpec): readonly T
 
 /**
  * The glyph font at each style a label that shows a glyph takes: a label whose own characters hold
- * one, and a label an instance's TEXT value gives one. The plugin loads them before its first write.
+ * one, and a label an instance's TEXT value, or the property's default where the instance gives
+ * none, gives one. The plugin loads them before its first write.
  *
  * @param kit - The kit.
  * @returns The fonts, each once.
@@ -989,8 +1043,10 @@ export function glyphRanges(characters: string, font: GlyphFontSpec): readonly T
 export function glyphFonts(kit: Pick<KitSpec, "componentSets" | "glyphFont">): readonly FontSpec[] {
   const { glyphFont } = kit;
   const shows = (characters: string): boolean => glyphRanges(characters, glyphFont).length > 0;
-  const variants = new Map(
-    kit.componentSets.flatMap((set) => set.variants.map((variant) => [variant.key, variant] as const))
+  const inners = new Map(
+    kit.componentSets.flatMap((set) =>
+      set.variants.map((variant) => [variant.key, { variant, textProperties: set.textProperties }] as const)
+    )
   );
   const styles = new Set<string>();
   for (const layer of kit.componentSets.flatMap((set) =>
@@ -999,15 +1055,13 @@ export function glyphFonts(kit: Pick<KitSpec, "componentSets" | "glyphFont">): r
     if (layer.kind === "text" && shows(layer.characters)) {
       styles.add(layer.fontStyle);
     }
-    if (layer.kind !== "instance") {
+    const inner = layer.kind === "instance" ? inners.get(layer.variant) : undefined;
+    if (layer.kind !== "instance" || inner === undefined) {
       continue;
     }
-    const inner = variants.get(layer.variant);
-    for (const [name, value] of Object.entries(layer.properties?.text ?? {})) {
-      for (const label of inner === undefined || !shows(value) ? [] : walkLayers(inner.root)) {
-        if (label.kind === "text" && label.textProperty === name) {
-          styles.add(label.fontStyle);
-        }
+    for (const label of shownLabels(layer, inner)) {
+      if (shows(label.characters)) {
+        styles.add(label.fontStyle);
       }
     }
   }

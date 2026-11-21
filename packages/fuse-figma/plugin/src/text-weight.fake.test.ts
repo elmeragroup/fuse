@@ -14,7 +14,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { KitSpec, TextLayerSpec } from "../../src/components/kit-spec.ts";
-import { buttonVariant, LABEL, nestedKit } from "./button-kit-fixture.ts";
+import { buttonVariant, LABEL, nestedKit, outerKit } from "./button-kit-fixture.ts";
 import { aliasOf, childNamed, color, fixtureFile, float, string } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
 import { reconcileKit } from "./reconcile.ts";
@@ -34,64 +34,10 @@ const WEIGHTED: TextLayerSpec = {
 
 const kit: KitSpec = nestedKit([WEIGHTED]);
 
-/**
- * The Button set, whose label, `⌘K` unless a case gives other characters, links its TEXT property
- * `Label`, and an Outer set whose one variant holds an instance of it showing `⌘B`, unless a case
- * gives it other characters.
- */
-function outerKit(characters = "⌘K", shown = "⌘B"): KitSpec {
-  const base = nestedKit([{ ...WEIGHTED, characters, textProperty: "Label" }]);
-  const [button] = base.componentSets;
-  if (button === undefined) {
-    throw new Error("the kit holds no Button set");
-  }
-  const inner = { ...button, textProperties: [{ name: "Label", defaultValue: characters }] };
-  const outer = {
-    ...inner,
-    key: "outer",
-    name: "Outer",
-    textProperties: [],
-    variants: inner.variants.map((variant) => ({
-      ...variant,
-      key: "outer/size=md",
-      root: {
-        ...variant.root,
-        children: [
-          {
-            kind: "instance",
-            key: "inner",
-            name: "Inner",
-            componentSet: "button",
-            variant: "button/size=md",
-            sizing: { horizontal: { kind: "hug" }, vertical: { kind: "hug" } },
-            properties: { text: { Label: shown } },
-          } as const,
-        ],
-      },
-    })),
-  };
-  return {
-    ...base,
-    componentSets: [inner, outer],
-    docs: base.docs.map((doc) => ({
-      ...doc,
-      labels: [
-        ...doc.labels,
-        ...doc.labels.slice(0, 1).map((first) => ({
-          ...first,
-          key: "docs/page/labels/outer",
-          name: "Outer labels",
-          componentSet: "outer",
-        })),
-      ],
-    })),
-  };
-}
-
-/** The label the Outer variant's instance shows. */
-async function instanceLabel(file: ReturnType<typeof weightedFile>): Promise<TextNode> {
+/** The label the Outer variant's instance shows, `⌘B` unless a case gives other characters. */
+async function instanceLabel(file: ReturnType<typeof weightedFile>, characters = "⌘B"): Promise<TextNode> {
   const labels = (node: BaseNode): TextNode[] =>
-    node.type === "TEXT" && node.parent?.type === "INSTANCE" && node.characters === "⌘B"
+    node.type === "TEXT" && node.parent?.type === "INSTANCE" && node.characters === characters
       ? [node]
       : "children" in node
         ? node.children.flatMap(labels)
@@ -103,7 +49,7 @@ async function instanceLabel(file: ReturnType<typeof weightedFile>): Promise<Tex
       return found;
     }
   }
-  throw new Error("no instance shows ⌘B");
+  throw new Error(`no instance shows ${characters}`);
 }
 
 /** A synced file whose `title-weight` is 500 in its one mode. */
@@ -219,7 +165,7 @@ describe("a label whose weight binds a variable", () => {
     "gives the glyphs of an instance's label the face the weight names, binding it, where %s",
     async (_case, characters) => {
       const file = weightedFile();
-      const outer = outerKit(characters);
+      const outer = outerKit({ ...WEIGHTED, characters }, "⌘B");
       await reconcileKit(file.figma, outer, true);
       file.reopen();
       const label = await instanceLabel(file);
@@ -242,9 +188,9 @@ describe("a label whose weight binds a variable", () => {
 
   it("loads the glyph font's face before the first write where a later run gives an instance the glyph", async () => {
     const file = weightedFile();
-    await reconcileKit(file.figma, outerKit("K", "B"), true);
+    await reconcileKit(file.figma, outerKit({ ...WEIGHTED, characters: "K" }, "B"), true);
     file.reopen();
-    const outer = outerKit("K");
+    const outer = outerKit({ ...WEIGHTED, characters: "K" }, "⌘B");
     await reconcileKit(file.figma, outer, true);
     file.reopen();
     expect(
@@ -256,10 +202,26 @@ describe("a label whose weight binds a variable", () => {
     expect((await reconcileKit(file.figma, outer, false)).changes).toEqual([]);
   });
 
+  it("loads the glyph font's face before the first write where a later run restores a glyph default", async () => {
+    const file = weightedFile();
+    await reconcileKit(file.figma, outerKit({ ...WEIGHTED, characters: "Save" }, "Open", "⌘K"), true);
+    file.reopen();
+    const outer = outerKit({ ...WEIGHTED, characters: "Save" }, undefined, "⌘K");
+    await reconcileKit(file.figma, outer, true);
+    file.reopen();
+    expect(
+      (await instanceLabel(file, "⌘K")).getStyledTextSegments(["fontName"]).map((segment) => segment.fontName)
+    ).toEqual([
+      { family: "Inter", style: "Medium" },
+      { family: "Roboto", style: "Medium" },
+    ]);
+    expect((await reconcileKit(file.figma, outer, false)).changes).toEqual([]);
+  });
+
   it("plans the glyph's face and the weight back where a designer sets an instance's glyph Regular", async () => {
     // A `fontName` write on `⌘` drops its range's weight binding (PG8).
     const file = weightedFile();
-    const outer = outerKit();
+    const outer = outerKit({ ...WEIGHTED, characters: "⌘K" }, "⌘B");
     await reconcileKit(file.figma, outer, true);
     file.reopen();
     await file.figma.loadFontAsync({ family: "Inter", style: "Regular" });

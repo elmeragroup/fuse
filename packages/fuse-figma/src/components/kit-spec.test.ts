@@ -3,7 +3,8 @@
  * designer reads in Figma's layers panel, written out by hand: each layer, then what a frame
  * holds, before the next sibling. `coveredShadow` over hand-built layers, against CSS's painting
  * order. `glyphRanges` over the Dropdown menu shortcuts in `dropdown-menu-text.ts`, against the
- * positions of ⇧ and ⌘ in them counted by hand, and `glyphFonts` over a hand-built kit.
+ * positions of ⇧ and ⌘ in them counted by hand, and `glyphFonts` over a hand-built kit. `instanceText`
+ * over a TEXT property named `constructor`, against the value an instance gives it or else its default.
  */
 import { describe, expect, it } from "vitest";
 
@@ -13,6 +14,7 @@ import {
   glyphFonts,
   glyphRanges,
   HUGGING_TEXT,
+  instanceText,
   NO_LIMITS,
   TOP_LEFT,
   walkLayers,
@@ -227,5 +229,16 @@ describe("glyphFonts", () => {
     const own = { ...text("caption"), characters: "⇧ to select", fontStyle: "SemiBold" };
     const kit = { glyphFont: GLYPHS, componentSets: [set("kbd", [keys, own]), set("menu", [shown("K")])] };
     expect(glyphFonts(kit)).toEqual([{ family: "Inter", style: "SemiBold" }]);
+  });
+});
+
+describe("instanceText", () => {
+  const property = { name: "constructor", defaultValue: "Save" };
+
+  it.each([
+    ["gives none", {}, "Save"],
+    ["gives its own", { constructor: "Open" }, "Open"],
+  ])("reads a TEXT property named constructor where the instance %s", (_case, text, expected) => {
+    expect(instanceText({ ...instance("row"), properties: { text } }, property)).toBe(expected);
   });
 });

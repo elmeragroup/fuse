@@ -20,6 +20,7 @@ import {
   glyphRanges,
   layerAt,
   outOfLayout,
+  shownLabels,
   docNodes,
   topLevelSpecs,
   walkLayers,
@@ -527,12 +528,15 @@ function checkInstances(kit: KitSpec): void {
 /**
  * Refuse a label that shows a glyph the kit's glyph font draws where the plugin cannot draw it so: a
  * glyph that is more than one UTF-16 code unit, a label whose family is a literal, a label whose size
- * or line height binds a variable, and a nested TEXT value. The plugin draws each glyph range in the
- * glyph font, unbound, and keeps the label's other characters bound to its family variable,
- * `font-sans` in the kit (G2), so a label holds exactly those two families. A literal family would
- * leave two literal fonts that follow no theme. A whole size binding gives a glyph range its value
- * but not the binding (G12b), and no probe shows a Plan over such a label converging. The plugin
- * plans no ranges on a label a nested value sets.
+ * or line height binds a variable, a value of glyphs alone, and a nested TEXT value. Each value is the
+ * label's own characters or the TEXT value an instance gives it, the property's default where it
+ * gives none, as Apply writes it. The plugin draws each glyph range in the glyph font, unbound, and
+ * keeps the label's other characters bound to its family variable, `font-sans` in the kit (G2), so a
+ * label holds exactly those two families. A literal family would leave two literal fonts that follow
+ * no theme. A whole size binding gives a glyph range its value but not the binding (G12b), and no
+ * probe shows a Plan over such a label converging. A glyph range over every character gives the
+ * label one style, which becomes its base style (FT1), so a later TEXT write would show letters in
+ * the glyph font, unbound. The plugin plans no ranges on a label a nested value sets.
  */
 function checkGlyphs(kit: KitSpec): void {
   const { glyphFont } = kit;
@@ -543,7 +547,18 @@ function checkGlyphs(kit: KitSpec): void {
     );
   }
   const shows = (characters: string): boolean => glyphRanges(characters, glyphFont).length > 0;
-  const refuseLabel = (where: string, label: TextLayerSpec): void => {
+  // Each value a label shows, the label's own characters or an instance's TEXT value, is judged once
+  // by its glyph ranges.
+  const judge = (where: string, label: TextLayerSpec, characters: string): void => {
+    const ranges = glyphRanges(characters, glyphFont);
+    if (ranges.length === 0) {
+      return;
+    }
+    if (ranges.some((range) => range.start === 0 && range.end === characters.length)) {
+      throw contradiction(
+        `${where} shows only glyphs the kit draws in ${glyphFont.family} in its label ${label.name}, which a range over every character would make the label's base style, so a later TEXT write would show letters in ${glyphFont.family}, unbound (FT1).`
+      );
+    }
     if (label.fontFamily.kind !== "variable") {
       throw contradiction(
         `${where} shows a glyph the kit draws in ${glyphFont.family}, and its label ${label.name} sets a literal family, where the plugin keeps the other characters bound to a family variable.`
@@ -564,21 +579,21 @@ function checkGlyphs(kit: KitSpec): void {
     for (const variant of set.variants) {
       for (const layer of walkLayers(variant.root)) {
         const where = `${set.name}: ${layer.name} in the variant ${variant.key}`;
-        if (layer.kind === "text" && shows(layer.characters)) {
-          refuseLabel(where, layer);
+        if (layer.kind === "text") {
+          judge(where, layer, layer.characters);
         }
         if (layer.kind !== "instance") {
           continue;
         }
-        const inner = kit.componentSets
-          .find((candidate) => candidate.key === layer.componentSet)
-          ?.variants.find((candidate) => candidate.key === layer.variant);
-        for (const [name, value] of Object.entries(layer.properties?.text ?? {})) {
-          for (const label of inner === undefined || !shows(value) ? [] : walkLayers(inner.root)) {
-            if (label.kind === "text" && label.textProperty === name) {
-              refuseLabel(where, label);
-            }
-          }
+        const innerSet = kit.componentSets.find((candidate) => candidate.key === layer.componentSet);
+        const inner = innerSet?.variants.find((candidate) => candidate.key === layer.variant);
+        // Apply writes every TEXT property, the default where the instance gives none.
+        const shown =
+          innerSet === undefined || inner === undefined
+            ? []
+            : shownLabels(layer, { variant: inner, textProperties: innerSet.textProperties });
+        for (const label of shown) {
+          judge(where, label, label.characters);
         }
         for (const nested of layer.properties?.nested ?? []) {
           if (Object.values(nested.text).some(shows)) {
