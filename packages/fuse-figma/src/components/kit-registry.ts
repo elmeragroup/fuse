@@ -45,6 +45,7 @@ import { CONFIRM_BUTTON_MANIFEST } from "./confirm-button-kit";
 import { DATA_TABLE_FILTER_BAR_MANIFEST } from "./data-table-filter-kit";
 import { DATE_FIELD_MANIFEST } from "./date-field-kit";
 import { DATE_PICKER_MANIFEST } from "./date-picker-kit";
+import { DATE_RANGE_PICKER_MANIFEST } from "./date-range-picker-kit";
 import { DESCRIPTION_LIST_ITEM_MANIFEST, DESCRIPTION_LIST_MANIFEST } from "./description-list-kit";
 import { DIALOG_CONTENT_MANIFEST, DIALOG_OPEN_MANIFEST } from "./dialog-kit";
 import {
@@ -305,6 +306,13 @@ const DATE_FIELD_PAGE: KitPage = { slug: "date-field", name: "Date field", examp
 
 /** The page Date picker sits on alone. */
 const DATE_PICKER_PAGE: KitPage = { slug: "date-picker", name: "Date picker", example: "date-picker" };
+
+/** The page Date range picker sits on alone. */
+const DATE_RANGE_PICKER_PAGE: KitPage = {
+  slug: "date-range-picker",
+  name: "Date range picker",
+  example: "date-range-picker",
+};
 
 /** The page Tabs trigger and Tabs list share. */
 const TABS_PAGE: KitPage = { slug: "tabs", name: "Tabs", example: "tabs-list" };
@@ -944,6 +952,11 @@ export const KIT: readonly KitEntry[] = [
     page: DATE_PICKER_PAGE,
     previewCells: possibleCells(DATE_PICKER_MANIFEST),
     manifest: DATE_PICKER_MANIFEST,
+  },
+  {
+    page: DATE_RANGE_PICKER_PAGE,
+    previewCells: possibleCells(DATE_RANGE_PICKER_MANIFEST),
+    manifest: DATE_RANGE_PICKER_MANIFEST,
   },
   {
     page: TABS_PAGE,
