@@ -153,6 +153,13 @@
       "className": "flex",
       "property": "display",
       "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
+    },
+    {
+      "set": "toggle",
+      "part": "toggle",
+      "className": "focus-visible:z-10",
+      "property": "z-index",
+      "reason": "A focused item of a segmented Toggle group stacks above its neighbors, so Chromium paints its focus ring over the pressed neighbor's fill where the two meet. The neighbors are instances in the Segmented toggle group's row, and Figma paints a row's layers in their order, with no field that lifts one layer of an auto layout above the next, so the kit paints the later item over the ring there."
     }
   ],
   "unbound": [
@@ -2895,18 +2902,20 @@
         "className": "data-[spacing=0]:enabled-active:scale-100"
       }
     ],
+    "segmented-toggle-group": [
+      {
+        "part": "toggle-group",
+        "className": "data-vertical:flex-col"
+      },
+      {
+        "part": "toggle-group",
+        "className": "data-vertical:items-stretch"
+      }
+    ],
     "toggle": [
       {
         "part": "toggle",
         "className": "enabled-active:scale-[0.96]"
-      },
-      {
-        "part": "toggle",
-        "className": "aria-disabled:cursor-not-allowed"
-      },
-      {
-        "part": "toggle",
-        "className": "aria-disabled:opacity-50"
       },
       {
         "part": "toggle",
@@ -2963,6 +2972,26 @@
       {
         "part": "toggle",
         "className": "data-invalid:focus-visible:ring-offset-error"
+      },
+      {
+        "part": "toggle",
+        "className": "data-[spacing=0]:enabled-active:scale-100"
+      },
+      {
+        "part": "toggle",
+        "className": "group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-md"
+      },
+      {
+        "part": "toggle",
+        "className": "group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-md"
+      },
+      {
+        "part": "toggle",
+        "className": "group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0"
+      },
+      {
+        "part": "toggle",
+        "className": "group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-t"
       }
     ],
     "tooltip-content": [

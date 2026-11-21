@@ -7,7 +7,7 @@ import type { VariableIndex } from "./css-values";
  * range's `rounded-s-full` its first day. `box-mapping.ts` reads them once the box's sizing is known,
  * since an infinite radius takes its length from the box's sides.
  */
-import type { SizingSpec } from "./kit-spec";
+import type { LimitsSpec, SizingSpec } from "./kit-spec";
 import { fixedLength } from "./kit-spec";
 import type { NumberSpec } from "./kit-spec";
 import type { CoverageNote, LayerStyle } from "./layer-style";
@@ -30,7 +30,10 @@ type Corner = (typeof CORNERS)[number];
  * @param sides - The box's sizing, whose fixed sides an infinite `border-radius` reads, the sizing
  *   with the literal length it holds on each axis it hugs, as `held-size.ts` reads it, whose sides a
  *   radius per corner reads, and the least height the box takes in any mode, as the box's layers
- *   bound it, which a radius per corner reads where the height is no literal.
+ *   bound it, which a radius per corner reads where the height is no literal, and the box's limits,
+ *   whose minimum width a radius per corner reads beside a fixed height, or undefined where a
+ *   `min-*` or `max-*` limit the box sets stays unmapped, so CSS may size the box past its sizing
+ *   and neither an infinite `border-radius` nor a radius per corner maps.
  * @param variables - The synced variables a radius can bind.
  * @returns The corner radius, or undefined where the box sets none or it does not map.
  */
@@ -40,13 +43,19 @@ export function readCorner(
     sizing,
     held,
     leastHeight,
-  }: { readonly sizing: SizingSpec; readonly held: SizingSpec; readonly leastHeight: number },
+    limits,
+  }: {
+    readonly sizing: SizingSpec;
+    readonly held: SizingSpec;
+    readonly leastHeight: number;
+    readonly limits: LimitsSpec | undefined;
+  },
   variables: VariableIndex
 ): CornerRadiusSpec | undefined {
   const own = CORNERS.filter((corner) => cornerProperty(reader, corner) !== undefined);
   return own.length === 0
-    ? readUniform(reader, sizing, variables)
-    : readCorners(reader, held, leastHeight, variables);
+    ? readUniform(reader, { sizing, limitsRead: limits !== undefined }, variables)
+    : readCorners(reader, { sizing: held, limits }, leastHeight, variables);
 }
 
 /** The longhand a box sets a corner by, physical or logical, or undefined for neither. */
@@ -61,11 +70,13 @@ function cornerProperty(reader: LayerStyle, corner: Corner): string | undefined 
  * fixed, it writes half that side: on 2026-10-22 a real file drew a radius above half the shorter
  * side as that half and kept the written value (probe P10), so Figma draws it as CSS does whichever
  * side ends up shorter. A box with no fixed side has no length to halve, so its pill corner stays
- * unmapped.
+ * unmapped, as does one with a `min-*` or `max-*` limit that stays unmapped, since that limit can
+ * make CSS's side longer or shorter than the one the build halves. A literal or bound radius reads
+ * no side, so it maps either way.
  */
 function readUniform(
   reader: LayerStyle,
-  sizing: SizingSpec,
+  { sizing, limitsRead }: { readonly sizing: SizingSpec; readonly limitsRead: boolean },
   variables: VariableIndex
 ): NumberSpec | undefined {
   const width = fixedLength(sizing.horizontal);
@@ -77,7 +88,7 @@ function readUniform(
       if (radius !== undefined) {
         return { radius, detail: undefined };
       }
-      if (!isInfiniteLength(value)) {
+      if (!isInfiniteLength(value) || !limitsRead) {
         return undefined;
       }
       if (width?.kind === "literal" && height?.kind === "literal") {
@@ -140,13 +151,19 @@ type RawRadius =
  * at least, as realistic text does, and a layer a BOOLEAN property can hide no height, so a label a
  * designer would realistically leave out counts as gone. A label emptied through its TEXT property is
  * a known limit: it sets no line in CSS, where the corners could scale, and keeps its line's height in
- * the bound. Any other corner set stays
- * unmapped. A box that sets a corner longhand beside `border-radius` stays unmapped
- * too, since which one wins depends on their order, which the build does not read.
+ * the bound. A box whose sides are no literals maps one more shape, {@link pairedCorners}: one
+ * radius on the two corners of its shorter side and none on the others. Every shape reads the box's
+ * sides, so a box with a `min-*` or `max-*` limit that stays unmapped maps no radius per corner,
+ * since that limit can make CSS's box longer or shorter on either axis than the build reads it, as
+ * a variable `min-h-*` past a literal `h-*` does. Any other corner set stays
+ * unmapped. A `border-radius` that wins only some corners reaches this reader as those corners'
+ * longhands, as `capture-cascade.ts` splits it, so `rounded-[4px] rounded-s-[8px]` reads 8px on the
+ * left corners and 4px on the right. One that stays whole there, as a value whose `var()` stands for
+ * an unknown number of radii does, leaves the box unmapped beside a corner longhand.
  */
 function readCorners(
   reader: LayerStyle,
-  sizing: SizingSpec,
+  { sizing, limits }: { readonly sizing: SizingSpec; readonly limits: LimitsSpec | undefined },
   leastHeight: number,
   variables: VariableIndex
 ): CornersSpec | undefined {
@@ -157,11 +174,13 @@ function readCorners(
   const width = fixedLength(sizing.horizontal);
   const height = fixedLength(sizing.vertical);
   const drawn =
-    width?.kind === "literal" && height?.kind === "literal"
-      ? drawnCorners(raw, width.value, height.value)
-      : width?.kind === "literal" && sizing.vertical.kind === "hug"
-        ? unscaledCorners(raw, width.value, leastHeight)
-        : undefined;
+    limits === undefined
+      ? undefined
+      : width?.kind === "literal" && height?.kind === "literal"
+        ? drawnCorners(raw, width.value, height.value)
+        : width?.kind === "literal" && sizing.vertical.kind === "hug"
+          ? unscaledCorners(raw, width.value, leastHeight)
+          : pairedCorners(raw, { sizing, limits }, variables);
   const [topLeft, topRight, bottomRight, bottomLeft] = drawn ?? [];
   const corners =
     topLeft === undefined || topRight === undefined || bottomRight === undefined || bottomLeft === undefined
@@ -189,7 +208,99 @@ function readCorners(
   return corners;
 }
 
-/** A corner's radius before CSS scales it, or undefined for a value that reads as no length. */
+/** The sides of a box by the two corners each one joins, in {@link CORNERS}' order, and its axis. */
+const SIDES = [
+  { corners: [0, 1], length: "width" },
+  { corners: [1, 2], length: "height" },
+  { corners: [2, 3], length: "width" },
+  { corners: [3, 0], length: "height" },
+] as const;
+
+/** Whether two radii are the same length in every mode: one literal, or one variable. */
+function sameRadius(left: RawRadius, right: RawRadius): boolean {
+  if (left.kind === "literal" && right.kind === "literal") {
+    return left.px === right.px;
+  }
+  return (
+    left.kind === "variable" &&
+    right.kind === "variable" &&
+    left.spec.kind === "variable" &&
+    right.spec.kind === "variable" &&
+    left.spec.variable.collection === right.spec.variable.collection &&
+    left.spec.variable.name === right.spec.variable.name
+  );
+}
+
+/** Whether a radius is a literal 0. */
+const isZero = (radius: RawRadius): boolean => radius.kind === "literal" && radius.px === 0;
+
+/**
+ * Whether a box's side along one axis is no longer than the other axis in any mode: its fixed length
+ * is the length the other axis is fixed at or held to at least, as a min-square control's height is
+ * its minimum width, or a literal no longer than the other axis's literal.
+ */
+function noLongerThanOther(
+  { sizing, limits }: { readonly sizing: SizingSpec; readonly limits: LimitsSpec },
+  axis: "width" | "height",
+  variables: VariableIndex
+): boolean {
+  const side = fixedLength(axis === "width" ? sizing.horizontal : sizing.vertical);
+  const others = [
+    fixedLength(axis === "width" ? sizing.vertical : sizing.horizontal),
+    axis === "width" ? limits.minHeight : limits.minWidth,
+  ];
+  const most =
+    side?.kind === "literal" ? side.value : side === undefined ? undefined : variables.maximum(side.variable);
+  return others.some(
+    (other) =>
+      side !== undefined &&
+      other !== undefined &&
+      (JSON.stringify(other) === JSON.stringify(side) ||
+        (other.kind === "literal" && most !== undefined && most <= other.value))
+  );
+}
+
+/**
+ * The radii as written where a box rounds the two corners of one side by one radius and no other
+ * corner, and that side is no longer than the other axis in any mode, as a segmented Toggle group's
+ * first item rounds its left corners and its height is its minimum width. CSS scales the two radii by
+ * the side's length over their sum where they overrun it, so each draws at most half the side (CSS
+ * Backgrounds 3 §5.5), and the sides beside them hold one radius each and are at least as long. Figma
+ * caps each corner at half the shorter side (probe P10), the same half. So the shape draws alike at
+ * any radius and any length. A box with every corner a literal 0 draws square in both. Undefined for
+ * any other corner set.
+ */
+function pairedCorners(
+  raw: readonly (RawRadius | undefined)[],
+  box: { readonly sizing: SizingSpec; readonly limits: LimitsSpec },
+  variables: VariableIndex
+): readonly NumberSpec[] | undefined {
+  const known = raw.flatMap((each) => (each === undefined || each.kind === "infinite" ? [] : [each]));
+  if (known.length !== CORNERS.length) {
+    return undefined;
+  }
+  const rounded = known.flatMap((each, index) => (isZero(each) ? [] : [index]));
+  const side = SIDES.find(({ corners }) => corners.every((corner) => rounded.includes(corner)));
+  const [first, second] = side === undefined ? [] : side.corners.map((corner) => known[corner]);
+  const paired =
+    rounded.length === 0 ||
+    (rounded.length === 2 &&
+      side !== undefined &&
+      first !== undefined &&
+      second !== undefined &&
+      sameRadius(first, second) &&
+      noLongerThanOther(box, side.length, variables));
+  return paired
+    ? known.map((each): NumberSpec =>
+        each.kind === "variable" ? each.spec : { kind: "literal", value: each.px }
+      )
+    : undefined;
+}
+
+/**
+ * A corner's radius before CSS scales it, or undefined for a value that reads as no length. A radius
+ * is a non-negative length, so CSS clamps a negative `calc()` literal to 0 (CSS Values 4 §10.12).
+ */
 function rawRadius(reader: LayerStyle, corner: Corner, variables: VariableIndex): RawRadius | undefined {
   const property = cornerProperty(reader, corner);
   const value = property === undefined ? "0px" : (reader.resolved(property) ?? "");
@@ -198,7 +309,7 @@ function rawRadius(reader: LayerStyle, corner: Corner, variables: VariableIndex)
   }
   const spec = readNumber(value, variables);
   if (spec?.kind === "literal") {
-    return { kind: "literal", px: spec.value };
+    return { kind: "literal", px: Math.max(0, spec.value) };
   }
   const most = spec === undefined ? undefined : variables.maximum(spec.variable);
   return spec === undefined || most === undefined ? undefined : { kind: "variable", spec, most };
