@@ -40,7 +40,6 @@ import {
   selfStretchedRoom,
   UNREAD_SHARE,
   unstretched,
-  viewportRoom,
 } from "./box-sizing";
 import type { Holder, Room, RowLayer } from "./box-sizing";
 import { dropIdleOrigin, readRotation } from "./box-transform";
@@ -71,7 +70,8 @@ import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
 import { drawRestAtEnd } from "./end-frame";
 import { drawsAtRoom, fitsRowRoom } from "./fitting-part";
 import type { BesideLayer, FitPlace } from "./fitting-part";
-import { fixedPlace, placeCentredFixed, refuseFixedPlace } from "./fixed-placement";
+import { fixedPlace, placeFixed, refuseFixedPlace } from "./fixed-placement";
+import type { DrawnAmong } from "./fixed-placement";
 import { DECLARED_WIDTH } from "./flex-item-width";
 import type { DrawnWidth } from "./flex-item-width";
 import { joinFlushLayers } from "./flush-layers";
@@ -899,8 +899,8 @@ export function mapBox(box: BoxDefinition, cascade: BoxCascade, scope: MapScope,
       partScope,
       layout.blocks && adjoinsMargin(styles, index),
       reader,
-      // A fixed part sits out of the flow, so it is first where no part shows before it.
-      drawn.indexOf(part) === 0,
+      // A fixed part sits out of the flow, so its place among the parts is where it shows.
+      { index: drawn.indexOf(part), count: drawn.length },
       keepsRoom
     );
     // The fill draws the part's fitted width only where nothing in it paints, moves or keeps it wider at the room's.
@@ -1451,7 +1451,7 @@ function elementOf(child: PartDefinition): PartElement {
  * @param collapses - Whether a vertical margin of the part adjoins another margin in a block box, as
  *   {@link adjoinsMargin} says.
  * @param parent - The box's style, which a fixed instance part's place and its margins read.
- * @param first - Whether the part is the box's first part.
+ * @param among - Where the part sits among the parts the box draws.
  * @param keepsRoom - Whether the box keeps its size with the part hidden, as {@link readHidden} needs.
  * @returns The part as mapped.
  */
@@ -1462,7 +1462,7 @@ function mapPart(
   scope: MapScope,
   collapses: boolean,
   parent: LayerStyle,
-  first: boolean,
+  among: DrawnAmong,
   keepsRoom: KeptRoom
 ): MappedPart {
   // The row that sets a popup's width keeps the popup's minimum, which no class of its own sets.
@@ -1472,14 +1472,11 @@ function mapPart(
       { own: part.visit.part.of.viewport, composite: scope.viewport, style: part.cascade.style },
       layout,
       parent,
-      first
+      among
     );
-    const { layer: built, painted } = scope.instances.map(
-      part,
-      fixed?._tag === "placed" ? viewportRoom(part.cascade.style, fixed.viewport) : room
-    );
+    const { layer: built, painted } = scope.instances.map(part, fixed?._tag === "placed" ? fixed.room : room);
     if (fixed?._tag === "placed") {
-      placeCentredFixed(part.cascade.style, fixed.at);
+      placeFixed(part.cascade.style, fixed);
     } else if (fixed?._tag === "refused") {
       refuseFixedPlace(part.cascade.style);
     }
