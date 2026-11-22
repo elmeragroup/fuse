@@ -765,6 +765,11 @@ const SOURCES: readonly RendererSource[] = [
     module: { url: new URL("sheet-cell.ts", import.meta.url), name: "sheetContent" },
   },
   {
+    set: "sheet-open",
+    entry: "dist/sheet.js",
+    module: { url: new URL("sheet-cell.ts", import.meta.url), name: "sheetOpen" },
+  },
+  {
     set: "text-styles",
     entry: ["dist/text.js", "dist/span.js", "dist/heading.js"],
     load: async () => (await import("./text-style-cell.ts")).textStyles,
