@@ -74,6 +74,8 @@ import type {
 } from "./capture-format.ts";
 import { placesOf } from "./capture-places.ts";
 import { declarationOrigin, isBase, isReset, rendersNothing, twinClaims } from "./instance-twin.ts";
+import { NESTED_PLACEMENT, nestedLayout } from "./nested-placement.ts";
+import type { NestedPlacement } from "./nested-placement.ts";
 import { PseudoBoxCascade, pseudoVerdict, withBorderLonghands } from "./pseudo-elements.ts";
 
 /** Why the kit draws none of a page element's own declarations. */
@@ -252,10 +254,12 @@ function atOf(read: CellRead, element: CapturedElement | undefined, index: numbe
 /**
  * How an open composite places the elements its cells measure, as its manifest names it:
  * `anchored`, a popup beside its anchor, `sideOffset` pixels apart, as Base UI's positioner places
- * it, or `modal`, a popup fixed over the Backdrop in the viewport.
+ * it, `nested`, a popup beside a row of another popup, as `nested-placement.ts` draws it, or
+ * `modal`, a popup fixed over the Backdrop in the viewport.
  */
 export type OpenPlacement =
   | { readonly _tag: "anchored"; readonly sideOffset: number }
+  | NestedPlacement
   | { readonly _tag: "modal"; readonly viewport: Viewport };
 
 /**
@@ -999,13 +1003,37 @@ export class CaptureCellCascade {
       box.drawnSlots = placement.roots.map(({ root }) => root.attributes["data-slot"]);
       return box;
     }
+    if (open._tag === "nested") {
+      const path = this.#aroundPath([]);
+      const placement = nestedLayout(this.#cell, open, {
+        declarations: this.#read.declarations,
+        variables: this.#read.context.variables,
+        styleOf: (element) => this.#detachedStyle(element),
+      });
+      return new CaptureBoxCascade(
+        this.#read,
+        this.#ledger,
+        [...path.placed, this.#placed(composedRoot(part, placement.children), part)],
+        path.layer,
+        [],
+        {
+          rooted: rootedChains(placement.roots),
+          applied: placementApplied(
+            part,
+            this.#ledger.scope.origin,
+            placement.declarations,
+            NESTED_PLACEMENT
+          ),
+        }
+      );
+    }
     const [popup, ...rest] = others;
     if (popup === undefined || rest.length > 0) {
       throw new KitUnmappable({
         message: `${this.#cell.key} measures ${String(this.#cell.roots.length)} elements, and a modal composite measures its Backdrop and its popup`,
       });
     }
-    const layout = modalLayout(this.#detachedStyle(popup), open.viewport);
+    const layout = modalLayout(this.#detachedStyle(popup.root), open.viewport);
     if (layout === undefined) {
       throw new KitUnmappable({
         message: `the popup of ${this.#cell.key} is fixed neither at the viewport's centre, nor a length below its top and centred across, nor against its right edge, which the Backdrop cannot place`,
@@ -1103,20 +1131,21 @@ export class CaptureCellCascade {
   }
 
   /**
-   * A modal popup's own style, read apart from the cell's layers, which the Backdrop's layout reads
-   * before the popup cascades in place. Its reads record nothing.
+   * A captured element's own style, read apart from the cell's layers: a modal popup's, which the
+   * Backdrop's layout reads before the popup cascades in place, or a nested composite's parent popup
+   * and rows, which its column reads. Its reads record nothing.
    */
-  #detachedStyle(popup: CapturedRoot): LayerStyle {
+  #detachedStyle(element: CapturedElement): LayerStyle {
     const scope: CellScope = {
       ...this.#ledger.scope,
       origin: { record: () => undefined },
       record: () => undefined,
     };
     const ledger = new CellLedger(scope);
-    const placed: Placed[] = [{ element: popup.root, name: "popup", origin: scope.origin, holders: [] }];
+    const placed: Placed[] = [{ element, name: "popup", origin: scope.origin, holders: [] }];
     const layer = ledger.add(
       new Map(),
-      appliedOf(this.#read, popup.root.declarations, placed, () => true),
+      appliedOf(this.#read, element.declarations, placed, () => true),
       undefined
     );
     return new LayerStyle(ledger, layer, []);
@@ -1304,8 +1333,13 @@ function checkHuggingAnchor(cell: CapturedCell, placement: AnchoredPlacement, re
   });
 }
 
+/** Whether `element` is a descendant of `box`. */
+function holdsElement(box: CapturedElement, element: CapturedElement): boolean {
+  return box.children.some((child) => child === element || holdsElement(child, element));
+}
+
 /** The element an anchored composite's root stands for: a box holding its roots, in drawn order. */
-function composedRoot(slot: string, roots: readonly CapturedRoot[]): CapturedElement {
+function composedRoot(slot: string, roots: readonly (CapturedRoot | CapturedElement)[]): CapturedElement {
   return {
     tag: "div",
     attributes: { "data-slot": slot },
@@ -1316,7 +1350,7 @@ function composedRoot(slot: string, roots: readonly CapturedRoot[]): CapturedEle
     pseudo: {},
     variables: {},
     unmatched: [],
-    children: roots.map(({ root }) => root),
+    children: roots.map((each) => ("root" in each ? each.root : each)),
   };
 }
 
@@ -1738,7 +1772,16 @@ class CaptureBoxCascade implements BoxCascade {
       this.#claimed.add(target);
       placed.push(placedBelow(placed, target, part, ledger.scope.origin, holder));
     }
-    return new CaptureBoxCascade(this.#read, ledger, placed, parent, path, PLAIN, undrawn);
+    // A composite's root that sits below this part, as a nested popup sits in the column beside its
+    // parent popup, keeps the chain of the component's elements around it.
+    const rooted = new Map(
+      [...this.#rooted].filter(([, chain]) => {
+        const root = chain.at(-1);
+        return target !== undefined && root !== undefined && root !== target && holdsElement(target, root);
+      })
+    );
+    const composed = rooted.size === 0 ? PLAIN : { rooted, applied: [] };
+    return new CaptureBoxCascade(this.#read, ledger, placed, parent, path, composed, undrawn);
   }
 
   /**

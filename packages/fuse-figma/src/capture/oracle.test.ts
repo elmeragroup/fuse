@@ -22,7 +22,8 @@
  * - Two values of an axis are two Figma variants, so each pair builds a different root on at least
  *   one slice of the other axes that holds both, or the ledger keeps the pair with a reason: in
  *   `alike` where every such slice builds the same root, in `apart` where no slice holds both.
- * - A manifest names only the allowlist's fields, and an anchored one its component's `sideOffset`.
+ * - A manifest names only the allowlist's fields, and an anchored one its component's `sideOffset`,
+ *   and a nested one its `alignOffset` too.
  */
 import { describe, expect, it } from "@effect/vitest";
 import { Effect, Result } from "effect";
@@ -334,13 +335,14 @@ describe("the coverage ledger", () => {
 
 /**
  * The docs' API reference of each anchored composite's popup part: the component's page and the
- * part whose `sideOffset` and `alignItemWithTrigger` defaults the manifest names. Each anchored
- * manifest must have a row, so a new one decides where its placement props come from.
+ * part whose `sideOffset`, `alignOffset` and `alignItemWithTrigger` defaults the manifest names.
+ * Each anchored manifest must have a row, so a new one decides where its placement props come from.
  */
 const PLACEMENT_SOURCES: ReadonlyMap<string, { readonly page: string; readonly part: string }> = new Map([
   ["select-open", { page: "select", part: "Select.Content" }],
   ["popover-open", { page: "popover", part: "Popover.Content" }],
   ["dropdown-menu-open", { page: "dropdown-menu", part: "DropdownMenu.Content" }],
+  ["dropdown-menu-submenu-open", { page: "dropdown-menu", part: "DropdownMenu.SubContent" }],
   ["combobox-open", { page: "combobox", part: "Combobox.Content" }],
   ["tooltip-open", { page: "tooltip", part: "Tooltip.Content" }],
 ]);
@@ -793,5 +795,19 @@ describe("values that differ only in which variant an instance shows", () => {
       { _tag: "Alike", axis: "state", values: ["one", "other"] },
     ]);
     expect(pair("number-field-stepper/state=disabled")).toEqual([]);
+  });
+});
+
+describe.each(
+  MANIFESTS.flatMap((manifest) =>
+    manifest.anchor === undefined ? [] : [[manifest.key, manifest.anchor] as const]
+  )
+)("the nested manifest %s", (key, anchor) => {
+  it("names its popup's alignOffset as the component's API reference declares it", () => {
+    const source = PLACEMENT_SOURCES.get(key);
+    expect(source).toBeDefined();
+    if (source !== undefined) {
+      expect(String(anchor.alignOffset)).toBe(apiDefault(source.page, source.part, "alignOffset"));
+    }
   });
 });
