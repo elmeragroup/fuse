@@ -143,7 +143,8 @@ export function readPaint(
         )
       : readImage(reader, image, variant);
   const shown = fill === NO_FILL ? undefined : fill;
-  const paddingBox = readBackgroundClip(reader, draws ? border : NO_BORDER, borders, shown, variables);
+  const background = shown ?? (paintsNoBackground(reader, image, fill) ? NO_BACKGROUND : undefined);
+  const paddingBox = readBackgroundClip(reader, draws ? border : NO_BORDER, borders, background, variables);
   const paint = { fill: shown, stroke, shadows };
   const backgroundBlur = readBackgroundBlur(reader);
   const blurred = backgroundBlur === undefined ? paint : { ...paint, backgroundBlur };
@@ -509,12 +510,40 @@ const UNOWNED_ROW_BORDER =
 /** A box with no border, whose padding box is its border box. */
 const NO_BORDER = "none";
 
+/** A box that paints no background, as {@link paintsNoBackground} proves. */
+const NO_BACKGROUND = "no background";
+
+/**
+ * Whether a box paints no background: it shows no image, its `background-color` is transparent or
+ * unset, it sets no `background-image` but `none`, and no `background` shorthand wins. A color the
+ * kit cannot read, such as `CanvasText`, a gradient and a winning shorthand, which the cascade keeps
+ * whole and no mapping reads, may each paint a background, so none proves the box clear.
+ *
+ * @param reader - The box's style.
+ * @param image - The picture the box shows, undefined for none.
+ * @param fill - The box's fill as `background-color` reads, undefined where it does not map.
+ * @returns True where the box paints no background.
+ */
+function paintsNoBackground(
+  reader: LayerStyle,
+  image: (() => Uint8Array) | undefined,
+  fill: BoxPaint["fill"] | typeof NO_FILL
+): boolean {
+  return (
+    image === undefined &&
+    !reader.has("background") &&
+    (fill === NO_FILL || !reader.has("background-color")) &&
+    (!reader.has("background-image") || normalizeCss(reader.resolved("background-image") ?? "") === "none")
+  );
+}
+
 /**
  * Read `background-clip: padding-box`, which paints the background inside the border only (CSS
  * Backgrounds 3 §3.7), where Figma paints a fill under the whole frame and its stroke inside it
- * (`strokeAlign` INSIDE), over the fill. The two draw alike in two cases, and the clip drops there:
+ * (`strokeAlign` INSIDE), over the fill. The two draw alike in three cases, and the clip drops there:
  *
  * - The box has no border, so its padding box is its border box.
+ * - The box paints no background, as a hovered framed Table cell's `bg-transparent` leaves it.
  * - The border draws as a solid stroke in a color that is opaque in every mode, a literal or a
  *   synced variable, so the stroke hides the fill beneath it.
  *
@@ -531,7 +560,8 @@ const NO_BORDER = "none";
  * @param border - The stroke the box's border draws, undefined where it does not map, or
  *   {@link NO_BORDER} for a box with no border.
  * @param borders - Each side's border, which gives the side's inset.
- * @param fill - The box's fill, undefined for none.
+ * @param fill - The box's fill, {@link NO_BACKGROUND} for a box that paints none, or undefined where
+ *   the background does not map.
  * @param variables - The synced variables, which say whether a color is opaque in every mode.
  * @returns The border's width on each side, where the fill draws inside it, or undefined.
  */
@@ -539,18 +569,25 @@ function readBackgroundClip(
   reader: LayerStyle,
   border: StrokeFromBorder | typeof NO_BORDER,
   borders: SideBorders,
-  fill: BoxPaint["fill"],
+  fill: BoxPaint["fill"] | typeof NO_BACKGROUND,
   variables: VariableIndex
 ): PaddingBoxInsets | undefined {
   const detail =
     border === NO_BORDER
       ? "the box has no border, so its padding box is its border box"
-      : border !== undefined && !("dashPattern" in border) && opaqueIn(border.color, variables)
-        ? "the box's border draws as a solid stroke, opaque in every mode, over the fill beneath it"
-        : undefined;
+      : fill === NO_BACKGROUND
+        ? "the box paints no background, so the clip has nothing to clip"
+        : border !== undefined && !("dashPattern" in border) && opaqueIn(border.color, variables)
+          ? "the box's border draws as a solid stroke, opaque in every mode, over the fill beneath it"
+          : undefined;
   const clipped = normalizeCss(reader.resolved("background-clip") ?? "") === "padding-box";
   const insets =
-    detail === undefined && clipped && border !== NO_BORDER && fill?.kind !== "image" && fill !== undefined
+    detail === undefined &&
+    clipped &&
+    border !== NO_BORDER &&
+    fill !== undefined &&
+    fill !== NO_BACKGROUND &&
+    fill.kind !== "image"
       ? paddingInsets(border, borders)
       : undefined;
   if (insets !== undefined && Object.values(insets).some((width) => !Number.isInteger(width))) {

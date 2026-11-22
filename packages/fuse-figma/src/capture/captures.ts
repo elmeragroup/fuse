@@ -58,6 +58,9 @@ import fieldError from "../../captures/field-error.json" with { type: "json" };
 import fieldLegend from "../../captures/field-legend.json" with { type: "json" };
 import fieldTitle from "../../captures/field-title.json" with { type: "json" };
 import fileUploadDropzone from "../../captures/file-upload-dropzone.json" with { type: "json" };
+import frameTableBody from "../../captures/frame-table-body.json" with { type: "json" };
+import frameTableCell from "../../captures/frame-table-cell.json" with { type: "json" };
+import frameTableRow from "../../captures/frame-table-row.json" with { type: "json" };
 import frame from "../../captures/frame.json" with { type: "json" };
 import iconButton from "../../captures/icon-button.json" with { type: "json" };
 import iconToggle from "../../captures/icon-toggle.json" with { type: "json" };
@@ -201,6 +204,9 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["table-cell", tableCell],
   ["table-row", tableRow],
   ["table-caption", tableCaption],
+  ["frame-table-cell", frameTableCell],
+  ["frame-table-row", frameTableRow],
+  ["frame-table-body", frameTableBody],
   ["timeline-list", timelineList],
   ["timeline-list-links", timelineListLinks],
   ["selection-item", selectionItem],

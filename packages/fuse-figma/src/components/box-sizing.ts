@@ -1340,6 +1340,31 @@ export function boxHeightBounds(box: BoxSpec, variables: VariableIndex): HeightB
   return withinLimits(hugged, box.limits, variables);
 }
 
+/**
+ * The least width a box that hugs its width takes in any mode, within its `min-width` and
+ * `max-width`: its padding across, a bound padding at the least value its variable holds, and the
+ * room its stroke takes on each side. A text a designer types counts no width, since the kit cannot
+ * measure it, so a box whose text the designer empties can shrink to this width.
+ *
+ * @param box - The box.
+ * @param variables - The synced variables, whose least values bound a bound length.
+ * @returns The width in pixels.
+ */
+export function leastHugWidth(box: BoxSpec, variables: VariableIndex): number {
+  const hugged = sum([
+    lengthBounds(box.paddingLeft, variables),
+    lengthBounds(box.paddingRight, variables),
+    lengthBounds(strokeRoom(box.stroke, "left"), variables),
+    lengthBounds(strokeRoom(box.stroke, "right"), variables),
+  ]).min;
+  const { minWidth, maxWidth } = box.limits;
+  return usedLength(
+    hugged,
+    minWidth === undefined ? undefined : lengthBounds(minWidth, variables).min,
+    maxWidth === undefined ? undefined : lengthBounds(maxWidth, variables).min
+  );
+}
+
 /** The bounds of a grid's rows, each its tallest layer, stacked with the row gap between them. */
 function gridHeight(
   grid: GridSpec,

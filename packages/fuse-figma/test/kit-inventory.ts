@@ -502,7 +502,11 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     sets: [{ key: "code", name: "Code", variants: 1, previewed: 1 }],
   },
   // The building blocks of the docs default demo's table: its first head and first cell, its header,
-  // body and last body rows, hovered or not and selected or not, and its caption.
+  // body and last body rows, hovered or not and selected or not, and its caption. Then the same table
+  // as a Frame's item: its first cell at each column of the body's first, a middle and its last row,
+  // its header row of three Table head instances, those three body rows, and its body of two rows.
+  // The header row previews once, since selection and hover leave it as it is, and a selected body
+  // row previews at rest, since hover leaves its fill as it is.
   {
     slug: "table",
     name: "Table",
@@ -511,6 +515,9 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "table-cell", name: "Table cell", variants: 1, previewed: 1 },
       { key: "table-row", name: "Table row", variants: 12, previewed: 12 },
       { key: "table-caption", name: "Table caption", variants: 1, previewed: 1 },
+      { key: "frame-table-cell", name: "Frame table cell", variants: 9, previewed: 9 },
+      { key: "frame-table-row", name: "Frame table row", variants: 16, previewed: 10 },
+      { key: "frame-table-body", name: "Frame table body", variants: 1, previewed: 1 },
     ],
   },
   // The docs default demo's row at each size, at rest, waiting to upload, failed, uploading and

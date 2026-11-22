@@ -231,8 +231,8 @@ export const KIT_PARITY = {
     kind: "partial",
     sets: ["frame"],
     missing:
-      "The stacked and flush layouts, whose fused panels round one end only, whose lower panel drops its top border, and whose flush items pull over the root's border with a negative margin; a collapsible section; a panel that holds only a Table; and a Table as the Frame's item.",
-    issue: 853,
+      "The stacked and flush layouts, whose fused panels round one end only, whose lower panel drops its top border, and whose flush items pull over the root's border with a negative margin; a collapsible section; a panel that holds only a Table; and a Frame holding a Table whole, whose columns share its width by their content (CSS 2.1 §17.5.2.2). The Table page draws a framed Table's heads, cells, rows and body as blocks.",
+    issue: NICE_TO_HAVE,
   },
   heading: { kind: "excluded", reason: TEXT_STYLE },
   input: {
@@ -378,9 +378,17 @@ export const KIT_PARITY = {
   switch: { kind: "sets", sets: ["switch"] },
   table: {
     kind: "partial",
-    sets: ["table-head", "table-cell", "table-row", "table-caption"],
+    sets: [
+      "table-head",
+      "table-cell",
+      "table-row",
+      "table-caption",
+      "frame-table-cell",
+      "frame-table-row",
+      "frame-table-body",
+    ],
     missing:
-      "Column widths: each cell hugs its text, as a table no wider than its content lays it out, and a wider table shares the rest among its columns by their content (CSS 2.1 §17.5.2.2), which no auto layout draws, so the designer sets them. Also the footer, a framed table (#853), and VerticalTable's fixed-layout equal columns and collapsed borders, which the kit has not attempted.",
+      "Column widths: each cell hugs its text, as a table no wider than its content lays it out, and a wider table shares the rest among its columns by their content (CSS 2.1 §17.5.2.2), which no auto layout draws, so the designer sets them. In a framed table, the kit draws the body's shadow but leaves out the clipping of the Table's scroll container, which cuts it off at the sides and below a body nothing follows. It also leaves out a body of one row, a one-column table and the caption. Also the footer, and VerticalTable's fixed-layout equal columns and collapsed borders, which the kit has not attempted.",
     issue: NICE_TO_HAVE,
   },
   tabs: {

@@ -17,7 +17,9 @@
  * measures and forces its state the same way twice. A Select item at rest must also show no fill and
  * a highlighted one the theme's `accent`, which fails where a stray focus or highlight from the mount
  * draws. The body-row crop must show the bottom rule across the row's full width. The head crop must
- * contain paint inside the head's box and stay transparent outside it. Each instance that sets a
+ * contain paint inside the head's box and stay transparent outside it, and so must a framed Table
+ * cell or row crop, whose Frame and neighbors the page hides. The header row's three Table head
+ * instances are one framed row crop, which the check confines as a whole. Each instance that sets a
  * BOOLEAN property off its default, such as the Dropdown menu item with its `Icon` on, must also pass
  * the checks in `boolean-overrides.ts`, which fail where the property never reaches the page, its part
  * takes room but draws nothing, or the part it shows or hides is not the one that comes and goes
@@ -32,6 +34,7 @@ import * as Srgb from "@elmeragroup/color/srgb";
 import { previewInstances } from "../components/build-kit.ts";
 import { variantKey } from "../components/component-spec.ts";
 import type { Cell } from "../components/component-spec.ts";
+import { FRAME_TABLE_CELL_MANIFEST, FRAME_TABLE_ROW_MANIFEST } from "../components/frame-table-kit.ts";
 import { KIT } from "../components/kit-registry.ts";
 import { previewInstanceKey } from "../components/kit-spec.ts";
 import { SELECT_ITEM_MANIFEST } from "../components/select-kit.ts";
@@ -243,22 +246,54 @@ function tableMismatch(
       : `${where}: shows no border rule at ${String(gaps.length)} of ${String(size.width * size.height)} device pixels below the row, from ${String(first.x)},${String(first.y)}, rgb(${first.shown.join(" ")}) where the rule over the background is rgb(${expected.join(" ")})`;
   }
   if (definition === TABLE_HEAD_MANIFEST.key) {
-    let paintedInside = false;
-    for (let y = 0; y < raster.height; y += 1) {
-      for (let x = 0; x < raster.width; x += 1) {
-        const inside = x >= box.left && x < box.rightTouched && y >= box.top && y < box.bottom;
-        if (!isPainted(raster, x, y)) {
-          continue;
-        }
-        if (!inside) {
-          return `${where}: paints device pixel ${String(x)},${String(y)} outside the head's box`;
-        }
-        paintedInside = true;
-      }
-    }
-    return paintedInside ? undefined : `${where}: paints nothing inside the head's box`;
+    return boxConfinement(rendered, padding, "head", where);
+  }
+  if (CONFINED_FRAME_TABLE_SETS.has(definition)) {
+    return boxConfinement(rendered, padding, "part", where);
   }
   return undefined;
+}
+
+/**
+ * The framed Table sets whose crop must show paint inside the part's box and none outside it. Each
+ * set draws its cell or row and nothing past the box: a framed cell's borders lie inside its
+ * box, and its row draws none. Around the part the renderer places the Frame's fill and border and
+ * empty cells, whose paint the page hides. The body is left out, since the kit's body casts a shadow
+ * past its box.
+ */
+const CONFINED_FRAME_TABLE_SETS: ReadonlySet<string> = new Set([
+  FRAME_TABLE_CELL_MANIFEST.key,
+  FRAME_TABLE_ROW_MANIFEST.key,
+]);
+
+/**
+ * Whether a crop shows paint inside its measured box and none outside it.
+ *
+ * @returns Undefined when it does, or a line that names the first pixel outside the box or says the
+ *   box is empty.
+ */
+function boxConfinement(
+  rendered: RenderedCell,
+  padding: number,
+  part: string,
+  where: string
+): string | undefined {
+  const { raster } = rendered;
+  const box = boxPixels(rendered, padding);
+  let paintedInside = false;
+  for (let y = 0; y < raster.height; y += 1) {
+    for (let x = 0; x < raster.width; x += 1) {
+      const inside = x >= box.left && x < box.rightTouched && y >= box.top && y < box.bottom;
+      if (!isPainted(raster, x, y)) {
+        continue;
+      }
+      if (!inside) {
+        return `${where}: paints device pixel ${String(x)},${String(y)} outside the ${part}'s box`;
+      }
+      paintedInside = true;
+    }
+  }
+  return paintedInside ? undefined : `${where}: paints nothing inside the ${part}'s box`;
 }
 
 /**

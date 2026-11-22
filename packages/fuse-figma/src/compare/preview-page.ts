@@ -107,6 +107,11 @@ export type PageCell = {
    * undefined for none. A cell taller than a slot with its padding takes a row of its own that tall.
    */
   readonly height?: number | undefined;
+  /**
+   * `measured` where the page hides the static cell's slot and shows only its measured elements, as
+   * it shows a client cell's. Undefined shows the whole slot.
+   */
+  readonly shows?: "measured" | undefined;
 };
 
 /** A point in CSS pixels. */
@@ -622,9 +627,13 @@ export function previewDocument(
   const rects = slotRects(layout, cells);
   const slots = cells.map((cell, index) => slotHtml(cell, rects[index] ?? slotRect(layout, index)));
   const clients = cells.filter((cell) => cell.content._tag === "Client");
-  const shown = clients.flatMap((cell) =>
+  // A slot hidden this way keeps its layout, so the measured element lays out among the same
+  // neighbors, and `visibility` inherits, so the element's own parts stay shown.
+  const isolated = cells.filter((cell) => cell.content._tag === "Static" && cell.shows === "measured");
+  const shown = [...clients, ...isolated].flatMap((cell) =>
     cell.measured.map((element) => `${cellSelector(cell.id, element)}{visibility:visible}`)
   );
+  const isolatedCss = isolated.map((cell) => `[data-compare-cell="${cell.id}"]{visibility:hidden}`);
   // A popup shrinks to fit the slot that holds its portal (CSS 2.1 §10.3.7), so a client slot takes the
   // whole slot's width, as a page gives a popup room for its widest row.
   const clientCss =
@@ -633,7 +642,6 @@ export function previewDocument(
       : [
           `${CLIENT_HIDDEN}{visibility:hidden}`,
           `${CLIENT_HIDDEN}{width:${String(layout.slotWidth)}px;box-sizing:border-box}`,
-          ...shown,
         ];
   const script = clients.length === 0 ? [] : [`<script type="module" src="${ASSET_PATHS.client}"></script>`];
   return `<!doctype html>
@@ -656,7 +664,7 @@ body{margin:0;font-family:var(--font-sans);color:var(--foreground);-webkit-font-
 [data-compare-cell]{position:absolute;display:flex;align-items:flex-start;padding:${layout.padding}px}
 [data-compare-cell]>*,${CLIENT_HIDDEN}>:first-child>*{flex-shrink:0}
 ${BACKGROUND_PROBE}{position:absolute;left:0;top:0;width:4px;height:4px;background:var(--background)}
-${clientCss.join("\n")}
+${[...clientCss, ...isolatedCss, ...shown].join("\n")}
 </style>
 </head>
 <body${attributes(stamps.body)}>

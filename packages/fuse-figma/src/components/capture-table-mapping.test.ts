@@ -122,6 +122,26 @@ describe("a table the capture measured tiling its parts", () => {
     }
   );
 
+  /**
+   * Oracle: CSS Backgrounds 3 §4.3. A side whose style is `none` has a used width of 0, whatever
+   * width it declares, so a row whose every side has that style draws no border for any box to
+   * contest, as a framed Table header row's `border-none` leaves the `border-b` its header gives it.
+   * Its border declarations then draw nothing, owned or not, and none of them stays unmapped.
+   */
+  it.each(["border-b border-none", "border-b [border-bottom-style:none]"])(
+    "draws nothing and leaves nothing unmapped for a row's `%s` it does not own",
+    async (border) => {
+      const { variant, coverage } = await buildTable(
+        { tableTiles: true },
+        { classes: `table-row ${border} border-black`, measured: { tableTiles: true } }
+      );
+      expect(frameOf(variant?.root)?.stroke).toBeUndefined();
+      expect(
+        coverage.filter((row) => row.property.startsWith("border-") && row.outcome === "unmapped")
+      ).toEqual([]);
+    }
+  );
+
   it("leaves each table box's display unmapped without the measurement", async () => {
     const { coverage } = await buildTable({});
     expect(

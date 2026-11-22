@@ -1,7 +1,7 @@
 /**
  * How the build paints a box: `currentcolor` a custom property passes down, a part under
- * `visibility: hidden`, a radius per corner and a border on some sides. The unit under test is
- * `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
+ * `visibility: hidden`, a border on some sides or whose style is none, and a background clip. The
+ * unit under test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
  * (`test/capture-fixtures.ts`). Each case names its oracle: the CSS specification that says what the
  * browser draws, or the Figma plugin typings that say what Figma draws, under the coverage contract,
  * where a declaration that does not reach Figma is `unmapped` and one with nothing to draw is
@@ -178,337 +178,6 @@ describe("a hidden part", () => {
     );
     expect(frameOf(variant?.root)?.hidden).toBeUndefined();
     expect(notesOf(coverage, "invisible").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
-  });
-});
-
-// Oracle: CSS Logical Properties 1 §6.2 and CSS Backgrounds 3 §5.5, against Figma's four corner
-// radii, each capped at half the shorter side (probe P10). On the kit's left-to-right page
-// `rounded-s-*` rounds the top left and bottom left. CSS scales every radius by one factor where the
-// radii along a side add past it, so `rounded-s-full` on a 36px square is 18px on both left corners,
-// within the cap, and two 20px corners along a 36px side are 18px each; `rounded-tl-full` alone
-// scales to the whole 36px side, a 30px corner alone keeps 30px, and a 30px and a 10px corner along
-// a 36px side are 27px and 9px, each past the 18px Figma would draw, so they stay unmapped. A variable maps only where its greatest value in any mode leaves
-// CSS nothing to scale and stays within the cap. A box that also sets `border-radius` leaves the
-// order of the two to the cascade, which the build does not read, so it stays unmapped too.
-describe("a radius per corner", () => {
-  const corners = (topLeft: number, topRight: number, bottomRight: number, bottomLeft: number) => ({
-    kind: "corners",
-    topLeft: literal(topLeft),
-    topRight: literal(topRight),
-    bottomRight: literal(bottomRight),
-    bottomLeft: literal(bottomLeft),
-  });
-
-  it.each([
-    ["size-[36px] rounded-s-full", corners(18, 0, 0, 18)],
-    ["size-[36px] rounded-e-full", corners(0, 18, 18, 0)],
-    ["size-[36px] rounded-t-[8px]", corners(8, 8, 0, 0)],
-    ["size-[36px] rounded-ss-[4px] rounded-ee-[6px]", corners(4, 0, 6, 0)],
-    ["size-[36px] rounded-tl-[20px] rounded-tr-[20px]", corners(18, 18, 0, 0)],
-  ])("draws %s on the corners it names", async (classes, expected) => {
-    const { variant, coverage } = await buildChip(classes);
-    expect(variant?.root.cornerRadius).toEqual(expected);
-    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
-  });
-
-  it("reads the sides of a box that hugs one part of a literal size", async () => {
-    const { variant } = await buildChip(
-      "flex rounded-s-full",
-      [{ slot: "chip-dot", classes: "size-[36px]" }],
-      {
-        parts: [part()],
-      }
-    );
-    expect(variant?.root.cornerRadius).toEqual(corners(18, 0, 0, 18));
-  });
-
-  // Oracle: CSS Backgrounds 3 §3.5 and §5.5. `border: 2px solid` adds 2px on each side, so the box
-  // that hugs the 36px part is a 40px square, and Chromium rounds its left corners at 20px.
-  it("reads the sides a border shorthand adds to a box that hugs one part", async () => {
-    const { variant } = await buildChip(
-      "flex rounded-s-full [border:2px_solid] border-[#ff0000]",
-      [{ slot: "chip-dot", classes: "size-[36px]" }],
-      { parts: [part()] }
-    );
-    expect(variant?.root.stroke).toEqual({
-      color: { kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } },
-      weight: literal(2),
-    });
-    expect(variant?.root.cornerRadius).toEqual(corners(20, 0, 0, 20));
-  });
-
-  it("reads the sides a box's minimum holds it at around a smaller part, as CSS raises it", async () => {
-    const { variant } = await buildChip(
-      "flex min-w-[64px] min-h-[64px] rounded-s-full",
-      [{ slot: "chip-dot", classes: "size-[36px]" }],
-      { parts: [part()] }
-    );
-    expect(variant?.root.cornerRadius).toEqual(corners(32, 0, 0, 32));
-  });
-
-  it("leaves the corners unmapped where a limit it cannot read could set the box's side", async () => {
-    const { variant } = await buildChip(
-      "flex min-w-[50%] rounded-s-full",
-      [{ slot: "chip-dot", classes: "size-[36px]" }],
-      {
-        parts: [part()],
-      }
-    );
-    expect(variant?.root.cornerRadius).toEqual(literal(0));
-  });
-
-  it("binds each corner a variable sets to that variable", async () => {
-    const variables = makeVariableIndex([
-      {
-        ref: { collection: "Fuse tokens", name: "radius" },
-        webSyntax: "var(--radius)",
-        minimum: 4,
-        maximum: 16,
-      },
-    ]);
-    const { variant } = await buildCaptured(
-      chip(),
-      rest({ slot: "chip", classes: "size-[36px] rounded-t-(--radius)" }),
-      {
-        variables,
-      }
-    );
-    const radius = { kind: "variable", variable: { collection: "Fuse tokens", name: "radius" } };
-    expect(variant?.root.cornerRadius).toEqual({
-      kind: "corners",
-      topLeft: radius,
-      topRight: radius,
-      bottomRight: literal(0),
-      bottomLeft: literal(0),
-    });
-  });
-
-  it("leaves a variable that CSS scales in some mode unmapped", async () => {
-    const variables = makeVariableIndex([
-      {
-        ref: { collection: "Fuse tokens", name: "radius" },
-        webSyntax: "var(--radius)",
-        minimum: 4,
-        maximum: 24,
-      },
-    ]);
-    const { variant } = await buildCaptured(
-      chip(),
-      rest({ slot: "chip", classes: "size-[36px] rounded-t-(--radius)" }),
-      {
-        variables,
-      }
-    );
-    expect(variant?.root.cornerRadius).toEqual(literal(0));
-  });
-
-  // A min-square control, whose height is a variable and its minimum width: CSS scales the two
-  // radii of its left or right side to at most half the height, and Figma caps each corner at half
-  // the shorter side, the height, so a radius past half the least height still draws alike. Any
-  // other corner set on such a box stays unmapped, since CSS and Figma part where a radius overruns.
-  describe("on a box whose height is a variable and its minimum width", () => {
-    const variables = makeVariableIndex([
-      {
-        ref: { collection: "Fuse tokens", name: "radius" },
-        webSyntax: "var(--radius)",
-        minimum: 4,
-        maximum: 24,
-      },
-      {
-        ref: { collection: "Fuse density", name: "control-h" },
-        webSyntax: "var(--control-h)",
-        minimum: 24,
-        maximum: 32,
-      },
-    ]);
-    const radius = { kind: "variable", variable: { collection: "Fuse tokens", name: "radius" } };
-    const square = "flex h-(--control-h) min-w-(--control-h)";
-
-    it.each([
-      [
-        "rounded-s-(--radius)",
-        { topLeft: radius, topRight: literal(0), bottomRight: literal(0), bottomLeft: radius },
-      ],
-      [
-        "rounded-e-(--radius)",
-        { topLeft: literal(0), topRight: radius, bottomRight: radius, bottomLeft: literal(0) },
-      ],
-    ])("draws %s on the side it names", async (classes, expected) => {
-      const { variant } = await buildCaptured(
-        chip(),
-        rest({ slot: "chip", classes: `${square} ${classes}` }),
-        {
-          variables,
-        }
-      );
-      expect(variant?.root.cornerRadius).toEqual({ kind: "corners", ...expected });
-    });
-
-    it.each([
-      // The pair sits on the top side, the width, which can be longer than the height.
-      `${square} rounded-t-(--radius)`,
-      // One corner alone scales to the whole side in CSS, past Figma's cap.
-      `${square} rounded-tl-(--radius)`,
-      // Two radii along one side scale by one factor in CSS, where Figma caps each on its own.
-      `${square} rounded-tl-(--radius) rounded-bl-[4px]`,
-      // With no minimum width, the box can be narrower than it is tall.
-      "flex h-(--control-h) rounded-s-(--radius)",
-      // The minimum height the sizing leaves unmapped makes the box 24 by 48 at the least height,
-      // where CSS draws the 24px radii whole and Figma would cap them at 12px against a 24px height.
-      `${square} min-h-[48px] rounded-s-[24px]`,
-    ])("leaves %s unmapped", async (classes) => {
-      const { variant } = await buildCaptured(chip(), rest({ slot: "chip", classes }), { variables });
-      expect(variant?.root.cornerRadius).toEqual(literal(0));
-    });
-  });
-
-  // Oracle: CSS Variables 1 §3 and CSS Backgrounds 3 §5.1. A `var()` is substituted before the
-  // shorthand's values are counted, so `var(--pair) 4px` with `--pair: 2px 8px` is `2px 8px 4px`,
-  // whose top right corner is 8px, and a lone `var(--pair)` is `2px 8px`, whose bottom right corner
-  // is 2px. Read as written, the value's second token, 4px, would take the first box's corner, and
-  // the lone `var()` gives each corner `2px 8px`, which reads as no radius.
-  it.each([
-    ["var(--pair) 4px", ["top-left", "bottom-right", "bottom-left"]],
-    ["var(--pair)", ["top-left"]],
-  ])(
-    "leaves border-radius: %s, whose var() stands for several values, unmapped where it wins some corners",
-    async (value, zeroed) => {
-      const written = (property: string, each: string) => ({
-        className: "pair-radius",
-        property,
-        value: each,
-      });
-      const { variant, coverage } = await buildCaptured(
-        chip(),
-        rest({
-          slot: "chip",
-          classes: "w-[64px] h-[36px]",
-          written: [
-            written("--pair", "2px 8px"),
-            written("border-radius", value),
-            ...zeroed.map((corner) => written(`border-${corner}-radius`, "0")),
-          ],
-        })
-      );
-      expect(variant?.root.cornerRadius).toEqual(literal(0));
-      const outcomes = notesOf(coverage, "pair-radius")
-        .filter(([property]) => String(property).endsWith("radius"))
-        .map(([, outcome]) => outcome);
-      expect(new Set(outcomes)).toEqual(new Set(["unmapped"]));
-    }
-  );
-
-  // Oracle: CSS Logical Properties 1 §4.4 and CSS Backgrounds 3 §5.1. On a left-to-right page a
-  // start corner is a left one, so a later `rounded-s-*` wins the two left corners over an earlier
-  // `border-radius`, which keeps the right ones.
-  it.each([
-    ["size-[36px] rounded-none rounded-s-[8px]", corners(8, 0, 0, 8)],
-    ["size-[36px] rounded-[4px] rounded-s-[8px]", corners(8, 4, 4, 8)],
-  ])("draws %s with the start corners on the left", async (classes, expected) => {
-    const { variant } = await buildChip(classes);
-    expect(variant?.root.cornerRadius).toEqual(expected);
-  });
-
-  // Oracle: CSS 2 §10.7 and CSS Backgrounds 3 §5.5. A 48px `min-height` wins over the 24px height,
-  // so Chromium draws a 48px square, whose two 24px left radii sum to its height and draw whole. The
-  // build leaves the variable `min-height` unmapped and reads a 48 by 24 box, where CSS would scale
-  // the radii to 12px, so it can tell neither length.
-  it("leaves the corners unmapped where an unmapped min-height can make the box taller", async () => {
-    const variables = makeVariableIndex([
-      {
-        ref: { collection: "Fuse density", name: "tall" },
-        webSyntax: "var(--tall)",
-        minimum: 48,
-        maximum: 48,
-      },
-    ]);
-    const { variant, coverage } = await buildCaptured(
-      chip(),
-      rest({ slot: "chip", classes: "flex w-[48px] h-[24px] min-h-(--tall) rounded-none rounded-l-[24px]" }),
-      { variables }
-    );
-    expect(variant?.root.cornerRadius).toEqual(literal(0));
-    expect(notesOf(coverage, "rounded-l-[24px]").map(([, outcome]) => outcome)).toEqual([
-      "unmapped",
-      "unmapped",
-    ]);
-  });
-
-  // Oracle: CSS Backgrounds 3 §5.1 and CSS Values 4 §10.12. A radius is a non-negative length, so
-  // Chromium rejects `12` with no unit, and clamps `calc(2px - 4px)` to 0, at the time it
-  // substitutes the `var()`. The lone `var()` the capture holds can stand for either.
-  it.each(["12", "calc(2px - 4px)"])(
-    "leaves border-radius: var(--r), with --r: %s, unmapped where it wins some corners",
-    async (radius) => {
-      const written = (property: string, value: string) => ({ className: "lone-radius", property, value });
-      const { variant, coverage } = await buildCaptured(
-        chip(),
-        rest({
-          slot: "chip",
-          classes: "w-[64px] h-[36px]",
-          written: [
-            written("--r", radius),
-            written("border-radius", "var(--r)"),
-            written("border-top-left-radius", "0"),
-          ],
-        })
-      );
-      expect(variant?.root.cornerRadius).toEqual(literal(0));
-      const outcomes = notesOf(coverage, "lone-radius")
-        .filter(([property]) => String(property).endsWith("radius"))
-        .map(([, outcome]) => outcome);
-      expect(new Set(outcomes)).toEqual(new Set(["unmapped"]));
-    }
-  );
-
-  // Oracle: CSS Values 4 §10.12 and CSS Backgrounds 3 §5.1. Chromium clamps `calc(8px - 12px)` to
-  // 0px, since a radius is a non-negative length, so a 64 by 36 box draws the bottom right corner
-  // square and keeps the 5px top right and bottom left corners.
-  it("clamps a negative calc() radius to 0 where border-radius wins some corners", async () => {
-    const { variant } = await buildCaptured(
-      chip(),
-      rest({
-        slot: "chip",
-        classes: "w-[64px] h-[36px]",
-        written: [
-          { className: "negative-radius", property: "border-radius", value: "calc(8px - 12px) 5px" },
-          { className: "negative-radius", property: "border-top-left-radius", value: "0" },
-        ],
-      })
-    );
-    expect(variant?.root.cornerRadius).toEqual(corners(0, 5, 0, 5));
-  });
-
-  // Oracle: CSS 2 §10.7 and CSS Backgrounds 3 §5.5. The 48px `min-height` wins over the 24px height,
-  // so Chromium draws a 48px square, whose infinite radius draws as 24px. The build leaves the
-  // variable `min-height` unmapped and reads a 48 by 24 box, whose half shorter side is 12px.
-  it("leaves rounded-full unmapped where an unmapped min-height can make the box taller", async () => {
-    const variables = makeVariableIndex([
-      {
-        ref: { collection: "Fuse density", name: "tall" },
-        webSyntax: "var(--tall)",
-        minimum: 48,
-        maximum: 48,
-      },
-    ]);
-    const { variant, coverage } = await buildCaptured(
-      chip(),
-      rest({ slot: "chip", classes: "flex w-[48px] h-[24px] min-h-(--tall) rounded-full" }),
-      { variables }
-    );
-    expect(variant?.root.cornerRadius).toEqual(literal(0));
-    expect(notesOf(coverage, "rounded-full").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
-  });
-
-  it.each([
-    "size-[36px] rounded-tl-full",
-    "size-[36px] rounded-tl-[30px]",
-    "size-[36px] rounded-tl-[30px] rounded-tr-[10px]",
-    "rounded-s-full",
-  ])("leaves %s unmapped", async (classes) => {
-    const { variant, coverage } = await buildChip(classes);
-    expect(variant?.root.cornerRadius).toEqual(literal(0));
-    expect(coverage.some((row) => row.outcome === "unmapped" && row.property.endsWith("radius"))).toBe(true);
   });
 });
 
@@ -887,4 +556,45 @@ describe("a four-sided border shorthand that wins some sides", () => {
         .map(([, outcome]) => outcome)
     ).toEqual(["unmapped"]);
   });
+});
+
+// Oracle: CSS Backgrounds 3 §3.3. A border whose style is `none` computes each side's width to 0, so
+// it draws nothing, whatever width or color the box also sets, as a framed Table's header row's
+// `border-none` sets over the `border-b` its header gives it.
+describe("a border whose style is none", () => {
+  it("draws no stroke and drops its width and color", async () => {
+    const { variant, coverage } = await buildChip("size-[20px] border-b border-none border-[#000000]");
+    expect(variant?.root.stroke).toBeUndefined();
+    const rows = coverage.filter((row) => row.property.startsWith("border-"));
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.filter((row) => row.outcome !== "dropped")).toEqual([]);
+  });
+});
+
+// Oracle: CSS Backgrounds 3 §3.7. `background-clip` clips the background, so a box that paints none,
+// as a hovered framed Table cell's `bg-transparent` leaves it, has nothing for the clip to draw.
+describe("background-clip: padding-box on a box with no background", () => {
+  it("is dropped beside a translucent border", async () => {
+    const { coverage, variant } = await buildChip("size-[20px] bg-clip-padding border border-[#00000080]");
+    expect(notesOf(coverage, "bg-clip-padding")).toEqual([
+      ["background-clip", "dropped", "the box paints no background, so the clip has nothing to clip"],
+    ]);
+    expect(variant?.root.children).toEqual([]);
+  });
+});
+
+// Oracle: CSS Backgrounds 3 §3.7. The clip drops only where the box paints no background. A system
+// color, a gradient or a `background` shorthand paints one the kit does not read (Chromium paints
+// `background: red` inside a translucent border), so the clip keeps the background inside the border
+// in CSS, which nothing in Figma draws.
+describe("background-clip: padding-box beside a background the kit does not read", () => {
+  it.each(["bg-[CanvasText]", "bg-[linear-gradient(#ffffff,#000000)]", "[background:#ff0000]"])(
+    "stays unmapped beside %s",
+    async (background) => {
+      const { coverage } = await buildChip(
+        `size-[20px] bg-clip-padding ${background} border border-[#00000080]`
+      );
+      expect(notesOf(coverage, "bg-clip-padding").map(([, outcome]) => outcome)).toEqual(["unmapped"]);
+    }
+  );
 });

@@ -94,8 +94,10 @@ export function ownFill(box: BoxSpec): FillSpec | undefined {
 
 /**
  * Whether a layer is the `padding box` layer that paints its box's fill inside the border: a frame
- * by that key, placed against its parent's edges and stretched with it on both axes. A layer the box
- * places in its auto layout under that key is an ordinary layer.
+ * by that key, placed against its parent's edges and stretched with it on both axes, that draws
+ * nothing but its fill, as {@link drawPaddingBoxFill} builds it. A layer the box places in its auto
+ * layout under that key is an ordinary layer, and so is a placed one with a stroke, a shadow, a
+ * background blur or layers of its own, which an override of its fill would leave drawn.
  *
  * @param layer - A layer the box holds.
  * @returns Whether the layer is the box's `padding box` layer.
@@ -106,7 +108,11 @@ export function isPaddingBoxLayer(layer: ChildLayerSpec): layer is FrameLayerSpe
     layer.key === PADDING_BOX_FILL &&
     layer.placement?.kind === "edges" &&
     layer.placement.horizontal.kind === "stretch" &&
-    layer.placement.vertical.kind === "stretch"
+    layer.placement.vertical.kind === "stretch" &&
+    layer.stroke === undefined &&
+    layer.shadows.length === 0 &&
+    layer.backgroundBlur === undefined &&
+    layer.children.length === 0
   );
 }
 

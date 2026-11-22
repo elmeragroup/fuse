@@ -123,6 +123,12 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   underMaxWidth: Schema.optionalKey(Schema.Literal(true)),
   /**
+   * The element's corner radii are not all one in some mode, and in every mode whose radii are not
+   * all 0 its border box, with its sample text, is wider than twice its largest horizontal radius by
+   * a margin, so neither CSS nor Figma shrinks a radius across it.
+   */
+  cornersFit: Schema.optionalKey(Schema.Literal(true)),
+  /**
    * A flex line whose items hold auto margins along it, which in every mode leaves at
    * least 24px of free space for them, so they take room and push the items after them to its end.
    */

@@ -73,10 +73,20 @@ export type CellRenderer = {
    * 576px host around its bar. Undefined where the host is no wider than the root's preview width.
    */
   readonly hostWidth?: number;
+  /**
+   * What the compare page shows of a static cell's host: `measured` hides everything but the
+   * measured element, for a part the renderer places among neighbors and ancestors its set does not
+   * draw, as a framed Table cell sits among empty cells inside a Frame. Undefined shows the whole
+   * host. The page hides a client cell's slot either way, and the capture reads its page unhidden.
+   */
+  readonly shows?: "measured";
 };
 
 /** The part of a renderer its own module defines, beside its import of the Fuse build. */
-export type CellRendering = Pick<CellRenderer, "element" | "hostClasses" | "highlight" | "hostWidth">;
+export type CellRendering = Pick<
+  CellRenderer,
+  "element" | "hostClasses" | "highlight" | "hostWidth" | "shows"
+>;
 
 /**
  * The part of a client renderer its own module defines, which the page's bundle imports. The page
@@ -553,6 +563,21 @@ const SOURCES: readonly RendererSource[] = [
     set: "table-caption",
     entry: "dist/table.js",
     load: async () => (await import("./table-cell.ts")).tableCaption,
+  },
+  {
+    set: "frame-table-cell",
+    entry: ["dist/frame.js", "dist/table.js"],
+    load: async () => (await import("./frame-table-cell.ts")).frameTableCell,
+  },
+  {
+    set: "frame-table-row",
+    entry: ["dist/frame.js", "dist/table.js"],
+    load: async () => (await import("./frame-table-cell.ts")).frameTableRow,
+  },
+  {
+    set: "frame-table-body",
+    entry: ["dist/frame.js", "dist/table.js"],
+    load: async () => (await import("./frame-table-cell.ts")).frameTableBody,
   },
   {
     set: "checkbox-card",

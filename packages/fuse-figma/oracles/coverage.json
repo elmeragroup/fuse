@@ -4877,14 +4877,46 @@
         "part": "list-detail-detail",
         "className": "data-[side=top]:top-0"
       }
+    ],
+    "frame-table-cell": [
+      {
+        "part": "frame-table-cell",
+        "className": "has-[[role=checkbox]]:[--table-cell-pe:0px]"
+      }
+    ],
+    "frame-table-body": [
+      {
+        "part": "table-body",
+        "className": "framed-table:*:[tr]:data-[state=selected]:*:[td]:bg-muted/72"
+      },
+      {
+        "part": "table-body",
+        "className": "framed-table:*:[tr]:hover:*:[td]:bg-transparent"
+      },
+      {
+        "part": "table-body",
+        "className": "not-framed-table:before:hidden"
+      }
     ]
   },
   "unreached": [
     {
       "set": "button",
       "part": "button-pending-indicator",
-      "className": "fuse.css base layer",
-      "property": "border-color",
+      "declarations": [
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-style"
+        }
+      ],
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
         "button/variant=default,size=default,state=pending,icon=end 0/root/1",
@@ -4976,659 +5008,32 @@
     {
       "set": "button",
       "part": "button-pending-indicator",
-      "className": "fuse.css base layer",
-      "property": "box-sizing",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "button/variant=default,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=xs,state=pending,icon=start 0/root/1"
-      ]
-    },
-    {
-      "set": "button",
-      "part": "button-pending-indicator",
-      "className": "fuse.css base layer",
-      "property": "border-style",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "button/variant=default,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=xs,state=pending,icon=start 0/root/1"
-      ]
-    },
-    {
-      "set": "button",
-      "part": "button-pending-indicator",
-      "className": "pointer-events-none",
-      "property": "pointer-events",
-      "reason": "The pending indicator's span holds the spinner, which the kit draws as the Button's first layer: `order-first` puts it first, its flex layout centres the spinner in a box its own size, and `pointer-events` draws nothing.",
-      "at": [
-        "button/variant=default,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=xs,state=pending,icon=start 0/root/1"
-      ]
-    },
-    {
-      "set": "button",
-      "part": "button-pending-indicator",
-      "className": "order-first",
-      "property": "order",
-      "reason": "The pending indicator's span holds the spinner, which the kit draws as the Button's first layer: `order-first` puts it first, its flex layout centres the spinner in a box its own size, and `pointer-events` draws nothing.",
-      "at": [
-        "button/variant=default,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=xs,state=pending,icon=start 0/root/1"
-      ]
-    },
-    {
-      "set": "button",
-      "part": "button-pending-indicator",
-      "className": "inline-flex",
-      "property": "display",
-      "reason": "The pending indicator's span holds the spinner, which the kit draws as the Button's first layer: `order-first` puts it first, its flex layout centres the spinner in a box its own size, and `pointer-events` draws nothing.",
-      "at": [
-        "button/variant=default,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=xs,state=pending,icon=start 0/root/1"
-      ]
-    },
-    {
-      "set": "button",
-      "part": "button-pending-indicator",
-      "className": "shrink-0",
-      "property": "flex-shrink",
-      "reason": "The pending indicator's span holds the spinner, which the kit draws as the Button's first layer: `order-first` puts it first, its flex layout centres the spinner in a box its own size, and `pointer-events` draws nothing.",
-      "at": [
-        "button/variant=default,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=xs,state=pending,icon=start 0/root/1"
-      ]
-    },
-    {
-      "set": "button",
-      "part": "button-pending-indicator",
-      "className": "items-center",
-      "property": "align-items",
-      "reason": "The pending indicator's span holds the spinner, which the kit draws as the Button's first layer: `order-first` puts it first, its flex layout centres the spinner in a box its own size, and `pointer-events` draws nothing.",
-      "at": [
-        "button/variant=default,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=default,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=default,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=destructive,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=destructive,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=ghost,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=ghost,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=link,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=link,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=outline,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=outline,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=secondary,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=secondary,size=xs,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=default,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=default,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=lg,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=lg,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=sm,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=sm,state=pending,icon=start 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=end 0/root/1",
-        "button/variant=success,size=xs,state=pending,icon=none 0/root/0",
-        "button/variant=success,size=xs,state=pending,icon=start 0/root/1"
-      ]
-    },
-    {
-      "set": "button",
-      "part": "button-pending-indicator",
-      "className": "justify-center",
-      "property": "justify-content",
+      "declarations": [
+        {
+          "className": "pointer-events-none",
+          "property": "pointer-events"
+        },
+        {
+          "className": "order-first",
+          "property": "order"
+        },
+        {
+          "className": "inline-flex",
+          "property": "display"
+        },
+        {
+          "className": "shrink-0",
+          "property": "flex-shrink"
+        },
+        {
+          "className": "items-center",
+          "property": "align-items"
+        },
+        {
+          "className": "justify-center",
+          "property": "justify-content"
+        }
+      ],
       "reason": "The pending indicator's span holds the spinner, which the kit draws as the Button's first layer: `order-first` puts it first, its flex layout centres the spinner in a box its own size, and `pointer-events` draws nothing.",
       "at": [
         "button/variant=default,size=default,state=pending,icon=end 0/root/1",
@@ -5720,8 +5125,20 @@
     {
       "set": "icon-button",
       "part": "button-pending-indicator",
-      "className": "fuse.css base layer",
-      "property": "border-color",
+      "declarations": [
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-style"
+        }
+      ],
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
         "icon-button/variant=default,size=icon,state=pending 0/root/1",
@@ -5764,316 +5181,32 @@
     {
       "set": "icon-button",
       "part": "button-pending-indicator",
-      "className": "fuse.css base layer",
-      "property": "box-sizing",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "icon-button/variant=default,size=icon,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-xs,state=pending 0/root/1"
-      ]
-    },
-    {
-      "set": "icon-button",
-      "part": "button-pending-indicator",
-      "className": "fuse.css base layer",
-      "property": "border-style",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "icon-button/variant=default,size=icon,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-xs,state=pending 0/root/1"
-      ]
-    },
-    {
-      "set": "icon-button",
-      "part": "button-pending-indicator",
-      "className": "pointer-events-none",
-      "property": "pointer-events",
-      "reason": "The pending indicator's span holds the spinner, which the kit draws as the Button's first layer: `order-first` puts it first, its flex layout centres the spinner in a box its own size, and `pointer-events` draws nothing.",
-      "at": [
-        "icon-button/variant=default,size=icon,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-xs,state=pending 0/root/1"
-      ]
-    },
-    {
-      "set": "icon-button",
-      "part": "button-pending-indicator",
-      "className": "order-first",
-      "property": "order",
-      "reason": "The pending indicator's span holds the spinner, which the kit draws as the Button's first layer: `order-first` puts it first, its flex layout centres the spinner in a box its own size, and `pointer-events` draws nothing.",
-      "at": [
-        "icon-button/variant=default,size=icon,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-xs,state=pending 0/root/1"
-      ]
-    },
-    {
-      "set": "icon-button",
-      "part": "button-pending-indicator",
-      "className": "inline-flex",
-      "property": "display",
-      "reason": "The pending indicator's span holds the spinner, which the kit draws as the Button's first layer: `order-first` puts it first, its flex layout centres the spinner in a box its own size, and `pointer-events` draws nothing.",
-      "at": [
-        "icon-button/variant=default,size=icon,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-xs,state=pending 0/root/1"
-      ]
-    },
-    {
-      "set": "icon-button",
-      "part": "button-pending-indicator",
-      "className": "shrink-0",
-      "property": "flex-shrink",
-      "reason": "The pending indicator's span holds the spinner, which the kit draws as the Button's first layer: `order-first` puts it first, its flex layout centres the spinner in a box its own size, and `pointer-events` draws nothing.",
-      "at": [
-        "icon-button/variant=default,size=icon,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-xs,state=pending 0/root/1"
-      ]
-    },
-    {
-      "set": "icon-button",
-      "part": "button-pending-indicator",
-      "className": "items-center",
-      "property": "align-items",
-      "reason": "The pending indicator's span holds the spinner, which the kit draws as the Button's first layer: `order-first` puts it first, its flex layout centres the spinner in a box its own size, and `pointer-events` draws nothing.",
-      "at": [
-        "icon-button/variant=default,size=icon,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=default,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=destructive,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=ghost,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=link,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=outline,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=secondary,size=icon-xs,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-inline,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-lg,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-sm,state=pending 0/root/1",
-        "icon-button/variant=success,size=icon-xs,state=pending 0/root/1"
-      ]
-    },
-    {
-      "set": "icon-button",
-      "part": "button-pending-indicator",
-      "className": "justify-center",
-      "property": "justify-content",
+      "declarations": [
+        {
+          "className": "pointer-events-none",
+          "property": "pointer-events"
+        },
+        {
+          "className": "order-first",
+          "property": "order"
+        },
+        {
+          "className": "inline-flex",
+          "property": "display"
+        },
+        {
+          "className": "shrink-0",
+          "property": "flex-shrink"
+        },
+        {
+          "className": "items-center",
+          "property": "align-items"
+        },
+        {
+          "className": "justify-center",
+          "property": "justify-content"
+        }
+      ],
       "reason": "The pending indicator's span holds the spinner, which the kit draws as the Button's first layer: `order-first` puts it first, its flex layout centres the spinner in a box its own size, and `pointer-events` draws nothing.",
       "at": [
         "icon-button/variant=default,size=icon,state=pending 0/root/1",
@@ -6116,8 +5249,12 @@
     {
       "set": "icon-button",
       "part": "button",
-      "className": "tailwind preflight",
-      "property": "border",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
         "icon-button/variant=default,size=icon-inline,state=disabled 0/root::before",
@@ -6160,8 +5297,16 @@
     {
       "set": "confirm-button",
       "part": "span",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        }
+      ],
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
         "confirm-button/variant=destructive,size=default,state=disabled,armed=false 0/root/0",
@@ -6225,74 +5370,13 @@
     {
       "set": "confirm-button",
       "part": "span",
-      "className": "tailwind preflight",
-      "property": "border",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
-      "at": [
-        "confirm-button/variant=destructive,size=default,state=disabled,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=focus,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=focus,armed=true 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=hover,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=hover,armed=true 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=rest,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=default,state=rest,armed=true 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=disabled,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=focus,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=focus,armed=true 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=hover,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=hover,armed=true 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=rest,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=lg,state=rest,armed=true 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=disabled,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=focus,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=focus,armed=true 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=hover,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=hover,armed=true 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=rest,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=sm,state=rest,armed=true 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=disabled,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=focus,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=focus,armed=true 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=hover,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=hover,armed=true 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=rest,armed=false 0/root/0",
-        "confirm-button/variant=destructive,size=xs,state=rest,armed=true 0/root/0",
-        "confirm-button/variant=success,size=default,state=disabled,armed=false 0/root/0",
-        "confirm-button/variant=success,size=default,state=focus,armed=false 0/root/0",
-        "confirm-button/variant=success,size=default,state=focus,armed=true 0/root/0",
-        "confirm-button/variant=success,size=default,state=hover,armed=false 0/root/0",
-        "confirm-button/variant=success,size=default,state=hover,armed=true 0/root/0",
-        "confirm-button/variant=success,size=default,state=rest,armed=false 0/root/0",
-        "confirm-button/variant=success,size=default,state=rest,armed=true 0/root/0",
-        "confirm-button/variant=success,size=lg,state=disabled,armed=false 0/root/0",
-        "confirm-button/variant=success,size=lg,state=focus,armed=false 0/root/0",
-        "confirm-button/variant=success,size=lg,state=focus,armed=true 0/root/0",
-        "confirm-button/variant=success,size=lg,state=hover,armed=false 0/root/0",
-        "confirm-button/variant=success,size=lg,state=hover,armed=true 0/root/0",
-        "confirm-button/variant=success,size=lg,state=rest,armed=false 0/root/0",
-        "confirm-button/variant=success,size=lg,state=rest,armed=true 0/root/0",
-        "confirm-button/variant=success,size=sm,state=disabled,armed=false 0/root/0",
-        "confirm-button/variant=success,size=sm,state=focus,armed=false 0/root/0",
-        "confirm-button/variant=success,size=sm,state=focus,armed=true 0/root/0",
-        "confirm-button/variant=success,size=sm,state=hover,armed=false 0/root/0",
-        "confirm-button/variant=success,size=sm,state=hover,armed=true 0/root/0",
-        "confirm-button/variant=success,size=sm,state=rest,armed=false 0/root/0",
-        "confirm-button/variant=success,size=sm,state=rest,armed=true 0/root/0",
-        "confirm-button/variant=success,size=xs,state=disabled,armed=false 0/root/0",
-        "confirm-button/variant=success,size=xs,state=focus,armed=false 0/root/0",
-        "confirm-button/variant=success,size=xs,state=focus,armed=true 0/root/0",
-        "confirm-button/variant=success,size=xs,state=hover,armed=false 0/root/0",
-        "confirm-button/variant=success,size=xs,state=hover,armed=true 0/root/0",
-        "confirm-button/variant=success,size=xs,state=rest,armed=false 0/root/0",
-        "confirm-button/variant=success,size=xs,state=rest,armed=true 0/root/0"
-      ]
-    },
-    {
-      "set": "confirm-button",
-      "part": "span",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
         "confirm-button/variant=destructive,size=default,state=disabled,armed=false 0/root/0",
         "confirm-button/variant=destructive,size=default,state=focus,armed=false 0/root/0",
@@ -6457,8 +5541,12 @@
     {
       "set": "input-group",
       "part": "input-group-control",
-      "className": "tailwind preflight",
-      "property": "color",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "color"
+        }
+      ],
       "reason": "The kit draws the placeholder as the control's own text, so in a placeholder cell the `::placeholder` color replaces the control's inherited `color`, and the placeholder's `opacity: 1` is the opacity it already has.",
       "at": [
         "input-group/form=caret,state=disabled 0/root/0",
@@ -6482,8 +5570,12 @@
     {
       "set": "input-group",
       "part": "input-group-control",
-      "className": "fuse.css base layer",
-      "property": "opacity",
+      "declarations": [
+        {
+          "className": "fuse.css base layer",
+          "property": "opacity"
+        }
+      ],
       "reason": "The kit draws the placeholder as the control's own text, so in a placeholder cell the `::placeholder` color replaces the control's inherited `color`, and the placeholder's `opacity: 1` is the opacity it already has.",
       "at": [
         "input-group/form=caret,state=disabled 0/root/0::placeholder",
@@ -6636,8 +5728,20 @@
     {
       "set": "select-open",
       "part": "div",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        },
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
         "select-open/side=bottom,size=default 0/around/0",
@@ -6661,95 +5765,36 @@
     {
       "set": "select-open",
       "part": "div",
-      "className": "tailwind preflight",
-      "property": "border",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "select-open/side=bottom,size=default 0/around/0",
-        "select-open/side=bottom,size=default 0/around/1",
-        "select-open/side=bottom,size=default 1/around/0",
-        "select-open/side=bottom,size=default 1/around/1",
-        "select-open/side=bottom,size=default,width=fill 0/around/0",
-        "select-open/side=bottom,size=default,width=fill 0/around/1",
-        "select-open/side=bottom,size=default,width=fill 1/around/0",
-        "select-open/side=bottom,size=default,width=fill 1/around/1",
-        "select-open/side=bottom,size=sm 0/around/0",
-        "select-open/side=bottom,size=sm 0/around/1",
-        "select-open/side=bottom,size=sm 1/around/0",
-        "select-open/side=bottom,size=sm 1/around/1",
-        "select-open/side=bottom,size=sm,width=fill 0/around/0",
-        "select-open/side=bottom,size=sm,width=fill 0/around/1",
-        "select-open/side=bottom,size=sm,width=fill 1/around/0",
-        "select-open/side=bottom,size=sm,width=fill 1/around/1"
-      ]
-    },
-    {
-      "set": "select-open",
-      "part": "div",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "select-open/side=bottom,size=default 0/around/0",
-        "select-open/side=bottom,size=default 0/around/1",
-        "select-open/side=bottom,size=default 1/around/0",
-        "select-open/side=bottom,size=default 1/around/1",
-        "select-open/side=bottom,size=default,width=fill 0/around/0",
-        "select-open/side=bottom,size=default,width=fill 0/around/1",
-        "select-open/side=bottom,size=default,width=fill 1/around/0",
-        "select-open/side=bottom,size=default,width=fill 1/around/1",
-        "select-open/side=bottom,size=sm 0/around/0",
-        "select-open/side=bottom,size=sm 0/around/1",
-        "select-open/side=bottom,size=sm 1/around/0",
-        "select-open/side=bottom,size=sm 1/around/1",
-        "select-open/side=bottom,size=sm,width=fill 0/around/0",
-        "select-open/side=bottom,size=sm,width=fill 0/around/1",
-        "select-open/side=bottom,size=sm,width=fill 1/around/0",
-        "select-open/side=bottom,size=sm,width=fill 1/around/1"
-      ]
-    },
-    {
-      "set": "select-open",
-      "part": "div",
-      "className": "w-36",
-      "property": "width",
+      "declarations": [
+        {
+          "className": "w-36",
+          "property": "width"
+        },
+        {
+          "className": "flex",
+          "property": "display"
+        },
+        {
+          "className": "justify-center",
+          "property": "justify-content"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": ["select-open/side=bottom,size=default 0/around/1", "select-open/side=bottom,size=sm 0/around/1"]
     },
     {
       "set": "select-open",
       "part": "div",
-      "className": "flex",
-      "property": "display",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["select-open/side=bottom,size=default 0/around/1", "select-open/side=bottom,size=sm 0/around/1"]
-    },
-    {
-      "set": "select-open",
-      "part": "div",
-      "className": "justify-center",
-      "property": "justify-content",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["select-open/side=bottom,size=default 0/around/1", "select-open/side=bottom,size=sm 0/around/1"]
-    },
-    {
-      "set": "select-open",
-      "part": "div",
-      "className": "isolate",
-      "property": "isolation",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "select-open/side=bottom,size=default 1/around/1",
-        "select-open/side=bottom,size=default,width=fill 1/around/1",
-        "select-open/side=bottom,size=sm 1/around/1",
-        "select-open/side=bottom,size=sm,width=fill 1/around/1"
-      ]
-    },
-    {
-      "set": "select-open",
-      "part": "div",
-      "className": "z-50",
-      "property": "z-index",
+      "declarations": [
+        {
+          "className": "isolate",
+          "property": "isolation"
+        },
+        {
+          "className": "z-50",
+          "property": "z-index"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
         "select-open/side=bottom,size=default 1/around/1",
@@ -6761,8 +5806,20 @@
     {
       "set": "popover-open",
       "part": "div",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        },
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
         "popover-open/side=bottom 0/around/0",
@@ -6774,66 +5831,36 @@
     {
       "set": "popover-open",
       "part": "div",
-      "className": "tailwind preflight",
-      "property": "border",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "popover-open/side=bottom 0/around/0",
-        "popover-open/side=bottom 0/around/1",
-        "popover-open/side=bottom 1/around/0",
-        "popover-open/side=bottom 1/around/1"
-      ]
-    },
-    {
-      "set": "popover-open",
-      "part": "div",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "popover-open/side=bottom 0/around/0",
-        "popover-open/side=bottom 0/around/1",
-        "popover-open/side=bottom 1/around/0",
-        "popover-open/side=bottom 1/around/1"
-      ]
-    },
-    {
-      "set": "popover-open",
-      "part": "div",
-      "className": "flex",
-      "property": "display",
+      "declarations": [
+        {
+          "className": "flex",
+          "property": "display"
+        },
+        {
+          "className": "w-72",
+          "property": "width"
+        },
+        {
+          "className": "justify-center",
+          "property": "justify-content"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": ["popover-open/side=bottom 0/around/1"]
     },
     {
       "set": "popover-open",
       "part": "div",
-      "className": "w-72",
-      "property": "width",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["popover-open/side=bottom 0/around/1"]
-    },
-    {
-      "set": "popover-open",
-      "part": "div",
-      "className": "justify-center",
-      "property": "justify-content",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["popover-open/side=bottom 0/around/1"]
-    },
-    {
-      "set": "popover-open",
-      "part": "div",
-      "className": "isolate",
-      "property": "isolation",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["popover-open/side=bottom 1/around/1"]
-    },
-    {
-      "set": "popover-open",
-      "part": "div",
-      "className": "z-50",
-      "property": "z-index",
+      "declarations": [
+        {
+          "className": "isolate",
+          "property": "isolation"
+        },
+        {
+          "className": "z-50",
+          "property": "z-index"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": ["popover-open/side=bottom 1/around/1"]
     },
@@ -6848,8 +5875,20 @@
     {
       "set": "dropdown-menu-checkbox-item",
       "part": "dropdown-menu-checkbox-item-indicator",
-      "className": "fuse.css base layer",
-      "property": "border-color",
+      "declarations": [
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-style"
+        }
+      ],
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
         "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
@@ -6861,34 +5900,32 @@
     {
       "set": "dropdown-menu-checkbox-item",
       "part": "dropdown-menu-checkbox-item-indicator",
-      "className": "fuse.css base layer",
-      "property": "box-sizing",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-checkbox-item",
-      "part": "dropdown-menu-checkbox-item-indicator",
-      "className": "fuse.css base layer",
-      "property": "border-style",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-checkbox-item",
-      "part": "dropdown-menu-checkbox-item-indicator",
-      "className": "pointer-events-none",
-      "property": "pointer-events",
+      "declarations": [
+        {
+          "className": "pointer-events-none",
+          "property": "pointer-events"
+        },
+        {
+          "className": "absolute",
+          "property": "position"
+        },
+        {
+          "className": "right-(--row-px)",
+          "property": "right"
+        },
+        {
+          "className": "flex",
+          "property": "display"
+        },
+        {
+          "className": "items-center",
+          "property": "align-items"
+        },
+        {
+          "className": "justify-center",
+          "property": "justify-content"
+        }
+      ],
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
         "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
@@ -6900,73 +5937,12 @@
     {
       "set": "dropdown-menu-checkbox-item",
       "part": "dropdown-menu-checkbox-item-indicator",
-      "className": "absolute",
-      "property": "position",
-      "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
-      "at": [
-        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-checkbox-item",
-      "part": "dropdown-menu-checkbox-item-indicator",
-      "className": "right-(--row-px)",
-      "property": "right",
-      "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
-      "at": [
-        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-checkbox-item",
-      "part": "dropdown-menu-checkbox-item-indicator",
-      "className": "flex",
-      "property": "display",
-      "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
-      "at": [
-        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-checkbox-item",
-      "part": "dropdown-menu-checkbox-item-indicator",
-      "className": "items-center",
-      "property": "align-items",
-      "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
-      "at": [
-        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-checkbox-item",
-      "part": "dropdown-menu-checkbox-item-indicator",
-      "className": "justify-center",
-      "property": "justify-content",
-      "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
-      "at": [
-        "dropdown-menu-checkbox-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-checkbox-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-checkbox-item",
-      "part": "dropdown-menu-checkbox-item-indicator",
-      "className": "not-data-[variant=destructive]:focus:**:text-accent-foreground",
-      "property": "color",
+      "declarations": [
+        {
+          "className": "not-data-[variant=destructive]:focus:**:text-accent-foreground",
+          "property": "color"
+        }
+      ],
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
         "dropdown-menu-checkbox-item/checked=false,state=focus 0/root/0",
@@ -6976,8 +5952,16 @@
     {
       "set": "dropdown-menu-checkbox-item",
       "part": "span",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        }
+      ],
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
         "dropdown-menu-checkbox-item/checked=true,state=disabled 0/root/0/0",
@@ -6989,8 +5973,12 @@
     {
       "set": "dropdown-menu-checkbox-item",
       "part": "span",
-      "className": "tailwind preflight",
-      "property": "border",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
         "dropdown-menu-checkbox-item/checked=true,state=disabled 0/root/0/0",
@@ -7000,36 +5988,22 @@
       ]
     },
     {
-      "set": "dropdown-menu-checkbox-item",
-      "part": "span",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "dropdown-menu-checkbox-item/checked=true,state=disabled 0/root/0/0",
-        "dropdown-menu-checkbox-item/checked=true,state=focus 0/root/0/0",
-        "dropdown-menu-checkbox-item/checked=true,state=highlighted 0/root/0/0",
-        "dropdown-menu-checkbox-item/checked=true,state=rest 0/root/0/0"
-      ]
-    },
-    {
       "set": "dropdown-menu-radio-item",
       "part": "dropdown-menu-radio-item-indicator",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-radio-item",
-      "part": "dropdown-menu-radio-item-indicator",
-      "className": "fuse.css base layer",
-      "property": "box-sizing",
+      "declarations": [
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-style"
+        }
+      ],
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
         "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
@@ -7041,21 +6015,32 @@
     {
       "set": "dropdown-menu-radio-item",
       "part": "dropdown-menu-radio-item-indicator",
-      "className": "fuse.css base layer",
-      "property": "border-style",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-radio-item",
-      "part": "dropdown-menu-radio-item-indicator",
-      "className": "pointer-events-none",
-      "property": "pointer-events",
+      "declarations": [
+        {
+          "className": "pointer-events-none",
+          "property": "pointer-events"
+        },
+        {
+          "className": "absolute",
+          "property": "position"
+        },
+        {
+          "className": "right-(--row-px)",
+          "property": "right"
+        },
+        {
+          "className": "flex",
+          "property": "display"
+        },
+        {
+          "className": "items-center",
+          "property": "align-items"
+        },
+        {
+          "className": "justify-center",
+          "property": "justify-content"
+        }
+      ],
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
         "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
@@ -7067,73 +6052,12 @@
     {
       "set": "dropdown-menu-radio-item",
       "part": "dropdown-menu-radio-item-indicator",
-      "className": "absolute",
-      "property": "position",
-      "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
-      "at": [
-        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-radio-item",
-      "part": "dropdown-menu-radio-item-indicator",
-      "className": "right-(--row-px)",
-      "property": "right",
-      "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
-      "at": [
-        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-radio-item",
-      "part": "dropdown-menu-radio-item-indicator",
-      "className": "flex",
-      "property": "display",
-      "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
-      "at": [
-        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-radio-item",
-      "part": "dropdown-menu-radio-item-indicator",
-      "className": "items-center",
-      "property": "align-items",
-      "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
-      "at": [
-        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-radio-item",
-      "part": "dropdown-menu-radio-item-indicator",
-      "className": "justify-center",
-      "property": "justify-content",
-      "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
-      "at": [
-        "dropdown-menu-radio-item/checked=false,state=disabled 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=highlighted 0/root/0",
-        "dropdown-menu-radio-item/checked=false,state=rest 0/root/0"
-      ]
-    },
-    {
-      "set": "dropdown-menu-radio-item",
-      "part": "dropdown-menu-radio-item-indicator",
-      "className": "not-data-[variant=destructive]:focus:**:text-accent-foreground",
-      "property": "color",
+      "declarations": [
+        {
+          "className": "not-data-[variant=destructive]:focus:**:text-accent-foreground",
+          "property": "color"
+        }
+      ],
       "reason": "Unchecked, the indicator span is empty, since Base UI mounts the Check only while the row is checked, so the kit shows no indicator part there and the span draws nothing; the checked cells read these declarations.",
       "at": [
         "dropdown-menu-radio-item/checked=false,state=focus 0/root/0",
@@ -7143,8 +6067,16 @@
     {
       "set": "dropdown-menu-radio-item",
       "part": "span",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        }
+      ],
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
         "dropdown-menu-radio-item/checked=true,state=disabled 0/root/0/0",
@@ -7156,8 +6088,12 @@
     {
       "set": "dropdown-menu-radio-item",
       "part": "span",
-      "className": "tailwind preflight",
-      "property": "border",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
         "dropdown-menu-radio-item/checked=true,state=disabled 0/root/0/0",
@@ -7167,95 +6103,66 @@
       ]
     },
     {
-      "set": "dropdown-menu-radio-item",
-      "part": "span",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "dropdown-menu-radio-item/checked=true,state=disabled 0/root/0/0",
-        "dropdown-menu-radio-item/checked=true,state=focus 0/root/0/0",
-        "dropdown-menu-radio-item/checked=true,state=highlighted 0/root/0/0",
-        "dropdown-menu-radio-item/checked=true,state=rest 0/root/0/0"
-      ]
-    },
-    {
       "set": "dropdown-menu-open",
       "part": "div",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dropdown-menu-open/side=bottom 0/around/0", "dropdown-menu-open/side=bottom 1/around/1"]
-    },
-    {
-      "set": "dropdown-menu-open",
-      "part": "div",
-      "className": "tailwind preflight",
-      "property": "border",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dropdown-menu-open/side=bottom 0/around/0", "dropdown-menu-open/side=bottom 1/around/1"]
-    },
-    {
-      "set": "dropdown-menu-open",
-      "part": "div",
-      "className": "fuse.css base layer",
-      "property": "border-color",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        },
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": ["dropdown-menu-open/side=bottom 0/around/0", "dropdown-menu-open/side=bottom 1/around/1"]
     },
     {
       "set": "dropdown-menu-open",
       "part": "dropdown-menu-portal",
-      "className": "fuse.css base layer",
-      "property": "border-color",
+      "declarations": [
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-style"
+        }
+      ],
       "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
       "at": ["dropdown-menu-open/side=bottom 1/around/0"]
     },
     {
       "set": "dropdown-menu-open",
-      "part": "dropdown-menu-portal",
-      "className": "fuse.css base layer",
-      "property": "box-sizing",
-      "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
-      "at": ["dropdown-menu-open/side=bottom 1/around/0"]
-    },
-    {
-      "set": "dropdown-menu-open",
-      "part": "dropdown-menu-portal",
-      "className": "fuse.css base layer",
-      "property": "border-style",
-      "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
-      "at": ["dropdown-menu-open/side=bottom 1/around/0"]
-    },
-    {
-      "set": "dropdown-menu-open",
       "part": "div",
-      "className": "isolate",
-      "property": "isolation",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dropdown-menu-open/side=bottom 1/around/1"]
-    },
-    {
-      "set": "dropdown-menu-open",
-      "part": "div",
-      "className": "z-50",
-      "property": "z-index",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dropdown-menu-open/side=bottom 1/around/1"]
-    },
-    {
-      "set": "dropdown-menu-open",
-      "part": "div",
-      "className": "outline-none",
-      "property": "--tw-outline-style",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dropdown-menu-open/side=bottom 1/around/1"]
-    },
-    {
-      "set": "dropdown-menu-open",
-      "part": "div",
-      "className": "outline-none",
-      "property": "outline-style",
+      "declarations": [
+        {
+          "className": "isolate",
+          "property": "isolation"
+        },
+        {
+          "className": "z-50",
+          "property": "z-index"
+        },
+        {
+          "className": "outline-none",
+          "property": "--tw-outline-style"
+        },
+        {
+          "className": "outline-none",
+          "property": "outline-style"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": ["dropdown-menu-open/side=bottom 1/around/1"]
     },
@@ -7372,8 +6279,20 @@
     {
       "set": "combobox-open",
       "part": "div",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        },
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
         "combobox-open/side=bottom 0/around/0",
@@ -7385,50 +6304,32 @@
     {
       "set": "combobox-open",
       "part": "div",
-      "className": "tailwind preflight",
-      "property": "border",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "combobox-open/side=bottom 0/around/0",
-        "combobox-open/side=bottom 0/around/1",
-        "combobox-open/side=bottom 1/around/0",
-        "combobox-open/side=bottom 1/around/1"
-      ]
-    },
-    {
-      "set": "combobox-open",
-      "part": "div",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "combobox-open/side=bottom 0/around/0",
-        "combobox-open/side=bottom 0/around/1",
-        "combobox-open/side=bottom 1/around/0",
-        "combobox-open/side=bottom 1/around/1"
-      ]
-    },
-    {
-      "set": "combobox-open",
-      "part": "div",
-      "className": "isolate",
-      "property": "isolation",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["combobox-open/side=bottom 1/around/1"]
-    },
-    {
-      "set": "combobox-open",
-      "part": "div",
-      "className": "z-50",
-      "property": "z-index",
+      "declarations": [
+        {
+          "className": "isolate",
+          "property": "isolation"
+        },
+        {
+          "className": "z-50",
+          "property": "z-index"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": ["combobox-open/side=bottom 1/around/1"]
     },
     {
       "set": "command-palette",
       "part": "span",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        }
+      ],
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
         "command-palette/content=commands 0/root/3/0/2",
@@ -7439,8 +6340,12 @@
     {
       "set": "command-palette",
       "part": "span",
-      "className": "tailwind preflight",
-      "property": "border",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
         "command-palette/content=commands 0/root/3/0/2",
@@ -7449,70 +6354,58 @@
       ]
     },
     {
-      "set": "command-palette",
-      "part": "span",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "command-palette/content=commands 0/root/3/0/2",
-        "command-palette/content=commands 0/root/3/1/1",
-        "command-palette/content=commands 0/root/3/2/1"
-      ]
-    },
-    {
       "set": "command-dialog-open",
       "part": "div",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["command-dialog-open/placement=top 1/around/0", "command-dialog-open/placement=top 1/around/1"]
-    },
-    {
-      "set": "command-dialog-open",
-      "part": "div",
-      "className": "tailwind preflight",
-      "property": "border",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["command-dialog-open/placement=top 1/around/0", "command-dialog-open/placement=top 1/around/1"]
-    },
-    {
-      "set": "command-dialog-open",
-      "part": "div",
-      "className": "fuse.css base layer",
-      "property": "border-color",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        },
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": ["command-dialog-open/placement=top 1/around/0", "command-dialog-open/placement=top 1/around/1"]
     },
     {
       "set": "command-dialog-open",
       "part": "dialog-portal",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
-      "at": ["command-dialog-open/placement=top 1/around/2"]
-    },
-    {
-      "set": "command-dialog-open",
-      "part": "dialog-portal",
-      "className": "fuse.css base layer",
-      "property": "box-sizing",
-      "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
-      "at": ["command-dialog-open/placement=top 1/around/2"]
-    },
-    {
-      "set": "command-dialog-open",
-      "part": "dialog-portal",
-      "className": "fuse.css base layer",
-      "property": "border-style",
+      "declarations": [
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-style"
+        }
+      ],
       "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
       "at": ["command-dialog-open/placement=top 1/around/2"]
     },
     {
       "set": "item",
       "part": "span",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        }
+      ],
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
       "at": [
         "item/variant=default,size=default,described=false,media=icon 0/root/2/0",
@@ -7556,8 +6449,12 @@
     {
       "set": "item",
       "part": "span",
-      "className": "tailwind preflight",
-      "property": "border",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
         "item/variant=default,size=default,described=false,media=icon 0/root/2/0",
@@ -7599,55 +6496,22 @@
       ]
     },
     {
-      "set": "item",
-      "part": "span",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
-      "at": [
-        "item/variant=default,size=default,described=false,media=icon 0/root/2/0",
-        "item/variant=default,size=default,described=false,media=image 0/root/2/0",
-        "item/variant=default,size=default,described=true,media=icon 0/root/2/0",
-        "item/variant=default,size=default,described=true,media=image 0/root/2/0",
-        "item/variant=default,size=sm,described=false,media=icon 0/root/2/0",
-        "item/variant=default,size=sm,described=false,media=image 0/root/2/0",
-        "item/variant=default,size=sm,described=true,media=icon 0/root/2/0",
-        "item/variant=default,size=sm,described=true,media=image 0/root/2/0",
-        "item/variant=default,size=xs,described=false,media=icon 0/root/2/0",
-        "item/variant=default,size=xs,described=false,media=image 0/root/2/0",
-        "item/variant=default,size=xs,described=true,media=icon 0/root/2/0",
-        "item/variant=default,size=xs,described=true,media=image 0/root/2/0",
-        "item/variant=muted,size=default,described=false,media=icon 0/root/2/0",
-        "item/variant=muted,size=default,described=false,media=image 0/root/2/0",
-        "item/variant=muted,size=default,described=true,media=icon 0/root/2/0",
-        "item/variant=muted,size=default,described=true,media=image 0/root/2/0",
-        "item/variant=muted,size=sm,described=false,media=icon 0/root/2/0",
-        "item/variant=muted,size=sm,described=false,media=image 0/root/2/0",
-        "item/variant=muted,size=sm,described=true,media=icon 0/root/2/0",
-        "item/variant=muted,size=sm,described=true,media=image 0/root/2/0",
-        "item/variant=muted,size=xs,described=false,media=icon 0/root/2/0",
-        "item/variant=muted,size=xs,described=false,media=image 0/root/2/0",
-        "item/variant=muted,size=xs,described=true,media=icon 0/root/2/0",
-        "item/variant=muted,size=xs,described=true,media=image 0/root/2/0",
-        "item/variant=outline,size=default,described=false,media=icon 0/root/2/0",
-        "item/variant=outline,size=default,described=false,media=image 0/root/2/0",
-        "item/variant=outline,size=default,described=true,media=icon 0/root/2/0",
-        "item/variant=outline,size=default,described=true,media=image 0/root/2/0",
-        "item/variant=outline,size=sm,described=false,media=icon 0/root/2/0",
-        "item/variant=outline,size=sm,described=false,media=image 0/root/2/0",
-        "item/variant=outline,size=sm,described=true,media=icon 0/root/2/0",
-        "item/variant=outline,size=sm,described=true,media=image 0/root/2/0",
-        "item/variant=outline,size=xs,described=false,media=icon 0/root/2/0",
-        "item/variant=outline,size=xs,described=false,media=image 0/root/2/0",
-        "item/variant=outline,size=xs,described=true,media=icon 0/root/2/0",
-        "item/variant=outline,size=xs,described=true,media=image 0/root/2/0"
-      ]
-    },
-    {
       "set": "tooltip-open",
       "part": "div",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        },
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
         "tooltip-open/side=top 0/around/0",
@@ -7671,58 +6535,16 @@
     {
       "set": "tooltip-open",
       "part": "div",
-      "className": "tailwind preflight",
-      "property": "border",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "tooltip-open/side=top 0/around/0",
-        "tooltip-open/side=top 0/around/1",
-        "tooltip-open/side=top 1/around/0",
-        "tooltip-open/side=top 1/around/1",
-        "tooltip-open/side=bottom 0/around/0",
-        "tooltip-open/side=bottom 0/around/1",
-        "tooltip-open/side=bottom 1/around/0",
-        "tooltip-open/side=bottom 1/around/1",
-        "tooltip-open/side=left 0/around/0",
-        "tooltip-open/side=left 0/around/1",
-        "tooltip-open/side=left 1/around/0",
-        "tooltip-open/side=left 1/around/1",
-        "tooltip-open/side=right 0/around/0",
-        "tooltip-open/side=right 0/around/1",
-        "tooltip-open/side=right 1/around/0",
-        "tooltip-open/side=right 1/around/1"
-      ]
-    },
-    {
-      "set": "tooltip-open",
-      "part": "div",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "tooltip-open/side=top 0/around/0",
-        "tooltip-open/side=top 0/around/1",
-        "tooltip-open/side=top 1/around/0",
-        "tooltip-open/side=top 1/around/1",
-        "tooltip-open/side=bottom 0/around/0",
-        "tooltip-open/side=bottom 0/around/1",
-        "tooltip-open/side=bottom 1/around/0",
-        "tooltip-open/side=bottom 1/around/1",
-        "tooltip-open/side=left 0/around/0",
-        "tooltip-open/side=left 0/around/1",
-        "tooltip-open/side=left 1/around/0",
-        "tooltip-open/side=left 1/around/1",
-        "tooltip-open/side=right 0/around/0",
-        "tooltip-open/side=right 0/around/1",
-        "tooltip-open/side=right 1/around/0",
-        "tooltip-open/side=right 1/around/1"
-      ]
-    },
-    {
-      "set": "tooltip-open",
-      "part": "div",
-      "className": "isolate",
-      "property": "isolation",
+      "declarations": [
+        {
+          "className": "isolate",
+          "property": "isolation"
+        },
+        {
+          "className": "z-50",
+          "property": "z-index"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
         "tooltip-open/side=top 0/around/1",
@@ -7734,21 +6556,16 @@
     {
       "set": "tooltip-open",
       "part": "div",
-      "className": "z-50",
-      "property": "z-index",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "tooltip-open/side=top 0/around/1",
-        "tooltip-open/side=bottom 0/around/1",
-        "tooltip-open/side=left 0/around/1",
-        "tooltip-open/side=right 0/around/1"
-      ]
-    },
-    {
-      "set": "tooltip-open",
-      "part": "div",
-      "className": "pt-12",
-      "property": "padding-top",
+      "declarations": [
+        {
+          "className": "pt-12",
+          "property": "padding-top"
+        },
+        {
+          "className": "flex",
+          "property": "display"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
         "tooltip-open/side=top 1/around/1",
@@ -7760,51 +6577,32 @@
     {
       "set": "tooltip-open",
       "part": "div",
-      "className": "flex",
-      "property": "display",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "tooltip-open/side=top 1/around/1",
-        "tooltip-open/side=bottom 1/around/1",
-        "tooltip-open/side=left 1/around/1",
-        "tooltip-open/side=right 1/around/1"
-      ]
-    },
-    {
-      "set": "tooltip-open",
-      "part": "div",
-      "className": "justify-center",
-      "property": "justify-content",
+      "declarations": [
+        {
+          "className": "justify-center",
+          "property": "justify-content"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": ["tooltip-open/side=top 1/around/1", "tooltip-open/side=bottom 1/around/1"]
     },
     {
       "set": "alert-dialog-open",
       "part": "div",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "alert-dialog-open/placement=centered 1/around/0",
-        "alert-dialog-open/placement=centered 1/around/1"
-      ]
-    },
-    {
-      "set": "alert-dialog-open",
-      "part": "div",
-      "className": "tailwind preflight",
-      "property": "border",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": [
-        "alert-dialog-open/placement=centered 1/around/0",
-        "alert-dialog-open/placement=centered 1/around/1"
-      ]
-    },
-    {
-      "set": "alert-dialog-open",
-      "part": "div",
-      "className": "fuse.css base layer",
-      "property": "border-color",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        },
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": [
         "alert-dialog-open/placement=centered 1/around/0",
@@ -7814,24 +6612,20 @@
     {
       "set": "alert-dialog-open",
       "part": "dialog-portal",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
-      "at": ["alert-dialog-open/placement=centered 1/around/2"]
-    },
-    {
-      "set": "alert-dialog-open",
-      "part": "dialog-portal",
-      "className": "fuse.css base layer",
-      "property": "box-sizing",
-      "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
-      "at": ["alert-dialog-open/placement=centered 1/around/2"]
-    },
-    {
-      "set": "alert-dialog-open",
-      "part": "dialog-portal",
-      "className": "fuse.css base layer",
-      "property": "border-style",
+      "declarations": [
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-style"
+        }
+      ],
       "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
       "at": ["alert-dialog-open/placement=centered 1/around/2"]
     },
@@ -7855,8 +6649,12 @@
     {
       "set": "sheet-content",
       "part": "sheet-close",
-      "className": "tailwind preflight",
-      "property": "border",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": ["sheet-content/side=right 0/root/0/2::before"]
     },
@@ -8087,72 +6885,60 @@
     {
       "set": "dialog-open",
       "part": "div",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dialog-open/placement=centered 1/around/0", "dialog-open/placement=centered 1/around/1"]
-    },
-    {
-      "set": "dialog-open",
-      "part": "div",
-      "className": "tailwind preflight",
-      "property": "border",
-      "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
-      "at": ["dialog-open/placement=centered 1/around/0", "dialog-open/placement=centered 1/around/1"]
-    },
-    {
-      "set": "dialog-open",
-      "part": "div",
-      "className": "fuse.css base layer",
-      "property": "border-color",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        },
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        }
+      ],
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": ["dialog-open/placement=centered 1/around/0", "dialog-open/placement=centered 1/around/1"]
     },
     {
       "set": "dialog-open",
       "part": "dialog-portal",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
-      "at": ["dialog-open/placement=centered 1/around/2"]
-    },
-    {
-      "set": "dialog-open",
-      "part": "dialog-portal",
-      "className": "fuse.css base layer",
-      "property": "box-sizing",
-      "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
-      "at": ["dialog-open/placement=centered 1/around/2"]
-    },
-    {
-      "set": "dialog-open",
-      "part": "dialog-portal",
-      "className": "fuse.css base layer",
-      "property": "border-style",
+      "declarations": [
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-style"
+        }
+      ],
       "reason": "Base UI's portal holds the popup and draws nothing of its own; the base layer's border color, style and box sizing change nothing on an element with no border or padding.",
       "at": ["dialog-open/placement=centered 1/around/2"]
     },
     {
       "set": "action-bar",
       "part": "action-bar-button-label",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; the span `ActionBar.ButtonLabel` wraps a button's words in draws no border and has no padding, and the Button instance draws the words, so none of them changes what it draws.",
-      "at": ["action-bar/state=rest 0/root/3/1", "action-bar/state=rest 0/root/4/1"]
-    },
-    {
-      "set": "action-bar",
-      "part": "action-bar-button-label",
-      "className": "fuse.css base layer",
-      "property": "border-style",
-      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; the span `ActionBar.ButtonLabel` wraps a button's words in draws no border and has no padding, and the Button instance draws the words, so none of them changes what it draws.",
-      "at": ["action-bar/state=rest 0/root/3/1", "action-bar/state=rest 0/root/4/1"]
-    },
-    {
-      "set": "action-bar",
-      "part": "action-bar-button-label",
-      "className": "fuse.css base layer",
-      "property": "box-sizing",
+      "declarations": [
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-style"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "box-sizing"
+        }
+      ],
       "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; the span `ActionBar.ButtonLabel` wraps a button's words in draws no border and has no padding, and the Button instance draws the words, so none of them changes what it draws.",
       "at": ["action-bar/state=rest 0/root/3/1", "action-bar/state=rest 0/root/4/1"]
     },
@@ -8252,8 +7038,12 @@
     {
       "set": "timeline-list",
       "part": "timeline-list-item",
-      "className": "tailwind preflight",
-      "property": "border",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": ["timeline-list/state=rest 0/root/0::before", "timeline-list/state=rest 0/root/1::before"]
     },
@@ -8268,8 +7058,12 @@
     {
       "set": "tabs-trigger",
       "part": "tabs-trigger",
-      "className": "tailwind preflight",
-      "property": "border",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
         "tabs-trigger/variant=default,state=active 0/root::after",
@@ -8287,72 +7081,44 @@
     {
       "set": "list-detail",
       "part": "span",
-      "className": "@min-[48rem]/list-detail:flex",
-      "property": "display",
-      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
-      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
-    },
-    {
-      "set": "list-detail",
-      "part": "span",
-      "className": "absolute",
-      "property": "position",
-      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
-      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
-    },
-    {
-      "set": "list-detail",
-      "part": "span",
-      "className": "fuse.css base layer",
-      "property": "border-color",
-      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
-      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
-    },
-    {
-      "set": "list-detail",
-      "part": "span",
-      "className": "invisible",
-      "property": "visibility",
-      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
-      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
-    },
-    {
-      "set": "list-detail",
-      "part": "span",
-      "className": "pointer-events-none",
-      "property": "pointer-events",
-      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
-      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
-    },
-    {
-      "set": "list-detail",
-      "part": "span",
-      "className": "size-px",
-      "property": "height",
-      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
-      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
-    },
-    {
-      "set": "list-detail",
-      "part": "span",
-      "className": "size-px",
-      "property": "width",
-      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
-      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
-    },
-    {
-      "set": "list-detail",
-      "part": "span",
-      "className": "tailwind preflight",
-      "property": "border",
-      "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
-      "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
-    },
-    {
-      "set": "list-detail",
-      "part": "span",
-      "className": "tailwind preflight",
-      "property": "box-sizing",
+      "declarations": [
+        {
+          "className": "@min-[48rem]/list-detail:flex",
+          "property": "display"
+        },
+        {
+          "className": "absolute",
+          "property": "position"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        },
+        {
+          "className": "invisible",
+          "property": "visibility"
+        },
+        {
+          "className": "pointer-events-none",
+          "property": "pointer-events"
+        },
+        {
+          "className": "size-px",
+          "property": "height"
+        },
+        {
+          "className": "size-px",
+          "property": "width"
+        },
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        },
+        {
+          "className": "tailwind preflight",
+          "property": "box-sizing"
+        }
+      ],
       "reason": "ListDetail.Root's container-query probe, an absolute 1px span under `invisible`, paints nothing and takes no room in the root's flow, so the kit draws no layer for it; the client only watches it appear and vanish to read the split.",
       "at": ["list-detail/content=empty 0/root/2", "list-detail/content=value 0/root/2"]
     },
@@ -8495,24 +7261,36 @@
     {
       "set": "tour-popup",
       "part": "tour-close",
-      "className": "tailwind preflight",
-      "property": "border",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": ["tour-popup/content=tip 0/root/0/1::before"]
     },
     {
       "set": "tour-step",
       "part": "tour-close",
-      "className": "tailwind preflight",
-      "property": "border",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": ["tour-step/content=step 0/root/0/1::before"]
     },
     {
       "set": "toast",
       "part": "toast-root",
-      "className": "tailwind preflight",
-      "property": "border",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
         "toast/status=error 0/root::after",
@@ -8570,14 +7348,181 @@
     {
       "set": "frame",
       "part": "frame-panel",
-      "className": "tailwind preflight",
-      "property": "border",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
         "frame/layout=gutter 0/root/1::before",
         "frame/layout=gutter 0/root/2::before",
         "frame/layout=gutter 0/root/3::before"
       ]
+    },
+    {
+      "set": "frame-table-cell",
+      "part": "table-body",
+      "declarations": [
+        {
+          "className": "before:absolute",
+          "property": "position"
+        },
+        {
+          "className": "before:inset-px",
+          "property": "inset"
+        },
+        {
+          "className": "before:pointer-events-none",
+          "property": "pointer-events"
+        },
+        {
+          "className": "before:rounded-[max(0px,calc(var(--frame-corner,--theme(--radius-xl))-1px))]",
+          "property": "border-radius"
+        },
+        {
+          "className": "before:shadow-[0_1px_--theme(--color-black/6%)]",
+          "property": "--tw-shadow"
+        },
+        {
+          "className": "before:shadow-[0_1px_--theme(--color-black/6%)]",
+          "property": "box-shadow"
+        },
+        {
+          "className": "before:shadow-[0_1px_--theme(--color-black/6%)]",
+          "property": "content"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-style"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-width"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "margin"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "padding"
+        },
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
+      "reason": "The framed body's highlight, the <tbody>'s ::before, paints a 0 1px line in black at 6% over the last body row's bottom border. A cell or row block draws no <tbody>, so it leaves the line out, and the frame-table-body set draws it over its rows. The highlight's position, insets, corner, content and pointer events place and shape only that line, and the base layer's border, box sizing, margin and padding reset nothing it draws.",
+      "at": [
+        "frame-table-cell/row=body,column=first 0/around/4::before",
+        "frame-table-cell/row=body,column=last 0/around/4::before",
+        "frame-table-cell/row=body,column=middle 0/around/4::before",
+        "frame-table-cell/row=first,column=first 0/around/4::before",
+        "frame-table-cell/row=first,column=last 0/around/4::before",
+        "frame-table-cell/row=first,column=middle 0/around/4::before",
+        "frame-table-cell/row=last,column=first 0/around/4::before",
+        "frame-table-cell/row=last,column=last 0/around/4::before",
+        "frame-table-cell/row=last,column=middle 0/around/4::before"
+      ]
+    },
+    {
+      "set": "frame-table-row",
+      "part": "table-body",
+      "declarations": [
+        {
+          "className": "before:absolute",
+          "property": "position"
+        },
+        {
+          "className": "before:inset-px",
+          "property": "inset"
+        },
+        {
+          "className": "before:pointer-events-none",
+          "property": "pointer-events"
+        },
+        {
+          "className": "before:rounded-[max(0px,calc(var(--frame-corner,--theme(--radius-xl))-1px))]",
+          "property": "border-radius"
+        },
+        {
+          "className": "before:shadow-[0_1px_--theme(--color-black/6%)]",
+          "property": "--tw-shadow"
+        },
+        {
+          "className": "before:shadow-[0_1px_--theme(--color-black/6%)]",
+          "property": "box-shadow"
+        },
+        {
+          "className": "before:shadow-[0_1px_--theme(--color-black/6%)]",
+          "property": "content"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-color"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-style"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "border-width"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "box-sizing"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "margin"
+        },
+        {
+          "className": "fuse.css base layer",
+          "property": "padding"
+        },
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
+      "reason": "The framed body's highlight, the <tbody>'s ::before, paints a 0 1px line in black at 6% over the last body row's bottom border. A cell or row block draws no <tbody>, so it leaves the line out, and the frame-table-body set draws it over its rows. The highlight's position, insets, corner, content and pointer events place and shape only that line, and the base layer's border, box sizing, margin and padding reset nothing it draws.",
+      "at": [
+        "frame-table-row/row=body,selected=false,state=hover 0/around/4::before",
+        "frame-table-row/row=body,selected=false,state=rest 0/around/4::before",
+        "frame-table-row/row=body,selected=true,state=hover 0/around/4::before",
+        "frame-table-row/row=body,selected=true,state=rest 0/around/4::before",
+        "frame-table-row/row=first,selected=false,state=hover 0/around/4::before",
+        "frame-table-row/row=first,selected=false,state=rest 0/around/4::before",
+        "frame-table-row/row=first,selected=true,state=hover 0/around/4::before",
+        "frame-table-row/row=first,selected=true,state=rest 0/around/4::before",
+        "frame-table-row/row=last,selected=false,state=hover 0/around/4::before",
+        "frame-table-row/row=last,selected=false,state=rest 0/around/4::before",
+        "frame-table-row/row=last,selected=true,state=hover 0/around/4::before",
+        "frame-table-row/row=last,selected=true,state=rest 0/around/4::before"
+      ]
+    },
+    {
+      "set": "frame-table-body",
+      "part": "table-body",
+      "declarations": [
+        {
+          "className": "tailwind preflight",
+          "property": "border"
+        }
+      ],
+      "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
+      "at": ["frame-table-body/state=rest 0/root::before"]
     }
   ],
   "alike": [

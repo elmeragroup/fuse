@@ -2259,6 +2259,7 @@ function measuredBox(
         ? MEASURED_UNDER_MAX_HEIGHT
         : undefined,
     underMaxWidth: facts?.underMaxWidth === true,
+    cornersFit: facts?.cornersFit === true,
     freeAlongMain: facts?.freeAlongMain === true,
     fitsAlongMain: facts?.fitsAlongMain === true,
     oneFlexLine: facts?.oneFlexLine === true,

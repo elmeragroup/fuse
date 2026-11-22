@@ -20,6 +20,7 @@ import { judgedFacts } from "./judged-facts.ts";
 import type { PageFacts } from "./judged-facts.ts";
 import { generatesNoBox, holdsOwnText, pseudoInFlow } from "./no-box.ts";
 import {
+  CORNER_CLEARANCE_PX,
   FIT_CLEARANCE_PX,
   FREE_SPACE_CLEARANCE_PX,
   GRID_CLEARANCE_PX,
@@ -54,6 +55,14 @@ import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
  *   in every mode of {@link EVERY_MODE} once the faces its text needs there have loaded, so the
  *   maximum never narrows it. The page reads the lowered maximum back, so a maximum Chromium cannot
  *   lower, such as `min-content`, which makes the `calc()` invalid, records nothing.
+ * - `cornersFit`: an element that declares a per-corner radius longhand, whose corner radii, each a
+ *   length in pixels, are not all one in some mode, and whose border box, before any transform, is
+ *   at least twice its largest horizontal radius and {@link CORNER_CLEARANCE_PX} more wide with its
+ *   sample text, in every mode of {@link EVERY_MODE} once its faces have loaded. The page reads that
+ *   width from the used `width`, as CSS lays the radii out on the untransformed box, so an inline
+ *   box, whose `width` computes to `auto`, records nothing. A mode that sets every radius to 0
+ *   decides nothing. CSS scales no radius on such an element across, and Figma caps none at half its
+ *   width.
  * - `tableTiles`: a table, a row group, a row or a cell whose parts tile its content box with no
  *   space between, within {@link LAYOUT_UNIT_PX}, in every mode of {@link EVERY_MODE}: a table's or
  *   a group's rows down it, each as wide as it; a row's cells across it, each as tall as it; a cell's
@@ -199,6 +208,8 @@ import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
  * @param cdp - A DevTools session on the page.
  * @param nodeId - The root's node.
  * @param role - Whether the root is an anchored composite's anchor, as {@link RootRole} says.
+ * @param cornered - The paths of the elements that declare a per-corner radius longhand, the only
+ *   ones the page measures `cornersFit` on, since no other box reads it.
  * @returns Each element's facts, by its path from the root.
  * @throws `FactsUnmeasured` where the page function throws, a defect in it or in the page, which
  *   stops the capture rather than keep facts it did not finish measuring.
@@ -206,7 +217,8 @@ import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
 export async function measuredFacts(
   cdp: CDPSession,
   nodeId: number,
-  role: RootRole = "root"
+  role: RootRole = "root",
+  cornered: readonly string[] = []
 ): Promise<ReadonlyMap<string, MeasuredFacts>> {
   const { object } = await cdp.send("DOM.resolveNode", { nodeId });
   if (object.objectId === undefined) {
@@ -216,7 +228,7 @@ export async function measuredFacts(
     objectId: object.objectId,
     returnByValue: true,
     awaitPromise: true,
-    arguments: [{ value: role }],
+    arguments: [{ value: role }, { value: cornered }],
     functionDeclaration: MEASURE_IN_PAGE,
   });
   if (exceptionDetails !== undefined) {
@@ -252,7 +264,7 @@ export class FactsUnmeasured extends Error {
  */
 const RATIO_RAISE_PX = 10;
 /** The page side of {@link measuredFacts}, called on the root. */
-const MEASURE_IN_PAGE = `async function (role) {
+const MEASURE_IN_PAGE = `async function (role, cornered) {
   const modes = ${JSON.stringify(EVERY_MODE)};
   const root = this;
   const out = {};
@@ -479,6 +491,41 @@ const MEASURE_IN_PAGE = `async function (role) {
       Math.abs(element.getBoundingClientRect().width - width) < ${String(LAYOUT_UNIT_PX)});
   };
   for (const { path } of await holdsInEveryMode(underMaxWidth, underMax)) { put(path, "underMaxWidth", true); }
+  // An element's horizontal corner radii in pixels, or undefined where one is no length in pixels.
+  const cornerRadii = (element) => {
+    const style = getComputedStyle(element);
+    const radii = ["top-left", "top-right", "bottom-right", "bottom-left"].map((corner) => style.getPropertyValue("border-" + corner + "-radius").trim().split(/\\s+/));
+    return radii.flat().every((radius) => radius.endsWith("px")) ? radii.map(([across]) => Number.parseFloat(across)) : undefined;
+  };
+  // An element's border box width before any transform, as CSS lays its radii out on it, from its
+  // used width, or undefined where it computes none, as an inline box's \`auto\`, or lays out no
+  // box, as \`display: none\` does, whose computed width is the declared one. A non-replaced inline
+  // box computes its declared width too, which CSS ignores (CSS 2 §10.3.1), so it has none.
+  const replaced = ["IMG", "VIDEO", "CANVAS", "IFRAME", "EMBED", "OBJECT", "svg"];
+  const borderBoxWidth = (element) => {
+    const style = getComputedStyle(element);
+    if (style.display === "inline" && !replaced.includes(element.tagName)) { return undefined; }
+    if (!style.width.endsWith("px") || element.getClientRects().length === 0) { return undefined; }
+    const px = (value) => Number.parseFloat(value);
+    const width = px(style.width);
+    return style.boxSizing === "border-box" ? width : width + px(style.paddingLeft) + px(style.paddingRight) + px(style.borderLeftWidth) + px(style.borderRightWidth);
+  };
+  // In one sweep across the modes, each element that declares a per-corner longhand: whether its
+  // radii are not all one in some mode, and whether in every mode its border box clears twice the
+  // largest radius, or the radii are all zero there, so the mode decides nothing.
+  const corners = elements.filter(({ path }) => cornered.includes(path)).map((candidate) => ({ ...candidate, uneven: false, fits: true }));
+  if (corners.length > 0) {
+    await inEveryMode(() => {
+      for (const candidate of corners) {
+        const radii = cornerRadii(candidate.element);
+        const largest = radii === undefined ? undefined : Math.max(...radii);
+        candidate.uneven ||= radii !== undefined && new Set(radii).size > 1;
+        const width = borderBoxWidth(candidate.element);
+        candidate.fits &&= largest === 0 || (largest !== undefined && width !== undefined && width >= 2 * largest + ${String(CORNER_CLEARANCE_PX)});
+      }
+    });
+  }
+  for (const { path } of corners.filter(({ uneven, fits }) => uneven && fits)) { put(path, "cornersFit", true); }
   // An element whose one element child is an inline-level box and which holds no text of its own,
   // whose content box's top and bottom edges are the child's margin box's at its own line height and
   // at 2px more, the child's line height held.

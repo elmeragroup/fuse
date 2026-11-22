@@ -42,7 +42,15 @@ import type { CapturedDeclaration, CapturedElement, SetCapture } from "./capture
 import { keptCapture } from "./captures.ts";
 import { MANIFEST_FIELDS, manifestDefinition, SAMPLE_HOST_WIDTHS } from "./manifest.ts";
 import type { IconManifest, InstanceManifest, LabelManifest, PartManifest, SetManifest } from "./manifest.ts";
-import { alikeValues, drawnRoot, keptLedger, syncedReads, unaccountedDeclarations } from "./oracle.ts";
+import {
+  alikeValues,
+  decodeLedger,
+  drawnRoot,
+  keptLedger,
+  syncedReads,
+  unaccountedDeclarations,
+  unreachedRows,
+} from "./oracle.ts";
 import type { KeptRow } from "./oracle.ts";
 
 const MANIFESTS = KIT.map(({ manifest }) => manifest);
@@ -241,7 +249,7 @@ describe.each(MANIFESTS.map((manifest) => [manifest.key, manifest] as const))(
       const unaccounted = unaccountedDeclarations(key, (each) => sets.get(each)).map((row) =>
         identity(row.at, row)
       );
-      const listed = LEDGER.unreached
+      const listed = unreachedRows(LEDGER)
         .filter((row) => row.set === key)
         .flatMap((row) => row.at.map((at) => identity(at, row)));
       expect(unaccounted.toSorted()).toEqual(listed.toSorted());
@@ -317,6 +325,59 @@ describe.each(MANIFESTS.map((manifest) => [manifest.key, manifest] as const))(
     });
   }
 );
+
+describe("the coverage ledger's unreached entries", () => {
+  const empty = { unmapped: [], unbound: [], unshown: {}, alike: [], apart: [] };
+  const place = "button/state=rest 0/root/0";
+
+  it("expand a group to one row per declaration and keep a single-declaration entry as one row", () => {
+    const decoded = decodeLedger({
+      ...empty,
+      unreached: [
+        {
+          set: "button",
+          part: "root",
+          declarations: [
+            { className: "a", property: "border-color" },
+            { className: "b", property: "border-style" },
+          ],
+          reason: "grouped",
+          at: [place],
+        },
+        {
+          set: "button",
+          part: "root",
+          className: "c",
+          property: "box-sizing",
+          reason: "single",
+          at: [place],
+        },
+      ],
+    });
+    if (Result.isFailure(decoded)) {
+      throw new Error("the ledger did not decode");
+    }
+    expect(unreachedRows(decoded.success)).toEqual([
+      {
+        set: "button",
+        part: "root",
+        reason: "grouped",
+        at: [place],
+        className: "a",
+        property: "border-color",
+      },
+      {
+        set: "button",
+        part: "root",
+        reason: "grouped",
+        at: [place],
+        className: "b",
+        property: "border-style",
+      },
+      { set: "button", part: "root", reason: "single", at: [place], className: "c", property: "box-sizing" },
+    ]);
+  });
+});
 
 describe("the coverage ledger", () => {
   it("names only sets the kit builds", () => {

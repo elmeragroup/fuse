@@ -628,7 +628,9 @@ const FORMULA_VARIABLES = [
   {
     name: "frame-bar-inset",
     reads: "density",
-    // `--frame-text-inset` less the gutter Frame's `--frame-overhang` of 0px.
+    // `--frame-text-inset` less the gutter Frame's `--frame-overhang` of 0px. A framed Table pads the
+    // outer side of its first and last heads with `--frame-text-inset` alone, the same length, which
+    // `canonicalCss` spells alike without the zero term.
     formula: "calc(calc(1px + var(--surface-pad-lg)) - 0px)",
     length: (metric) => 1 + metric("surface-pad-lg"),
     scopes: ["GAP"],
@@ -638,7 +640,8 @@ const FORMULA_VARIABLES = [
   {
     name: "frame-bar-inset-flush",
     reads: "density",
-    // `--frame-text-inset` less the flush Frame's `--frame-overhang` of 1px.
+    // `--frame-text-inset` less the flush Frame's `--frame-overhang` of 1px. A framed Table's first
+    // and last body cells pad their outer side with the same formula, less the cell's 1px border.
     formula: "calc(calc(1px + var(--surface-pad-lg)) - 1px)",
     length: (metric) => metric("surface-pad-lg"),
     scopes: ["GAP"],

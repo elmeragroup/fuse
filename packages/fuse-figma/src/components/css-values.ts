@@ -187,30 +187,258 @@ const LENGTH_UNITS: ReadonlySet<string> = new Set([
   "q",
 ]);
 
+/** A CSS number, without its unit. */
+const NUMBER = String.raw`-?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?`;
+
 /** A number with its unit, not inside an identifier or a hex color. */
-const DIMENSION = /(?<![\w#-])(-?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z%]*)(?![\w-])/gi;
+const DIMENSION = new RegExp(String.raw`(?<![\w#-])(${NUMBER})([a-z%]*)(?![\w-])`, "gi");
+
+/** A whole number, dimension or percentage. */
+const NUMERIC = new RegExp(`^${NUMBER}(?:[a-z]+|%)?$`, "i");
+
+/** A whole dimension, its unit captured. */
+const DIMENSION_TERM = new RegExp(`^${NUMBER}([a-z]+)$`, "i");
 
 /**
  * A value spelled one way for each meaning its notation can take: whitespace as
  * {@link normalizeCss} collapses it, each number in its shortest decimal form, each time in seconds,
- * and each zero length without its unit. So `0.25rem` and `.25rem`, `200ms` and `.2s`, and `0px` and
- * `0` spell alike, as a minifier rewrites them. Units stay apart otherwise, so `1px` and `1rem` do not.
+ * each zero length as `0`, or as `0px` inside a math function, a zero length added or taken last in
+ * a length sum dropped, and a `calc()` that fills a math function's argument whole unwrapped. So
+ * `0.25rem` and `.25rem`, `200ms` and `.2s`, and `0px` and `0` spell alike, as a minifier rewrites
+ * them. Units stay apart otherwise, so `1px` and `1rem` do not. A math function type-checks its
+ * arguments (CSS Values 4 §10.9), so there a unitless `0` is a number and keeps apart from `0px`:
+ * `max(0, <length>)` is invalid, and so is `calc(4px + 0)`.
  *
  * @param value - A CSS value.
  * @returns The value in its canonical spelling.
  */
 export function canonicalCss(value: string): string {
-  return normalizeCss(value).replaceAll(DIMENSION, (_whole, number: string, unit: string) => {
+  const dropped = dropZeroLengthTerms(normalizeCss(value));
+  const math = insideMath(dropped);
+  const spelled = dropped.replaceAll(DIMENSION, (_whole, number: string, unit: string, offset: number) => {
     const amount = Number(number);
     const lower = unit.toLowerCase();
     if (lower === "ms") {
       return `${String(amount / 1000)}s`;
     }
     if (amount === 0 && LENGTH_UNITS.has(lower)) {
-      return "0";
+      return math[offset] === true ? "0px" : "0";
     }
     return `${String(amount)}${lower}`;
   });
+  return unwrapArgumentCalc(spelled);
+}
+
+/** For each UTF-16 index of a value, whether a math function's parentheses hold it. */
+function insideMath(value: string): readonly boolean[] {
+  const functions: string[] = [];
+  return Array.from({ length: value.length }, (_, index) => {
+    if (value[index] === "(") {
+      functions.push(/[\w-]*$/.exec(value.slice(0, index))?.[0] ?? "");
+    } else if (value[index] === ")") {
+      functions.pop();
+    }
+    return functions.some((name) => MATH_FUNCTIONS.has(name));
+  });
+}
+
+/**
+ * A zero length added or taken last in a parenthesized sum, as the gutter Frame's
+ * `calc(<inset> - 0px)` takes its `--frame-overhang` of 0px from its text inset. The space on each
+ * side marks a `calc()` operator (CSS Values 4 §10.1). A unitless `0` is a number, not a length.
+ */
+const ZERO_LENGTH_TERM = new RegExp(
+  String.raw` [+-] (?:0+(?:\.0*)?|\.0+)(?:${[...LENGTH_UNITS].join("|")})(?=[),])`,
+  "gi"
+);
+
+/**
+ * Drop each zero length added or taken last in a math expression's sum that another term proves a
+ * length, which leaves the sum as it is. A sum of a length with a number or another dimension is
+ * invalid CSS (CSS Values 4 §10.9), so Chromium computes no value from it. Where no other term
+ * proves the type, the zero may be the term that makes the sum invalid, so the sum keeps it.
+ *
+ * @param value - A value {@link normalizeCss} spelled, with no space beside a parenthesis or comma.
+ * @returns The value with each such zero dropped.
+ */
+function dropZeroLengthTerms(value: string): string {
+  for (const match of value.matchAll(ZERO_LENGTH_TERM)) {
+    const terms = sumBefore(value, match.index);
+    if (terms?.some(provesLength) === true) {
+      return dropZeroLengthTerms(
+        `${value.slice(0, match.index)}${value.slice(match.index + match[0].length)}`
+      );
+    }
+  }
+  return value;
+}
+
+/**
+ * The top-level terms of the sum that ends at `end`, when that sum fills a math function's
+ * argument or a parenthesis inside one, or undefined where it does not.
+ */
+function sumBefore(value: string, end: number): readonly string[] | undefined {
+  let depth = 0;
+  let start = end;
+  for (let index = end - 1; index >= 0; index -= 1) {
+    const char = value[index];
+    if (char === ")") {
+      depth += 1;
+    } else if (char === "(" && depth > 0) {
+      depth -= 1;
+    } else if (depth === 0 && (char === "(" || char === ",")) {
+      start = index + 1;
+      const open = char === "(" ? index : openingParenthesis(value, index);
+      const name = open === undefined ? undefined : (/[\w-]*$/.exec(value.slice(0, open))?.[0] ?? "");
+      if (name === undefined || !(MATH_FUNCTIONS.has(name) || name === "")) {
+        return undefined;
+      }
+      return splitSum(value.slice(start, end));
+    }
+  }
+  return undefined;
+}
+
+/** The index of the parenthesis that opens the group holding `at`, or undefined at the top level. */
+function openingParenthesis(value: string, at: number): number | undefined {
+  let depth = 0;
+  for (let index = at - 1; index >= 0; index -= 1) {
+    depth += value[index] === ")" ? 1 : value[index] === "(" ? -1 : 0;
+    if (depth < 0) {
+      return index;
+    }
+  }
+  return undefined;
+}
+
+/** The terms a sum adds or takes, split at its top-level `+` and `-` operators. */
+function splitSum(sum: string): readonly string[] {
+  const terms: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let index = 0; index < sum.length; index += 1) {
+    const char = sum[index];
+    depth += char === "(" ? 1 : char === ")" ? -1 : 0;
+    if (depth === 0 && /^ [+-] $/.test(sum.slice(index, index + 3))) {
+      terms.push(sum.slice(start, index));
+      start = index + 3;
+      index += 2;
+    }
+  }
+  terms.push(sum.slice(start));
+  return terms;
+}
+
+/**
+ * Whether a sum's term is a length: a length dimension, or a `calc()`, `min()`, `max()`, `clamp()` or
+ * parenthesis that holds one in a sum. A valid sum's terms share one type, so one length among them
+ * types the whole. A `var()` or a product proves nothing.
+ */
+function provesLength(term: string): boolean {
+  const unit = DIMENSION_TERM.exec(term)?.[1];
+  if (unit !== undefined) {
+    return LENGTH_UNITS.has(unit.toLowerCase());
+  }
+  const group = /^([\w-]*)\(/.exec(term);
+  if (group === null || !(MATH_FUNCTIONS.has(group[1] ?? "") || group[1] === "")) {
+    return false;
+  }
+  const open = (group[1] ?? "").length;
+  if (closingParenthesis(term, open) !== term.length - 1) {
+    return false;
+  }
+  return splitTopLevel(term.slice(open + 1, -1), ",").some((argument) =>
+    splitSum(argument).some(provesLength)
+  );
+}
+
+/** The math functions whose arguments a nested `calc()` may fill whole. */
+const MATH_FUNCTIONS: ReadonlySet<string> = new Set(["calc", "min", "max", "clamp"]);
+
+/**
+ * Drop the `calc()` around a whole argument of a math function, which CSS reads as parentheses
+ * there (CSS Values 4 §10.1), and parentheses around a whole argument change nothing. So a Table
+ * body highlight's `max(0px, calc(<corner> - 1px))` spells as the synced `max(0px, <corner> - 1px)`.
+ * A `calc()` beside other terms in its argument keeps its wrapper, since it groups them, and so does
+ * one that holds no calculation, such as two arguments or a keyword. So `clamp(none,10px,20px)`
+ * and `clamp(calc(none),10px,20px)` keep apart: Chromium accepts the first and rejects the second.
+ * A `calc()` that holds one `var()` alone keeps its wrapper too, since the variable may hold a
+ * keyword such as `none`, which the bare argument accepts and the `calc()` turns invalid.
+ *
+ * @param value - A value {@link normalizeCss} spelled, with no space beside a parenthesis or comma.
+ * @returns The value with each such wrapper dropped.
+ */
+function unwrapArgumentCalc(value: string): string {
+  const functions: string[] = [];
+  for (let index = 0; index < value.length; index += 1) {
+    const char = value[index];
+    if (char === "(") {
+      functions.push(/[\w-]*$/.exec(value.slice(0, index))?.[0] ?? "");
+    } else if (char === ")") {
+      functions.pop();
+    } else if (
+      value.startsWith("calc(", index) &&
+      MATH_FUNCTIONS.has(functions.at(-1) ?? "") &&
+      ["(", ","].includes(value[index - 1] ?? "")
+    ) {
+      const close = closingParenthesis(value, index + "calc".length);
+      if (close !== undefined && [",", ")"].includes(value[close + 1] ?? "")) {
+        const inner = value.slice(index + "calc(".length, close);
+        if (!isNumericExpression(inner) || isLoneVar(inner)) {
+          continue;
+        }
+        return unwrapArgumentCalc(`${value.slice(0, index)}${inner}${value.slice(close + 1)}`);
+      }
+    }
+  }
+  return value;
+}
+
+/** Whether a value is one `var()` and nothing else. */
+function isLoneVar(expression: string): boolean {
+  return (
+    expression.startsWith("var(") && closingParenthesis(expression, "var".length) === expression.length - 1
+  );
+}
+
+/**
+ * Whether a value is one calculation a `calc()` may hold: sums and products whose factors are each a
+ * number, dimension or percentage, a `var()`, a parenthesis that holds a calculation, or a math
+ * function each of whose arguments does. A keyword or a list of arguments is none.
+ */
+function isNumericExpression(expression: string): boolean {
+  return splitSum(expression).every((term) =>
+    splitTopLevel(term, "*")
+      .flatMap((factor) => splitTopLevel(factor, "/"))
+      .every((factor) => {
+        if (NUMERIC.test(factor)) {
+          return true;
+        }
+        const name = /^([\w-]*)\(/.exec(factor)?.[1];
+        if (name === undefined || closingParenthesis(factor, name.length) !== factor.length - 1) {
+          return false;
+        }
+        if (name === "var") {
+          return true;
+        }
+        const args = splitTopLevel(factor.slice(name.length + 1, -1), ",");
+        return (
+          (name === "" ? args.length === 1 : MATH_FUNCTIONS.has(name)) && args.every(isNumericExpression)
+        );
+      })
+  );
+}
+
+/** The index of the parenthesis that closes the one at `open`, or undefined where none does. */
+function closingParenthesis(value: string, open: number): number | undefined {
+  let depth = 0;
+  for (let index = open; index < value.length; index += 1) {
+    depth += value[index] === "(" ? 1 : value[index] === ")" ? -1 : 0;
+    if (depth === 0) {
+      return index;
+    }
+  }
+  return undefined;
 }
 
 /** No synced variables, which a comparison of two literal values reads. */

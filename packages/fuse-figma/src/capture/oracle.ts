@@ -53,12 +53,35 @@ const CoverageLedgerSchema = Schema.Struct({
   /** Each set's `unshown` rows, by the set's key. */
   unshown: Schema.Record(Schema.String, Schema.Array(UnshownSchema)),
   /**
-   * Each declaration the capture records that no row accounts for, as {@link unaccountedDeclarations}
-   * finds it, with why the kit keeps it so: its property is the one the rule writes, and `at` lists
-   * every cell and element it covers, as `button/state=rest 0/root/0`, or `0/root/0::before` for the
-   * element's pseudo-element, so an exception for one state or one box excuses no other.
+   * The declarations the capture records that no row accounts for, as {@link unaccountedDeclarations}
+   * finds them, in groups that share a part, a reason and their places: each group lists its
+   * declarations by class and the property the rule writes, and `at` every cell and element they
+   * cover, as `button/state=rest 0/root/0`, or `0/root/0::before` for the element's pseudo-element,
+   * so an exception for one state or one box excuses no other. {@link unreachedRows} expands them.
    */
-  unreached: Schema.Array(Schema.Struct({ ...KeptRowSchema.fields, at: Schema.Array(Schema.String) })),
+  unreached: Schema.Array(
+    Schema.Union([
+      Schema.Struct({
+        set: Schema.String,
+        part: Schema.String,
+        declarations: Schema.NonEmptyArray(
+          Schema.Struct({ className: Schema.String, property: Schema.String })
+        ),
+        reason: Schema.String,
+        at: Schema.Array(Schema.String),
+      }),
+      // A single declaration, the shape entries took before groups: branches written against it
+      // keep reading after a rebase, and a later edit may group them.
+      Schema.Struct({
+        set: Schema.String,
+        part: Schema.String,
+        className: Schema.String,
+        property: Schema.String,
+        reason: Schema.String,
+        at: Schema.Array(Schema.String),
+      }),
+    ])
+  ),
   /**
    * Each pair of an axis's values that {@link alikeValues} finds built alike, its values in the
    * axis's order, with why the kit keeps both.
@@ -100,6 +123,31 @@ export function decodeLedger(value: unknown): Result.Result<CoverageLedger, Ledg
  */
 export function keptLedger(): Result.Result<CoverageLedger, LedgerUnreadable> {
   return decodeLedger(ledger);
+}
+
+/** A declaration the ledger keeps unreached, by its set, part, class and property, at every place it covers. */
+export type UnreachedRow = KeptRow & { readonly at: readonly string[] };
+
+/**
+ * The ledger's `unreached` entries, one row for each declaration a group lists and one for each
+ * single-declaration entry.
+ *
+ * @param kept - The ledger.
+ * @returns The rows, each with its group's part, reason and places.
+ */
+export function unreachedRows(kept: CoverageLedger): readonly UnreachedRow[] {
+  return kept.unreached.flatMap((entry) =>
+    "declarations" in entry
+      ? entry.declarations.map(({ className, property }) => ({
+          set: entry.set,
+          part: entry.part,
+          reason: entry.reason,
+          at: entry.at,
+          className,
+          property,
+        }))
+      : [entry]
+  );
 }
 
 /**

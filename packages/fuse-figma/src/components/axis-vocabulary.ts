@@ -165,9 +165,17 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
   [
     "row",
     {
-      values: ["header", "body", "last"],
+      values: ["header", "first", "body", "last"],
       draws:
-        "Which row of a Table the cell draws: the header row, a body row, or the body's last row, which draws no rule under it.",
+        "Which row of a Table the cell draws: the header row, a body row, or the body's last row, which draws no rule under it. A framed Table's cell or row also draws the body's first row, whose cells draw the panel's top border and round its top corners.",
+    },
+  ],
+  [
+    "column",
+    {
+      values: ["first", "middle", "last"],
+      draws:
+        "Which column of a framed Table the cell draws: the first or the last, which the Frame's text inset pads on its outer side, and whose body cell draws the panel's side border, or one between them.",
     },
   ],
   [

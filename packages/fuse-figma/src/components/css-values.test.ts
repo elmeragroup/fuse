@@ -309,6 +309,72 @@ describe("canonicalCss", () => {
     expect(canonicalCss("var(--spacing-04)")).toBe("var(--spacing-04)");
     expect(canonicalCss("2ms")).toBe("0.002s");
   });
+
+  // CSS Values 4 §10.1: a `calc()` filling a math function's argument reads as parentheses, and a
+  // zero length added or taken last leaves a length sum as it is. So the gutter Frame's bar inset,
+  // its text inset less a 0px overhang, is the text inset a framed Table's edge head pads with.
+  it("spells a length sum alike with a zero length taken from it", () => {
+    const inset = { collection: "Fuse density", name: "frame-bar-inset" } as const;
+    const frame = makeVariableIndex([
+      { ref: inset, webSyntax: "calc(calc(1px + var(--surface-pad-lg)) - 0px)" },
+    ]);
+    expect(frame.lookup("calc(1px + var(--surface-pad-lg))")).toEqual(inset);
+    expect(frame.lookup("calc(1px + var(--surface-pad-lg) - 1px)")).toBeUndefined();
+    expect(canonicalCss("calc(4px * 0)")).toBe("calc(4px * 0)");
+  });
+
+  // Chromium rejects a sum of a length and a unitless number, so `padding-left:
+  // calc(1px + var(--surface-pad-lg) + 0)` computes to 0px, not to the 17px the bar inset holds.
+  it("keeps a unitless zero, or a zero length beside a number, in its sum", () => {
+    const inset = { collection: "Fuse density", name: "frame-bar-inset" } as const;
+    const frame = makeVariableIndex([
+      { ref: inset, webSyntax: "calc(calc(1px + var(--surface-pad-lg)) - 0px)" },
+    ]);
+    expect(frame.lookup("calc(1px + var(--surface-pad-lg) + 0)")).toBeUndefined();
+    expect(canonicalCss("calc(4px + 0)")).toBe("calc(4px + 0)");
+    expect(canonicalCss("calc(2 + 0px)")).not.toBe("calc(2)");
+    expect(canonicalCss("calc(4px + 0deg)")).toBe("calc(4px + 0deg)");
+  });
+
+  // Chromium type-checks a math function (CSS Values 4 §10.9). With --radius 16px and
+  // --surface-pad-md 4px, `max(0, calc(<radius> - <pad>))` mixes a number with a length and computes
+  // to 0px, not the 12px the corner holds. `max(calc(0px, <radius> - <pad>))` holds a `calc()` of two
+  // arguments, which is invalid. `opacity: calc(min(0.4, 0.5) + 0px)` adds a length to a number and
+  // computes to 1, not to the 0.4 its sum would without the zero.
+  const innerCorner = { collection: "Fuse density", name: "radius-inner/lg-pad-md" } as const;
+  const corners = makeVariableIndex([
+    { ref: innerCorner, webSyntax: "max(0px, var(--radius) - var(--surface-pad-md))" },
+  ]);
+
+  it("binds a corner whose `calc()` fills a `max()` argument", () => {
+    expect(corners.lookup("max(0px, calc(var(--radius) - var(--surface-pad-md)))")).toEqual(innerCorner);
+  });
+
+  it.each([
+    ["a unitless zero beside a length", "max(0, calc(var(--radius) - var(--surface-pad-md)))"],
+    ["a `calc()` of two arguments", "max(calc(0px, var(--radius) - var(--surface-pad-md)))"],
+  ])("binds no corner through %s", (_case, value) => {
+    expect(corners.lookup(value)).toBeUndefined();
+  });
+
+  it("keeps a zero length added to a number", () => {
+    expect(canonicalCss("calc(min(0.4, 0.5) + 0px)")).not.toBe(canonicalCss("calc(min(0.4, 0.5))"));
+  });
+
+  // Chromium accepts `width: clamp(none, 10px, 20px)`, whose `none` lifts the lower bound, and rejects
+  // `width: clamp(calc(none), 10px, 20px)`: `none` is no term of a `calc()` sum.
+  it("keeps a `calc()` that holds no numeric expression", () => {
+    expect(canonicalCss("clamp(calc(none), 10px, 20px)")).not.toBe(canonicalCss("clamp(none, 10px, 20px)"));
+  });
+
+  // With `--bound: none`, Chromium gives `width: clamp(var(--bound), 10px, 20px)` 10px and
+  // `width: clamp(calc(var(--bound)), 10px, 20px)` the available width: the `calc()` turns the
+  // substituted `none` invalid at computed-value time.
+  it("keeps a `calc()` that holds only a `var()`", () => {
+    expect(canonicalCss("clamp(calc(var(--bound)), 10px, 20px)")).not.toBe(
+      canonicalCss("clamp(var(--bound), 10px, 20px)")
+    );
+  });
 });
 
 describe("sameCssValue", () => {

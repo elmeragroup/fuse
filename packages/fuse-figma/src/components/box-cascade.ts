@@ -244,6 +244,11 @@ export type MeasuredBox = {
   readonly underMaxHeight: string | undefined;
   /** The box is as wide with its `max-width` 24px lower, so the maximum never narrows it. */
   readonly underMaxWidth: boolean;
+  /**
+   * The box has unequal corners in some mode, and its border box, with its sample text, is wider
+   * than twice its largest horizontal radius by a margin in every mode whose radii are not all 0.
+   */
+  readonly cornersFit: boolean;
   /** The box's flex line leaves room for its items' auto margins along it in every mode. */
   readonly freeAlongMain: boolean;
   /** The box's flex line fits its items, with its auto margins at zero, in every mode. */
