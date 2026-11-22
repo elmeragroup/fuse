@@ -1,6 +1,5 @@
 import { createElement } from "react";
 
-import { NodeServices } from "@effect/platform-node";
 /**
  * Unit under test: the Icon button set's `size=icon-inline` variants, as the kit builds them: a root
  * of a fixed width and a fixed height, each a literal length.
@@ -22,9 +21,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { Button, buttonVariants } from "../../../fuse/dist/button.js";
 import { Plus } from "../../../fuse/dist/icons.js";
-import { openSweep } from "../../test/sweep-page.ts";
+import { openFusePage } from "../../test/fuse-page.ts";
 import { EVERY_MODE } from "../capture/page-modes.ts";
-import { locateFuseBuild, readPageAssets } from "../compare/page-assets.ts";
 import { buildComponentSets } from "./build-kit.ts";
 import type { SizeSpec } from "./kit-spec.ts";
 import { ownKey } from "./own-key.ts";
@@ -135,14 +133,9 @@ beforeAll(async () => {
       },
     ])
   );
-  const assets = await Effect.runPromise(
-    Effect.gen(function* () {
-      return yield* readPageAssets(yield* locateFuseBuild(), new Map());
-    }).pipe(Effect.provide(NodeServices.layer))
-  );
   browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 800, height: 600 } });
-  await openSweep(page, assets, sampleSlots());
+  await openFusePage(page, { body: sampleSlots().join("\n") });
   measured = await measureEveryMode(page);
 }, 300_000);
 

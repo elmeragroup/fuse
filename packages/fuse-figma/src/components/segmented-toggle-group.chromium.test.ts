@@ -1,7 +1,6 @@
 import { createElement } from "react";
 import type { ComponentProps } from "react";
 
-import { NodeServices } from "@effect/platform-node";
 /**
  * Unit under test: the Segmented toggle group set as the kit builds it, a row of `Toggle` instances
  * at the `first`, `middle` and `last` values of the Toggle set's `segment` axis, each drawn by that
@@ -17,7 +16,7 @@ import { NodeServices } from "@effect/platform-node";
  * where the build draws an item's label, inset, left border or corners other than a segmented group
  * does.
  */
-import { Effect, Result } from "effect";
+import { Result } from "effect";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -25,9 +24,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { ToggleGroup } from "../../../fuse/dist/toggle-group.js";
 import { builtKit } from "../../test/built-kit.ts";
-import { openSweep } from "../../test/sweep-page.ts";
+import { openFusePage } from "../../test/fuse-page.ts";
 import { EVERY_MODE } from "../capture/page-modes.ts";
-import { locateFuseBuild, readPageAssets } from "../compare/page-assets.ts";
 import { fuseVariableSet } from "../fuse-variable-set.ts";
 import { cornerLengths } from "./corner-spec.ts";
 import { strokeRoom } from "./kit-spec.ts";
@@ -353,14 +351,9 @@ beforeAll(async () => {
       ])
     ),
   ];
-  const assets = await Effect.runPromise(
-    Effect.gen(function* () {
-      return yield* readPageAssets(yield* locateFuseBuild(), new Map());
-    }).pipe(Effect.provide(NodeServices.layer))
-  );
   browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 800, height: 600 } });
-  await openSweep(page, assets, segmentedSlots());
+  await openFusePage(page, { body: segmentedSlots().join("\n") });
   measured = await measureEveryMode(page, lengths);
 }, 300_000);
 
