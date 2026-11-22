@@ -275,12 +275,21 @@ export function shownBinding(state: NodeState, field: StoredNumberField): string
 
 /**
  * The layer along a layer's chain of sources whose binding or stored number it shows on a field:
- * the first that binds the field, holds it as its own, or has no source.
+ * the first that binds the field, holds it as its own, or has no source. A height limit that a
+ * width limit's write lists (rule 44) holds the layer's own number only while the source shows no
+ * binding on it (MH).
  */
 function holderOf(state: NodeState, field: StoredNumberField): NodeState {
   for (let node = state; ;) {
     const source = sourceOf(node);
-    if (node.bindings.has(field) || source === undefined || node.overridden.has(numberOwner(field))) {
+    if (node.bindings.has(field) || source === undefined) {
+      return node;
+    }
+    if ((field === "minHeight" || field === "maxHeight") && node.overridden.has(field)) {
+      const shown = holderOf(source, field);
+      return shown.bindings.has(field) ? shown : node;
+    }
+    if (node.overridden.has(numberOwner(field))) {
       return node;
     }
     node = source;

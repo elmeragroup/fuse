@@ -88,8 +88,21 @@
  *    null, and kept both listed after `minWidth` went back to null (PH3). The fake lists both from the
  *    first write on. It does not lay out, so the minimum clamps no size. On 2026-11-20 a `maxWidth`
  *    write alone listed `maxWidth` and `maxHeight`, and both stayed listed after the main's value was
- *    written back (SW), so the fake lists both from the first write on. No probe wrote a height limit
- *    on an instance, so the fake lists none for those.
+ *    written back (SW), so the fake lists both from the first write on. On 2026-11-21 a literal
+ *    `minWidth` or `maxWidth` write kept the height limit the instance showed then, 40, 80 or null,
+ *    after the main's literal changed, and the instance showed the main's binding while the main held
+ *    one, on a rebind too, and went back to the kept number when the main took a literal again. A
+ *    literal or a null written on the height limit stayed the instance's own the same way. A bound
+ *    width write listed neither height limit, and the instance followed the main's (MH). So the fake
+ *    keeps the number a literal width write finds as the instance's own and shows a binding the main
+ *    shows over it. A held `minHeight` bound to the main's own variable followed the main's rebind
+ *    and went back to its kept 40 once the main took a literal (MH), so the fake stores no binding
+ *    for such a write and keeps the number. A null written on a fresh instance's `minHeight` that
+ *    showed null listed nothing, and the instance followed its main's next value, 30 (MH), so the
+ *    fake lists no such write. No probe wrote such a null on `maxHeight`. The fake keeps one MH
+ *    reading apart on purpose: a bound `minWidth` write on a fresh instance lists `minWidth`, where
+ *    MH listed none. That comes from the number rules above, and the plugin reads no listed
+ *    `minWidth`, so it changes nothing the plugin plans.
  * 45. TEXT values set through exposure two levels down. On 2026-10-25 a `Command item` row instance
  *    listed in `exposedInstances` its exposed `kbd-group` and the two exposed caps inside it, and the
  *    group's own `exposedInstances` listed the caps. `setProperties` on each cap set its TEXT, and the

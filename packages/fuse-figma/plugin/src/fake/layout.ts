@@ -271,7 +271,15 @@
  */
 
 import { newGrid, placedCell } from "./grid.ts";
-import { modeKey, ownNumber, resolveNumber, shownNumber, storeNumber, variableState } from "./modes.ts";
+import {
+  modeKey,
+  ownNumber,
+  resolveNumber,
+  shownBinding,
+  shownNumber,
+  storeNumber,
+  variableState,
+} from "./modes.ts";
 import { isHidden, listNumbers, markOverride } from "./overrides.ts";
 import {
   bindingTargets,
@@ -1354,12 +1362,39 @@ export function setLimit(state: NodeState, field: LimitField, value: number | nu
   // maximum width both maximums.
   if (field === "minWidth" && state.type === "INSTANCE") {
     markOverride(state, "minWidth");
-    markOverride(state, "minHeight");
+    holdHeightLimit(state, "minHeight");
   }
   if (field === "maxWidth" && state.type === "INSTANCE") {
     markOverride(state, "maxWidth");
-    markOverride(state, "maxHeight");
+    holdHeightLimit(state, "maxHeight");
   }
+}
+
+/**
+ * Whether a `minHeight` write is a null on an instance that shows null and holds no `minHeight` of
+ * its own. On 2026-11-21 such a write listed no override, and the instance followed its main's next
+ * value, 30 (rule 44, MH's `jA`). No probe wrote such a null on `maxHeight`.
+ */
+export function leavesMinHeight(state: NodeState, value: number | null): boolean {
+  return (
+    value === null &&
+    state.type === "INSTANCE" &&
+    !state.overridden.has("minHeight") &&
+    !state.overridden.has(numberOwner("minHeight")) &&
+    !state.bindings.has("minHeight") &&
+    shownNumber(state, "minHeight") === null
+  );
+}
+
+/**
+ * List the height limit a width limit's write pairs with, and keep the number it shows then as the
+ * instance's own (rule 44, MH).
+ */
+function holdHeightLimit(state: NodeState, field: "minHeight" | "maxHeight"): void {
+  if (!state.overridden.has(field)) {
+    storeNumber(state, field, shownNumber(state, field));
+  }
+  markOverride(state, field);
 }
 
 /** Write the number a node field takes, as a binding does: a length resizes and a limit is checked. */
@@ -1475,6 +1510,13 @@ function bindField(state: NodeState, field: VariableBindableNodeField, variable:
   }
   const bound = fileVariable(state.file, variable);
   requireType(bound, "FLOAT", field);
+  if (followsSourceBinding(state, field, bound.id)) {
+    // Rule 44: a held height limit bound to the variable its source shows keeps its number and
+    // follows the source's next binding (MH).
+    state.bindings.delete(field);
+    write(state, `bind ${field}`);
+    return;
+  }
   if (length !== undefined) {
     state.unboundLengths.delete(length);
   }
@@ -1488,6 +1530,21 @@ function bindField(state: NodeState, field: VariableBindableNodeField, variable:
   ownTargets(state, targets);
   listNumbers(state, targets.filter(isStoredNumber));
   write(state, `bind ${field}`);
+}
+
+/**
+ * Whether a binding is of the variable an instance's source shows on a height limit a literal width
+ * write made the instance's own (rule 44).
+ */
+function followsSourceBinding(state: NodeState, field: VariableBindableNodeField, id: string): boolean {
+  const source = sourceOf(state);
+  return (
+    (field === "minHeight" || field === "maxHeight") &&
+    state.type === "INSTANCE" &&
+    state.overridden.has(field) &&
+    source !== undefined &&
+    shownBinding(source, field) === id
+  );
 }
 
 /**

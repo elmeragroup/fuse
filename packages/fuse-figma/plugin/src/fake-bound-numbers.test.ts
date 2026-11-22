@@ -9,7 +9,10 @@
  * overrides", and a reset padding follows its source again (rule 64). A wrapping
  * row breaks its layers into rows of the width it is given, and a FLEX column takes the grid's width
  * (rules 32 and 61, PG9). An unread instance keeps its last settled size after a literal edit to its
- * main, and its hugging parent sizes from it (rule 32, PI).
+ * main, and its hugging parent sizes from it (rule 32, PI). A height limit a literal width write
+ * holds on an instance showed the main's binding over the instance's own literal, followed the
+ * main's rebind after the instance bound the main's variable, and went back to its kept number once
+ * the main took a literal (rule 44, MH on #904, 2026-11-21).
  */
 import { describe, expect, it } from "vitest";
 
@@ -509,5 +512,54 @@ describe("a measure from the numbers a layer's modes give", () => {
       grid: 24,
       filling: 24,
     });
+  });
+});
+
+describe("a height limit a literal width limit's write holds on an instance", () => {
+  /** A hugging component with a literal `minHeight` of 40, an instance of it whose `minWidth` took a literal, and `h40` and `h56`. */
+  async function heldMinimum() {
+    const float = (name: string, value: number) => ({
+      name,
+      type: "FLOAT" as const,
+      scopes: [],
+      webSyntax: undefined,
+      description: "",
+      values: new Map([["Mode 1", { _tag: "Float" as const, value }]]),
+    });
+    const { figma } = createFakeFigma({
+      collections: [{ name: "Heights", modes: ["Mode 1"], variables: [float("h40", 40), float("h56", 56)] }],
+    });
+    const [h40, h56] = await figma.variables.getLocalVariablesAsync("FLOAT");
+    if (h40 === undefined || h56 === undefined) {
+      throw new Error("The file holds no h40 and h56.");
+    }
+    const component = figma.createComponent();
+    component.layoutMode = "HORIZONTAL";
+    component.minHeight = 40;
+    const instance = component.createInstance();
+    instance.minWidth = 120;
+    return { component, instance, h40, h56 };
+  }
+
+  const shown = (instance: InstanceNode) => [instance.minHeight, instance.boundVariables?.minHeight?.id];
+
+  it("shows the binding its main takes after a literal written on the height limit", async () => {
+    const { component, instance, h40 } = await heldMinimum();
+    instance.minHeight = 56;
+    component.setBoundVariable("minHeight", h40);
+    expect(shown(instance)).toEqual([40, h40.id]);
+  });
+
+  it("follows its main's rebind after binding the variable its main shows, and keeps its number once the main takes a literal", async () => {
+    const { component, instance, h40, h56 } = await heldMinimum();
+    component.setBoundVariable("minHeight", h40);
+    instance.setBoundVariable("minHeight", h40);
+    component.setBoundVariable("minHeight", h56);
+    const rebound = shown(instance);
+    component.minHeight = 64;
+    expect([rebound, shown(instance)]).toEqual([
+      [56, h56.id],
+      [40, undefined],
+    ]);
   });
 });

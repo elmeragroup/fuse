@@ -232,7 +232,8 @@ export function propertyValue(state: NodeState, id: string): string | boolean | 
 /**
  * The variable each bound field follows, by id: its own, and on an instance or a sublayer the one
  * its source shows on each number it does not hold as its own, as it shows its source's corners
- * (rules 8, 38). An instance that binds no width or height of its own shows its source's binding
+ * (rules 8, 38), and on a height limit a literal width write holds the one its source shows (rule
+ * 44). An instance that binds no width or height of its own shows its source's binding
  * there (rule 56), and a sublayer its main layer's until it holds its own length.
  */
 export function shownBindings(state: NodeState): ReadonlyMap<VariableBindableNodeField, string> {
@@ -249,7 +250,9 @@ export function shownBindings(state: NodeState): ReadonlyMap<VariableBindableNod
         ? !state.unboundLengths.has(field)
         : !state.overridden.has(numberOwner(field));
     }
-    return isStoredNumber(field) && !state.overridden.has(numberOwner(field));
+    // A stored number shows the binding its holder does (rule 8), which a held height limit takes
+    // from its source while the source shows one (rule 44).
+    return isStoredNumber(field) && shownBinding(state, field) !== undefined;
   });
   return new Map([...state.bindings, ...inherited]);
 }

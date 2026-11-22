@@ -58,6 +58,7 @@ import {
   resize,
   resizeWithConstraints,
   setLayoutMode,
+  leavesMinHeight,
   setLimit,
   setSizing,
   setStrokesIncludedInLayout,
@@ -609,6 +610,10 @@ class FakeSceneNode extends FakeBaseNode {
 
   set minHeight(value: number | null) {
     const state = live(this);
+    if (leavesMinHeight(state, value)) {
+      write(state, "minHeight");
+      return;
+    }
     writeNumbers(state, () => {
       setLimit(state, "minHeight", value);
       return ["minHeight"];

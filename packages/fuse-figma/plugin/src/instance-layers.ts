@@ -38,14 +38,16 @@ import type {
   ComponentRootSpec,
   InstanceLayerSpec,
   InstanceOverride,
+  LimitsSpec,
   NestedPropertiesSpec,
+  NumberSpec,
   TextLayerSpec,
   VariantSpec,
 } from "../../src/components/kit-spec.ts";
 import { findProperty, propertyName } from "./component-properties.ts";
 import type { PlannedSet } from "./component-set.ts";
 import type { PluginError } from "./errors.ts";
-import { planLimit, planScalar, planVisibleLink } from "./fields.ts";
+import { lengthIn, planLimit, planScalar, planVisibleLink } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
 import { fontFor, fontsOf, heldFonts, requireFont, shownFace } from "./fonts.ts";
 import type { InnerSpecs } from "./fonts.ts";
@@ -496,6 +498,28 @@ const planOverridesAndSizing = Effect.fnUntraced(function* (
   const refaced = planOverrides(run, instance, layers, label, spec, shown);
   planLabelGlyphs(run, layers, shown, spec, refaced);
   yield* planNested(instance, label, spec);
+  // An instance with no minimum of its own shows the inner variant's (PH3). A literal `minWidth`
+  // write lists `minHeight` among the instance's overrides too (PH3), and a `maxWidth` write
+  // `maxHeight` (SW). The instance then keeps the height limit it showed through a change of the
+  // main's literal, and shows only a binding the main holds (MH), so an instance that lists one takes
+  // the main's by a write.
+  const listed = new Set(
+    instance.overrides.flatMap(({ id, overriddenFields }) => (id === instance.id ? overriddenFields : []))
+  );
+  const limits: readonly (readonly [keyof LimitsSpec, NumberSpec | undefined])[] = [
+    ["minWidth", spec.minWidth ?? inner.spec.root.limits.minWidth],
+    ["maxWidth", spec.maxWidth ?? inner.spec.root.limits.maxWidth],
+    ...(["minHeight", "maxHeight"] as const)
+      .filter((field) => listed.has(field))
+      .map((field) => [field, inner.spec.root.limits[field]] as const),
+  ];
+  // Figma clamps a length to the limits the layer holds when the length is written, so the limits
+  // that loosen go before the sizing and the ones that tighten after it. At the resize, each limit
+  // holds the looser of its old and new values.
+  const loosens = limits.filter(([field, limit]) => loosensLimit(run, instance, field, limit));
+  for (const [field, limit] of loosens) {
+    planLimit(run, instance, label, field, limit);
+  }
   // Figma refuses FILL on an absolute layer (P8), so an instance leaves the flow after its sizing
   // and comes back into it before.
   if (spec.placement === undefined) {
@@ -506,17 +530,8 @@ const planOverridesAndSizing = Effect.fnUntraced(function* (
   if (spec.placement !== undefined) {
     planLeaving(run, instance, label, spec.placement);
   }
-  // An instance with no minimum of its own shows the inner variant's (PH3).
-  planLimit(run, instance, label, "minWidth", spec.minWidth ?? inner.spec.root.limits.minWidth);
-  planLimit(run, instance, label, "maxWidth", spec.maxWidth ?? inner.spec.root.limits.maxWidth);
-  // A `maxWidth` write lists `maxHeight` among the instance's overrides too (SW), and an override keeps
-  // the instance's value through a change of the main's, as rule 38 of the fake keeps an instance's
-  // other overrides (N3), so an instance that holds it takes the main's by a write.
-  const heightHeld = instance.overrides.some(
-    ({ id, overriddenFields }) => id === instance.id && overriddenFields.includes("maxHeight")
-  );
-  if (heightHeld) {
-    planLimit(run, instance, label, "maxHeight", inner.spec.root.limits.maxHeight);
+  for (const [field, limit] of limits.filter((each) => !loosens.includes(each))) {
+    planLimit(run, instance, label, field, limit);
   }
   planVisibleLink(run, instance, label, spec.visibleProperty, links.properties);
   const exposed = spec.exposed === true;
@@ -524,6 +539,28 @@ const planOverridesAndSizing = Effect.fnUntraced(function* (
     instance.isExposedInstance = exposed;
   });
 });
+
+/**
+ * Whether writing a limit leaves it no tighter than the instance holds it now: a minimum no higher,
+ * a maximum no lower, or no limit at all. A bound limit compares the value its variable takes in
+ * the instance.
+ */
+function loosensLimit(
+  run: Run,
+  instance: InstanceNode,
+  field: keyof LimitsSpec,
+  limit: NumberSpec | undefined
+): boolean {
+  const held = instance[field];
+  if (limit === undefined) {
+    return true;
+  }
+  if (held === null) {
+    return false;
+  }
+  const next = lengthIn(run, limit, instance);
+  return field === "minWidth" || field === "minHeight" ? next <= held : next >= held;
+}
 
 /**
  * The stages after the main: the properties in one `setProperties`, then the last stage. A property
