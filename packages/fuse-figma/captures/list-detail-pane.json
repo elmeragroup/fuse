@@ -278,7 +278,7 @@
                   "children": [
                     {
                       "tag": "h2",
-                      "attributes": {"data-slot":"list-detail-title","id":"_R_p_"},
+                      "attributes": {"data-slot":"list-detail-title","id":"_R_2p_"},
                       "classes": ["text-xl","font-medium","m-0","font-heading","text-balance"],
                       "text": "Henrik Aasen",
                       "textIndex": 0,
