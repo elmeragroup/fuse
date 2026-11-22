@@ -14,7 +14,7 @@ import {
   paddingEdges,
   stackingOf,
 } from "./containing-block.ts";
-import { roomAlong } from "./flex-room.ts";
+import { flexItems, itemBox, nowrapMovesNothing, roomAlong } from "./flex-room.ts";
 import { gridColumns } from "./grid-facts.ts";
 import { judgedFacts } from "./judged-facts.ts";
 import type { PageFacts } from "./judged-facts.ts";
@@ -75,13 +75,30 @@ import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
  *   items sit on its one line in source order: each is one box whose own text keeps to one line,
  *   starts where the one before it ends or after it, within {@link LAYOUT_UNIT_PX}, and shares a band
  *   of the line with every other.
- * - `freeAlongMain`: a flex container whose items hold auto margins along its direction, which wraps
- *   in no mode of {@link EVERY_MODE}, since auto margins take the room of each line on its own (CSS
- *   Flexbox 1 §9.5), and which with those margins at zero and its items packed at its start leaves at
- *   least {@link FREE_SPACE_CLEARANCE_PX} between its last item and its content box's end, in every
- *   mode once its faces have loaded, so the margins take that room (CSS Flexbox 1 §8.1).
+ * - `oneFlexLine`: a flex container whose `flex-wrap` is `wrap`, where in every mode of
+ *   {@link EVERY_MODE}, once its faces have loaded, forcing `nowrap` moves none of its in-flow items
+ *   by {@link LAYOUT_UNIT_PX} or more, and the line, with `nowrap` forced, its auto margins at zero
+ *   and its items packed at its start, leaves at least {@link FIT_CLEARANCE_PX} past its last item.
+ *   The items are those `flexItems` in `flex-room.ts` finds: it looks through the children that
+ *   generate no box, leaves out absolute and hidden ones, and takes each run of text between two
+ *   boxes as one item. A run of text on more than one line, an in-flow `::before` or `::after` of the
+ *   container or of a child it looks through, and a column that holds text are items the page cannot
+ *   measure, so none of them records the fact. Nor does a container where a `transform`,
+ *   `translate`, `scale` or `rotate` applies to it, an item or a `display: contents` box around one,
+ *   since the page reads boxes where Chromium paints them. The items' outer sizes then fit the line,
+ *   so CSS collects them all into one line (CSS Flexbox 1 §9.3 step 1), which `nowrap` lays out the same.
+ * - `freeAlongMain`: a flex container whose items hold auto margins along its direction, which does
+ *   not wrap in the page's own mode or holds `oneFlexLine`, and which with those margins at zero, its
+ *   items packed at its start and `flex-wrap` forced to `nowrap` leaves at least
+ *   {@link FREE_SPACE_CLEARANCE_PX} between its last item and its content box's end, in every mode
+ *   once its faces have loaded. Auto margins take the room of each line on its own (CSS Flexbox 1
+ *   §9.5), and a container that wraps in a mode lays that room out on one line there, as `roomAlong`
+ *   in `flex-room.ts` says, so the margins take that room (CSS Flexbox 1 §8.1).
  *   The auto margins take the free space before `justify-content` does, so the room is the same
- *   whatever `justify-content` the container sets.
+ *   whatever `justify-content` the container sets. The items are those `oneFlexLine` reads, and a
+ *   run of text on more than one line, a column that holds text, or a transform, `translate`, `scale`
+ *   or `rotate` on the container, an item or a `display: contents` box around one records neither
+ *   this fact nor `fitsAlongMain`.
  * - `fitsAlongMain`: a flex container as `freeAlongMain` takes one, whose items, with their auto
  *   margins at zero and packed at its start, leave at least {@link FIT_CLEARANCE_PX} between the last and its content box's
  *   end, in every mode of {@link EVERY_MODE} once its faces have loaded, so the line's items fit it
@@ -270,12 +287,18 @@ const MEASURE_IN_PAGE = `async function (role) {
     }
   };
   const inFlow = (element) => !["absolute", "fixed"].includes(getComputedStyle(element).position) && getComputedStyle(element).display !== "none";
+  const holdsOwnText = (${holdsOwnText.toString()});
+  const pseudoInFlow = (${pseudoInFlow.toString()});
+  // A flex container's in-flow items, through the children that generate no box, as \`flex-room.ts\`
+  // finds them. Every reading of a flex line's items and their auto margins takes this one list.
+  const flexItems = (${flexItems.toString()});
+  const flexItemsOf = (element) => flexItems(element, { inFlow, pseudo: pseudoInFlow });
   // The auto margins of a flex container's items along its direction, as their computed values keep
   // \`auto\` (CSS Typed OM), where \`getComputedStyle\` gives their used lengths.
   const autoMargins = (element) => {
     const direction = getComputedStyle(element).flexDirection;
     const sides = direction.startsWith("row") ? ["left", "right"] : ["top", "bottom"];
-    return [...element.children].filter(inFlow).flatMap((child) => sides.filter((side) => String(child.computedStyleMap().get("margin-" + side)) === "auto").map((side) => ({ child, side })));
+    return (flexItemsOf(element) ?? []).filter((item) => item instanceof Element).flatMap((child) => sides.filter((side) => String(child.computedStyleMap().get("margin-" + side)) === "auto").map((side) => ({ child, side })));
   };
   const elements = [];
   const walk = (element, path) => {
@@ -423,12 +446,13 @@ const MEASURE_IN_PAGE = `async function (role) {
     await inEveryMode(() => { kept = kept.filter((candidate) => holds(candidate.element)); });
     return kept;
   };
-  // Each candidate with the least value its measure takes across the modes.
+  // Each candidate with the least value its measure takes across the modes. A mode where the measure
+  // reads nothing gives -Infinity, so the candidate records no fact.
   const leastInEveryMode = async (candidates, measure) => {
     const least = candidates.map((candidate) => ({ ...candidate, least: Infinity }));
     if (least.length === 0) { return least; }
     await inEveryMode(() => {
-      for (const candidate of least) { candidate.least = Math.min(candidate.least, measure(candidate.element)); }
+      for (const candidate of least) { candidate.least = Math.min(candidate.least, measure(candidate.element) ?? -Infinity); }
     });
     return least;
   };
@@ -483,8 +507,25 @@ const MEASURE_IN_PAGE = `async function (role) {
   for (const { path } of await holdsInEveryMode(lineBoxes, lineFits)) { put(path, "lineFits", true); }
   // The room a flex line leaves along its direction, as \`flex-room.ts\` measures it.
   const roomAlong = (${roomAlong.toString()});
-  const flexHelpers = { withStyles, autoMargins, inFlow };
-  // One sweep measures each line's least room, which each fact compares with its own clearance.
+  const itemBox = (${itemBox.toString()});
+  const flexHelpers = { withStyles, autoMargins, items: flexItemsOf, box: itemBox };
+  const nowrapMovesNothing = (${nowrapMovesNothing.toString()});
+  // A wrapping container lays its items out on one line where forcing \`nowrap\` moves none of them
+  // and the line keeps a clearance with its auto margins at zero, in every mode. Its auto margins then
+  // take the room of that one line, the least room this sweep reads, as on a line that does not wrap.
+  const wrapping = elements.filter(({ element }) => getComputedStyle(element).display.endsWith("flex") && getComputedStyle(element).flexWrap === "wrap");
+  const oneLine = (element) => nowrapMovesNothing(element, flexHelpers, ${String(LAYOUT_UNIT_PX)}) ? roomAlong(element, flexHelpers) : undefined;
+  for (const { element, path, least } of await leastInEveryMode(wrapping, oneLine)) {
+    if (least >= ${String(FIT_CLEARANCE_PX)}) {
+      put(path, "oneFlexLine", true);
+      if (autoMargins(element).length > 0) {
+        if (least >= ${String(FREE_SPACE_CLEARANCE_PX)}) { put(path, "freeAlongMain", true); }
+        put(path, "fitsAlongMain", true);
+      }
+    }
+  }
+  // One sweep measures each line that does not wrap for its least room, which each fact compares
+  // with its own clearance.
   for (const { path, least } of await leastInEveryMode(freeAlongMain, (element) => roomAlong(element, flexHelpers))) {
     if (least >= ${String(FREE_SPACE_CLEARANCE_PX)}) { put(path, "freeAlongMain", true); }
     if (least >= ${String(FIT_CLEARANCE_PX)}) { put(path, "fitsAlongMain", true); }
@@ -744,8 +785,6 @@ const MEASURE_IN_PAGE = `async function (role) {
   }
   // The columns of each grid of two or more that hug their items, and whether every column holds its
   // items, in every mode: a column hugs only where each mode measured it so.
-  const holdsOwnText = (${holdsOwnText.toString()});
-  const pseudoInFlow = (${pseudoInFlow.toString()});
   const generatesNoBox = (${generatesNoBox.toString()});
   const addsBox = (element) => holdsOwnText(element) || pseudoInFlow(element);
   // An element that generates no box and adds nothing to its parent's flow but its children's boxes.

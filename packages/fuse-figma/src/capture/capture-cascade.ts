@@ -2173,6 +2173,7 @@ function measuredBox(
     underMaxWidth: facts?.underMaxWidth === true,
     freeAlongMain: facts?.freeAlongMain === true,
     fitsAlongMain: facts?.fitsAlongMain === true,
+    oneFlexLine: facts?.oneFlexLine === true,
     itemsAtContent: facts?.itemsAtContent === true,
     tableTiles: facts?.tableTiles === true,
     bordersCollapse: facts?.bordersCollapse === true,

@@ -1085,3 +1085,54 @@ describe("a row's unset align-items", () => {
     expect(frameOf(variant?.root)?.sizing.vertical).toEqual(height);
   });
 });
+
+// Oracle: CSS Flexbox 1 §9.3 step 1 and §9.4, worked by hand, with the capture's `oneFlexLine`
+// fact. A wrapping row whose items the capture measured on one line in every mode collects them
+// into that one line. A wrapping row sizes the line to its items, here 20px, and `align-content:
+// normal` stretches it to the row's definite 36px content height, the one line a row that does not
+// wrap has, so a `self-stretch` item of auto height is 36px tall in both and the row draws as a
+// Figma row that does not wrap. Without the fact the row may break a line, and with `align-content:
+// center` the 20px line sits in the middle of the 36px row, where the stretched item would be 20px
+// tall, so the wrap and the stretch stay unmapped. A row that hugs its height is as tall as its one
+// line, which the rule does not read.
+describe("a wrapping row the capture measured on one line", () => {
+  const build = (row: string, measured: MeasuredFacts) =>
+    buildCaptured(
+      chip({ parts: [part({ key: "a", slot: "a" }), part({ key: "b", slot: "b" })] }),
+      rest({
+        slot: "chip",
+        classes: row,
+        measured,
+        children: [
+          { slot: "a", classes: "w-[20px] self-stretch" },
+          { slot: "b", classes: "size-[20px]" },
+        ],
+      })
+    );
+
+  it("drops the wrap and stretches an item down the row's height, as a row that does not wrap", async () => {
+    const { variant, coverage } = await build("flex flex-wrap w-[200px] h-[36px]", { oneFlexLine: true });
+    expect(
+      variant?.root.children.map((child) => [
+        child.key,
+        child.kind === "frame" ? child.sizing.vertical : child.kind,
+      ])
+    ).toEqual([
+      ["a", FILL],
+      ["b", fixed(literal(20))],
+    ]);
+    expect(notesOf(coverage, "flex-wrap").map(([, outcome]) => outcome)).toEqual(["dropped"]);
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  it.each([
+    ["without the measurement", "flex flex-wrap w-[200px] h-[36px]", {}],
+    ["that centres its lines", "flex flex-wrap content-center w-[200px] h-[36px]", { oneFlexLine: true }],
+    ["that hugs its height", "flex flex-wrap w-[200px]", { oneFlexLine: true }],
+  ] as const)("leaves the wrap and the stretch unmapped in a row %s", async (_case, row, measured) => {
+    const { coverage } = await build(row, measured);
+    expect(coverage.filter((note) => note.outcome === "unmapped").map(({ property }) => property)).toEqual(
+      expect.arrayContaining(["flex-wrap", "align-self"])
+    );
+  });
+});
