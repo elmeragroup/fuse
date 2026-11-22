@@ -11,7 +11,9 @@
  * its place only where the box's order also draws it last. The box refuses the place before the part
  * maps where the order of its layers puts another after it (`PAINTED_OVER` in
  * `absolute-placement.ts`), and {@link readLiftedLast} checks the order the box finally draws, which a
- * first layer on top or a wrapper around some layers can still change.
+ * first layer on top or a wrapper around some layers can still change. It checks an absolute icon
+ * its box places the same way, which the capture measured CSS painting over everything else
+ * (`uncovered`) and the box draws last (`absolute-icon.ts`).
  */
 import type { ChildLayerSpec } from "./kit-spec";
 import type { LayerStyle } from "./layer-style";
@@ -21,7 +23,7 @@ import { placementKey } from "./placement-wrapper";
 const UNDER_ANOTHER =
   "the capture measured CSS painting the part over everything else in its containing block, and the block's frame draws another layer over it";
 
-/** A part a box lifted into its frame, as the check of its paint order reads it. */
+/** A part a box lifted into its frame, or an icon it placed, as the check of its paint order reads it. */
 export type LiftedLayer = {
   /** The part's key, its own layer's, or the instance's that a placement wrapper holds. */
   readonly key: string;
@@ -36,7 +38,7 @@ export type LiftedLayer = {
  * place comes before, so it reads the part's `position` again once the part is drawn, as unmapped,
  * where `readRaisedLevels` in `paint-order.ts` reads a `z-index` once the order is known.
  *
- * @param lifted - The parts the box lifted into its frame.
+ * @param lifted - The parts the box lifted into its frame, and the icons it placed.
  * @param painted - The box's layers in the order it draws them, and whether it paints its first
  *   layer on top.
  */

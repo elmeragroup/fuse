@@ -2,6 +2,7 @@
  * The cascade of one box, the root or a part, as the mapping reads it: its own style, and the
  * cascades of the parts and icons below it. `capture/capture-cascade.ts` runs it from a set's capture.
  */
+import type { IconPlace } from "../capture/capture-format";
 import type { Cell, IconSlot, PreviewLength } from "./component-spec";
 import type { Origin } from "./coverage-log";
 import type { DrawnAt } from "./drawn-parts";
@@ -47,7 +48,21 @@ export type PartElement = {
  * slotted span, draws no layer of its own. Undefined where the icon's element is not in the cell's
  * own capture.
  */
-export type IconCascade = { readonly style: LayerStyle; readonly drawnAt: DrawnAt | undefined };
+export type IconCascade = {
+  readonly style: LayerStyle;
+  readonly drawnAt: DrawnAt | undefined;
+  /** Whether the build accepts the icon in the one shape it places an absolute icon in, as {@link IconAcceptance} says. */
+  readonly acceptance: IconAcceptance;
+};
+
+/**
+ * Whether the build accepts an icon in the one shape the kit places an absolute icon in
+ * (`capture/icon-acceptance.ts`): `accepted`, with where the capture measured the `<svg>` in its
+ * box, or `refused`, with the reason it is not that shape.
+ */
+export type IconAcceptance =
+  | { readonly kind: "accepted"; readonly place: IconPlace }
+  | { readonly kind: "refused"; readonly why: string };
 
 /** The cascade of one box, the root or a part, as the mapping reads it. */
 export type BoxCascade = {

@@ -4,6 +4,7 @@
  */
 import type { CDPSession } from "playwright";
 
+import { STILL_ATTRIBUTE } from "../compare/preview-page.ts";
 import { blockFrame } from "./block-frame.ts";
 import type { MeasuredFacts } from "./capture-format.ts";
 import { coincidingAround } from "./coinciding-around.ts";
@@ -35,6 +36,7 @@ import { parentSpansBlock } from "./parent-spans-block.ts";
 import { pseudoBox, pseudoPaintOf } from "./pseudo-boxes.ts";
 import { ratioReading } from "./ratio-facts.ts";
 import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
+import { agreedPlace, placeReadings, stillInEveryMode, uncovered } from "./uncovered.ts";
 
 /**
  * Measure a root's tree in the page and keep what holds on any platform, by each element's
@@ -180,6 +182,14 @@ import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
  * - `paintsLast`: a child of the root whose positive `z-index` paints it over every other box of the
  *   root, as the root's last child, in every mode of {@link EVERY_MODE} once its faces have loaded,
  *   as `paints-last.ts` decides.
+ * - `uncovered`: an absolute `<svg>` below the root over which CSS paints no other box of the root,
+ *   in every mode of {@link EVERY_MODE} once its faces have loaded, as `uncovered.ts` decides.
+ * - `iconPlace`: on such an `<svg>`, its size and each inset and centre offset in its parent's border
+ *   box that every mode of {@link EVERY_MODE} gives alike, also with the parent grown 10px wide and
+ *   then 10px tall, where the `<svg>` lies inside that box in each, as `uncovered.ts` reads them.
+ * - `still`: on such an `<svg>`, every element of the root computes `animation-name: none`, the
+ *   page's stopping rule lifted, in every mode of {@link EVERY_MODE}, without and with
+ *   `prefers-reduced-motion: reduce`, which {@link measuredFacts} emulates over the session in turn.
  * - `identityTransform`: an element whose `transform` computes to the identity matrix in every mode
  *   of {@link EVERY_MODE} once its faces have loaded, as a translation by a `calc()` of zero does.
  *   Chromium computes a transform to a matrix, and to `none` only where the element sets none.
@@ -240,11 +250,69 @@ export async function measuredFacts(
   const measured = (result.value ?? {}) as Record<string, PageFacts>;
   const reading = measured[""]?.coincidingAround;
   const coinciding = reading === undefined ? 0 : await coincidingAround(cdp, object.objectId, reading);
+  // The stillness read runs only for a root that holds an icon the kit may place.
+  const still =
+    Object.values(measured).some((facts) => facts.uncovered === true) &&
+    (await stillUnderEitherMotion(cdp, object.objectId));
   return new Map(
     Object.entries(measured).flatMap(([path, facts]) =>
-      judgedFacts(path, facts, path === "" ? coinciding : 0)
+      judgedFacts(
+        path,
+        still && facts.uncovered === true ? { ...facts, still } : facts,
+        path === "" ? coinciding : 0
+      )
     )
   );
+}
+
+/** The page side of {@link stillUnderEitherMotion}: `stillInEveryMode` on the root. */
+const STILL_IN_PAGE = `function (modes, selector) {
+  return (${stillInEveryMode.toString()})(this, modes, selector);
+}`;
+
+/**
+ * Whether `stillInEveryMode` holds on a root under `prefers-reduced-motion: no-preference` and again
+ * under `reduce`, each emulated over the session beside the colour scheme the page matched before,
+ * and both put back as the page matched them after, also where a read throws. A session that detaches
+ * later drops the context's own emulation with its own, which the capture's session outlives.
+ *
+ * @param cdp - A DevTools session on the page.
+ * @param objectId - The root.
+ * @returns True where both reads hold.
+ * @throws `FactsUnmeasured` where a read throws in the page.
+ */
+async function stillUnderEitherMotion(cdp: CDPSession, objectId: string): Promise<boolean> {
+  const matched = await cdp.send("Runtime.evaluate", {
+    expression:
+      '[matchMedia("(prefers-reduced-motion: reduce)").matches, matchMedia("(prefers-color-scheme: dark)").matches]',
+    returnByValue: true,
+  });
+  const value: unknown = matched.result.value;
+  const reduced = Array.isArray(value) && value[0] === true;
+  const dark = Array.isArray(value) && value[1] === true;
+  const scheme = { name: "prefers-color-scheme", value: dark ? "dark" : "light" };
+  const read = async (motion: "no-preference" | "reduce"): Promise<boolean> => {
+    await cdp.send("Emulation.setEmulatedMedia", {
+      features: [{ name: "prefers-reduced-motion", value: motion }, scheme],
+    });
+    const { result, exceptionDetails } = await cdp.send("Runtime.callFunctionOn", {
+      objectId,
+      returnByValue: true,
+      arguments: [{ value: EVERY_MODE }, { value: `style[${STILL_ATTRIBUTE}]` }],
+      functionDeclaration: STILL_IN_PAGE,
+    });
+    if (exceptionDetails !== undefined) {
+      throw new FactsUnmeasured(exceptionDetails.exception?.description ?? exceptionDetails.text);
+    }
+    return result.value === true;
+  };
+  try {
+    return (await read("no-preference")) && (await read("reduce"));
+  } finally {
+    await cdp.send("Emulation.setEmulatedMedia", {
+      features: [{ name: "prefers-reduced-motion", value: reduced ? "reduce" : "no-preference" }, scheme],
+    });
+  }
 }
 
 /**
@@ -914,6 +982,22 @@ const MEASURE_IN_PAGE = `async function (role, cornered) {
   const paintsLast = (${paintsLast.toString()});
   const raised = elements.filter(({ element }) => paintsLast(element, root, stacking));
   for (const { path } of await holdsInEveryMode(raised, (each) => paintsLast(each, root, stacking))) { put(path, "paintsLast", true); }
+  // An absolute <svg> over which CSS paints no other box of the root, in every mode.
+  const uncovered = (${uncovered.toString()});
+  const icons = elements.filter(({ element }) => element.localName === "svg" && uncovered(element, root, stacking, blockHelpers));
+  const uncoveredIcons = await holdsInEveryMode(icons, (each) => uncovered(each, root, stacking, blockHelpers));
+  for (const { path } of uncoveredIcons) { put(path, "uncovered", true); }
+  // Where each such <svg> sits in its parent, kept where every mode and the parent's growth agree.
+  const placeReadings = (${placeReadings.toString()});
+  const agreedPlace = (${agreedPlace.toString()});
+  const placing = uncoveredIcons.map((each) => ({ ...each, readings: [] }));
+  if (placing.length > 0) {
+    await inEveryMode(() => { for (const each of placing) { each.readings.push(placeReadings(each.element, blockHelpers)); } });
+  }
+  for (const { path, readings } of placing) {
+    const place = agreedPlace(readings);
+    if (place !== undefined) { put(path, "iconPlace", place); }
+  }
   // An element that sets a transform which computes to the identity matrix, in every mode.
   const identityMatrix = (element) => ["matrix(1, 0, 0, 1, 0, 0)", "matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)"].includes(getComputedStyle(element).transform);
   const unmoved = elements.filter(({ element }) => identityMatrix(element));

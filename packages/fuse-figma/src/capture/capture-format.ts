@@ -87,6 +87,28 @@ export type VariableSource = typeof VariableSourceSchema.Type;
  * in every mode holds in each color scheme and density with each legal theme, as the page stamps
  * them in turn; the page reads every other fact in its own mode only.
  */
+/**
+ * Where an absolute `<svg>` sits in its parent's border box, in CSS pixels, with its `rotate` set
+ * aside: its size, the distance from each of its edges to the parent's same edge, and the offset of
+ * its centre from the parent's centre, across and down. The page keeps a value only where it is the
+ * same in every mode and with the parent grown 10px wide and then 10px tall (`grownAlike` in
+ * `containing-block.ts`), and keeps the place only where the `<svg>` lies inside the parent's border
+ * box in each of those.
+ */
+const IconPlaceSchema = Schema.Struct({
+  width: Schema.Finite,
+  height: Schema.Finite,
+  left: Schema.optionalKey(Schema.Finite),
+  right: Schema.optionalKey(Schema.Finite),
+  top: Schema.optionalKey(Schema.Finite),
+  bottom: Schema.optionalKey(Schema.Finite),
+  across: Schema.optionalKey(Schema.Finite),
+  down: Schema.optionalKey(Schema.Finite),
+});
+
+/** Where an absolute `<svg>` sits in its parent, as {@link IconPlaceSchema} lists. */
+export type IconPlace = typeof IconPlaceSchema.Type;
+
 const MeasuredFactsSchema = Schema.Struct({
   /**
    * The root fills the element around it, whose content width its own text does not change, in CSS
@@ -263,6 +285,22 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   paintsLast: Schema.optionalKey(Schema.Literal(true)),
   /**
+   * On an absolute `<svg>` below the root: in every mode, CSS paints no other box of the root over
+   * it, so the kit can draw it as its box's last layer (`uncovered.ts`).
+   */
+  uncovered: Schema.optionalKey(Schema.Literal(true)),
+  /**
+   * On an absolute `<svg>` below the root that holds `uncovered`: where it sits in the border box of
+   * its parent, `rotate` aside, as {@link IconPlaceSchema} lists.
+   */
+  iconPlace: Schema.optionalKey(IconPlaceSchema),
+  /**
+   * On an absolute `<svg>` below the root that holds `uncovered`: every element of the root, and each
+   * one's `::before` and `::after`, computes `animation-name: none` with the capture page's stopping
+   * rule lifted, in every mode, without and with `prefers-reduced-motion: reduce` (`uncovered.ts`).
+   */
+  still: Schema.optionalKey(Schema.Literal(true)),
+  /**
    * On a block whose width is 100% of a parent block that fits its content, where every mode keeps
    * it so: the widest max-content width among the parent's other in-flow children, one length within
    * a 64th of a pixel in every mode, in CSS pixels. The parent is then as wide as the block's own content or that width,
@@ -273,6 +311,20 @@ const MeasuredFactsSchema = Schema.Struct({
 
 /** What the capture measured of an element, as {@link MeasuredFactsSchema} lists. */
 export type MeasuredFacts = typeof MeasuredFactsSchema.Type;
+
+/**
+ * An element's text nodes joined between its element children: the text before each child, then
+ * the text after the last. The capture records them where `text` and `textIndex` lose some, and
+ * otherwise the element's text sits before the child its `textIndex` names, or after the last.
+ */
+export function textsOf(element: CapturedElement): readonly string[] {
+  if (element.texts !== undefined) {
+    return element.texts;
+  }
+  const texts = Array.from({ length: element.children.length + 1 }, () => "");
+  texts[Math.min(element.textIndex ?? element.children.length, element.children.length)] = element.text;
+  return texts;
+}
 
 /** An element as the capture records it, with the elements below it. */
 export type CapturedElement = {

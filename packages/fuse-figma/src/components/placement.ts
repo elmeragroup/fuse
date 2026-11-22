@@ -576,15 +576,21 @@ export function slotAroundDot(style: LayerStyle, box: BoxSpec): SlotAroundDot {
  */
 type ParentLayout = "centers-its-one-layer" | "other";
 
+/** The layer a box holds and places by its constraints: what kind it is, and the constraints. */
+type Anchored = { readonly layer: "instance" | "icon"; readonly constraints: string };
+
 /**
- * The constraints of the instance a box holds and places by them, as a Sidebar menu item holds its
+ * The instance or icon a box holds and places by its constraints, as a Sidebar menu item holds its
  * badge, or undefined for a box that holds none.
  */
-function anchoredConstraints(layers: readonly ChildLayerSpec[]): string | undefined {
+function anchoredConstraints(layers: readonly ChildLayerSpec[]): Anchored | undefined {
   for (const layer of layers) {
-    if (layer.kind === "instance" && layer.placement !== undefined) {
+    if ((layer.kind === "instance" || layer.kind === "icon") && layer.placement !== undefined) {
       const { horizontal, vertical } = layer.placement;
-      return `${AXIS_CONSTRAINT[horizontal.kind]} × ${AXIS_CONSTRAINT[vertical.kind]}`;
+      return {
+        layer: layer.kind,
+        constraints: `${AXIS_CONSTRAINT[horizontal.kind]} × ${AXIS_CONSTRAINT[vertical.kind]}`,
+      };
     }
   }
   return undefined;
@@ -616,10 +622,10 @@ export function translateShares(style: LayerStyle): readonly (number | undefined
  *
  * @param reader - The box's style.
  * @param parent - How the box's parent lays it out. The root passes `other`.
- * @param anchors - The constraints of the instance the box holds and places by them, or undefined
+ * @param anchors - The instance or icon the box holds and places by its constraints, or undefined
  *   for none. An instance part passes none, since its own layers are its set's.
  */
-function readPosition(reader: LayerStyle, parent: ParentLayout, anchors: string | undefined): void {
+function readPosition(reader: LayerStyle, parent: ParentLayout, anchors: Anchored | undefined): void {
   const translate = translateShares(reader);
   const centered =
     parent === "centers-its-one-layer" &&
@@ -649,7 +655,7 @@ function readPosition(reader: LayerStyle, parent: ParentLayout, anchors: string 
       detail:
         anchors === undefined
           ? "it only anchors positioned descendants, which auto layout does not need"
-          : `it anchors the absolute instance it holds, whose ${anchors} constraints place it against this frame${anchors === "MAX × CENTER" ? " (N11)" : ""}`,
+          : `it anchors the absolute ${anchors.layer} it holds, whose ${anchors.constraints} constraints place it against this frame${anchors.layer === "instance" && anchors.constraints === "MAX × CENTER" ? " (N11)" : ""}`,
     }),
     []
   );

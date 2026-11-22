@@ -35,6 +35,11 @@
  * other shape, both offsets beside a length of the part's own, and a containing block the parent is
  * not leave the part's place unmapped, an instance's with the reason.
  *
+ * An absolute icon takes the places an instance takes, and down a flex row that lays its lines
+ * horizontally and centres its items it also sits centred at its static position, as `planPlacement`
+ * says. Whether the capture holds the icon in the one shape the kit places, and measured it where the
+ * plan puts it, is `absolute-icon.ts`'s to say.
+ *
  * An instance at its parent's end across, at a width the capture did not measure one length in every
  * mode (`oneLength`), keeps its place only in a placement wrapper (`placement-wrapper.ts`), as
  * `wrapIfVarying` says, so the plan names the wrapper it needs.
@@ -44,6 +49,7 @@
  * `placement.ts` reads it once the part maps.
  */
 import type { Room } from "./box-sizing";
+import { originIsCentre, transformsAboutBorderBox } from "./box-transform";
 import {
   affineLength,
   constantOf,
@@ -55,6 +61,7 @@ import {
 import type { AffineLength } from "./css-values";
 import type { AxisPlacementSpec, EdgePlacementSpec, InstanceAxisPlacementSpec } from "./kit-spec";
 import type { LayerStyle } from "./layer-style";
+import { horizontal } from "./subgrid-row";
 
 /** The properties that place a part on one axis, and its parent's borders and paddings there. */
 type Axis = {
@@ -105,12 +112,19 @@ const POSITIONED: ReadonlySet<string> = new Set(["relative", "absolute", "fixed"
 /** The properties that move a box from where its offsets put it. */
 const MOVES = ["translate", "rotate", "scale", "transform"] as const;
 
-/** What the place of an absolute part rests on in its parent. */
+/** The box that holds an absolute part. */
 export type PlacementContext = {
   /** The style of the box that holds the part. */
   readonly parent: LayerStyle;
   /** The positioned element around the box with its border box, where the definition names one. */
   readonly positionedBy: string | undefined;
+};
+
+/**
+ * What a frame's or an instance's place reads of the box's flow, which the box knows once its layers
+ * are planned.
+ */
+type FlowReading = {
   /**
    * Whether the capture measured the parent's border box as the padding box of the part's
    * containing block, an element above the parent, in every mode (`parentSpansBlock`).
@@ -131,6 +145,27 @@ export type PlacementContext = {
    */
   readonly paddingBox: { readonly horizontal: number | undefined; readonly vertical: number | undefined };
 };
+
+/** What an icon's place reads of the icon as it maps, before the box knows its flow. */
+type IconReading = {
+  /** Whether the icon is a child of the box's own element, with no element between them. */
+  readonly direct: boolean;
+  /**
+   * The icon's turn, counterclockwise as Figma counts it, 0 for none, or undefined for a `rotate` no
+   * turn reads (`ownTurn`).
+   */
+  readonly turn: number | undefined;
+};
+
+/**
+ * The kind of layer an absolute part draws as, which decides the places it can take, with what its
+ * place reads. A frame and an instance place in the box's flow as its layers settle. An icon keeps its
+ * own size, as an instance keeps its main's, and plans before the box's flow, since a placed icon
+ * leaves it.
+ */
+export type PlacedLayer =
+  | ({ readonly kind: "frame" | "instance" } & FlowReading)
+  | ({ readonly kind: "icon" } & IconReading);
 
 /** An axis as planned: its place, and the length a stretch leaves the part where the room knows it. */
 type PlannedAxis = {
@@ -167,9 +202,6 @@ export type PlacementPlan =
     }
   | Refused;
 
-/** The kind of layer a part draws as, which decides the places it can take. */
-export type PlacedLayer = "frame" | "instance";
-
 /** A refusal with its reason. */
 const refused = (why: string): Refused => ({ kind: "refused", why });
 
@@ -205,7 +237,16 @@ const BOUNDED = (property: string): Refused =>
   refused(
     `\`${property}\` bounds a length the parent's edges set, which Figma's constraints would carry past the bound as the parent resizes`
   );
-
+/**
+ * Why an absolute icon has no place where its turn moves its box. The kit draws no such turn in the
+ * flow either (`kit-check.ts`), so the icon draws unturned there.
+ */
+export const UNKEPT_TURN = refused(
+  "the absolute icon turns other than a quarter or half turn about its centre, which moves its box off its offsets"
+);
+const WRAPPED_ICON = refused(
+  "an element the kit draws no layer for sits between the absolute icon and its box, so neither its containing block nor its static position is the box's"
+);
 /** A property's value as one length in pixels in every mode, or undefined. */
 function constant(style: LayerStyle, property: string): number | undefined {
   const value = style.resolved(property);
@@ -258,8 +299,8 @@ const lengthOf = (style: LayerStyle, property: string): AffineLength | undefined
  * or height limit, and the layer sets its own height and no margin down, so the parent is as tall as
  * the layer and its own padding and borders (CSS 2.1 §10.6.3).
  */
-function parentHeight(context: PlacementContext): AffineLength | undefined {
-  const { parent, flow, layers } = context;
+function parentHeight(parent: LayerStyle, reading: FlowReading): AffineLength | undefined {
+  const { flow, layers } = reading;
   const [only] = flow;
   const free = ["height", "min-height", "max-height"].every((property) =>
     ["auto", "none", "0px", "0"].includes(normalizeCss(parent.resolved(property) ?? "auto"))
@@ -286,14 +327,11 @@ function parentHeight(context: PlacementContext): AffineLength | undefined {
  * mode: the parent's top border, the instance's `top` and half its height, less half the parent's
  * height, with no `bottom` beside it.
  */
-function centreOffset(style: LayerStyle, context: PlacementContext): number | undefined {
+function centreOffset(style: LayerStyle, parent: LayerStyle, reading: FlowReading): number | undefined {
   const top = affineLength(style.resolved("top") ?? "");
   const height = affineLength(style.resolved("height") ?? "");
-  const outer = parentHeight(context);
-  const topBorder = lengthOf(
-    context.parent,
-    context.parent.has("border-top-width") ? "border-top-width" : "border-width"
-  );
+  const outer = parentHeight(parent, reading);
+  const topBorder = lengthOf(parent, parent.has("border-top-width") ? "border-top-width" : "border-width");
   if (
     top === undefined ||
     height === undefined ||
@@ -306,14 +344,66 @@ function centreOffset(style: LayerStyle, context: PlacementContext): number | un
   return constantOf(sumAffine([topBorder, top, scaleAffine(height, 0.5), scaleAffine(outer, -0.5)]));
 }
 
+/**
+ * The offset of an absolute icon's centre from its parent's centre down, where both its vertical
+ * offsets are `auto` and the parent is a flex row that does not wrap, lays its lines horizontally and
+ * centres its items: the icon then sits at its static position, where it would sit as the row's sole
+ * flex item (CSS Flexbox 1 §4.1), centred in the row's content box, its centre half the difference of
+ * the row's top and bottom padding and border from the row's centre. In a vertical writing mode the
+ * row runs down and its alignment centres the icon across instead (CSS Writing Modes 4 §2.1).
+ * Undefined for any other row, or a length that is not one length in every mode.
+ */
+function staticCentre(parent: LayerStyle): number | undefined {
+  const display = normalizeCss(parent.resolved("display") ?? "");
+  const row =
+    horizontal(parent) &&
+    (display === "flex" || display === "inline-flex") &&
+    normalizeCss(parent.resolved("flex-direction") ?? "row") === "row" &&
+    normalizeCss(parent.resolved("flex-wrap") ?? "nowrap") === "nowrap" &&
+    normalizeCss(parent.resolved("align-items") ?? "normal") === "center";
+  const padding = (property: string) => (parent.has(property) ? constant(parent, property) : 0);
+  const [top, topBorder, bottom, bottomBorder] = [
+    padding("padding-top"),
+    border(parent, VERTICAL.startBorder),
+    padding("padding-bottom"),
+    border(parent, VERTICAL.endBorder),
+  ];
+  if (
+    !row ||
+    top === undefined ||
+    topBorder === undefined ||
+    bottom === undefined ||
+    bottomBorder === undefined
+  ) {
+    return undefined;
+  }
+  return (top + topBorder - bottom - bottomBorder) / 2;
+}
+
+/**
+ * Where a part sits down its parent's centre, where its place there sets no start or end: an
+ * instance by its `top` and height ({@link centreOffset}), and an icon whose `top` and `bottom` are
+ * both `auto` at its static position ({@link staticCentre}).
+ */
+function centreDown(style: LayerStyle, layer: PlacedLayer, parent: LayerStyle): PlannedAxis | undefined {
+  const offset =
+    layer.kind === "instance"
+      ? centreOffset(style, parent, layer)
+      : layer.kind === "icon" && !sets(style, VERTICAL.start) && !sets(style, VERTICAL.end)
+        ? staticCentre(parent)
+        : undefined;
+  return offset === undefined
+    ? undefined
+    : { kind: "axis", at: { kind: "centre", offset }, length: undefined };
+}
+
 /** Where a part sits on one axis, as the module comment says, or the reason it has no place there. */
 function planAxis(
   style: LayerStyle,
   layer: PlacedLayer,
   axis: Axis,
-  context: PlacementContext
+  parent: LayerStyle
 ): PlannedAxis | Refused {
-  const { parent } = context;
   const startBorder = border(parent, axis.startBorder);
   const endBorder = border(parent, axis.endBorder);
   const start = sets(style, axis.start) ? constant(style, axis.start) : undefined;
@@ -323,22 +413,16 @@ function planAxis(
     endBorder !== undefined &&
     (!sets(style, axis.start) || start !== undefined) &&
     (!sets(style, axis.end) || end !== undefined);
-  if (
-    layer === "instance" &&
-    axis.name === "vertical" &&
-    startBorder !== undefined &&
-    start === undefined &&
-    end === undefined
-  ) {
-    const offset = centreOffset(style, context);
-    if (offset !== undefined) {
-      return { kind: "axis", at: { kind: "centre", offset }, length: undefined };
+  if (axis.name === "vertical" && startBorder !== undefined && start === undefined && end === undefined) {
+    const centred = centreDown(style, layer, parent);
+    if (centred !== undefined) {
+      return centred;
     }
   }
   if (!offsetsRead) {
     return UNPLACED;
   }
-  if (layer === "instance") {
+  if (layer.kind !== "frame") {
     if (start !== undefined && end === undefined) {
       return { kind: "axis", at: { kind: "start", start: startBorder + start }, length: undefined };
     }
@@ -367,7 +451,7 @@ function planAxis(
     : limits(style, axis.max, "maximum")
       ? axis.max
       : undefined;
-  const paddingBox = context.paddingBox[axis.name];
+  const paddingBox = layer.paddingBox[axis.name];
   // The parent's outer length, which the distances measure from, where the room knows it.
   const outer = paddingBox === undefined ? undefined : paddingBox + startBorder + endBorder;
   const stretch = (startDistance: number, endDistance: number): PlannedAxis | Refused => {
@@ -416,11 +500,41 @@ function planAxis(
 }
 
 /**
- * Plan where an absolute part sits against its parent, reading nothing.
+ * Whether an icon's turn leaves its box where its offsets put it: none, or a quarter or half turn,
+ * which keeps a square box, about its border box's centre (CSS Transforms 2 §6), as
+ * `originIsCentre` and `transformsAboutBorderBox` in `box-transform.ts` read it. The icon is square,
+ * as `mapIcon` requires.
+ */
+function keepsBox(style: LayerStyle, turn: number | undefined): boolean {
+  if (turn === 0) {
+    return true;
+  }
+  return turn !== undefined && turn % 90 === 0 && originIsCentre(style) && transformsAboutBorderBox(style);
+}
+
+/**
+ * Why an absolute icon has no place before its axes plan: a turn that moves its box, or an element
+ * between it and its box. Undefined where neither refuses it.
+ */
+function iconRefusal(style: LayerStyle, icon: IconReading): Refused | undefined {
+  if (!keepsBox(style, icon.turn)) {
+    return UNKEPT_TURN;
+  }
+  return icon.direct ? undefined : WRAPPED_ICON;
+}
+
+/**
+ * Plan where an absolute part sits against its parent, reading nothing. An icon plans as an instance
+ * does, at its own size, with these differences: its box is its containing block only where the box
+ * is positioned or names the positioned element around it, and the icon is a child of the box's
+ * element; down a flex row that lays its lines horizontally and centres its items, both offsets
+ * `auto` leave it at its static position, centred (`staticCentre`), which CENTER keeps; and a quarter
+ * or half turn about its centre keeps its square box, so it turns where a frame or an instance
+ * cannot, while any other turn leaves its place unmapped.
  *
  * @param style - The part's style.
- * @param layer - Whether the part draws as a frame or an instance.
- * @param context - The parent and its flow.
+ * @param layer - The kind of layer the part draws as, with what its place reads of the flow or the icon.
+ * @param context - The box that holds the part.
  * @returns The place on each axis, the reason the part has none, or undefined for a part that is
  *   not absolute.
  */
@@ -432,23 +546,31 @@ export function planPlacement(
   if (normalizeCss(style.resolved("position") ?? "") !== "absolute") {
     return undefined;
   }
+  const { parent } = context;
+  const icon = layer.kind === "icon" ? iconRefusal(style, layer) : undefined;
+  if (icon !== undefined) {
+    return icon;
+  }
   const positioned =
-    POSITIONED.has(normalizeCss(context.parent.resolved("position") ?? "static")) ||
+    POSITIONED.has(normalizeCss(parent.resolved("position") ?? "static")) ||
     context.positionedBy !== undefined;
-  if (!positioned && !context.parentSpansBlock) {
+  const spans = layer.kind !== "icon" && layer.parentSpansBlock;
+  if (!positioned && !spans) {
     return refused(NOT_POSITIONED);
   }
   // `planAxis` adds the parent's border to each offset, which holds only where the parent is the
   // block. A parent that spans the block has its outer edge on the block's padding edge, so it must
   // draw no border.
-  if (!positioned && !bordersNothing(context.parent)) {
+  if (!positioned && !bordersNothing(parent)) {
     return refused(BORDERED_SPAN);
   }
-  if (MOVES.some((property) => !["", "none"].includes(normalizeCss(style.resolved(property) ?? "")))) {
+  // An icon's turn is `iconRefusal`'s to read.
+  const moves = layer.kind === "icon" ? MOVES.filter((property) => property !== "rotate") : MOVES;
+  if (moves.some((property) => !["", "none"].includes(normalizeCss(style.resolved(property) ?? "")))) {
     return refused(MOVED);
   }
-  const horizontal = planAxis(style, layer, HORIZONTAL, context);
-  const vertical = planAxis(style, layer, VERTICAL, context);
+  const horizontal = planAxis(style, layer, HORIZONTAL, parent);
+  const vertical = planAxis(style, layer, VERTICAL, parent);
   if (horizontal.kind === "refused") {
     return horizontal;
   }
@@ -456,7 +578,14 @@ export function planPlacement(
     return vertical;
   }
   const planned = { kind: "planned", horizontal, vertical } as const;
-  return layer === "instance" ? wrapIfVarying(planned, context) : planned;
+  switch (layer.kind) {
+    case "frame":
+      return planned;
+    case "instance":
+      return wrapIfVarying(planned, parent, layer);
+    case "icon":
+      return planned;
+  }
 }
 
 /**
@@ -471,18 +600,19 @@ export function planPlacement(
  */
 function wrapIfVarying(
   plan: { readonly kind: "planned"; readonly horizontal: PlannedAxis; readonly vertical: PlannedAxis },
-  context: PlacementContext
+  parent: LayerStyle,
+  reading: FlowReading
 ): PlacementPlan {
-  const varies = (axis: Axis) => plan[axis.name].at.kind !== "start" && !context.oneLength.has(axis.name);
+  const varies = (axis: Axis) => plan[axis.name].at.kind !== "start" && !reading.oneLength.has(axis.name);
   if (!varies(HORIZONTAL) && !varies(VERTICAL)) {
     return plan;
   }
   if (varies(VERTICAL) || plan.horizontal.at.kind !== "end" || plan.vertical.at.kind !== "start") {
     return UNWRAPPED;
   }
-  const paddingBox = context.paddingBox.horizontal;
-  const startBorder = border(context.parent, HORIZONTAL.startBorder);
-  const endBorder = border(context.parent, HORIZONTAL.endBorder);
+  const paddingBox = reading.paddingBox.horizontal;
+  const startBorder = border(parent, HORIZONTAL.startBorder);
+  const endBorder = border(parent, HORIZONTAL.endBorder);
   const outer =
     paddingBox === undefined || startBorder === undefined || endBorder === undefined
       ? undefined

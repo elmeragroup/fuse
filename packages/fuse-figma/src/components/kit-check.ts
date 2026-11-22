@@ -207,7 +207,7 @@ function checkBox(set: ComponentSetSpec, variant: VariantSpec, box: BoxSpec, nam
     const setsLength =
       box.limits[limits[0]] !== undefined ||
       box.children.some(
-        (child) => child.kind === "icon" || (child.sizing[axis].kind !== "fill" && !outOfLayout(child))
+        (child) => !outOfLayout(child) && (child.kind === "icon" || child.sizing[axis].kind !== "fill")
       );
     if (!setsLength) {
       throw contradiction(
@@ -287,8 +287,10 @@ function checkPlacedLengths(set: ComponentSetSpec): void {
  * while Figma lays a turned layer out by its turned box. On 2026-10-22 a real file kept a
  * half-turned layer's box in its auto layout slot (PR), and a 20 × 10 frame at -90 made its hugging
  * row 10 × 20 (PQ). So the kit takes a half turn on any layer and a quarter turn only on a layer
- * with two equal fixed sides, whose box the turn keeps. The plugin places an absolute layer by its
- * `x` and `y`, which a turn moves (PR), so an absolute frame cannot turn. A frame placed by its
+ * with two equal fixed sides, whose box the turn keeps. The plugin places an absolute frame by its
+ * `x` and `y`, which a turn moves (PR), so an absolute frame cannot turn. An absolute icon can: its
+ * box is square, so a quarter or half turn keeps it, and the plugin places the box after the turn
+ * (`placing.ts`). A frame placed by its
  * centre (`pivot`) can take any turn: it sits outside the flow, and the plugin writes its turn before
  * its place, which it reads from the turned box's centre.
  */

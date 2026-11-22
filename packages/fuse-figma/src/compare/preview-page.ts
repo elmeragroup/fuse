@@ -609,6 +609,17 @@ function attributes(entries: Readonly<Record<string, string>>): string {
 }
 
 /**
+ * The page's rule that stops every animation and transition, so a pending spinner stays at 0°. It
+ * sits in a `<style>` of its own, marked with {@link STILL_ATTRIBUTE}, so the capture's page
+ * function can lift it while it reads which animations a consumer's page runs (`stillInEveryMode`
+ * in `capture/uncovered.ts`).
+ */
+export const STILL_RULE = "*,*::before,*::after{animation:none!important;transition:none!important}";
+
+/** The attribute that marks the `<style>` holding {@link STILL_RULE}. */
+export const STILL_ATTRIBUTE = "data-still";
+
+/**
  * The page's HTML.
  *
  * @param stamps - The theme attributes for `<html>` and `<body>`.
@@ -657,7 +668,6 @@ export function previewDocument(
 @layer utilities {
 ${hostCss}
 }
-*,*::before,*::after{animation:none!important;transition:none!important}
 html,body{background:transparent!important}
 ${kitFontCss("body")}
 body{margin:0;font-family:var(--font-sans);color:var(--foreground);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
@@ -666,6 +676,7 @@ body{margin:0;font-family:var(--font-sans);color:var(--foreground);-webkit-font-
 ${BACKGROUND_PROBE}{position:absolute;left:0;top:0;width:4px;height:4px;background:var(--background)}
 ${[...clientCss, ...isolatedCss, ...shown].join("\n")}
 </style>
+<style ${STILL_ATTRIBUTE}>${STILL_RULE}</style>
 </head>
 <body${attributes(stamps.body)}>
 <div data-compare-probe></div>

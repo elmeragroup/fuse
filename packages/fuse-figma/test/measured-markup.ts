@@ -6,6 +6,7 @@ import type { Page } from "playwright";
 
 import type { MeasuredFacts } from "../src/capture/capture-format.ts";
 import { measuredFacts } from "../src/capture/page-facts.ts";
+import { STILL_ATTRIBUTE, STILL_RULE } from "../src/compare/preview-page.ts";
 
 /** The markup a case measures. */
 export type Markup = {
@@ -21,6 +22,11 @@ export type Markup = {
   readonly watched: string;
   /** What runs on the page once the markup has loaded, before the page measures it. */
   readonly prepare?: () => Promise<void>;
+  /**
+   * Set where the page stops every animation as the capture's page does, by the same marked
+   * `<style>` (`STILL_RULE` in `compare/preview-page.ts`).
+   */
+  readonly still?: true;
 };
 
 /**
@@ -36,7 +42,7 @@ export async function measureMarkup(
   markup: Markup
 ): Promise<{ readonly facts: ReadonlyMap<string, MeasuredFacts>; readonly restored: boolean }> {
   await page.setContent(
-    `<!doctype html><style>body { margin: 0 } ${markup.head}</style><main data-compare-cell>${markup.body}</main>${markup.after ?? ""}`
+    `<!doctype html><style>body { margin: 0 } ${markup.head}</style>${markup.still === true ? `<style ${STILL_ATTRIBUTE}>${STILL_RULE}</style>` : ""}<main data-compare-cell>${markup.body}</main>${markup.after ?? ""}`
   );
   await markup.prepare?.();
   const styleOf = () =>

@@ -26,6 +26,7 @@ import type {
   BoxCascade,
   CapturedText,
   IconCascade,
+  IconAcceptance,
   TextRun,
   ChildSpacing,
   InstanceScope,
@@ -74,7 +75,9 @@ import type {
   CapturedRoot,
   SetCapture,
 } from "./capture-format.ts";
+import { textsOf } from "./capture-format.ts";
 import { placesOf } from "./capture-places.ts";
+import { iconAcceptance } from "./icon-acceptance.ts";
 import { declarationOrigin, isBase, isReset, rendersNothing, twinClaims } from "./instance-twin.ts";
 import { NESTED_PLACEMENT, nestedLayout } from "./nested-placement.ts";
 import type { NestedPlacement } from "./nested-placement.ts";
@@ -172,6 +175,8 @@ type CellRead = {
   readonly cell: string;
   /** Where the cell's instance parts hold their inner roots, as {@link CellAccounting} says. */
   readonly instances: InstancePlace[];
+  /** The cell's captured roots, which an icon's shape reads (`icon-acceptance.ts`). */
+  readonly roots: readonly CapturedElement[];
 };
 
 /**
@@ -477,20 +482,6 @@ function ownMinimum(read: CellRead, positioner: CapturedElement): string | undef
     .findLast((declaration) => declaration?.longhands.includes("min-width") === true)?.value;
 }
 
-/**
- * An element's text nodes joined between its element children: the text before each child, then
- * the text after the last. The capture records them where `text` and `textIndex` lose some, and
- * otherwise the element's text sits before the child its `textIndex` names, or after the last.
- */
-function textsOf(element: CapturedElement): readonly string[] {
-  if (element.texts !== undefined) {
-    return element.texts;
-  }
-  const texts = Array.from({ length: element.children.length + 1 }, () => "");
-  texts[Math.min(element.textIndex ?? element.children.length, element.children.length)] = element.text;
-  return texts;
-}
-
 /** The name of an element the kit draws no layer for: its `data-slot`, or its tag. */
 function undrawnName(element: CapturedElement): string {
   return element.attributes["data-slot"] ?? element.tag;
@@ -633,6 +624,7 @@ export class CaptureSetCascade {
       places: placesOf(captured),
       cell: captured.key,
       instances: [],
+      roots: captured.roots.map(({ root }) => root),
     };
     this.#cells.push({ cell: captured, read });
     return new CaptureCellCascade(read, new CellLedger(scope), capture.page, captured, this.#source.open);
@@ -2017,10 +2009,14 @@ class CaptureBoxCascade implements BoxCascade {
     // around it draws no layer, and its box holds the `<svg>`'s margins too.
     const svg = found.at(-1);
     const place = svg === undefined ? undefined : this.#read.places.get(svg);
-    return {
-      style,
-      drawnAt: place === undefined ? undefined : { place, slot: svg?.attributes["data-slot"] },
-    };
+    const drawnAt = place === undefined ? undefined : { place, slot: svg?.attributes["data-slot"] };
+    // The facts on an `<svg>` the box holds itself speak of the box's own element, so a box that draws
+    // roots from outside its element, or an icon from another capture, holds no shape that places.
+    const chain = svg === undefined ? [] : chainTo(this.#read.roots, svg);
+    const held = at >= 0 && found.length === 1 && box !== undefined && this.#rooted.size === 0;
+    const acceptance =
+      held && chain.at(-2) === box ? iconAcceptance(chain, this.#read.declarations) : UNOWNED;
+    return { style, drawnAt, acceptance };
   }
 
   /**
@@ -2068,6 +2064,38 @@ class CaptureBoxCascade implements BoxCascade {
 
   /** The box's icons not read yet, each as the elements from below the box down to its `<svg>`. */
   #icons: CapturedElement[][] | undefined;
+}
+
+/** The acceptance of an icon whose `<svg>` is not a child of the box's own element in the cell's capture. */
+const UNOWNED: IconAcceptance = {
+  kind: "refused",
+  why: "the absolute icon is no child of its box's own element in the cell's capture, which the facts on it speak of",
+};
+
+/**
+ * The elements from the root that holds an element down to the element itself, or none where no
+ * root holds it.
+ */
+function chainTo(roots: readonly CapturedElement[], element: CapturedElement): readonly CapturedElement[] {
+  const find = (at: CapturedElement): readonly CapturedElement[] | undefined => {
+    if (at === element) {
+      return [at];
+    }
+    for (const child of at.children) {
+      const below = find(child);
+      if (below !== undefined) {
+        return [at, ...below];
+      }
+    }
+    return undefined;
+  };
+  for (const root of roots) {
+    const chain = find(root);
+    if (chain !== undefined) {
+      return chain;
+    }
+  }
+  return [];
 }
 
 /**

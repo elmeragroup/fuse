@@ -14,7 +14,6 @@ import { Effect } from "effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { planPlacement, readPlacement } from "./absolute-placement.ts";
-import type { PlacementContext } from "./absolute-placement.ts";
 import type { BuildContext } from "./component-spec.ts";
 import { makeVariableIndex } from "./css-values.ts";
 import type { EdgePlacementSpec, InstanceAxisPlacementSpec, InstanceLayerSpec } from "./kit-spec.ts";
@@ -75,7 +74,10 @@ const CLOSE: InstanceLayerSpec = {
 function place(
   offsets: Readonly<Record<string, string>>,
   oneLength: ReadonlySet<"horizontal" | "vertical">,
-  paddingBox: PlacementContext["paddingBox"] = { horizontal: 448, vertical: undefined }
+  paddingBox: { readonly horizontal: number | undefined; readonly vertical: number | undefined } = {
+    horizontal: 448,
+    vertical: undefined,
+  }
 ) {
   const cell = new CellLedger({
     context,
@@ -86,15 +88,11 @@ function place(
   });
   const parent = box(cell, { position: "relative", width: "448px" });
   const part = box(cell, { position: "absolute", ...offsets }, parent.layer);
-  const plan = planPlacement(part.style, "instance", {
-    parent: parent.style,
-    positionedBy: undefined,
-    parentSpansBlock: false,
-    oneLength,
-    flow: [],
-    layers: 0,
-    paddingBox,
-  });
+  const plan = planPlacement(
+    part.style,
+    { kind: "instance", parentSpansBlock: false, oneLength, flow: [], layers: 0, paddingBox },
+    { parent: parent.style, positionedBy: undefined }
+  );
   if (plan === undefined) {
     throw new Error("the part is not absolute");
   }
