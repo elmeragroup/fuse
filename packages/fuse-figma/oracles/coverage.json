@@ -3845,10 +3845,6 @@
       },
       {
         "part": "attachment",
-        "className": "data-[state=error]:border-error/30"
-      },
-      {
-        "part": "attachment",
         "className": "has-enabled-trigger:enabled-hover:bg-muted"
       },
       {
@@ -3876,10 +3872,6 @@
         "className": "[&[hidden]:not([hidden=until-found])]:hidden"
       },
       {
-        "part": "attachment-description",
-        "className": "group-data-[state=error]/attachment:text-error"
-      },
-      {
         "part": "attachment-media",
         "className": "*:data-[slot=loader]:p-0"
       },
@@ -3894,14 +3886,6 @@
       {
         "part": "attachment-media",
         "className": "group-data-[orientation=vertical]/attachment:w-full"
-      },
-      {
-        "part": "attachment-media",
-        "className": "group-data-[state=error]/attachment:bg-error/10"
-      },
-      {
-        "part": "attachment-media",
-        "className": "group-data-[state=error]/attachment:text-error"
       },
       {
         "part": "attachment-media",
