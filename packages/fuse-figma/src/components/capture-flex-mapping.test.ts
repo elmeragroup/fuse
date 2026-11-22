@@ -894,6 +894,40 @@ describe("a two-layer row's one-word text before an ml-auto icon", () => {
   });
 });
 
+// Oracle: CSS Flexbox 1 §9.7 and CSS Text 3 §6.1. In a `justify-between` row the text's anonymous item
+// sits at the row's start, so a short label starts there under any `text-align`. A Figma text that
+// filled the room before the icon would set a short label in the room's middle under `text-center`,
+// so the text keeps its own width and the row spaces its two layers to its ends.
+describe("a justify-between row's centered one-word text before a shrink-0 icon", () => {
+  it("hugs its word and spaces the row between, so the word starts at the row's start", async () => {
+    const { variant } = await buildCaptured(
+      chip({
+        label: {
+          key: "label",
+          name: "label",
+          characters: "Shipping",
+          textProperty: "Label",
+          shownIn: () => true,
+        },
+        iconsFor: () => [{ ...ICON, side: "end" }],
+      }),
+      rest({
+        slot: "chip",
+        classes:
+          "flex w-[200px] items-center justify-between gap-[8px] text-center font-sans text-[16px] leading-[24px] text-[#000000]",
+        text: "Shipping",
+        textIndex: 0,
+        children: [{ tag: "svg", classes: "size-[16px] shrink-0" }],
+      }),
+      FONT_SANS
+    );
+    expect([textOf(variant?.root)?.sizing.horizontal, variant?.root.primaryAlign]).toEqual([
+      HUG,
+      "SPACE_BETWEEN",
+    ]);
+  });
+});
+
 // Oracle: CSS Flexbox 1 §8.1, §9.4 step 11 and §9.6 step 13, and the capture's `freeAlongMain` fact.
 // Auto margins on all four sides of a column's one item take the free space down the column and the
 // room across it, so the item sits in the middle at its fit-content width, and no stretch widens it.
