@@ -21,6 +21,7 @@
 import { NodeServices } from "@effect/platform-node";
 import { Effect, Result, Schema } from "effect";
 import { TestConsole } from "effect/testing";
+import type { Page } from "playwright";
 
 import * as CssColor from "@elmeragroup/color/css-color";
 import { BRAND_CODES, BRANDS, THEME_IDENTITIES, THEME_SEGMENTS } from "@elmeragroup/fuse/theme-catalog";
@@ -214,6 +215,8 @@ export type ComputedElement = {
   readonly place: string;
   /** The computed value of each property the sweep reads. */
   readonly styles: Readonly<Record<string, string>>;
+  /** Its border box on the page, in CSS pixels. */
+  readonly box: { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
 };
 
 /** One cell under one pin: its measured elements, then each element inside them, in document order. */
@@ -251,33 +254,41 @@ function readEveryTheme(input: {
         .flatMap((root) => [root, ...root.querySelectorAll("*")])
         .map((element) => {
           const style = getComputedStyle(element);
+          const { x, y, width, height } = element.getBoundingClientRect();
           return {
             place: placeOf(element),
             styles: Object.fromEntries(
               input.properties.map((property) => [property, style.getPropertyValue(property)])
             ),
+            box: { x, y, width, height },
           };
         })
     );
   });
 }
 
+/** A set's cell as the page renders it from the capture's own request. */
+type RenderedCell = {
+  readonly cell: Cell;
+  readonly key: string;
+  readonly request: ReturnType<typeof requestOf>;
+};
+
 /**
- * Render a set's cells as `figma:capture` renders them and read the given computed properties of
- * each cell's elements under each pin. The page measures each theme the pins stamp once.
+ * Render a set's cells as `figma:capture` renders them, on a page with the kit's fonts, and read the
+ * page once every forced state holds.
  *
  * @param set - The set's key.
  * @param include - Which of the set's cells to render.
- * @param modes - The pins to read each cell under.
- * @param properties - The CSS properties to read.
- * @returns Each cell under each pin.
+ * @param read - What to read off the opened page, given the cells it renders.
+ * @returns What `read` returned.
+ * @throws When the kit captures no such set, or forcing left a cell at rest.
  */
-export function sweepSet(
+function onCapturePage<T>(
   set: string,
   include: (cell: Cell) => boolean,
-  modes: readonly SweptMode[],
-  properties: readonly string[]
-): Promise<readonly SweptCell[]> {
+  read: (page: Page, cells: readonly RenderedCell[]) => Promise<T>
+): Promise<T> {
   return Effect.runPromise(
     Effect.gen(function* () {
       const [target] = captureTargets(new Set([set]));
@@ -296,14 +307,7 @@ export function sweepSet(
           key: variantKey(target, cell),
           request: requestOf(target, renderer, cell, index),
         }));
-      const themes = new Map(
-        modes.map(({ theme }) => {
-          const stamps = themeStamps(theme);
-          return [JSON.stringify(stamps), stamps] as const;
-        })
-      );
-      const themeKeys = [...themes.keys()];
-      const read = yield* browser.openPreview(
+      return yield* browser.openPreview(
         CAPTURE_THEME,
         cells.map(({ request }) => request),
         PAGE_LAYOUT,
@@ -314,19 +318,105 @@ export function sweepSet(
           if (unforced.length > 0) {
             throw new Error(`forcing left ${unforced.map(({ key }) => key).join(", ")} at rest`);
           }
-          return opened.page.evaluate(readEveryTheme, {
-            cells: cells.map(({ request }) =>
-              request.measured.map((selector) => cellSelector(request.id, selector))
-            ),
-            stamps: [...themes.values()],
-            properties,
-          });
+          return read(opened.page, cells);
         }
       );
-      return modes.flatMap((mode) => {
-        const at = themeKeys.indexOf(JSON.stringify(themeStamps(mode.theme)));
-        return cells.map(({ key, cell }, index) => ({ key, cell, mode, elements: read[at]?.[index] ?? [] }));
-      });
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer))
+  );
+}
+
+/**
+ * Render a set's cells as `figma:capture` renders them and read the given computed properties of
+ * each cell's elements under each pin. The page measures each theme the pins stamp once.
+ *
+ * @param set - The set's key.
+ * @param include - Which of the set's cells to render.
+ * @param modes - The pins to read each cell under.
+ * @param properties - The CSS properties to read.
+ * @returns Each cell under each pin.
+ */
+export function sweepSet(
+  set: string,
+  include: (cell: Cell) => boolean,
+  modes: readonly SweptMode[],
+  properties: readonly string[]
+): Promise<readonly SweptCell[]> {
+  const themes = new Map(
+    modes.map(({ theme }) => {
+      const stamps = themeStamps(theme);
+      return [JSON.stringify(stamps), stamps] as const;
+    })
+  );
+  const themeKeys = [...themes.keys()];
+  return onCapturePage(set, include, async (page, cells) => {
+    const read = await page.evaluate(readEveryTheme, {
+      cells: cells.map(({ request }) =>
+        request.measured.map((selector) => cellSelector(request.id, selector))
+      ),
+      stamps: [...themes.values()],
+      properties,
+    });
+    return modes.flatMap((mode) => {
+      const at = themeKeys.indexOf(JSON.stringify(themeStamps(mode.theme)));
+      return cells.map(({ key, cell }, index) => ({ key, cell, mode, elements: read[at]?.[index] ?? [] }));
+    });
+  });
+}
+
+/** A run of text as a Figma text layer sets it on one line, its lengths in CSS pixels. */
+export type TextRun = {
+  readonly characters: string;
+  readonly family: string;
+  readonly weight: number;
+  readonly size: number;
+  /** The space added after each character, in pixels. */
+  readonly letterSpacing: number;
+};
+
+/**
+ * Set each run in a span of its own font and read its advance, once its face has loaded, or name the
+ * fonts no face of the page matches, whose runs a fallback would set.
+ */
+async function readAdvances(
+  runs: readonly TextRun[]
+): Promise<{ readonly advances: readonly number[]; readonly missing: readonly string[] }> {
+  const fontOf = ({ family, weight, size }: TextRun): string =>
+    `${String(weight)} ${String(size)}px "${family}"`;
+  const fonts = [...new Set(runs.map(fontOf))];
+  const faces = await Promise.all(fonts.map((font) => document.fonts.load(font)));
+  const missing = fonts.filter((_, index) => (faces[index] ?? []).length === 0);
+  const advances = runs.map((run) => {
+    const span = document.createElement("span");
+    span.textContent = run.characters;
+    span.style.cssText = `position:absolute;white-space:pre;font:${fontOf(run)};letter-spacing:${String(run.letterSpacing)}px`;
+    document.body.append(span);
+    const { width } = span.getBoundingClientRect();
+    span.remove();
+    return width;
+  });
+  return { advances, missing };
+}
+
+/**
+ * The advance of each run of text, as Chromium sets it on one line on the page `figma:capture`
+ * renders `set` on, which loads the kit's fonts. A test that lays a hugging text out takes its width
+ * from here, from the characters and type the build gave the layer, not from the page's own text.
+ *
+ * @param set - The set whose page loads the faces.
+ * @param runs - The runs to set.
+ * @returns Each run's advance in CSS pixels, in order.
+ * @throws When no face of the page matches a run's font, which would leave its advance a fallback's.
+ */
+export function textAdvances(set: string, runs: readonly TextRun[]): Promise<readonly number[]> {
+  return onCapturePage(
+    set,
+    () => false,
+    async (page) => {
+      const { advances, missing } = await page.evaluate(readAdvances, runs);
+      if (missing.length > 0) {
+        throw new Error(`the page loads no face for ${missing.join(", ")}`);
+      }
+      return advances;
+    }
   );
 }

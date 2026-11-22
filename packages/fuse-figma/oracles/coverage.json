@@ -356,6 +356,230 @@
       "className": "flex-wrap",
       "property": "flex-wrap",
       "reason": "The item row wraps, and item-content grows beside the row's other layers with its content-based minimum. CSS breaks the line where those layers and the gaps leave the content less than that minimum (CSS Flexbox 1 §9.3 step 1), and a Figma row never wraps. Chromium sets the row on one line in every captured cell, and the build draws that one line. The capture measures one line in the cell's own mode only, and it reads a second line that a negative margin lifts over the first as one line, so no measurement proves the row never breaks."
+    },
+    {
+      "set": "combobox-chip",
+      "part": "Icon",
+      "className": "size-3",
+      "property": "height",
+      "reason": "The remove button's X is `size-3`, 12px, where the `icon-inline` Icon button variant draws its icon at 16px. An instance carries no icon size, so the X draws at 16px, centred in the button's 16px square as Chromium centres its 12px X. The glyph is larger, and no box moves."
+    },
+    {
+      "set": "combobox-chip",
+      "part": "Icon",
+      "className": "size-3",
+      "property": "width",
+      "reason": "The remove button's X is `size-3`, 12px, where the `icon-inline` Icon button variant draws its icon at 16px. An instance carries no icon size, so the X draws at 16px, centred in the button's 16px square as Chromium centres its 12px X. The glyph is larger, and no box moves."
+    },
+    {
+      "set": "combobox-chip",
+      "part": "button",
+      "className": "",
+      "property": "aspectLock",
+      "reason": "In the chip, `text-xs` gives the remove button a 16px line, so its `icon-inline` square is 16px, where the variant stands alone on the page's 24px line and locks 24 by 24. The instance takes its own fixed 16px width and height, which place it as Chromium does, and an instance carries no aspect lock, so it keeps the variant's lock, the same 1:1 ratio."
+    },
+    {
+      "set": "combobox-chip",
+      "part": "button",
+      "className": "",
+      "property": "opacity",
+      "reason": "The remove button rests at half opacity, `opacity-50`, where the Icon button variant at rest is opaque. An instance carries no layer opacity, so the X draws at full strength at rest. A disabled chip's button takes the disabled variant, which is at half opacity already."
+    },
+    {
+      "set": "combobox-chip",
+      "part": "button",
+      "className": "",
+      "property": "size",
+      "reason": "The remove button's X is `size-3`, 12px, where the `icon-inline` Icon button variant draws its icon at 16px. An instance carries no icon size, so the X draws at 16px, centred in the button's 16px square as Chromium centres its 12px X. The glyph is larger, and no box moves."
+    },
+    {
+      "set": "combobox-chip",
+      "part": "button",
+      "className": "",
+      "property": "stroke",
+      "reason": "The remove button drops the ghost Button's transparent 1px border, `border-0`. That border paints nothing, and in the instance's fixed 16px square its 1px room only narrows the space the X centres in, so the X stays where Chromium draws it, and the instance keeps the variant's stroke."
+    },
+    {
+      "set": "combobox-chip",
+      "part": "button",
+      "className": "border-0",
+      "property": "border-width",
+      "reason": "The remove button drops the ghost Button's transparent 1px border, `border-0`. That border paints nothing, and in the instance's fixed 16px square its 1px room only narrows the space the X centres in, so the X stays where Chromium draws it, and the instance keeps the variant's stroke."
+    },
+    {
+      "set": "combobox-chip",
+      "part": "button",
+      "className": "opacity-50",
+      "property": "opacity",
+      "reason": "The remove button rests at half opacity, `opacity-50`, where the Icon button variant at rest is opaque. An instance carries no layer opacity, so the X draws at full strength at rest. A disabled chip's button takes the disabled variant, which is at half opacity already."
+    },
+    {
+      "set": "combobox-chip",
+      "part": "button",
+      "className": "rounded-[max(0px,var(--inner-corner,var(--radius))-0.5*var(--spacing))]",
+      "property": "border-radius",
+      "reason": "The remove button rounds at the chip's inner corner less the chip's 2px end padding, `max(0px, var(--inner-corner, var(--radius)) - 0.5 * var(--spacing))`, over the chips box's `--inner-corner`. No synced variable holds that length, so the instance draws square corners, where Chromium rounds the button by 0px in neutral themes and by up to 7px in branded ones. The ghost button paints nothing at rest, so the corner shows only behind its hover fill."
+    },
+    {
+      "set": "combobox-chip",
+      "part": "combobox-chip",
+      "className": "rounded-inner",
+      "property": "border-radius",
+      "reason": "The chip rounds at the chips box's inner corner, `rounded-inner`, which the box publishes as the field box corner less its 1px border and 6px inline padding, `max(0px, var(--field-corner) - 1px - 1.5 * var(--spacing))`. No synced variable holds that length, so the chip draws square corners, where Chromium rounds it by 1px in neutral themes and by up to 9px in branded ones, TrøndelagKraft's. The corner paints only the chip's `muted` fill, so no box moves."
+    },
+    {
+      "set": "combobox-chip",
+      "part": "combobox-chips",
+      "className": "[--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]",
+      "property": "--field-corner",
+      "reason": "The chips box declares the field corner, and the inner corner it publishes from it, for the chip's `rounded-inner` and the remove button's corner, which no synced variable holds, as the chip's `rounded-inner` row says. The kit draws both corners square."
+    },
+    {
+      "set": "combobox-chip",
+      "part": "combobox-chips",
+      "className": "[--inner-corner:var(--shell-inner)]",
+      "property": "--inner-corner",
+      "reason": "The chips box declares the field corner, and the inner corner it publishes from it, for the chip's `rounded-inner` and the remove button's corner, which no synced variable holds, as the chip's `rounded-inner` row says. The kit draws both corners square."
+    },
+    {
+      "set": "combobox-chip",
+      "part": "combobox-chips",
+      "className": "[--shell-inner:max(0px,var(--field-corner)-1px-1.5*var(--spacing))]",
+      "property": "--shell-inner",
+      "reason": "The chips box declares the field corner, and the inner corner it publishes from it, for the chip's `rounded-inner` and the remove button's corner, which no synced variable holds, as the chip's `rounded-inner` row says. The kit draws both corners square."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "Icon",
+      "className": "size-3",
+      "property": "height",
+      "reason": "The remove button's X is `size-3`, 12px, where the `icon-inline` Icon button variant draws its icon at 16px. An instance carries no icon size, so the X draws at 16px, centred in the button's 16px square as Chromium centres its 12px X. The glyph is larger, and no box moves."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "Icon",
+      "className": "size-3",
+      "property": "width",
+      "reason": "The remove button's X is `size-3`, 12px, where the `icon-inline` Icon button variant draws its icon at 16px. An instance carries no icon size, so the X draws at 16px, centred in the button's 16px square as Chromium centres its 12px X. The glyph is larger, and no box moves."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "button",
+      "className": "",
+      "property": "aspectLock",
+      "reason": "In the chip, `text-xs` gives the remove button a 16px line, so its `icon-inline` square is 16px, where the variant stands alone on the page's 24px line and locks 24 by 24. The instance takes its own fixed 16px width and height, which place it as Chromium does, and an instance carries no aspect lock, so it keeps the variant's lock, the same 1:1 ratio."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "button",
+      "className": "",
+      "property": "opacity",
+      "reason": "The remove button rests at half opacity, `opacity-50`, where the Icon button variant at rest is opaque. An instance carries no layer opacity, so the X draws at full strength at rest. A disabled chip's button takes the disabled variant, which is at half opacity already."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "button",
+      "className": "",
+      "property": "size",
+      "reason": "The remove button's X is `size-3`, 12px, where the `icon-inline` Icon button variant draws its icon at 16px. An instance carries no icon size, so the X draws at 16px, centred in the button's 16px square as Chromium centres its 12px X. The glyph is larger, and no box moves."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "button",
+      "className": "",
+      "property": "stroke",
+      "reason": "The remove button drops the ghost Button's transparent 1px border, `border-0`. That border paints nothing, and in the instance's fixed 16px square its 1px room only narrows the space the X centres in, so the X stays where Chromium draws it, and the instance keeps the variant's stroke."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "button",
+      "className": "border-0",
+      "property": "border-width",
+      "reason": "The remove button drops the ghost Button's transparent 1px border, `border-0`. That border paints nothing, and in the instance's fixed 16px square its 1px room only narrows the space the X centres in, so the X stays where Chromium draws it, and the instance keeps the variant's stroke."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "button",
+      "className": "opacity-50",
+      "property": "opacity",
+      "reason": "The remove button rests at half opacity, `opacity-50`, where the Icon button variant at rest is opaque. An instance carries no layer opacity, so the X draws at full strength at rest. A disabled chip's button takes the disabled variant, which is at half opacity already."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "button",
+      "className": "rounded-[max(0px,var(--inner-corner,var(--radius))-0.5*var(--spacing))]",
+      "property": "border-radius",
+      "reason": "The remove button rounds at the chip's inner corner less the chip's 2px end padding, `max(0px, var(--inner-corner, var(--radius)) - 0.5 * var(--spacing))`, over the chips box's `--inner-corner`. No synced variable holds that length, so the instance draws square corners, where Chromium rounds the button by 0px in neutral themes and by up to 7px in branded ones. The ghost button paints nothing at rest, so the corner shows only behind its hover fill."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chip",
+      "className": "rounded-inner",
+      "property": "border-radius",
+      "reason": "The chip rounds at the chips box's inner corner, `rounded-inner`, which the box publishes as the field box corner less its 1px border and 6px inline padding, `max(0px, var(--field-corner) - 1px - 1.5 * var(--spacing))`. No synced variable holds that length, so the chip draws square corners, where Chromium rounds it by 1px in neutral themes and by up to 9px in branded ones, TrøndelagKraft's. The corner paints only the chip's `muted` fill, so no box moves."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chips",
+      "className": "[--field-corner:clamp(var(--radius)-1000*var(--radius-step,0px),var(--radius-field,var(--radius)),var(--radius)+1000*var(--radius-step,0px))]",
+      "property": "--field-corner",
+      "reason": "The chips box declares the field corner, and the inner corner it publishes from it, for the chip's `rounded-inner` and the remove button's corner, which no synced variable holds, as the chip's `rounded-inner` row says. The kit draws both corners square."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chips",
+      "className": "[--inner-corner:var(--shell-inner)]",
+      "property": "--inner-corner",
+      "reason": "The chips box declares the field corner, and the inner corner it publishes from it, for the chip's `rounded-inner` and the remove button's corner, which no synced variable holds, as the chip's `rounded-inner` row says. The kit draws both corners square."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chips",
+      "className": "[--shell-inner:max(0px,var(--field-corner)-1px-1.5*var(--spacing))]",
+      "property": "--shell-inner",
+      "reason": "The chips box declares the field corner, and the inner corner it publishes from it, for the chip's `rounded-inner` and the remove button's corner, which no synced variable holds, as the chip's `rounded-inner` row says. The kit draws both corners square."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chips",
+      "className": "[--chip-h:calc(var(--spacing)*5.5)]",
+      "property": "--chip-h",
+      "reason": "At `sm` the box pads its block axis by `(var(--field-h) - var(--chip-h) - 2px) / 2`, half of what its height leaves around one 22px chip and its 1px borders. No synced variable holds that length, so the sm variants pad 0px there. On one line both draw alike: the box is its `control-h-sm` minimum tall either way and centres the chips and the input across it, as `combobox-chips.chromium.test.ts` holds in every mode. A box whose chips wrap onto more lines would differ, and the kit draws none (#922)."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chips",
+      "className": "[--field-h:max(var(--control-h-sm),26px)]",
+      "property": "--field-h",
+      "reason": "At `sm` the box pads its block axis by `(var(--field-h) - var(--chip-h) - 2px) / 2`, half of what its height leaves around one 22px chip and its 1px borders. No synced variable holds that length, so the sm variants pad 0px there. On one line both draw alike: the box is its `control-h-sm` minimum tall either way and centres the chips and the input across it, as `combobox-chips.chromium.test.ts` holds in every mode. A box whose chips wrap onto more lines would differ, and the kit draws none (#922)."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chips",
+      "className": "py-[calc((var(--field-h)-var(--chip-h)-2px)/2)]",
+      "property": "padding-bottom",
+      "reason": "At `sm` the box pads its block axis by `(var(--field-h) - var(--chip-h) - 2px) / 2`, half of what its height leaves around one 22px chip and its 1px borders. No synced variable holds that length, so the sm variants pad 0px there. On one line both draw alike: the box is its `control-h-sm` minimum tall either way and centres the chips and the input across it, as `combobox-chips.chromium.test.ts` holds in every mode. A box whose chips wrap onto more lines would differ, and the kit draws none (#922)."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chips",
+      "className": "py-[calc((var(--field-h)-var(--chip-h)-2px)/2)]",
+      "property": "padding-top",
+      "reason": "At `sm` the box pads its block axis by `(var(--field-h) - var(--chip-h) - 2px) / 2`, half of what its height leaves around one 22px chip and its 1px borders. No synced variable holds that length, so the sm variants pad 0px there. On one line both draw alike: the box is its `control-h-sm` minimum tall either way and centres the chips and the input across it, as `combobox-chips.chromium.test.ts` holds in every mode. A box whose chips wrap onto more lines would differ, and the kit draws none (#922)."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chips",
+      "className": "flex-wrap",
+      "property": "flex-wrap",
+      "reason": "The chips box wraps its row, and the input's `flex-1` grows beside the chips from its 64px `min-w-16`. CSS sets the input on a line at that minimum, so it breaks the line where the chips and the gaps leave it less than 64px (CSS Flexbox 1 §9.3 step 1), and a Figma row never wraps. The Apple and Cherry chips leave the input room on one line in every captured cell, and the build draws that one line. A box whose chips fill the line breaks it in Chromium and stays on one line in Figma, a #922 line."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chips",
+      "className": "gap-y-[max(var(--field-gap,var(--control-gap-md)),calc(24px-var(--chip-h)))]",
+      "property": "row-gap",
+      "reason": "The row gap spaces the lines the chips box's wrap makes when the input's 64px `min-w-16` breaks the line beside the chips (CSS Flexbox 1 §9.3 step 1, CSS Box Alignment 3 §8). A Figma row never wraps, so it has no second line to space. Chromium sets one line in every captured cell, where the row gap adds nothing, and the build draws that one line."
     }
   ],
   "unbound": [
@@ -421,6 +645,20 @@
       "className": "group-data-horizontal/tabs:h-(--control-h-md)",
       "property": "height",
       "reason": "The list's height sets the content height the trigger's `h-[calc(100%-1px)]` takes, which binds `tabs-trigger-h` or `tabs-line-trigger-h` on the trigger's own row."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chips",
+      "className": "leading-[var(--field-leading,var(--control-leading))]",
+      "property": "line-height",
+      "reason": "At `sm` the field size sets `--field-text` to `--text-sm` and `--field-leading` to its line, 14px on a 20px line in every theme, and no synced variable holds either, so the input's placeholder takes those literals. The `--control-text` and `--control-leading` fallbacks apply only at the default size, where they bind."
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chips",
+      "className": "text-[length:var(--field-text,var(--control-text))]",
+      "property": "font-size",
+      "reason": "At `sm` the field size sets `--field-text` to `--text-sm` and `--field-leading` to its line, 14px on a 20px line in every theme, and no synced variable holds either, so the input's placeholder takes those literals. The `--control-text` and `--control-leading` fallbacks apply only at the default size, where they bind."
     }
   ],
   "unshown": {
@@ -4918,6 +5156,62 @@
         "part": "table-body",
         "className": "not-framed-table:before:hidden"
       }
+    ],
+    "combobox-chip": [
+      {
+        "part": "button",
+        "className": "enabled-hover:opacity-100"
+      }
+    ],
+    "combobox-chips": [
+      {
+        "part": "combobox-chip-input",
+        "className": "aria-disabled:cursor-not-allowed"
+      },
+      {
+        "part": "combobox-chip-input",
+        "className": "aria-disabled:opacity-100"
+      },
+      {
+        "part": "combobox-chip-input",
+        "className": "aria-invalid:focus-visible:ring-0"
+      },
+      {
+        "part": "combobox-chip-input",
+        "className": "aria-invalid:focus-visible:ring-offset-0"
+      },
+      {
+        "part": "combobox-chip-input",
+        "className": "entry-floor:[--entry-text:max(16px,1em)]"
+      },
+      {
+        "part": "combobox-chips",
+        "className": "has-[>[data-focus-ring-control][aria-disabled=true]]:cursor-not-allowed"
+      },
+      {
+        "part": "combobox-chips",
+        "className": "has-[>[data-focus-ring-control][aria-disabled=true]]:opacity-50"
+      },
+      {
+        "part": "combobox-chips",
+        "className": "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-3"
+      },
+      {
+        "part": "combobox-chips",
+        "className": "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-error/20"
+      },
+      {
+        "part": "combobox-chips",
+        "className": "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-1"
+      },
+      {
+        "part": "combobox-chips",
+        "className": "has-[>[data-focus-ring-control][aria-invalid=true]:focus-visible]:ring-offset-error"
+      },
+      {
+        "part": "combobox-chips",
+        "className": "has-[>[data-focus-ring-control][readonly]:not(:disabled)]:bg-muted"
+      }
     ]
   },
   "unreached": [
@@ -7544,6 +7838,40 @@
       ],
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": ["frame-table-body/state=rest 0/root::before"]
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chip-input",
+      "className": "tailwind preflight",
+      "property": "color",
+      "reason": "The kit draws the placeholder as the input's own text, so the `::placeholder` color replaces the input's inherited `color`, and the placeholder's `opacity: 1` is the opacity it already has.",
+      "at": [
+        "combobox-chips/size=default,state=disabled 0/root/2",
+        "combobox-chips/size=default,state=focus 0/root/2",
+        "combobox-chips/size=default,state=invalid 0/root/2",
+        "combobox-chips/size=default,state=rest 0/root/2",
+        "combobox-chips/size=sm,state=disabled 0/root/2",
+        "combobox-chips/size=sm,state=focus 0/root/2",
+        "combobox-chips/size=sm,state=invalid 0/root/2",
+        "combobox-chips/size=sm,state=rest 0/root/2"
+      ]
+    },
+    {
+      "set": "combobox-chips",
+      "part": "combobox-chip-input",
+      "className": "fuse.css base layer",
+      "property": "opacity",
+      "reason": "The kit draws the placeholder as the input's own text, so the `::placeholder` color replaces the input's inherited `color`, and the placeholder's `opacity: 1` is the opacity it already has.",
+      "at": [
+        "combobox-chips/size=default,state=disabled 0/root/2::placeholder",
+        "combobox-chips/size=default,state=focus 0/root/2::placeholder",
+        "combobox-chips/size=default,state=invalid 0/root/2::placeholder",
+        "combobox-chips/size=default,state=rest 0/root/2::placeholder",
+        "combobox-chips/size=sm,state=disabled 0/root/2::placeholder",
+        "combobox-chips/size=sm,state=focus 0/root/2::placeholder",
+        "combobox-chips/size=sm,state=invalid 0/root/2::placeholder",
+        "combobox-chips/size=sm,state=rest 0/root/2::placeholder"
+      ]
     }
   ],
   "alike": [

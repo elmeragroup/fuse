@@ -10,6 +10,9 @@
  * - `comboboxPopup`: the docs Basic demo's rows, its Groups demo's groups, or a list no row matches,
  *   nothing selected, measured as the popup.
  * - `comboboxOpen`: the input and the popup with the Basic demo's rows, measured together.
+ * - `comboboxChip` and `comboboxChips`: the docs Multiple demo's closed chips field, holding `Apple`
+ *   alone or its `Apple` and `Cherry`, at the cell's size, in a disabled Combobox or in an invalid
+ *   `Field.Root`, measured as the chip or as the field box. The box fills the host.
  *
  * Every cell renders `Combobox.Input` in a host as wide as the kit's Input group, which the group's
  * `w-auto` fills. Fuse anchors the popup to the whole Input group, not the `<input>` inside it, so
@@ -26,8 +29,11 @@ import { createElement, Fragment } from "react";
 import type { ReactElement } from "react";
 
 import { Combobox } from "../../../fuse/dist/combobox.js";
+import { Field } from "../../../fuse/dist/field.js";
 import { LocaleProvider } from "../../../fuse/dist/theme.js";
 import {
+  COMBOBOX_CHIPS,
+  COMBOBOX_CHIPS_PLACEHOLDER,
   COMBOBOX_INPUT_GROUP_WIDTH,
   COMBOBOX_BASIC_ROWS,
   COMBOBOX_GROUPS,
@@ -144,4 +150,42 @@ export const comboboxOpen: ClientCellRendering = {
   element: (_cell: Cell, _turnedOn: ReadonlySet<string>, container: HTMLElement) =>
     openCombobox(container, listingOf({ content: "flat" })),
   union: ["input-group", "combobox-content"],
+};
+
+/** The docs Multiple demo's chips field, holding `chips`, at `size`, disabled or in an invalid Field. */
+function chipsField(
+  chips: readonly string[],
+  size: "default" | "sm",
+  state: string | undefined
+): ReactElement {
+  const field = createElement(
+    Combobox.Root,
+    { items: [...chips], multiple: true, defaultValue: [...chips], disabled: state === "disabled" },
+    createElement(
+      Combobox.Chips,
+      { "aria-label": "Selected fruit", size },
+      createElement(Combobox.Value, {
+        children: (value: string[]) => value.map((item) => createElement(Combobox.Chip, { key: item }, item)),
+      }),
+      createElement(Combobox.ChipsInput, { "aria-label": "Fruit", placeholder: COMBOBOX_CHIPS_PLACEHOLDER })
+    )
+  );
+  return createElement(LocaleProvider, {
+    locale: "en-US",
+    children: createElement(
+      "div",
+      { style: { width: `${String(COMBOBOX_INPUT_GROUP_WIDTH)}px` } },
+      state === "invalid" ? createElement(Field.Root, { invalid: true }, field) : field
+    ),
+  });
+}
+
+/** One chip, `Apple`, in a chips field that holds it alone, at rest or disabled. */
+export const comboboxChip: ClientCellRendering = {
+  element: (cell: Cell) => chipsField([COMBOBOX_ITEM_TEXT], "default", cell.state),
+};
+
+/** The docs Multiple demo's chips field at the cell's size, at rest, disabled or in an invalid Field. */
+export const comboboxChips: ClientCellRendering = {
+  element: (cell: Cell) => chipsField(COMBOBOX_CHIPS, cell.size === "sm" ? "sm" : "default", cell.state),
 };

@@ -465,6 +465,16 @@ const SOURCES: readonly RendererSource[] = [
     module: { url: new URL("combobox-cell.ts", import.meta.url), name: "comboboxOpen" },
   },
   {
+    set: "combobox-chip",
+    entry: "dist/combobox.js",
+    module: { url: new URL("combobox-cell.ts", import.meta.url), name: "comboboxChip" },
+  },
+  {
+    set: "combobox-chips",
+    entry: "dist/combobox.js",
+    module: { url: new URL("combobox-cell.ts", import.meta.url), name: "comboboxChips" },
+  },
+  {
     set: "command-item",
     entry: "dist/command.js",
     module: { url: new URL("command-cell.ts", import.meta.url), name: "commandItem" },

@@ -133,8 +133,16 @@ export const KIT_PARITY = {
   collapsible: { kind: "excluded", reason: "It has no styles beyond its height transition." },
   combobox: {
     kind: "partial",
-    sets: ["combobox-item", "combobox-empty", "combobox-popup", "combobox-open"],
-    missing: "The popup search field, chips (#918), the small input size, and the read-only fill.",
+    sets: [
+      "combobox-item",
+      "combobox-empty",
+      "combobox-popup",
+      "combobox-open",
+      "combobox-chip",
+      "combobox-chips",
+    ],
+    missing:
+      "The popup search field, chips that wrap onto more lines, the small input size, and the read-only fill.",
     issue: NICE_TO_HAVE,
   },
   "combobox-field": {

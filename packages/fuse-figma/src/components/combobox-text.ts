@@ -30,3 +30,9 @@ export const COMBOBOX_EMPTY_TEXT = "No results.";
  * the popup to the `<input>` inside the group, which `combobox-kit.ts` derives from this width.
  */
 export const COMBOBOX_INPUT_GROUP_WIDTH = FIELD_BOX_PREVIEW_WIDTH;
+
+/** The chips the docs Multiple demo selects, in its order. */
+export const COMBOBOX_CHIPS = ["Apple", "Cherry"] as const;
+
+/** The placeholder of the docs Multiple demo's `Combobox.ChipsInput`. */
+export const COMBOBOX_CHIPS_PLACEHOLDER = "Add fruit…";
