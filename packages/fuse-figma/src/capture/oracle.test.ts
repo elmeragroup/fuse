@@ -36,10 +36,10 @@ import { possibleCells, previewWidthIn, variantKey } from "../components/compone
 import { KIT } from "../components/kit-registry.ts";
 import type { ChildLayerSpec } from "../components/kit-spec.ts";
 import { fuseVariableSet } from "../fuse-variable-set.ts";
-import type { InstancePlace } from "./capture-cascade.ts";
 import { CAPTURE_FORMAT, CAPTURE_VERSION } from "./capture-format.ts";
 import type { CapturedDeclaration, CapturedElement, SetCapture } from "./capture-format.ts";
 import { keptCapture } from "./captures.ts";
+import type { InstancePlace } from "./cell-accounting.ts";
 import { MANIFEST_FIELDS, manifestDefinition, SAMPLE_HOST_WIDTHS } from "./manifest.ts";
 import type { IconManifest, InstanceManifest, LabelManifest, PartManifest, SetManifest } from "./manifest.ts";
 import {

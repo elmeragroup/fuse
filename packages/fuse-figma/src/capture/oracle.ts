@@ -18,9 +18,9 @@ import type {
   FrameLayerSpec,
   InstanceLayerSpec,
 } from "../components/kit-spec.ts";
-import type { CellAccounting, InstancePlace } from "./capture-cascade.ts";
 import type { CapturedCell, CapturedDeclaration, CapturedElement, SetCapture } from "./capture-format.ts";
 import { placesOf } from "./capture-places.ts";
+import type { CellAccounting, InstancePlace } from "./cell-accounting.ts";
 import { boxIdentity, keptDeclarations, rendersNothing, twinClaims } from "./instance-twin.ts";
 import type { KeptDeclaration } from "./instance-twin.ts";
 
