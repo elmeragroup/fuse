@@ -32,11 +32,11 @@ import { PNG } from "pngjs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import * as Srgb from "@elmeragroup/color/srgb";
-
 import { builtKit, variantRoot } from "../../test/built-kit.ts";
 import type { BuiltSets } from "../../test/built-kit.ts";
 import { buildCaptured, chip, rest } from "../../test/capture-fixtures.ts";
+import { near, over, shownPixel } from "../../test/composited-pixels.ts";
+import type { Pixel } from "../../test/composited-pixels.ts";
 import { fuseModule, openFusePage } from "../../test/fuse-page.ts";
 import type { InMemoryFigma } from "../../test/in-memory-figma.ts";
 import { colorIn, named, pixelsIn, sweptFile } from "../../test/mode-sweep.ts";
@@ -51,9 +51,6 @@ import { SHEET_VIEWPORT } from "./sheet-text.ts";
 
 /** The opaque color behind every component, in 8-bit channels. */
 const PAGE = { r: 255, g: 0, b: 255 } as const;
-
-/** How far apart a channel of the spec's pixel and Chromium's may lie, for color conversion. */
-const CHANNEL_TOLERANCE = 2;
 
 /**
  * Each box: the variant that draws it and the keys of the layers down to it, none for the root, the
@@ -186,9 +183,6 @@ flushSync(() => {
 });
 slots.get("frame").innerHTML = ${JSON.stringify(renderToStaticMarkup(frame.element({ layout: "gutter" }, new Set())))};
 `;
-
-/** An 8-bit color with no alpha. */
-type Pixel = { readonly r: number; readonly g: number; readonly b: number };
 
 /** What Chromium shows of one set's component under one pin. */
 type Measured = {
@@ -341,25 +335,6 @@ const length = (spec: NumberSpec, mode: SweptMode): number => pixelsIn(figma, sp
 /** A COLOR field as the file resolves it under a pin. */
 const color = (spec: ColorSpec, mode: SweptMode): Rgba => colorIn(figma, spec, mode);
 
-/** An sRGB color from 0..1 channels and alpha. A value outside that range fails the test. */
-function srgb({ r, g, b, a }: Rgba): Srgb.Srgb {
-  const made = Srgb.make({ r, g, b, alpha: a });
-  if (made._tag !== "ok") {
-    throw new Error(`the file holds a color outside sRGB: ${JSON.stringify({ r, g, b, a })}`);
-  }
-  return made.value;
-}
-
-/** An 8-bit pixel as an opaque sRGB color. */
-const fromPixel = (pixel: Pixel): Srgb.Srgb =>
-  srgb({ r: pixel.r / 255, g: pixel.g / 255, b: pixel.b / 255, a: 1 });
-
-/** A color over an 8-bit pixel, composited as CSS does, in 8-bit channels. */
-function over(base: Pixel, paint: ReturnType<typeof color>): Pixel {
-  const shown = Srgb.compositeOver(srgb(paint), fromPixel(base));
-  return { r: shown.r * 255, g: shown.g * 255, b: shown.b * 255 };
-}
-
 /** The root's layers that cover it from edge to edge, inset by fixed lengths, as a fill's box does. */
 function coveringLayers(root: BoxSpec): readonly FrameLayerSpec[] {
   return root.children.flatMap((child) =>
@@ -449,18 +424,6 @@ function specPixel(root: BoxSpec, mode: SweptMode, at: Sample, behind: Pixel): P
   return pixel;
 }
 
-/** Whether two pixels lie within the tolerance on every channel. */
-function near(spec: Pixel, chromium: Pixel): boolean {
-  return (["r", "g", "b"] as const).every(
-    (channel) => Math.abs(spec[channel] - chromium[channel]) <= CHANNEL_TOLERANCE
-  );
-}
-
-/** A pixel, rounded, for a mismatch line. */
-function shown(pixel: Pixel): string {
-  return `rgb(${[pixel.r, pixel.g, pixel.b].map((channel) => Math.round(channel)).join(", ")})`;
-}
-
 /**
  * The box a set entry names: its variant's root, or the frame layer its path of keys leads to.
  *
@@ -509,7 +472,7 @@ describe.each(SETS.map((set, index) => ({ ...set, index })))("the $key $path fil
       return near(border, chromium.border) && near(inside, chromium.inside) && near(bottom, chromium.bottom)
         ? []
         : [
-            `${named(mode)}: spec border ${shown(border)} inside ${shown(inside)} bottom ${shown(bottom)}, Chromium border ${shown(chromium.border)} inside ${shown(chromium.inside)} bottom ${shown(chromium.bottom)}`,
+            `${named(mode)}: spec border ${shownPixel(border)} inside ${shownPixel(inside)} bottom ${shownPixel(bottom)}, Chromium border ${shownPixel(chromium.border)} inside ${shownPixel(chromium.inside)} bottom ${shownPixel(chromium.bottom)}`,
           ];
     });
     expect(apart).toEqual([]);
@@ -579,8 +542,9 @@ describe("the suite's shadow compositor", () => {
     // The box's bottom edge sits the shadows' offset up from the edge the depth counts from, so
     // Chromium's pixel, in the second row below the box, lies 2px up from that edge.
     const spec = paintAt(box, mode, { side: "bottom", depth: 2 }, STACKED_SHADOWS.offsetY, PAGE);
-    expect(near(spec, stackedShadowPixel), `spec ${shown(spec)}, Chromium ${shown(stackedShadowPixel)}`).toBe(
-      true
-    );
+    expect(
+      near(spec, stackedShadowPixel),
+      `spec ${shownPixel(spec)}, Chromium ${shownPixel(stackedShadowPixel)}`
+    ).toBe(true);
   });
 });

@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
 
 import { settleInstanceRoot } from "./hugging-rows.ts";
 import { diffInstance } from "./instance-diff.ts";
-import { NO_LIMITS } from "./kit-spec.ts";
+import { edgeLayer, NO_LIMITS } from "./kit-spec.ts";
 import type { BoxSpec, ComponentRootSpec, FrameLayerSpec, SizingSpec, TextLayerSpec } from "./kit-spec.ts";
 
 const ZERO = { kind: "literal", value: 0 } as const;
@@ -226,5 +226,74 @@ describe("a root's widest width, built in place", () => {
   it("stays unmapped beside a minimum that differs too", () => {
     const diff = diffAsBuilt(built({ ...NO_LIMITS, maxWidth: CAP, minHeight: CAP }), VARIANT);
     expect([diff.maxWidth, diff.unmapped.map(({ field }) => field)]).toEqual([undefined, ["limits"]]);
+  });
+});
+
+// Oracle: the layer `padding-box-fill.ts` builds holds only the box's fill, placed at the box's
+// edges out of its auto layout, so an instance clears it with a fill override. A layer keyed
+// `padding box`, placed so, that draws a stroke or blurs what lies behind it is a part of the
+// component, which an override of its fill does not remove, since Figma still draws the stroke or
+// the blur.
+describe("a layer keyed `padding box` that the box built in place lacks", () => {
+  const inset = { kind: "stretch", start: 1, end: 1 } as const;
+  const PART: FrameLayerSpec = {
+    ...BOX,
+    kind: "frame",
+    key: "padding box",
+    name: "padding box",
+    sizing: {
+      horizontal: { kind: "fixed", length: { kind: "literal", value: 20 } },
+      vertical: { kind: "fixed", length: { kind: "literal", value: 20 } },
+    },
+    placement: { kind: "edges", within: "parent", horizontal: inset, vertical: inset },
+    stroke: {
+      color: { kind: "literal", color: { r: 0, g: 0, b: 0, a: 1 } },
+      weight: { kind: "literal", value: 1 },
+    },
+    children: [],
+  };
+
+  it("stays unmapped where the placed layer draws a stroke", () => {
+    const diff = diffAsBuilt(inPlace({ sizing: VARIANT.sizing, primaryAlign: "CENTER" }), {
+      ...VARIANT,
+      children: [PART],
+    });
+    expect([diff.overrides, diff.unmapped.length > 0]).toEqual([[], true]);
+  });
+
+  it("stays unmapped where the placed layer blurs its background", () => {
+    const blurred: FrameLayerSpec = {
+      ...PART,
+      stroke: undefined,
+      backgroundBlur: { kind: "literal", value: 4 },
+    };
+    const diff = diffAsBuilt(inPlace({ sizing: VARIANT.sizing, primaryAlign: "CENTER" }), {
+      ...VARIANT,
+      children: [blurred],
+    });
+    expect([diff.overrides, diff.unmapped.length > 0]).toEqual([[], true]);
+  });
+
+  // The box built in place paints a solid fill on its own frame, where the main paints white on its
+  // layer inside the border. An override that cleared the layer would still leave the fill on the
+  // frame under the stroke, where CSS paints none, so neither fill nor the layer tree maps.
+  it("stays unmapped where the box in place paints a fill of its own", () => {
+    const WHITE = { kind: "literal", color: { r: 1, g: 1, b: 1, a: 1 } } as const;
+    const RED = { kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } } as const;
+    const layer = edgeLayer({
+      key: "padding box",
+      insets: { top: 1, right: 1, bottom: 1, left: 1 },
+      cornerRadius: ZERO,
+      fill: WHITE,
+      stroke: undefined,
+    });
+    const diff = diffAsBuilt(inPlace({ sizing: VARIANT.sizing, primaryAlign: "CENTER", fill: RED }), {
+      ...VARIANT,
+      children: [layer],
+    });
+    expect([diff.overrides, diff.unmapped.map(({ path, field }) => [...path, field].join("."))]).toEqual([
+      [],
+      ["fill", "layers", "padding box.fill"],
+    ]);
   });
 });

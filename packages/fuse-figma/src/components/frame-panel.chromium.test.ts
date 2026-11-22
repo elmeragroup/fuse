@@ -23,10 +23,10 @@ import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import * as CssColor from "@elmeragroup/color/css-color";
-
 import { builtKit, variantRoot } from "../../test/built-kit.ts";
 import type { BuiltSets } from "../../test/built-kit.ts";
+import { computedShadows, roundedShadows } from "../../test/composited-pixels.ts";
+import type { Shadow } from "../../test/composited-pixels.ts";
 import { openFusePage } from "../../test/fuse-page.ts";
 import type { InMemoryFigma } from "../../test/in-memory-figma.ts";
 import { colorIn, named, pixelsIn, sweptFile } from "../../test/mode-sweep.ts";
@@ -45,15 +45,6 @@ const LEAST_CASTING_ALPHA = 0.0015;
 
 /** Half an 8-bit step: a fill below it moves no channel of what lies under it. */
 const HALF_STEP = 1 / 510;
-
-/** One drop shadow, its lengths in CSS pixels and its color as 0..1 channels. */
-type Shadow = {
-  readonly color: { readonly r: number; readonly g: number; readonly b: number; readonly a: number };
-  readonly x: number;
-  readonly y: number;
-  readonly blur: number;
-  readonly spread: number;
-};
 
 /** What Chromium computes for the first panel and its highlight under one pin. */
 type Measured = {
@@ -126,36 +117,6 @@ afterAll(async () => {
   await browser?.close();
 });
 
-/** A computed `box-shadow` as the shadows it paints: a layer with a clear color or no geometry paints nothing. */
-function computedShadows(value: string): readonly Shadow[] {
-  if (value === "none") {
-    return [];
-  }
-  return value.split(/,(?![^(]*\))/).flatMap((layer) => {
-    const match =
-      /^\s*([a-z]+\([^)]*\))\s+(-?[\d.]+)px\s+(-?[\d.]+)px\s+(-?[\d.]+)px\s+(-?[\d.]+)px\s*$/.exec(layer);
-    if (match === null) {
-      throw new Error(`Chromium computed a shadow this suite does not read: ${layer}`);
-    }
-    const [, text = "", x = "", y = "", blur = "", spread = ""] = match;
-    const parsed = CssColor.parse(text);
-    if (parsed._tag !== "ok") {
-      throw new Error(`Chromium computed a shadow color @elmeragroup/color does not parse: ${text}`);
-    }
-    const { r, g, b, alpha } = CssColor.toSrgb(parsed.value);
-    const shadow = {
-      color: { r, g, b, a: alpha },
-      x: Number(x),
-      y: Number(y),
-      blur: Number(blur),
-      spread: Number(spread),
-    };
-    const paints =
-      alpha > 0 && [shadow.x, shadow.y, shadow.blur, shadow.spread].some((length) => length !== 0);
-    return paints ? [shadow] : [];
-  });
-}
-
 /** A FLOAT field as the file resolves it under a pin. */
 const length = (spec: NumberSpec, mode: SweptMode): number => pixelsIn(figma, spec, mode);
 
@@ -172,21 +133,6 @@ function specShadows(shadows: readonly ShadowSpec[], mode: SweptMode): readonly 
     spread: length(shadow.spread, mode),
   }));
 }
-
-/** A length or channel rounded to three decimals. */
-const round = (value: number): number => Math.round(value * 1000) / 1000;
-
-/** A shadow list, each number rounded to three decimals, for one comparison. */
-const rounded = (shadows: readonly Shadow[]): string =>
-  JSON.stringify(
-    shadows.map(({ color: { r, g, b, a }, x, y, blur, spread }) => ({
-      color: { r: round(r), g: round(g), b: round(b), a: round(a) },
-      x: round(x),
-      y: round(y),
-      blur: round(blur),
-      spread: round(spread),
-    }))
-  );
 
 /** The first panel's frame, or the frame it sits in where a margin wraps it. */
 function firstPanel(): BoxSpec {
@@ -211,8 +157,8 @@ describe("the Frame panel", () => {
   it("casts the shadows Chromium computes under every pin", () => {
     const panel = firstPanel();
     const apart = modes.flatMap((mode, index) => {
-      const spec = rounded(specShadows(panel.shadows, mode));
-      const browserShadows = rounded(computedShadows(measured[index]?.panelShadow ?? ""));
+      const spec = roundedShadows(specShadows(panel.shadows, mode));
+      const browserShadows = roundedShadows(computedShadows(measured[index]?.panelShadow ?? ""));
       return spec === browserShadows ? [] : [`${named(mode)}: spec ${spec}, Chromium ${browserShadows}`];
     });
     expect(apart).toEqual([]);
@@ -241,13 +187,13 @@ describe("the Frame panel", () => {
         castsShadows:
           layer.shadows.length === 0 ||
           (fill !== undefined && fill.a >= LEAST_CASTING_ALPHA && fill.a < HALF_STEP),
-        shadows: rounded(specShadows(layer.shadows, mode)),
+        shadows: roundedShadows(specShadows(layer.shadows, mode)),
         radii: cornerLengths(layer.cornerRadius).map((corner) => length(corner, mode)),
         insets,
       };
       const browserSide = {
         castsShadows: true,
-        shadows: rounded(computedShadows(chromium?.highlightShadow ?? "")),
+        shadows: roundedShadows(computedShadows(chromium?.highlightShadow ?? "")),
         radii: chromium?.highlightRadii,
         insets: chromium?.highlightInsets,
       };

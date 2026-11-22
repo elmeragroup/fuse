@@ -30,6 +30,7 @@ import type { BoxPaint } from "./box-paint";
 import {
   absoluteRoom,
   boxHeightBounds,
+  leastHugWidth,
   fitsRoom,
   fittingRoom,
   growingRoom,
@@ -1319,6 +1320,8 @@ function mapBoxBeforeClip(
     {
       sizing,
       held: heldSizing(reader, { sizing, limits, borders }, children),
+      leastWidth: leastHugWidth(laidOut, context.variables),
+      holdsCorners: cascade.measured?.cornersFit === true,
       leastHeight: boxHeightBounds(
         grid === undefined ? laidOut : { ...laidOut, grid: keyedCells(grid, children) },
         context.variables

@@ -36,6 +36,7 @@ import {
 } from "../compare/preview-page.ts";
 import type { CellContent } from "../compare/preview-page.ts";
 import type { PreviewTheme } from "../compare/preview-theme.ts";
+import { CORNER_LONGHANDS } from "../components/box-corners.ts";
 import { possibleCells, variantKey } from "../components/component-spec.ts";
 import type { ImpossibleCells } from "../components/component-spec.ts";
 import type { Viewport } from "../components/css-values.ts";
@@ -764,7 +765,7 @@ function anchoredPair(
 
 /** A cell root's elements with what the page measured of each, as `role` names the root. */
 async function withMeasuredFacts(cdp: CDPSession, raw: RawCell, role: RootRole): Promise<RawCell> {
-  const facts = await measuredFacts(cdp, raw.root.nodeId, role);
+  const facts = await measuredFacts(cdp, raw.root.nodeId, role, corneredPaths(raw.root, ""));
   const attach = (element: RawElement, path: string): RawElement => {
     const children = element.children.map((child, index) =>
       attach(child, path === "" ? String(index) : `${path}/${String(index)}`)
@@ -773,6 +774,23 @@ async function withMeasuredFacts(cdp: CDPSession, raw: RawCell, role: RootRole):
     return measured === undefined ? { ...element, children } : { ...element, children, measured };
   };
   return { ...raw, root: attach(raw.root, "") };
+}
+
+/**
+ * The paths of an element and its descendants whose recorded rules declare a per-corner radius
+ * longhand, which `box-corners.ts` reads a radius per corner from.
+ */
+function corneredPaths(element: RawElement, path: string): readonly string[] {
+  const own = element.rules.some(
+    (rule) =>
+      rule.source !== "user-agent" && rule.properties.some((property) => CORNER_LONGHANDS.has(property.name))
+  );
+  return [
+    ...(own ? [path] : []),
+    ...element.children.flatMap((child, index) =>
+      corneredPaths(child, path === "" ? String(index) : `${path}/${String(index)}`)
+    ),
+  ];
 }
 
 /** Check every winner of a cell's elements against the browser. */

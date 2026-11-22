@@ -69,6 +69,12 @@ import {
 } from "./field-text-kit";
 import { FILE_UPLOAD_DROPZONE_MANIFEST } from "./file-upload-kit";
 import { FRAME_MANIFEST } from "./frame-kit";
+import {
+  FRAME_TABLE_CELL_MANIFEST,
+  FRAME_TABLE_ROW_MANIFEST,
+  FRAME_TABLE_ROW_PREVIEW_CELLS,
+  FRAME_TABLE_BODY_MANIFEST,
+} from "./frame-table-kit";
 import { INPUT_GROUP_MANIFEST } from "./input-group-kit";
 import { INPUT_MANIFEST } from "./input-kit";
 import { ITEM_LINK_MANIFEST, ITEM_MANIFEST } from "./item-kit";
@@ -1017,6 +1023,21 @@ export const KIT: readonly KitEntry[] = [
   { page: TABLE_PAGE, previewCells: possibleCells(TABLE_CELL_MANIFEST), manifest: TABLE_CELL_MANIFEST },
   { page: TABLE_PAGE, previewCells: possibleCells(TABLE_ROW_MANIFEST), manifest: TABLE_ROW_MANIFEST },
   { page: TABLE_PAGE, previewCells: possibleCells(TABLE_CAPTION_MANIFEST), manifest: TABLE_CAPTION_MANIFEST },
+  {
+    page: TABLE_PAGE,
+    previewCells: possibleCells(FRAME_TABLE_CELL_MANIFEST),
+    manifest: FRAME_TABLE_CELL_MANIFEST,
+  },
+  {
+    page: TABLE_PAGE,
+    previewCells: FRAME_TABLE_ROW_PREVIEW_CELLS,
+    manifest: FRAME_TABLE_ROW_MANIFEST,
+  },
+  {
+    page: TABLE_PAGE,
+    previewCells: possibleCells(FRAME_TABLE_BODY_MANIFEST),
+    manifest: FRAME_TABLE_BODY_MANIFEST,
+  },
   {
     page: ATTACHMENT_PAGE,
     previewCells: possibleCells(ATTACHMENT_MANIFEST),

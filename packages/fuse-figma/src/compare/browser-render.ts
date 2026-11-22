@@ -103,6 +103,8 @@ export type CellRequest = {
    * such as the parts a BOOLEAN property turns on. None when undefined.
    */
   readonly parts?: readonly string[];
+  /** `measured` where the page shows only a static cell's measured elements, as its renderer's `shows` says. */
+  readonly shows?: "measured" | undefined;
 };
 
 /**
@@ -513,11 +515,27 @@ async function checkSlots(page: Page, slots: readonly CheckedSlot[], padding: nu
 /** The cells a page holds for its requests: each request's cell, then each resting twin. */
 function pageCellsOf(requests: readonly CellRequest[]): PageCell[] {
   return [
-    ...requests.map(({ id, content, measured, span, height }) => ({ id, content, measured, span, height })),
-    ...requests.flatMap(({ id, resting, measured, span, height }) =>
+    ...requests.map(({ id, content, measured, span, height, shows }) => ({
+      id,
+      content,
+      measured,
+      span,
+      height,
+      shows,
+    })),
+    ...requests.flatMap(({ id, resting, measured, span, height, shows }) =>
       resting === undefined
         ? []
-        : [{ id: `${REFERENCE_PREFIX}${id}`, content: resting, measured, span, height }]
+        : [
+            {
+              id: `${REFERENCE_PREFIX}${id}`,
+              content: resting,
+              measured,
+              span,
+              height,
+              shows,
+            },
+          ]
     ),
   ];
 }

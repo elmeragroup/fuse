@@ -27,6 +27,16 @@ export const TRACK_CLEARANCE_PX = 1;
 export const GRID_CLEARANCE_PX = 2;
 
 /**
+ * How much wider than twice its largest corner radius, in CSS pixels, an element's border box must
+ * stay in every mode for the page to record `cornersFit`. Its text can set its width, and the same
+ * Roboto word sets up to 1.6px narrower in Playwright's Linux image than on macOS, as
+ * {@link GRID_CLEARANCE_PX} records, so the page keeps the two whole pixels that fact keeps. An element
+ * within that of the bound could still land on either side, so `figma:capture --check` in the Linux
+ * image is what shows each kept capture agrees.
+ */
+export const CORNER_CLEARANCE_PX = GRID_CLEARANCE_PX;
+
+/**
  * How far below its `max-width` a box's width must stay, in CSS pixels, for the page to record
  * `underMaxWidth`: the page lowers the maximum by this much and checks the width did not move. It
  * absorbs the fraction of a pixel by which the same text sets wider on one platform than the other,

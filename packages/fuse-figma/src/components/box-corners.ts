@@ -20,6 +20,14 @@ const CORNERS = [
   { key: "bottomLeft", physical: "border-bottom-left-radius", logical: "border-end-start-radius" },
 ] as const;
 
+/**
+ * The per-corner longhands, physical and logical, that {@link readCorner} reads a radius per corner
+ * from. The capture measures `cornersFit` only on an element that declares one of them.
+ */
+export const CORNER_LONGHANDS: ReadonlySet<string> = new Set(
+  CORNERS.flatMap((corner) => [corner.physical, corner.logical])
+);
+
 /** One of Figma's four corners. */
 type Corner = (typeof CORNERS)[number];
 
@@ -36,10 +44,21 @@ export type CornerBox = {
    */
   readonly held: SizingSpec;
   /**
+   * The least width the box takes in any mode, its padding and stroke across within its width limits,
+   * which a radius per corner reads where the box hugs its width.
+   */
+  readonly leastWidth: number;
+  /**
    * The least height the box takes in any mode, as its layers bound it, which a radius per corner
    * reads where the height is no literal.
    */
   readonly leastHeight: number;
+  /**
+   * Whether the capture measured the box, with its sample text, wider than twice its largest radius
+   * by a margin in every mode (`cornersFit`), which proves its radii fit across whatever its least
+   * width.
+   */
+  readonly holdsCorners: boolean;
   /**
    * The box's limits, whose minimum width a radius per corner reads beside a fixed height, or
    * undefined where a `min-*` or `max-*` limit the box sets stays unmapped. CSS may then size the box
@@ -184,20 +203,30 @@ type RawRadius =
  * at least, as realistic text does, and a layer a BOOLEAN property can hide no height, so a label a
  * designer would realistically leave out counts as gone. A label emptied through its TEXT property is
  * a known limit: it sets no line in CSS, where the corners could scale, and keeps its line's height in
- * the bound. A box whose sides are no literals maps one more shape, {@link pairedCorners}: one
- * radius on the two corners of its shorter side and none on the others. These shapes read the box's
- * sides, so a box with a `min-*` or `max-*` limit that stays unmapped maps none of them, since that
- * limit can make CSS's box longer or shorter on either axis than the build reads it, as a variable
- * `min-h-*` past a literal `h-*` does. Four equal radii are the exception to all of these: they read
- * no side, so they map first, as written, on a box of any size, {@link equalCorners}, as a Frame
- * panel's `rounded-t-*` and `rounded-b-*` give. Any other corner set stays unmapped. A `border-radius` that wins only some corners reaches this reader as those corners'
- * longhands, as `border-shorthands.ts` splits it, so `rounded-[4px] rounded-s-[8px]` reads 8px on the
- * left corners and 4px on the right. One that stays whole there, as a value whose `var()` stands for
- * an unknown number of radii does, leaves the box unmapped beside a corner longhand.
+ * the bound. A box that hugs its width, and hugs or fixes its height, maps the same way where its
+ * least width and its least height in any mode prove it, as a framed Table's corner cell rounds one
+ * corner. The least width is what `leastHugWidth` gives, its padding and stroke across within its
+ * width limits. Where the capture measured the box, with its sample text, wider than twice its
+ * largest radius in every mode (`cornersFit`), that measure proves the radii fit across, and only its
+ * least height decides, so a realistic text maps. A text much shorter than the sample is a known limit there: in the dense TKAS theme an
+ * edge cell's padding and border take 25px beside a 15px corner, so a cell holding `1` still fits,
+ * one holding `i` is about 28.4px wide, where Figma caps the corner at about 14.2px, one holding `.`
+ * caps it too, and an emptied one is 25px wide, capped at 12.5px. A box whose sides are no literals
+ * maps one more shape, {@link pairedCorners}: one radius on the two corners of its shorter side and
+ * none on the others. These shapes read the box's sides, so a box with a `min-*` or `max-*` limit
+ * that stays unmapped maps none of them, since that limit can make CSS's box longer or shorter on
+ * either axis than the build reads it, as a variable `min-h-*` past a literal `h-*` does. Four equal
+ * radii are the exception to all of these: they read no side, so they map first, as written, on a
+ * box of any size, {@link equalCorners}, as a Frame panel's `rounded-t-*` and `rounded-b-*` give. Any
+ * other corner set stays unmapped. A `border-radius` that wins only some corners reaches this reader
+ * as those corners' longhands, as `border-shorthands.ts` splits it, so `rounded-[4px]
+ * rounded-s-[8px]` reads 8px on the left corners and 4px on the right. One that stays whole there, as
+ * a value whose `var()` stands for an unknown number of radii does, leaves the box unmapped beside a
+ * corner longhand.
  */
 function readCorners(
   reader: LayerStyle,
-  { held: sizing, leastHeight, limits }: CornerBox,
+  { held: sizing, leastWidth, leastHeight, holdsCorners, limits }: CornerBox,
   variables: VariableIndex
 ): CornersSpec | undefined {
   if (reader.has("border-radius")) {
@@ -215,7 +244,9 @@ function readCorners(
         ? drawnCorners(raw, width.value, height.value)
         : width?.kind === "literal" && sizing.vertical.kind === "hug"
           ? unscaledCorners(raw, width.value, leastHeight)
-          : pairedCorners(raw, { sizing, limits }, variables);
+          : ((sizing.horizontal.kind === "hug" && sizing.vertical.kind !== "fill"
+              ? unscaledCorners(raw, holdsCorners ? HELD_ACROSS : leastWidth, leastHeight)
+              : undefined) ?? pairedCorners(raw, { sizing, limits }, variables));
   const [topLeft, topRight, bottomRight, bottomLeft] = drawn ?? [];
   const corners =
     topLeft === undefined || topRight === undefined || bottomRight === undefined || bottomLeft === undefined
@@ -355,14 +386,21 @@ function rawRadius(reader: LayerStyle, corner: Corner, variables: VariableIndex)
 }
 
 /**
+ * A box's width where the capture measured it wider than twice its largest radius in every mode
+ * (`cornersFit`), so no radius along its top or bottom scales or reaches half its width.
+ */
+const HELD_ACROSS = "held";
+
+/**
  * The radii as written, on a box whose sides are at least the given lengths, where they prove CSS
  * scales none of them and Figma caps none, each a variable at its greatest value: the radii along
- * each side sum within its least length, and each sits within half the shorter one. Undefined
- * otherwise, or for a radius that reads as no length.
+ * each side sum within its least length, and each sits within {@link cornerCap}. A width of
+ * {@link HELD_ACROSS} proves the top and bottom fit, so only the height decides. Undefined otherwise,
+ * or for a radius that reads as no length.
  */
 function unscaledCorners(
   raw: readonly (RawRadius | undefined)[],
-  width: number,
+  width: number | typeof HELD_ACROSS,
   height: number
 ): readonly NumberSpec[] | undefined {
   const known = raw.flatMap((each) => (each === undefined || each.kind === "infinite" ? [] : [each]));
@@ -371,12 +409,13 @@ function unscaledCorners(
   }
   const px = known.map((each) => (each.kind === "literal" ? each.px : each.most));
   const [topLeft = 0, topRight = 0, bottomRight = 0, bottomLeft = 0] = px;
+  const cap = cornerCap(width === HELD_ACROSS ? Number.POSITIVE_INFINITY : width, height);
+  const within = (first: number, second: number, length: number) => first + second <= length;
   const fits =
-    topLeft + topRight <= width &&
-    bottomRight + bottomLeft <= width &&
-    topRight + bottomRight <= height &&
-    bottomLeft + topLeft <= height &&
-    px.every((radius) => radius <= cornerCap(width, height));
+    px.every((radius) => radius <= cap) &&
+    (width === HELD_ACROSS || (within(topLeft, topRight, width) && within(bottomLeft, bottomRight, width))) &&
+    within(topRight, bottomRight, height) &&
+    within(topLeft, bottomLeft, height);
   return fits ? known.map(writtenRadius) : undefined;
 }
 

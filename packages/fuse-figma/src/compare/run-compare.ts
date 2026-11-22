@@ -279,6 +279,7 @@ export function planCells(
           : undefined,
         fallback: fallbackInteraction(cell),
         restsByDesign: unchanged.has(instance.variant),
+        shows: isClientRenderer(renderer) ? undefined : renderer.shows,
       },
     });
   });
