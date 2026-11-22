@@ -2439,6 +2439,30 @@
       {
         "part": "field-label",
         "className": "group-data-disabled/field:opacity-50"
+      },
+      {
+        "part": "arrow",
+        "className": "data-[side=left]:right-[-9px]"
+      },
+      {
+        "part": "arrow",
+        "className": "data-[side=left]:rotate-90"
+      },
+      {
+        "part": "arrow",
+        "className": "data-[side=right]:left-[-9px]"
+      },
+      {
+        "part": "arrow",
+        "className": "data-[side=right]:-rotate-90"
+      },
+      {
+        "part": "arrow",
+        "className": "data-[side=top]:bottom-[-6px]"
+      },
+      {
+        "part": "arrow",
+        "className": "data-[side=top]:rotate-180"
       }
     ],
     "radio-group": [
@@ -6512,6 +6536,14 @@
       "property": "z-index",
       "reason": "An open composite's `<div>`s around its roots are the sample's host, which centres the trigger and gives it room, and Base UI's positioner. The kit draws the composite's own box: it places the popup by the placement rule and takes the anchor's width as the capture measured it, so their layout, `isolate`, `z-50`, `outline-none` and their preflight and base-layer resets draw nothing.",
       "at": ["popover-open/side=bottom 1/around/1"]
+    },
+    {
+      "set": "popover-content",
+      "part": "div",
+      "className": "tailwind preflight",
+      "property": "border",
+      "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
+      "at": ["popover-content/content=basic,showArrow=true 0/root/3::before"]
     },
     {
       "set": "dropdown-menu-checkbox-item",

@@ -4,7 +4,7 @@
  * for every box and icon; `placement.ts` reads the translates and scales that place a part, and
  * `translate-fold.ts` folds a translate its rows share.
  */
-import { evaluateLength, evaluateNumber, normalizeCss } from "./css-values";
+import { evaluateLength, evaluateNumber, normalizeCss, splitTopLevel } from "./css-values";
 import type { RotationSpec } from "./kit-spec";
 import type { LayerStyle } from "./layer-style";
 
@@ -132,6 +132,146 @@ function clockwiseDegrees(value: string): number | undefined {
 }
 
 /**
+ * A CSS angle as the turn Figma's `rotation` holds: counterclockwise, from -180 to 180, as
+ * {@link readRotation} says. `none` is no turn.
+ *
+ * @param value - The angle, as `rotate` or `rotate()` takes it.
+ * @returns The turn, or undefined for a value {@link clockwiseDegrees} does not read.
+ */
+function figmaTurn(value: string): RotationSpec | undefined {
+  const normalized = normalizeCss(value);
+  const clockwise = normalized === "none" ? 0 : clockwiseDegrees(normalized);
+  if (clockwise === undefined) {
+    return undefined;
+  }
+  const turned = ((-clockwise % 360) + 360) % 360;
+  return turned > 180 ? turned - 360 : turned;
+}
+
+/**
+ * The `transform-box` values whose reference box is an HTML box's border box: unset, `border-box`,
+ * and `view-box` and `stroke-box`, which CSS Transforms 1 §7 resolves to the border box for a box with
+ * a CSS layout. `content-box` and `fill-box`, which resolves to the content box, take the box inside
+ * its border. Chromium agreed on 2026-11-21: an 8px `border-box` square with a 1px border moved 4px
+ * under `translateX(-50%)` at the first four and 3px at the other two.
+ */
+const BORDER_REFERENCES: ReadonlySet<string> = new Set(["", "border-box", "view-box", "stroke-box"]);
+
+/**
+ * Whether a box's transforms take its border box as their reference box, so a percentage in a
+ * translate takes the box's own size and a turn and a scale act about a point the box's size sets,
+ * as the kit's readers assume. Reads nothing.
+ *
+ * @param style - The box's style.
+ * @returns True where `transform-box` is one of {@link BORDER_REFERENCES}.
+ */
+export function transformsAboutBorderBox(style: LayerStyle): boolean {
+  return BORDER_REFERENCES.has(normalizeCss(style.resolved("transform-box") ?? ""));
+}
+
+/** Whether one component of a `transform-origin` is the centre on its axis: `center` or `50%`. */
+const CENTRED = new Set(["center", "50%"]);
+
+/**
+ * Whether a `transform-origin` is the box's centre, the default `50% 50%`: unset, or one or two
+ * components that are each `center` or `50%`, the one left out being the centre too (CSS Transforms
+ * 1 §6), with any third, the z offset, at zero. Reads nothing.
+ *
+ * @param style - The box's style.
+ * @returns True where the origin is the centre.
+ */
+export function originIsCentre(style: LayerStyle): boolean {
+  if (!style.has("transform-origin")) {
+    return true;
+  }
+  const [x = "", y = "center", z = "0", ...rest] = normalizeCss(style.resolved("transform-origin") ?? "")
+    .split(" ")
+    .filter((part) => part !== "");
+  return CENTRED.has(x) && CENTRED.has(y) && evaluateLength(z) === 0 && rest.length === 0;
+}
+
+/**
+ * A box's `transform` as the `translate` and the turn it composes, as {@link foldTranslateTurn}
+ * reads it: none, folded, or refused for the reason given.
+ */
+export type TranslateTurn =
+  | { readonly kind: "none" }
+  | {
+      readonly kind: "folded";
+      /** The translate, as the `translate` property writes it: the x and the y move. */
+      readonly translate: string;
+      /** The turn, counterclockwise as Figma counts it. */
+      readonly turn: RotationSpec;
+    }
+  | { readonly kind: "refused"; readonly why: string };
+
+/**
+ * Read a box's `transform` of exactly `translate()` then `rotate()` as the `translate` and the turn
+ * it composes, as an arrow's `::before` writes `translate(-50%,50%) rotate(45deg)`. CSS applies the
+ * individual `translate`, `rotate` and `scale`, then `transform`, each about the `transform-origin`
+ * (CSS Transforms 2 §6). About the box's centre, `transform: translate(T) rotate(R)` moves the centre
+ * by T and turns the box about it, the matrix `translate: T; rotate: R` makes. So the fold holds only
+ * where the box sets no `translate`, `rotate` or `scale` of its own and its origin is the centre. The
+ * caller checks the reference box ({@link transformsAboutBorderBox}). Reads nothing.
+ *
+ * @param style - The box's style.
+ * @returns The translate and the turn, none for `transform: none`, or why any other transform does
+ *   not fold.
+ */
+export function foldTranslateTurn(style: LayerStyle): TranslateTurn {
+  const value = normalizeCss(style.resolved("transform") ?? "none");
+  if (value === "none") {
+    return { kind: "none" };
+  }
+  const match = /^translate\(([^()]*)\) rotate\(([^()]*)\)$/.exec(value);
+  const [, moves = "", angle = ""] = match ?? [];
+  const [x, y = "0px", ...rest] = splitTopLevel(moves, ",");
+  const turn = figmaTurn(angle);
+  if (match === null || x === undefined || rest.length > 0 || turn === undefined) {
+    return { kind: "refused", why: `\`transform: ${value}\` is no \`translate()\` then \`rotate()\`` };
+  }
+  const moved = ["translate", "rotate", "scale"].some(
+    (property) => !["", "none"].includes(normalizeCss(style.resolved(property) ?? ""))
+  );
+  if (moved) {
+    return {
+      kind: "refused",
+      why: "a `translate`, `rotate` or `scale` of the box's own applies before its `transform`",
+    };
+  }
+  return originIsCentre(style)
+    ? { kind: "folded", translate: `${x} ${y}`, turn }
+    : {
+        kind: "refused",
+        why: `the transform turns the box about \`transform-origin: ${style.resolved("transform-origin") ?? ""}\`, not its centre`,
+      };
+}
+
+/**
+ * A box's own `rotate`: no turn, a turn {@link readRotation} maps, or an angle it does not read, such
+ * as `.125turn`, which still turns the box in CSS.
+ */
+export type OwnTurn =
+  | { readonly kind: "none" }
+  | { readonly kind: "turned"; readonly turn: RotationSpec }
+  | { readonly kind: "unread"; readonly value: string };
+
+/**
+ * The turn a box's own `rotate` gives it, as {@link readRotation} reads it. Reads nothing.
+ *
+ * @param style - The box's style.
+ * @returns The turn from -180 to 180, none for no turn or a whole one, or the angle it does not read.
+ */
+export function ownTurn(style: LayerStyle): OwnTurn {
+  const value = style.resolved("rotate") ?? "none";
+  const turn = figmaTurn(value);
+  if (turn === undefined) {
+    return { kind: "unread", value };
+  }
+  return turn === 0 ? { kind: "none" } : { kind: "turned", turn };
+}
+
+/**
  * Read a part's or an icon's `rotate` as the turn Figma's `rotation` holds. CSS turns a box
  * clockwise about its center and leaves its layout as it was. Figma counts degrees
  * counterclockwise: on 2026-10-22 a real file read `relativeTransform` `[[0, -1], [1, 0]]` at -90, a
@@ -145,15 +285,7 @@ function clockwiseDegrees(value: string): number | undefined {
 export function readRotation(style: LayerStyle): RotationSpec | undefined {
   const rotation = style.read(
     "rotate",
-    (value) => {
-      const normalized = normalizeCss(value);
-      const clockwise = normalized === "none" ? 0 : clockwiseDegrees(normalized);
-      if (clockwise === undefined) {
-        return undefined;
-      }
-      const turned = ((-clockwise % 360) + 360) % 360;
-      return turned > 180 ? turned - 360 : turned;
-    },
+    figmaTurn,
     (turn) => ({
       outcome: "literal",
       detail: turn === 0 ? "no turn" : `a rotation of ${turn}, counterclockwise as Figma counts it`,

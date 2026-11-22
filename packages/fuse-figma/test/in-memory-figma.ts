@@ -344,6 +344,20 @@ export class InMemoryFigma {
     return this.collectionNamed(collection).modes.map((mode) => mode.name);
   }
 
+  /**
+   * Every combination of the local collections' modes, one mode per collection, as the pins a frame
+   * can take.
+   *
+   * @returns Each pin, a mode name by collection name.
+   */
+  everyPin(): readonly Readonly<Record<string, string>>[] {
+    return this.collectionNames().reduce<readonly Readonly<Record<string, string>>[]>(
+      (pins, collection) =>
+        pins.flatMap((pin) => this.modeNames(collection).map((mode) => ({ ...pin, [collection]: mode }))),
+      [{}]
+    );
+  }
+
   /** Live variable names of a collection in creation order. */
   variableNames(collection: string): string[] {
     const owner = this.collectionNamed(collection);

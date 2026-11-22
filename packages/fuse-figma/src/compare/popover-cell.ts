@@ -4,7 +4,10 @@
  * compare page with its popup in the cell's slot, as `popover-kit.ts` draws it.
  *
  * - `popoverContent`: the popup, measured alone. Its outline Button trigger is the anchor, which the
- *   page hides, and the popup aligns to the trigger's start, so it starts on the slot's pixel grid.
+ *   page hides. Without the arrow the popup aligns to the trigger's start, so it starts on the slot's
+ *   pixel grid. With `showArrow` it opens centred on the trigger in a host as wide as the popup, as
+ *   `popoverOpen` does, since Base UI points the arrow at the trigger's centre and the capture reads
+ *   that offset only where the popup is centred on the trigger.
  * - `popoverOpen`: the trigger and the popup, measured together. It keeps the demo's centered popup
  *   and centers the trigger in a host as wide as the popup, so the popup starts at the slot's start.
  *
@@ -27,8 +30,8 @@ import {
 } from "../components/popover-text.ts";
 import type { ClientCellRendering } from "./cell-renderers.ts";
 
-/** The docs Basic demo's Popover, open, its popup portalled into `container`. */
-function basicPopover(container: HTMLElement, align: "start" | "center") {
+/** The docs Basic demo's Popover, open, its popup portalled into `container`, with or without its arrow. */
+function basicPopover(container: HTMLElement, align: "start" | "center", showArrow = false) {
   return createElement(
     Popover.Root,
     { defaultOpen: true },
@@ -39,7 +42,7 @@ function basicPopover(container: HTMLElement, align: "start" | "center") {
     ),
     createElement(
       Popover.Content,
-      { container, align },
+      { container, align, showArrow },
       createElement(
         Popover.Header,
         null,
@@ -60,14 +63,17 @@ function basicPopover(container: HTMLElement, align: "start" | "center") {
   );
 }
 
-/** The open Popover's popup. */
-export const popoverContent: ClientCellRendering = {
-  element: (_cell: Cell, _turnedOn: ReadonlySet<string>, container: HTMLElement) =>
-    basicPopover(container, "start"),
-};
-
 /** A host as wide as the popup, which centers the trigger in it, so the centered popup starts at its start. */
 const HOST = "flex w-72 justify-center";
+
+/** The open Popover's popup, with its arrow where the cell's `showArrow` is `true`. */
+export const popoverContent: ClientCellRendering = {
+  hostClasses: HOST.split(" "),
+  element: (cell: Cell, _turnedOn: ReadonlySet<string>, container: HTMLElement) =>
+    cell.showArrow === "true"
+      ? createElement("div", { className: HOST }, basicPopover(container, "center", true))
+      : basicPopover(container, "start"),
+};
 
 /** The open Popover, its trigger and its popup. */
 export const popoverOpen: ClientCellRendering = {

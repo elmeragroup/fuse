@@ -298,10 +298,10 @@ export const KIT_PARITY = {
   popover: {
     kind: "partial",
     sets: ["popover-content", "popover-open"],
-    missing: "The `showArrow` arrow.",
-    issue: 844,
+    missing: "The `showArrow` arrow on the `top`, `left` and `right` sides, and on the open Popover.",
+    issue: NICE_TO_HAVE,
   },
-  // The Popover sets leave out the arrow (#844).
+  // The Popover sets leave out the arrow on the `right` side, where its popup opens.
   "popover-info-button": { kind: "issue", issue: NICE_TO_HAVE },
   "radio-group": {
     kind: "partial",

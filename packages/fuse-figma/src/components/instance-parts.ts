@@ -62,7 +62,13 @@ import { prepareParts } from "./part-preparation";
 import { PaintedInstances } from "./stacking";
 
 /** A component set the build made before the set that holds an instance of it. */
-export type InnerSet = Omit<ComponentSetSpec, "page">;
+export type InnerSet = Omit<ComponentSetSpec, "page"> & {
+  /**
+   * The keys of the variants whose root `wrapHanging` in `root-clip.ts` drew as a frame inside an
+   * unclipped root, which an instance part does not build in place.
+   */
+  readonly wrappedRoots: ReadonlySet<string>;
+};
 
 /** A coverage row before it names its component. */
 type Row = RecordedRow;
@@ -230,6 +236,13 @@ export class InstanceParts {
     if (variant === undefined) {
       throw new KitUnmappable({
         message: `${part.key} shows ${of.name} at ${JSON.stringify(cell)}, a cell its set lacks`,
+      });
+    }
+    // The part maps its inner root as its own set maps a root left unwrapped, so it would diff that
+    // flat root against the wrapped variant (#922).
+    if (set.wrappedRoots.has(variant.key)) {
+      throw new KitUnmappable({
+        message: `${part.key} shows ${variant.key}, whose root draws its box in a frame inside an unclipped root that holds the layers hanging past it, which an instance part does not build in place (#922)`,
       });
     }
     const record = this.#recordOf(part);

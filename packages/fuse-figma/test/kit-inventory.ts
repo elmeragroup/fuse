@@ -214,8 +214,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     slug: "popover",
     name: "Popover",
     sets: [
-      // The Basic demo's header and Fields.
-      { key: "popover-content", name: "Popover content", variants: 1, previewed: 1 },
+      // The Basic demo's header and Fields, without and with the `showArrow` arrow.
+      { key: "popover-content", name: "Popover content", variants: 2, previewed: 2 },
       // Below the outline Button trigger.
       { key: "popover-open", name: "Popover (open)", variants: 1, previewed: 1 },
     ],

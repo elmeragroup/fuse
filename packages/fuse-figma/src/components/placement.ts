@@ -42,7 +42,8 @@ import type {
 } from "./kit-spec";
 import type { LayerStyle } from "./layer-style";
 import { MARGINS, VERTICAL_MARGINS } from "./margin-box";
-import { readPivot } from "./pivot-part";
+import { applyPivot } from "./pivot-part";
+import type { PivotPlan } from "./pivot-part";
 import { wrapPlaced } from "./placement-wrapper";
 import type { SubgridLayout } from "./subgrid-row";
 
@@ -155,6 +156,12 @@ export type ParentBox = {
 };
 
 /**
+ * A part's place as planned before it maps: by its parent's edges, as `absolute-placement.ts` plans
+ * a frame's or an instance's, or by its centre, as `pivot-part.ts` plans a frame's.
+ */
+export type PartPlan = PlacementPlan | PivotPlan;
+
+/**
  * A part where its box places it: the part as mapped, the layer that draws it there, absolute where it
  * sits outside the flow, and the layer that draws its border box.
  *
@@ -189,7 +196,7 @@ export type Placement<Part extends PlacedPart> = {
  * @param parts - The parts the cell renders in it, as mapped.
  * @param inFlowEnd - The style of the absolute part that draws in flow at the row's end, as
  *   {@link endsInFlow} found it, or undefined.
- * @param plans - The places `absolute-placement.ts` planned for the box's absolute parts, frames and
+ * @param plans - The places the box mapping planned for the box's absolute parts, frames and
  *   instances, by each part's style.
  * @returns The box's primary alignment, the translate's where one maps, else the layout's, and the
  *   parts with their placed layers in order.
@@ -198,7 +205,7 @@ export function placeParts<Part extends PlacedPart>(
   parent: ParentBox,
   parts: readonly Part[],
   inFlowEnd: LayerStyle | undefined,
-  plans: ReadonlyMap<LayerStyle, PlacementPlan> = new Map()
+  plans: ReadonlyMap<LayerStyle, PartPlan> = new Map()
 ): Placement<Part> {
   const centering = centersAlone(parent, parts) ? "centers-its-one-layer" : "other";
   // A copy of a part's layer with its place draws the part's border box where the layer did, and a
@@ -227,7 +234,8 @@ export function placeParts<Part extends PlacedPart>(
         return kept;
       }
       const plan = plans.get(style);
-      if (plan === undefined) {
+      // The box mapping plans an instance by its parent's edges alone.
+      if (plan === undefined || plan.kind === "pivot" || plan.kind === "pivot-refused") {
         readPosition(style, "other", undefined);
         return kept;
       }
@@ -247,16 +255,25 @@ export function placeParts<Part extends PlacedPart>(
       leaveUnplaced(style, UNPAINTABLE.why);
       return kept;
     }
-    const pivot = readPivot(style, layer, parent);
-    // A turned part keeps its turn wherever the flow puts it, so one with no place fails the build.
-    if (pivot?.kind === "refused") {
-      throw new KitUnmappable({ message: `the turned part ${layer.name} has no place: ${pivot.why}` });
-    }
-    if (pivot !== undefined) {
-      return copied({ ...layer, placement: pivot.spec });
-    }
     const plan = plans.get(style);
-    const read = plan === undefined ? undefined : readPlacement(style, plan);
+    // A turned part keeps its turn wherever the flow puts it, so one with no place fails the build.
+    if (plan?.kind === "pivot-refused") {
+      throw new KitUnmappable({ message: `the turned part ${layer.name} has no place: ${plan.why}` });
+    }
+    if (plan?.kind === "pivot") {
+      const pivoted = applyPivot(style, layer, plan);
+      if (pivoted !== undefined) {
+        return copied(pivoted);
+      }
+      if (plan.fallback.unsized === "fails") {
+        throw new KitUnmappable({
+          message: `the pseudo-element ${layer.name} hangs by its centre, and its layer as mapped holds no fixed size to place that centre by`,
+        });
+      }
+    }
+    // A frame placed by its centre that maps with no fixed size takes its place by its parent's edges.
+    const edges = plan?.kind === "pivot" ? plan.fallback.edges : plan;
+    const read = edges === undefined ? undefined : readPlacement(style, edges);
     if (read?.kind === "placed") {
       return copied({ ...layer, placement: read.placement });
     }
