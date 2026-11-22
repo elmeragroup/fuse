@@ -7841,6 +7841,14 @@
       "at": ["timeline-list/state=rest 0/root/0::before", "timeline-list/state=rest 0/root/1::before"]
     },
     {
+      "set": "timeline-list-links",
+      "part": "timeline-list-item",
+      "className": "tailwind preflight",
+      "property": "border",
+      "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
+      "at": ["timeline-list-links/state=rest 0/root/0::before"]
+    },
+    {
       "set": "tabs-trigger",
       "part": "tabs-trigger",
       "className": "tailwind preflight",

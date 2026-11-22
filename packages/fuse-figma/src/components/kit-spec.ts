@@ -308,8 +308,9 @@ export type TextLayerSpec = {
   readonly lineHeight: LineHeightSpec;
   readonly color: ColorSpec;
   /**
-   * The runs of characters that take a color other than `color`, in order and apart, as Code's
-   * highlighter colors each token through a span of its own. Absent for a text in one color.
+   * The runs of characters that take a color other than `color`, an underline or a link of their
+   * own, in order and apart, as Code's highlighter colors each token through a span and an inline
+   * `<a>` underlines and links its text. Absent for a text whose characters all look alike.
    */
   readonly ranges?: readonly TextRangeSpec[];
   /** The underline `text-decoration-line: underline` draws, or undefined for none. */
@@ -335,13 +336,21 @@ export type TextLayerSpec = {
 };
 
 /**
- * A run of a text's characters in a color of its own: from `start`, the index of its first character,
- * to `end`, the index after its last, as Figma's range methods count them.
+ * A run of a text's characters that looks alike: from `start`, the index of its first character, to
+ * `end`, the index after its last, as Figma's range methods count them. `color` is the run's fill,
+ * the text's own `color` where only an underline sets the run apart.
  */
 export type TextRangeSpec = {
   readonly start: number;
   readonly end: number;
   readonly color: ColorSpec;
+  /** The underline the run's element draws, as an inline `<a class="underline">` does. Absent for none. */
+  readonly underline?: UnderlineSpec;
+  /**
+   * The absolute `http` or `https` URL the run links to, the `href` of the `<a>` it sits in. Absent
+   * for none, and for an `href` that names a fragment or a path, which Figma refuses as a link.
+   */
+  readonly hyperlink?: string;
 };
 
 /**
