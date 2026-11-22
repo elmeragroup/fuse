@@ -1,10 +1,11 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, posix } from "node:path";
+import { parseArgs } from "node:util";
 import { expect, it } from "vitest";
 
 import { PUBLISH_GATES } from "../packages/fuse/scripts/release-pack.ts";
-import { asRecord, asString } from "./json-object.mjs";
+import { asRecord, asRecordArray, asString } from "./json-object.mjs";
 import { repoRoot } from "./repo-tree.mjs";
 import { readWorkflow, requiredJobSteps, requiredRunStep, turboTasks } from "./workflow.mjs";
 
@@ -29,21 +30,49 @@ function turboRunStep(job) {
 }
 
 /**
- * The arguments a job's turbo command requests, before Turbo resolves them.
+ * A job's matrix legs, each as the values its `${{ matrix.<key> }}` expressions read, or one leg
+ * with no values for a job without a matrix.
  * @param {string} job
+ * @returns {Record<string, unknown>[]}
  */
-function requestedArgs(job) {
-  const command = asString(turboRunStep(job).run, `${job} command`);
-  expect(command, `${job} gate must be one literal command`).not.toMatch(/\$\{\{|[\r\n]/);
-  const tokens = (command.match(/(?:'[^']*'|"[^"]*"|[^\s'"]+)+/g) ?? []).map((token) =>
-    token.replace(/['"]/g, "")
+function matrixLegs(job) {
+  const jobs = asRecord(readWorkflow("merge").jobs, "workflow jobs");
+  const strategy = asRecord(jobs[job], job).strategy;
+  if (strategy === undefined) return [{}];
+  return asRecordArray(
+    asRecord(asRecord(strategy, `${job} strategy`).matrix, `${job} matrix`).include,
+    `${job} matrix include`
   );
-  return tokens.slice(4);
 }
 
-/** @param {string} job */
+/**
+ * Each leg's turbo command after `pnpm exec turbo run`, with the leg's matrix values substituted:
+ * the arguments Turbo resolves, and the ones after `--` that it passes to the scripts it runs.
+ * @param {string} job
+ */
+function legCommands(job) {
+  const template = asString(turboRunStep(job).run, `${job} command`);
+  return matrixLegs(job).map((leg) => {
+    const command = template.replace(/\$\{\{\s*matrix\.([\w-]+)\s*\}\}/g, (_, /** @type {string} */ key) =>
+      asString(leg[key], `${job} matrix ${key}`)
+    );
+    expect(command, `${job} gate must be one literal command per leg`).not.toMatch(/\$\{\{|[\r\n]/);
+    const tokens = (command.match(/(?:'[^']*'|"[^"]*"|[^\s'"]+)+/g) ?? [])
+      .map((token) => token.replace(/['"]/g, ""))
+      .slice(4);
+    const separator = tokens.indexOf("--");
+    return separator === -1
+      ? { turbo: tokens, passThrough: [] }
+      : { turbo: tokens.slice(0, separator), passThrough: tokens.slice(separator + 1) };
+  });
+}
+
+/**
+ * The tasks a job schedules, over all of its legs.
+ * @param {string} job
+ */
 function scheduledTasks(job) {
-  return resolvedTasks(["run", ...requestedArgs(job)]);
+  return legCommands(job).flatMap(({ turbo }) => resolvedTasks(["run", ...turbo]));
 }
 
 /**
@@ -134,14 +163,16 @@ it("schedules every publish gate through the ci:checks aggregate", () => {
 it("the local check gate is ci:checks without the e2e and packed-artifact tier", () => {
   // Unit under test: turbo.json's `check` aggregate. Oracle: the resolved ci:checks graph minus
   // the tasks this list names, which CI alone runs. `test:compare` is fuse-figma's self-check in
-  // Chromium, which takes minutes, and `test:capture` its capture check, which captures in Chromium. Fuse's no-op aggregate anchors are not gates.
+  // Chromium, which takes minutes, and `test:capture:sets` and `test:capture:facts` the two halves
+  // of its capture check, which capture in Chromium. Fuse's no-op aggregate anchors are not gates.
   // `build:e2e` is the build only `docs#test:e2e` serves (apps/docs/turbo.json), and `pack` the
   // tarball only the packed-artifact tier reads.
   const ciOnly = [
     "test:e2e",
     "build:e2e",
     "test:compare",
-    "test:capture",
+    "test:capture:sets",
+    "test:capture:facts",
     "test:packed-consumer",
     "package:check",
     "pack",
@@ -160,45 +191,94 @@ it("the local check gate is ci:checks without the e2e and packed-artifact tier",
   expect([...local].sort()).toEqual(expected.sort());
 }, 60_000);
 
-/** fuse-figma's Chromium jobs: each job, the one task it schedules, and its change gate's pathspecs. */
+/** fuse-figma's Chromium jobs, each with the fuse-figma gates its legs run between them. */
 const FIGMA_JOBS = [
-  { job: "figma-compare", task: "test:compare", inputs: ".github/figma-compare-inputs.txt" },
-  { job: "figma-capture", task: "test:capture", inputs: ".github/figma-capture-inputs.txt" },
+  { job: "figma-compare", gates: ["@elmeragroup/fuse-figma#test:compare"] },
+  {
+    job: "figma-capture",
+    gates: ["@elmeragroup/fuse-figma#test:capture:facts", "@elmeragroup/fuse-figma#test:capture:sets"],
+  },
 ];
 
+/** The pathspec file .github/scripts/figma-compare-affected.sh reads when its step sets no INPUTS. */
+const DEFAULT_INPUTS = ".github/figma-compare-inputs.txt";
+
 it.each(FIGMA_JOBS)(
-  "the $job job schedules fuse-figma's $task and no other gate",
-  ({ job, task }) => {
-    // Its own runner keeps the minutes-long Chromium run out of the browser job.
-    const ids = executableTaskIds(scheduledTasks(job)).filter((id) => !id.endsWith("#build"));
-    expect(ids).toEqual([`@elmeragroup/fuse-figma#${task}`]);
+  "the $job job schedules its fuse-figma gates and no other",
+  ({ job, gates }) => {
+    // Unit under test: the job's legs. Oracle: the gates listed above.
+    // Its own runners keep the minutes-long Chromium run out of the browser job.
+    const scheduled = executableTaskIds(scheduledTasks(job)).filter((id) => !id.endsWith("#build"));
+    expect([...new Set(scheduled)].sort()).toEqual(gates);
     const others = executableTaskIds([...scheduledTasks("checks"), ...scheduledTasks("browser")]);
-    expect(others).not.toContain(`@elmeragroup/fuse-figma#${task}`);
+    for (const id of gates) expect(others).not.toContain(id);
   },
   30_000
 );
 
+it("the figma-capture sets legs capture every shard once", () => {
+  // Unit under test: the shards the sets legs' commands pass. Oracle: `--shard <k>/<n>`
+  // (scripts/capture.ts), where the n shards 1/n to n/n together hold every capture target. A
+  // shard left out or repeated skips its targets silently, and any other argument, such as a set
+  // name, narrows a leg to fewer targets, so parsing it throws.
+  const shards = legCommands("figma-capture")
+    .filter(({ turbo }) => turbo.includes("test:capture:sets"))
+    .map(({ passThrough }) =>
+      asString(
+        parseArgs({
+          args: passThrough,
+          options: { shard: { type: "string" } },
+          strict: true,
+          allowPositionals: false,
+        }).values.shard,
+        "figma-capture sets leg --shard"
+      )
+    );
+  expect(shards.length).toBeGreaterThan(1);
+  const expected = shards.map((_, index) => `${String(index + 1)}/${String(shards.length)}`);
+  expect([...shards].sort()).toEqual(expected.sort());
+});
+
 it.each(FIGMA_JOBS)(
   "the $job job's change gate covers every package and file its run needs",
-  ({ job, task, inputs }) => {
-    // Unit under test: the job's pathspecs, which its gate diffs. Oracles: the packages Turbo builds
-    // for the task, and the local action and scripts the job runs. Git matches the pathspecs, so a
-    // path the list leaves out or excludes fails here.
+  ({ job, gates }) => {
+    // Unit under test: the pathspecs the job's affected step diffs. Oracles: the packages Turbo
+    // schedules for the job's legs, the files Turbo hashes for the job's gates, and the local action
+    // and scripts the job runs. Git matches the pathspecs, so a path the list leaves out or excludes
+    // fails here. Every gate renders Fuse's build, so each must depend on it.
+    const steps = requiredJobSteps(readWorkflow("merge"), job);
+    const affected = asRecord(
+      steps.find((step) => step.id === "affected"),
+      `${job} affected step`
+    );
+    const env = affected.env === undefined ? {} : asRecord(affected.env, `${job} affected env`);
+    const inputs = env.INPUTS === undefined ? DEFAULT_INPUTS : asString(env.INPUTS, `${job} INPUTS`);
     const pathspecs = readFileSync(join(repoRoot, inputs), "utf8")
       .split("\n")
       .filter((line) => line !== "" && !line.startsWith("#"));
     const covered = new Set(
-      execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "--", ...pathspecs], {
-        cwd: repoRoot,
-        encoding: "utf8",
-      })
-        .split("\n")
+      execFileSync(
+        "git",
+        ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", ...pathspecs],
+        {
+          cwd: repoRoot,
+          encoding: "utf8",
+        }
+      )
+        .split("\0")
         .filter((line) => line !== "")
     );
-    const graph = turboTasks(["run", task, "--filter=@elmeragroup/fuse-figma"]);
-    const manifests = graph.map((each) => `${asString(each.directory, "task directory")}/package.json`);
+    const scheduled = scheduledTasks(job);
+    const gateTasks = scheduled.filter((each) => gates.includes(asString(each.taskId, "task id")));
+    for (const each of gateTasks) {
+      expect(each.dependencies, `${asString(each.taskId, "task id")} must build Fuse first`).toContain(
+        "@elmeragroup/fuse#build"
+      );
+    }
+    const manifests = scheduled
+      .filter((each) => asString(each.command, "task command") !== "<NONEXISTENT>")
+      .map((each) => `${asString(each.directory, "task directory")}/package.json`);
     expect(manifests).toContain("packages/fuse/package.json");
-    const steps = requiredJobSteps(readWorkflow("merge"), job);
     const localFiles = steps.flatMap((step) => {
       const uses = step.uses === undefined ? "" : asString(step.uses, "step uses");
       const run = step.run === undefined ? "" : asString(step.run, "step run");
@@ -217,6 +297,16 @@ it.each(FIGMA_JOBS)(
     ]) {
       expect(covered, `${inputs} must cover ${path}`).toContain(path);
     }
+    const hashed = gateTasks.flatMap((each) =>
+      Object.keys(asRecord(each.inputs, "task inputs")).map((file) =>
+        posix.join(asString(each.directory, "task directory"), file)
+      )
+    );
+    expect(hashed.length).toBeGreaterThan(0);
+    expect(
+      [...new Set(hashed)].filter((path) => !covered.has(path)),
+      `${inputs} must cover every file Turbo hashes for ${gates.join(" and ")}`
+    ).toEqual([]);
   },
   30_000
 );

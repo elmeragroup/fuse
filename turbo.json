@@ -66,8 +66,12 @@
     // cell twice in Chromium. packages/fuse-figma/turbo.json declares its build and inputs.
     "test:compare": {},
     // CI-only too: fuse-figma's capture check, which captures the capture-backed sets in Chromium
-    // again. packages/fuse-figma/turbo.json declares its build and inputs.
+    // again. `test:capture` runs it whole; CI's figma-capture legs run its halves,
+    // `test:capture:sets` and `test:capture:facts`. packages/fuse-figma/turbo.json declares their
+    // build and inputs.
     "test:capture": {},
+    "test:capture:sets": {},
+    "test:capture:facts": {},
     "test:packed-consumer": {
       "dependsOn": ["pack"]
     },
@@ -97,14 +101,15 @@
     // `check` script has nothing left to run: `@elmeragroup/fuse` defines both as self-describing
     // no-ops that exist only so `turbo run <aggregate>` fans out to the dependency list.
     // `check` is the local gate; `ci:checks` is `check` plus the CI-only e2e and packed-artifact
-    // tier (`test:e2e`, `test:compare`, `test:capture`, `test:packed-consumer`, `package:check`), so it mirrors every
-    // gate the merge workflow runs.
+    // tier (`test:e2e`, `test:compare`, `test:capture:sets`, `test:capture:facts`,
+    // `test:packed-consumer`, `package:check`), so it mirrors every gate the merge workflow runs.
     "ci:checks": {
       "dependsOn": [
         "check",
         "test:e2e",
         "test:compare",
-        "test:capture",
+        "test:capture:sets",
+        "test:capture:facts",
         "test:packed-consumer",
         "package:check"
       ]

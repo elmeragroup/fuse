@@ -17,17 +17,51 @@
     "type-check": {
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/docs/scripts/lib/page-frontmatter.ts"]
     },
-    // The capture check in Chromium: each capture-backed set captured again and compared with its
-    // kept file, the perturbation probe, the differential oracle and the fake-file Plan differential.
-    // It runs in CI's `figma-capture` job and stays out of the local `check` gate. Like
-    // `test:compare`, it renders Fuse's build; the Plan differential reads the plugin's sources.
+    // The capture check in Chromium. `test:capture` runs it whole and stays out of the local
+    // `check` gate. CI's figma-capture legs run its two halves, so each caches on its own:
+    // `test:capture:sets` captures each capture-backed set again and compares it with its kept
+    // file, and `test:capture:facts` runs the perturbation probe, the differential oracle and the
+    // fake-file Plan differential. A sets leg passes `-- --shard=<k>/<n>`, which Turbo hashes, so
+    // each shard has its own cache entry. All three render Fuse's build. The capture reads no plugin
+    // source, test or docs page, so a change to those replays the sets; the facts half's oracle
+    // reads the API references, its kit build the docs pages, and its Plan differential the plugin.
+    // The facts half's suites import helpers from `test/`, so only its test files and fixtures stay
+    // out of the whole check and the facts half.
     "test:capture": {
       "dependsOn": ["@elmeragroup/fuse#build"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "!README.md",
-        "!test/**",
+        "!test/**/*.test.ts",
+        "!test/fixtures/**",
         "$TURBO_ROOT$/packages/color/src/**",
+        "!$TURBO_ROOT$/packages/color/src/**/*.test.*",
+        "$TURBO_ROOT$/apps/docs/src/app/*/components/*/api.json",
+        "$TURBO_ROOT$/apps/docs/src/app/*/components/*/page.mdx",
+        "$TURBO_ROOT$/apps/docs/scripts/lib/page-frontmatter.ts"
+      ]
+    },
+    "test:capture:sets": {
+      "dependsOn": ["@elmeragroup/fuse#build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!README.md",
+        "!test/**",
+        "!plugin/**",
+        "!**/*.test.ts",
+        "$TURBO_ROOT$/packages/color/src/**",
+        "!$TURBO_ROOT$/packages/color/src/**/*.test.*"
+      ]
+    },
+    "test:capture:facts": {
+      "dependsOn": ["@elmeragroup/fuse#build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!README.md",
+        "!test/**/*.test.ts",
+        "!test/fixtures/**",
+        "$TURBO_ROOT$/packages/color/src/**",
+        "!$TURBO_ROOT$/packages/color/src/**/*.test.*",
         "$TURBO_ROOT$/apps/docs/src/app/*/components/*/api.json",
         "$TURBO_ROOT$/apps/docs/src/app/*/components/*/page.mdx",
         "$TURBO_ROOT$/apps/docs/scripts/lib/page-frontmatter.ts"
@@ -36,8 +70,9 @@
     // `figma:compare --self-check` in Chromium: every kit cell rendered twice and compared. It takes
     // minutes, so it runs in CI's `figma-compare` job and stays out of the local `check` gate. The
     // cells import Fuse's build, whose task hash covers Fuse's sources, which the kit reads through
-    // the catalog entries too. The color package has no build, so its sources are listed. The inputs leave out what the
-    // run never reads, so a docs or test edit replays the cached result.
+    // the catalog entries too. The color package has no build, so its sources are listed. The inputs
+    // leave out what the run never reads, so a test edit, or a docs edit outside the component pages'
+    // `page.mdx` and their frontmatter reader, replays the cached result.
     "test:compare": {
       "dependsOn": ["@elmeragroup/fuse#build"],
       "inputs": [

@@ -1,8 +1,9 @@
-# What fuse-figma's `test:compare` self-check reads, as git pathspecs, one per line. The merge
-# workflow's figma-compare job renders only when one of these changed since its base
-# (.github/scripts/figma-compare-affected.sh). test/merge-task-graph.test.mjs checks that every
-# package the task's turbo graph builds is listed. A path listed too broadly costs a render; one
-# left out lets a change skip the check.
+# What fuse-figma's `test:compare` self-check reads, as git pathspecs, one per line. On a PR with
+# a known base, the merge workflow's figma-compare job skips the render when none of these changed
+# (.github/scripts/figma-compare-affected.sh); a manual dispatch or an unknown base renders.
+# test/merge-task-graph.test.mjs checks that every package the task's turbo graph builds and every
+# file Turbo hashes for it is listed. A path listed too broadly costs a render; one left out lets a
+# change skip the check.
 
 # fuse-figma's sources and scripts
 packages/fuse-figma
@@ -41,3 +42,7 @@ turbo.json
 .github/scripts/install-playwright-deps.sh
 .github/scripts/figma-compare-affected.sh
 .github/figma-compare-inputs.txt
+
+# The docs pages whose ledes the kit build reads, and their frontmatter reader
+:(glob)apps/docs/src/app/(docs)/components/*/page.mdx
+apps/docs/scripts/lib/page-frontmatter.ts

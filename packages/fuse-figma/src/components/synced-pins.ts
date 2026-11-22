@@ -1,9 +1,6 @@
 /**
  * An in-memory Figma file the token sync wrote, every combination of its modes, and the page stamps
  * that show each combination in Chromium, for the suites that check a built length in every mode.
- * It sits beside those suites, not in `test/`, because the figma-capture job's path filter and
- * `test:capture`'s Turbo inputs leave `test/` out, so a change there would skip the Chromium job
- * (#947).
  */
 import { Effect, Result } from "effect";
 import { TestConsole } from "effect/testing";

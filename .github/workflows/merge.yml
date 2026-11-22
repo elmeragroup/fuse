@@ -288,18 +288,40 @@ jobs:
           key: ${{ env.TURBO_CACHE_KEY }}
 
   # fuse-figma's capture check (packages/fuse-figma/README.md, "Building sets from a browser
-  # capture"): it captures every capture-backed set again in Chromium and fails where a capture
-  # differs from its kept file, then runs the perturbation probe, the differential oracle and the
-  # fake-file Plan differential. It skips its setup when nothing it reads changed
-  # (.github/figma-capture-inputs.txt), as the figma-compare job does. It guards the Figma kit's
-  # tooling, not the published package, so publishing and deploys do not wait on it.
+  # capture"), split over parallel legs. Each `sets` leg captures one round-robin shard of the
+  # capture targets again in Chromium and fails where a capture differs from its kept file
+  # (`test:capture:sets -- --shard=<k>/<n>`). The `facts` leg runs the perturbation probe, the
+  # differential oracle and the fake-file Plan differential (`test:capture:facts`). On a pull
+  # request or push with a known base, every leg skips its setup when no path in
+  # .github/figma-capture-inputs.txt changed; a manual dispatch or an unknown base always runs it,
+  # as in the figma-compare job. It guards the Figma kit's tooling, not the published package, so
+  # publishing and deploys do not wait on it.
   figma-capture:
+    name: figma-capture (${{ matrix.leg }})
     runs-on: ubuntu-latest
-    # A hang guard: setup and a cold capture take minutes.
-    timeout-minutes: 20
+    strategy:
+      # A failing leg leaves the others running, so the run reports every drifted shard at once.
+      fail-fast: false
+      matrix:
+        include:
+          - { leg: sets-1, args: "test:capture:sets -- --shard=1/6" }
+          - { leg: sets-2, args: "test:capture:sets -- --shard=2/6" }
+          - { leg: sets-3, args: "test:capture:sets -- --shard=3/6" }
+          - { leg: sets-4, args: "test:capture:sets -- --shard=4/6" }
+          - { leg: sets-5, args: "test:capture:sets -- --shard=5/6" }
+          - { leg: sets-6, args: "test:capture:sets -- --shard=6/6" }
+          - { leg: facts, args: "test:capture:facts" }
+    # A hang guard about three times a leg's run. On main's 2c95c0ecc run (job 137156180016) one
+    # runner took 725 s to capture 131 targets one after another. A few sets take most of it (button
+    # 66 s, item 61 s, calendar-day 47 s), so the shards are uneven: the heaviest of six would have
+    # taken 149 s, against 252 s for the heaviest of four. The probe and the oracle tests took about
+    # 2 minutes, and setup and the Fuse build about 1.5 minutes. The list grows with each kit PR,
+    # so raise the shard count before this guard. Turbo hashes the args after `--` into every task a
+    # leg runs, so each leg builds Fuse under its own hash, which the leg's own cache keeps.
+    timeout-minutes: 15
     env:
-      # Per-attempt keys, restored by prefix, as in the browser job.
-      TURBO_CACHE_KEY: turbo-figma-capture-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+      # Per-leg, per-attempt keys, restored by the leg's prefix, as in the browser job.
+      TURBO_CACHE_KEY: turbo-figma-capture-${{ matrix.leg }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -342,15 +364,15 @@ jobs:
           path: .turbo/cache
           key: ${{ env.TURBO_CACHE_KEY }}
           restore-keys: |
-            turbo-figma-capture-${{ github.sha }}-
-            turbo-figma-capture-
+            turbo-figma-capture-${{ matrix.leg }}-${{ github.sha }}-
+            turbo-figma-capture-${{ matrix.leg }}-
 
-      # The log names each set whose capture drifted, each contradiction the probe found, and each
-      # difference or Plan line no oracle entry classifies.
+      # A sets leg's log names each set in its shard whose capture drifted; the facts leg's names
+      # each contradiction the probe found and each difference or Plan line no oracle entry classifies.
       - name: turbo capture check
         id: turbo-gate
         if: steps.affected.outputs.run == 'true'
-        run: pnpm exec turbo run test:capture
+        run: pnpm exec turbo run ${{ matrix.args }}
         env:
           TURBO_RUN_SUMMARY: "true"
 
