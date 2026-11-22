@@ -1,12 +1,14 @@
 /**
  * Pagination's parts and the row that lays them out, as four component sets on one page.
  *
- * - `Pagination link` is a page number at rest, hover and focus, current off and on: 6 cells.
- *   `Pagination.Link` renders an `<a>` with Button's look at `size="icon"`, ghost, or outline with
- *   `aria-current="page"` while current. The number takes the host page's type.
- * - `Pagination edge` is the previous and next link at rest, hover and focus: 6 cells. Each is that
- *   link at `size="default"`, ghost, with the caret on the side the component puts it. Its copy is the
- *   en-US default, in a bare `<span>`.
+ * - `Pagination link` is a page number at four of Button's square sizes and its four label sizes, at rest, hover
+ *   and focus, current off and on: 48 cells. `Pagination.Link` renders an `<a>` with Button's look at
+ *   its `size`, `icon` by default, ghost, or outline with `aria-current="page"` while current. The
+ *   number takes the host page's type. `icon-inline`, which Icon button draws, stays out of the link.
+ * - `Pagination edge` is the previous and next link at Button's four label sizes, at rest, hover and
+ *   focus: 24 cells. Each is that link at its `size`, `default` by default, ghost, with the caret on
+ *   the side the component puts it. Its copy is the en-US default, in a bare `<span>`. The edge also
+ *   takes Button's square sizes, which the kit leaves out until a probe shows they draw.
  * - `Pagination ellipsis` is the md control square around DotsThree: 1 cell. Its copy is visually
  *   hidden, so the kit draws no text for it.
  * - `Pagination row` is the docs Basic demo's row: previous, the pages 1 to 3 with 1 current, and
@@ -22,10 +24,41 @@ import type {
   PartManifest,
   SetManifest,
 } from "../capture/manifest";
+import { BUTTON_ICON_SIZES, BUTTON_LABEL_SIZES } from "./button-kit";
 import type { Cell } from "./component-spec";
 
 /** The states an `<a>` shows. */
 const STATE_AXIS = { name: "state", values: ["rest", "hover", "focus"] };
+
+/** A square size of Button's the link draws: every one but `icon-inline`, which the parity row lists. */
+type LinkSquareSize = Exclude<(typeof BUTTON_ICON_SIZES)[number], "icon-inline">;
+
+/** The link's sizes: Button's square sizes, `icon` first as `Pagination.Link` defaults to it, then its label sizes. */
+const LINK_SIZES = [
+  ...BUTTON_ICON_SIZES.filter((size): size is LinkSquareSize => size !== "icon-inline"),
+  ...BUTTON_LABEL_SIZES,
+];
+
+/** A size the link or the edge takes, as `Pagination.Link`'s and the edges' `size` props take it. */
+export type PaginationSize = (typeof LINK_SIZES)[number];
+
+function isSize(value: string | undefined): value is PaginationSize {
+  return LINK_SIZES.some((size) => size === value);
+}
+
+/**
+ * A cell's size.
+ *
+ * @param cell - A `pagination-link` or `pagination-edge` cell.
+ * @returns The size its `size` axis names.
+ * @throws When the cell names no size the sets declare, a defect in the caller's cell.
+ */
+export function sizeOf(cell: Cell): PaginationSize {
+  if (!isSize(cell.size)) {
+    throw new Error(`Pagination has no size ${cell.size ?? ""}`);
+  }
+  return cell.size;
+}
 
 /**
  * The number every link cell shows, the default of the `Label` text property: the current page of
@@ -112,14 +145,16 @@ export const PAGINATION_ROW_PAGES = [PAGINATION_LINK_LABEL, "2", "3"] as const;
 
 /**
  * The link's manifest, which the capture-backed build reads with `captures/pagination-link.json`:
- * `<Pagination.Link href isActive>1</Pagination.Link>`, ghost, or outline while current.
+ * `<Pagination.Link href size isActive>1</Pagination.Link>`, ghost, or outline while current.
  */
 export const PAGINATION_LINK_MANIFEST: SetManifest = {
   key: "pagination-link",
   name: "Pagination link",
   api: { page: "pagination", parts: ["Pagination.Link"] },
   slot: "pagination-link",
-  axes: [{ name: "isActive", values: ["false", "true"] }, STATE_AXIS],
+  axes: [{ name: "size", values: LINK_SIZES }, { name: "isActive", values: ["false", "true"] }, STATE_AXIS],
+  // The size axis came after the set's first release, so an `icon` link keeps the key it had then.
+  addedAxes: new Set(["size"]),
   columnAxis: "state",
   label: LINK_LABEL,
   iconsFor: () => [],
@@ -128,7 +163,7 @@ export const PAGINATION_LINK_MANIFEST: SetManifest = {
 
 /**
  * The edge's manifest, which the capture-backed build reads with `captures/pagination-edge.json`:
- * `<Pagination.Previous href />` and `<Pagination.Next href />`. Its `data-slot` is
+ * `<Pagination.Previous href size />` and `<Pagination.Next href size />`. Its `data-slot` is
  * `pagination-previous` or `pagination-next`. Its label names no element: the `<span>` around the
  * copy carries no class, so it takes the link's own type.
  */
@@ -138,7 +173,13 @@ export const PAGINATION_EDGE_MANIFEST: SetManifest = {
   api: { page: "pagination", parts: ["Pagination.Previous", "Pagination.Next"] },
   slot: "pagination-edge",
   elementSlot: (cell) => `pagination-${directionOf(cell)}`,
-  axes: [{ name: "direction", values: ["previous", "next"] }, STATE_AXIS],
+  axes: [
+    { name: "size", values: BUTTON_LABEL_SIZES },
+    { name: "direction", values: ["previous", "next"] },
+    STATE_AXIS,
+  ],
+  // The size axis came after the set's first release, so a `default` edge keeps the key it had then.
+  addedAxes: new Set(["size"]),
   columnAxis: "state",
   label: {
     key: "label",
@@ -180,28 +221,28 @@ function itemManifest(inner: InstanceManifest): PartManifest {
   };
 }
 
-/** The previous or next edge, an instance of the edge's set at rest. */
+/** The previous or next edge, an instance of the edge's set at its default size, at rest. */
 function edgeManifest(direction: Direction): InstanceManifest {
   return {
     kind: "instance",
     key: direction,
     of: PAGINATION_EDGE_MANIFEST,
     slot: `pagination-${direction}`,
-    cell: () => ({ direction, state: "rest" }),
+    cell: () => ({ size: "default", direction, state: "rest" }),
     shownIn: () => true,
   };
 }
 
 /**
- * A page link, an instance of the link's set at rest, current for the first page, and exposed, so a
- * designer retypes the number from the row's panel.
+ * A page link, an instance of the link's set at its default size, at rest, current for the first
+ * page, and exposed, so a designer retypes the number from the row's panel.
  */
 function pageManifest(number: string, current: boolean): InstanceManifest {
   return {
     kind: "instance",
     key: `page-${number}`,
     of: PAGINATION_LINK_MANIFEST,
-    cell: () => ({ isActive: current ? "true" : "false", state: "rest" }),
+    cell: () => ({ size: "icon", isActive: current ? "true" : "false", state: "rest" }),
     properties: () => ({ text: { Label: number } }),
     shownIn: () => true,
     exposed: true,
