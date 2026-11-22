@@ -69,7 +69,7 @@ import {
 import type { Viewport } from "./css-values";
 import type { DrawnAt, DrawnParts } from "./drawn-parts";
 import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
-import { drawRestAtEnd } from "./end-frame";
+import { drawRest } from "./end-frame";
 import { drawsAtRoom, fitsRowRoom } from "./fitting-part";
 import type { BesideLayer, FitPlace } from "./fitting-part";
 import { fixedPlace, placeCentredFixed, refuseFixedPlace } from "./fixed-placement";
@@ -1153,11 +1153,12 @@ export function mapBox(
     laid,
     counterAlign
   );
-  // A row whose first part's auto margin ends the others draws them in a frame of their own.
+  // A row whose first part's auto margin ends the others, or whose last part's starts them, draws
+  // them in a frame of their own.
   const children =
-    layout.restAtEnd === true
-      ? drawRestAtEnd(reader, joined, { itemSpacing, counterAlign }, sizing.vertical)
-      : joined;
+    layout.restAt === undefined
+      ? joined
+      : drawRest(reader, joined, { itemSpacing, counterAlign }, sizing.vertical, layout.restAt);
   // A row spaced around a first part that fits packs at its start, and where a fill does not draw
   // that part, the row's spacing stays unmapped with it.
   const unspaced =

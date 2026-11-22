@@ -95,6 +95,22 @@ describe("an auto margin on an instance part", () => {
     ]);
   });
 
+  it("draws ms-auto on the last of three layers through the frame that starts the others", async () => {
+    const { variant, coverage } = await buildRow(
+      "flex w-[200px] gap-[8px]",
+      [part({ key: "a", slot: "a" }), part({ key: "b", slot: "b" }), TAG],
+      [
+        { slot: "a", classes: "size-[20px]" },
+        { slot: "b", classes: "size-[20px]" },
+        { slot: "tag", classes: "size-[20px] ms-auto" },
+      ]
+    );
+    expect(variant?.root.children.map((child) => child.key)).toEqual(["tag start", "tag"]);
+    expect(notesOf(coverage, "ms-auto").map(([property, outcome]) => [property, outcome])).toEqual([
+      ["margin-left", "literal"],
+    ]);
+  });
+
   // Oracle: Figma's instance model, under which an instance of the row's set draws that set's
   // variant and carries only what an override or its own sizing sets. Here the chip's
   // `[--push:auto]` reaches the tag's `var(--push,0px)` inside a Review row instance, so the row that
