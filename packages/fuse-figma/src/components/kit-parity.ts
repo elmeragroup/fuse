@@ -249,7 +249,7 @@ export const KIT_PARITY = {
     issue: MISSING_SETS,
   },
   kbd: { kind: "sets", sets: ["kbd", "kbd-group"] },
-  link: { kind: "partial", sets: ["link"], missing: "`weight` and `truncate`.", issue: MISSING_SETS },
+  link: { kind: "partial", sets: ["link"], missing: "`truncate`.", issue: MISSING_SETS },
   "list-detail": {
     kind: "partial",
     sets: ["list-detail-pane", "list-detail"],
