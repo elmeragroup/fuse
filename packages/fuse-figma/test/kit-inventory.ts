@@ -263,6 +263,10 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       { key: "combobox-popup", name: "Combobox popup", variants: 3, previewed: 3 },
       // The input with the Basic demo's popup open below it.
       { key: "combobox-open", name: "Combobox (open)", variants: 1, previewed: 1 },
+      // A chip at rest and in a disabled Combobox.
+      { key: "combobox-chip", name: "Combobox chip", variants: 2, previewed: 2 },
+      // The Multiple demo's chips field at both sizes, at rest, focused, disabled and invalid.
+      { key: "combobox-chips", name: "Combobox chips", variants: 8, previewed: 8 },
     ],
   },
   {
