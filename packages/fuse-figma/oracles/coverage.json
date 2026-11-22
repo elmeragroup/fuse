@@ -279,6 +279,90 @@
       "className": "data-popup-open:text-accent-foreground",
       "property": "color",
       "reason": "#922: the sub trigger's `data-popup-open` face, which only the open submenu turns on, lands on the sub trigger instance inside the popup instance, which a Figma override does not reach."
+    },
+    {
+      "set": "attachment",
+      "part": "attachment-title",
+      "className": "group-data-[state=processing]/attachment:shimmer",
+      "property": "-webkit-text-fill-color",
+      "reason": "The solid title fill matches the resting shimmer within the pixel tolerance tested for #857, except for color glyphs such as emoji."
+    },
+    {
+      "set": "attachment",
+      "part": "attachment-title",
+      "className": "group-data-[state=processing]/attachment:shimmer",
+      "property": "background-clip",
+      "reason": "The solid title fill matches the resting shimmer within the pixel tolerance tested for #857, except for color glyphs such as emoji."
+    },
+    {
+      "set": "attachment",
+      "part": "attachment-title",
+      "className": "group-data-[state=processing]/attachment:shimmer",
+      "property": "background-image",
+      "reason": "The solid title fill matches the resting shimmer within the pixel tolerance tested for #857, except for color glyphs such as emoji."
+    },
+    {
+      "set": "attachment",
+      "part": "attachment-title",
+      "className": "group-data-[state=processing]/attachment:shimmer",
+      "property": "background-position",
+      "reason": "The solid title fill matches the resting shimmer within the pixel tolerance tested for #857, except for color glyphs such as emoji."
+    },
+    {
+      "set": "attachment",
+      "part": "attachment-title",
+      "className": "group-data-[state=processing]/attachment:shimmer",
+      "property": "background-repeat",
+      "reason": "The solid title fill matches the resting shimmer within the pixel tolerance tested for #857, except for color glyphs such as emoji."
+    },
+    {
+      "set": "attachment",
+      "part": "attachment-title",
+      "className": "group-data-[state=processing]/attachment:shimmer",
+      "property": "background-size",
+      "reason": "The solid title fill matches the resting shimmer within the pixel tolerance tested for #857, except for color glyphs such as emoji."
+    },
+    {
+      "set": "attachment",
+      "part": "attachment-title",
+      "className": "group-data-[state=uploading]/attachment:shimmer",
+      "property": "-webkit-text-fill-color",
+      "reason": "The solid title fill matches the resting shimmer within the pixel tolerance tested for #857, except for color glyphs such as emoji."
+    },
+    {
+      "set": "attachment",
+      "part": "attachment-title",
+      "className": "group-data-[state=uploading]/attachment:shimmer",
+      "property": "background-clip",
+      "reason": "The solid title fill matches the resting shimmer within the pixel tolerance tested for #857, except for color glyphs such as emoji."
+    },
+    {
+      "set": "attachment",
+      "part": "attachment-title",
+      "className": "group-data-[state=uploading]/attachment:shimmer",
+      "property": "background-image",
+      "reason": "The solid title fill matches the resting shimmer within the pixel tolerance tested for #857, except for color glyphs such as emoji."
+    },
+    {
+      "set": "attachment",
+      "part": "attachment-title",
+      "className": "group-data-[state=uploading]/attachment:shimmer",
+      "property": "background-position",
+      "reason": "The solid title fill matches the resting shimmer within the pixel tolerance tested for #857, except for color glyphs such as emoji."
+    },
+    {
+      "set": "attachment",
+      "part": "attachment-title",
+      "className": "group-data-[state=uploading]/attachment:shimmer",
+      "property": "background-repeat",
+      "reason": "The solid title fill matches the resting shimmer within the pixel tolerance tested for #857, except for color glyphs such as emoji."
+    },
+    {
+      "set": "attachment",
+      "part": "attachment-title",
+      "className": "group-data-[state=uploading]/attachment:shimmer",
+      "property": "background-size",
+      "reason": "The solid title fill matches the resting shimmer within the pixel tolerance tested for #857, except for color glyphs such as emoji."
     }
   ],
   "unbound": [
@@ -3914,14 +3998,6 @@
       {
         "part": "attachment-title",
         "className": "[&[hidden]:not([hidden=until-found])]:hidden"
-      },
-      {
-        "part": "attachment-title",
-        "className": "group-data-[state=processing]/attachment:shimmer"
-      },
-      {
-        "part": "attachment-title",
-        "className": "group-data-[state=uploading]/attachment:shimmer"
       }
     ],
     "description-list-item": [
@@ -8304,6 +8380,24 @@
       "axis": "active",
       "values": ["false", "true"],
       "reason": "An active link sets `font-medium`, as an inactive one does, and `text-foreground`, where an inactive one is `text-inherit` and takes the capture's host color, `--foreground`; neither the Root nor the List sets a color. `aria-current` draws nothing."
+    },
+    {
+      "set": "attachment",
+      "axis": "state",
+      "values": ["done", "uploading"],
+      "reason": "The kit draws the shimmering title in the `done` title's fill, so the state draws as `done` does."
+    },
+    {
+      "set": "attachment",
+      "axis": "state",
+      "values": ["done", "processing"],
+      "reason": "The kit draws the shimmering title in the `done` title's fill, so the state draws as `done` does."
+    },
+    {
+      "set": "attachment",
+      "axis": "state",
+      "values": ["uploading", "processing"],
+      "reason": "The kit draws both shimmering titles in the `done` title's fill, so the two states draw alike."
     }
   ],
   "apart": []
