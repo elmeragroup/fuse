@@ -255,6 +255,21 @@ describe("a `w-fit` part that holds only its text in a column", () => {
   });
 });
 
+// Oracle: CSS Fonts 4 §2.5, where an `em` in `font-size` is the parent's font size, and CSS Custom
+// Properties 1 §3, which substitutes a `var()` before the value computes, so a fallback of `1em`, as
+// Combobox's chips input sets through `var(--entry-text, 1em)`, takes the parent's size too.
+describe("a part's font size of 1em through a var() fallback", () => {
+  it("draws the root's font size", async () => {
+    const { variant, coverage } = await buildWithPart("", {
+      classes: "text-[length:var(--unset-text,1em)]",
+    });
+    expect(textOf(variant?.root)?.fontSize).toEqual({ kind: "literal", value: 14 });
+    expect(notesOf(coverage, "text-[length:var(--unset-text,1em)]")).toEqual([
+      ["font-size", "literal", "14px"],
+    ]);
+  });
+});
+
 // Oracle: CSS Text 3 §8.2, where an `em` spacing is a share of the font size, Tailwind's
 // `tracking-tight`, which is `-0.025em`, and probe PL, where Figma read `{ unit: "PERCENT", value:
 // -2.5 }` back exactly and drew it at any size as the same share. A spacing in pixels has no share.
