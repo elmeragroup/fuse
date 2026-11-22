@@ -20,9 +20,10 @@
  * `data-icon` child that the markup draws. Every variant pads alike, so the table measures the
  * default one.
  *
- * The sync keeps each identity's floor in a table of its own, since the theme catalog does not
- * carry it, so a second check reads `--button-label-px-min` in Chromium under every pin and
- * compares it with the synced `button-label-px-min`.
+ * The sync reads each theme's floor from the theme catalog, which resolves the floor that
+ * `corners.ts` in `@elmeragroup/fuse` declares. A second check reads `--button-label-px-min` in
+ * Chromium under every pin and compares it with the synced `button-label-px-min`, so a floor the
+ * catalog resolves wrong fails it even where every padding case still passes.
  *
  * Data table filter bar's filtered cell holds Button instances: the chip's operator and value
  * segments, which set `--button-px-floor: 0px`, and Clear, which keeps the floor. An instance draws
