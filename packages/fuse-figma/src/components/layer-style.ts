@@ -207,6 +207,8 @@ export type Provenance = Declaration & {
   readonly origin: Origin;
   /** The captured declaration it came from, which its row accounts for; undefined for a synthetic one. */
   readonly at: CapturedAt | undefined;
+  /** The physical longhands the captured declaration wins; undefined for one the capture does not record. */
+  readonly wins: readonly string[] | undefined;
 };
 
 /**
@@ -264,6 +266,8 @@ export type Applied = {
   /** The captured declaration it applies, whose row accounts for it; undefined for a synthetic one. */
   readonly at: CapturedAt | undefined;
   readonly declarations: readonly { readonly property: string; readonly value: string }[];
+  /** The physical longhands a captured declaration wins, as the capture records them. */
+  readonly wins?: readonly string[];
   /**
    * How an element outside computes the declarations' values, for declarations the element inherits
    * from it rather than sets, as the root inherits the page's. Undefined for the element's own.
@@ -632,6 +636,30 @@ export class LayerStyle {
   /** Whether the computed style sets the property. */
   has(property: string): boolean {
     return this.#layer.style.has(property);
+  }
+
+  /**
+   * The property of the layer's own declaration that wins a physical longhand, as the capture records
+   * the longhands each declaration wins once Chromium's cascade chose them: `border-inline-color`
+   * where it wins `border-left-color`. The longhand's own declaration wins it wherever the layer
+   * holds one, since the capture keeps a declaration only where it wins, and a pseudo-element's
+   * cascade splits each border shorthand into per-side declarations that keep the shorthand's
+   * longhands.
+   *
+   * @param longhand - A physical longhand, as `border-left-color`.
+   * @returns The property, or undefined where no declaration of the layer's own that the capture
+   *   records wins the longhand.
+   */
+  winnerOf(longhand: string): string | undefined {
+    if (this.#layer.style.get(longhand)?.source.layer === this.#layer.id) {
+      return longhand;
+    }
+    for (const { source } of this.#layer.style.values()) {
+      if (source.layer === this.#layer.id && source.wins?.includes(longhand) === true) {
+        return source.property;
+      }
+    }
+    return undefined;
   }
 
   /** The computed value before substitution. */
@@ -1055,7 +1083,7 @@ function computeStyle(
 ): ComputedStyle {
   const style = new Map(inherited);
   const sorted = applied.toSorted((left, right) => left.rank - right.rank || left.order - right.order);
-  const declared = sorted.flatMap(({ part, className, origin, declarations, computedOutside, at }) =>
+  const declared = sorted.flatMap(({ part, className, origin, declarations, computedOutside, at, wins }) =>
     declarations.map(({ property, value }) => ({
       part,
       className,
@@ -1063,6 +1091,7 @@ function computeStyle(
       property,
       computedOutside,
       at,
+      wins,
       ...importance(value),
     }))
   );
@@ -1070,7 +1099,7 @@ function computeStyle(
     ...declared.filter(({ important }) => !important),
     ...declared.filter(({ important }) => important),
   ];
-  const entries = ordered.flatMap(({ part, className, origin, property, value, computedOutside, at }) =>
+  const entries = ordered.flatMap(({ part, className, origin, property, value, computedOutside, at, wins }) =>
     expandShorthand(property, value).map(([longhand, longValue]) => {
       const source: Provenance = {
         layer,
@@ -1080,6 +1109,7 @@ function computeStyle(
         property: longhand,
         value: longValue,
         at,
+        wins,
       };
       const entry: StyleEntry =
         computedOutside === undefined

@@ -388,6 +388,7 @@ function appliedOf(
         order,
         declarations: [{ property: declaration.property, value }],
         at,
+        wins: declaration.longhands,
       },
     ];
   });
