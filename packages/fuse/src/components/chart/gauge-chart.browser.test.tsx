@@ -33,6 +33,7 @@ import type { SupportedLocale } from "../../intl/locale-context";
 import type { ValueFormat } from "./chart-types";
 import "./chart.css";
 import { GaugeChart } from "./gauge-chart-namespace";
+import { CHART_UPDATE_MS } from "./layout/motion";
 
 const energy = { preset: "energy", unit: "kWh", maximumFractionDigits: 1 } as const;
 
@@ -193,8 +194,8 @@ describe("the meter", () => {
   });
 
   it("clamps the drawing and the meter's value past either end, and keeps the true value in its text", async () => {
+    useFakeFrames();
     const { host, rerender } = renderThemed(<Gauge value={5.6} intro="none" />);
-    await nextFrames(1);
     const figure = host.querySelector('[data-slot="gauge-chart"]');
     const meter = page.getByRole("meter");
     expect(figure?.hasAttribute("data-over-max")).toBe(true);
@@ -203,15 +204,12 @@ describe("the meter", () => {
     expect(centerText(host, "gauge-chart-center-value")).toBe("5,6\u00a0kWh");
     expect([needle(host), litCount(host)]).toEqual([135, 40]);
     rerender(<Gauge value={-0.4} intro="none" />);
-    // The update sweeps down to the start, and rests there.
-    await recordFrames(
-      () => null,
-      () => needle(host) === -135
-    );
+    // The needle can round to −135° while the first notch and tick are still lit.
+    vi.advanceTimersByTime(CHART_UPDATE_MS + 16);
+    expect([needle(host), litCount(host), passedTicks(host)]).toEqual([-135, 0, 0]);
     expect(figure?.hasAttribute("data-under-min")).toBe(true);
     expect(figure?.hasAttribute("data-over-max")).toBe(false);
     await expect.element(meter).toHaveAttribute("aria-valuenow", "0");
-    expect([needle(host), litCount(host), passedTicks(host)]).toEqual([-135, 0, 0]);
   });
 
   it("drops the meter, names the figure and shows Empty while the value is null", async () => {
