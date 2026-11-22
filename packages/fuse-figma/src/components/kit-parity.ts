@@ -396,7 +396,8 @@ export const KIT_PARITY = {
   "text-field": {
     kind: "partial",
     sets: ["text-field"],
-    missing: "The `sm` size axis, and the inline (#851) and card variants.",
+    missing:
+      "The `sm` size axis and the card variant. The inline variant stays out as a known limit, because Chromium sizes its input from the `size` attribute and the font's character widths, which differ by platform, so no density variable can hold its width.",
     issue: NICE_TO_HAVE,
   },
   textarea: {

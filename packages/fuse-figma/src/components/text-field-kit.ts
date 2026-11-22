@@ -13,10 +13,15 @@
  *   states.
  * - The label, the error and the description, and the states Base UI stamps on them, come from
  *   `field-frame-kit.ts`, with the Basic demo's copy and the Error demo's message.
- * - Left out: the card variant draws the Field as a Card, and the kit has no Card set yet. The inline
- *   variant gives the input the width its `size` attribute and the font's character widths give it,
- *   168px dense and 217px comfortable in Chromium, which no Figma length holds. TextField's trailing
- *   icon renders only with `icon`, which no cell passes.
+ * - Left out: the card variant draws the Field as a Card, and the kit has no Card set yet.
+ *   TextField's trailing icon renders only with `icon`, which no cell passes.
+ * - The inline variant is a known limit. Its `fieldGroup` gives the input `w-auto`, so Chromium
+ *   sizes the input from its default `size` of 20 and the font's character widths. On 2026-11-21,
+ *   with the same `@fontsource/roboto` files, Chromium 153 laid it out 168px wide dense and 218px
+ *   comfortable on macOS, and 182px and 235px on Linux, alike in every identity, brand, segment and
+ *   color scheme, at rest, invalid, disabled and read-only. The width follows the platform as well
+ *   as the density, so no `Fuse density` variable can hold it, and a capture fact that measured it
+ *   would fail `figma:capture --check` on one of the two platforms.
  */
 import type { SetManifest } from "../capture/manifest";
 import { FIELD_BOX_AXES } from "./field-box-kit";
