@@ -43,7 +43,8 @@ export type CornerBox = {
   /**
    * The box's limits, whose minimum width a radius per corner reads beside a fixed height, or
    * undefined where a `min-*` or `max-*` limit the box sets stays unmapped. CSS may then size the box
-   * past its sizing, so neither an infinite `border-radius` nor a radius per corner maps.
+   * past its sizing, so neither an infinite `border-radius` nor a radius per corner maps, except four
+   * equal radii, which read no side.
    */
   readonly limits: LimitsSpec | undefined;
 };
@@ -184,11 +185,12 @@ type RawRadius =
  * designer would realistically leave out counts as gone. A label emptied through its TEXT property is
  * a known limit: it sets no line in CSS, where the corners could scale, and keeps its line's height in
  * the bound. A box whose sides are no literals maps one more shape, {@link pairedCorners}: one
- * radius on the two corners of its shorter side and none on the others. Every shape reads the box's
- * sides, so a box with a `min-*` or `max-*` limit that stays unmapped maps no radius per corner,
- * since that limit can make CSS's box longer or shorter on either axis than the build reads it, as
- * a variable `min-h-*` past a literal `h-*` does. Any other corner set stays
- * unmapped. A `border-radius` that wins only some corners reaches this reader as those corners'
+ * radius on the two corners of its shorter side and none on the others. These shapes read the box's
+ * sides, so a box with a `min-*` or `max-*` limit that stays unmapped maps none of them, since that
+ * limit can make CSS's box longer or shorter on either axis than the build reads it, as a variable
+ * `min-h-*` past a literal `h-*` does. Four equal radii are the exception to all of these: they read
+ * no side, so they map first, as written, on a box of any size, {@link equalCorners}, as a Frame
+ * panel's `rounded-t-*` and `rounded-b-*` give. Any other corner set stays unmapped. A `border-radius` that wins only some corners reaches this reader as those corners'
  * longhands, as `border-shorthands.ts` splits it, so `rounded-[4px] rounded-s-[8px]` reads 8px on the
  * left corners and 4px on the right. One that stays whole there, as a value whose `var()` stands for
  * an unknown number of radii does, leaves the box unmapped beside a corner longhand.
@@ -204,9 +206,11 @@ function readCorners(
   const raw = CORNERS.map((corner) => rawRadius(reader, corner, variables));
   const width = fixedLength(sizing.horizontal);
   const height = fixedLength(sizing.vertical);
+  // Four equal radii come first: written as is, they draw alike at any size a designer gives the box.
+  const equal = equalCorners(raw);
   const drawn =
-    limits === undefined
-      ? undefined
+    equal !== undefined || limits === undefined
+      ? equal
       : width?.kind === "literal" && height?.kind === "literal"
         ? drawnCorners(raw, width.value, height.value)
         : width?.kind === "literal" && sizing.vertical.kind === "hug"
@@ -227,12 +231,17 @@ function readCorners(
       property,
       () => length,
       (read): CoverageNote =>
-        read.kind === "literal"
-          ? {
-              outcome: "literal",
-              detail: `${read.value}px on the ${corner.key} corner, as CSS draws it on the box's sides`,
-            }
-          : describeNumber(read),
+        read.kind !== "literal"
+          ? describeNumber(read)
+          : equal === undefined
+            ? {
+                outcome: "literal",
+                detail: `${read.value}px on the ${corner.key} corner, as CSS draws it on the box's sides`,
+              }
+            : {
+                outcome: "literal",
+                detail: `${read.value}px on the ${corner.key} corner, as written on all four, which CSS and Figma both cap at half the shorter side`,
+              },
       reader.feed("cornerRadius")
     );
   }
@@ -264,6 +273,10 @@ function sameRadius(left: RawRadius, right: RawRadius): boolean {
 
 /** Whether a radius is a literal 0. */
 const isZero = (radius: RawRadius): boolean => radius.kind === "literal" && radius.px === 0;
+
+/** A finite radius as written: its variable, or its literal length. */
+const writtenRadius = (radius: Exclude<RawRadius, { readonly kind: "infinite" }>): NumberSpec =>
+  radius.kind === "variable" ? radius.spec : { kind: "literal", value: radius.px };
 
 /**
  * Whether a box's side along one axis is no longer than the other axis in any mode: its fixed length
@@ -298,8 +311,8 @@ function noLongerThanOther(
  * the side's length over their sum where they overrun it, so each draws at most half the side (CSS
  * Backgrounds 3 §5.5), and the sides beside them hold one radius each and are at least as long. Figma
  * caps each corner at half the shorter side (probe P10), the same half. So the shape draws alike at
- * any radius and any length. A box with every corner a literal 0 draws square in both. Undefined for
- * any other corner set.
+ * any radius and any length. Undefined for any other corner set; four equal radii, every corner 0
+ * among them, are {@link equalCorners}'.
  */
 function pairedCorners(
   raw: readonly (RawRadius | undefined)[],
@@ -314,18 +327,13 @@ function pairedCorners(
   const side = SIDES.find(({ corners }) => corners.every((corner) => rounded.includes(corner)));
   const [first, second] = side === undefined ? [] : side.corners.map((corner) => known[corner]);
   const paired =
-    rounded.length === 0 ||
-    (rounded.length === 2 &&
-      side !== undefined &&
-      first !== undefined &&
-      second !== undefined &&
-      sameRadius(first, second) &&
-      noLongerThanOther(box, side.length, variables));
-  return paired
-    ? known.map((each): NumberSpec =>
-        each.kind === "variable" ? each.spec : { kind: "literal", value: each.px }
-      )
-    : undefined;
+    rounded.length === 2 &&
+    side !== undefined &&
+    first !== undefined &&
+    second !== undefined &&
+    sameRadius(first, second) &&
+    noLongerThanOther(box, side.length, variables);
+  return paired ? known.map(writtenRadius) : undefined;
 }
 
 /**
@@ -369,10 +377,23 @@ function unscaledCorners(
     topRight + bottomRight <= height &&
     bottomLeft + topLeft <= height &&
     px.every((radius) => radius <= cornerCap(width, height));
-  return fits
-    ? known.map((each): NumberSpec =>
-        each.kind === "variable" ? each.spec : { kind: "literal", value: each.px }
-      )
+  return fits ? known.map(writtenRadius) : undefined;
+}
+
+/**
+ * The radii as written where all four are one literal or one variable, which CSS and Figma draw alike
+ * on a box of any size, its limits unread: CSS scales each by the least of 1 and every side over twice
+ * the radius (CSS Backgrounds 3 §5.5), so it draws the radius, at most half the shorter side, which is
+ * where Figma caps it (probe P10). Undefined where any corner differs, is infinite or reads as no
+ * length.
+ */
+function equalCorners(raw: readonly (RawRadius | undefined)[]): readonly NumberSpec[] | undefined {
+  const known = raw.flatMap((each) => (each === undefined || each.kind === "infinite" ? [] : [each]));
+  const [first] = known;
+  return first !== undefined &&
+    known.length === CORNERS.length &&
+    known.every((each) => sameRadius(each, first))
+    ? known.map(writtenRadius)
     : undefined;
 }
 

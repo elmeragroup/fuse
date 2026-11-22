@@ -4288,6 +4288,236 @@
         "className": "sm:data-[placement^=top]:top-0"
       }
     ],
+    "frame": [
+      {
+        "part": "frame",
+        "className": "data-[layout=flush]:[--frame-overhang:1px]"
+      },
+      {
+        "part": "frame",
+        "className": "data-[layout=flush]:[--shell-inner:max(0px,--theme(--radius-xl)-1px)]"
+      },
+      {
+        "part": "frame",
+        "className": "data-[layout=flush]:frame-first-item:-mt-(--frame-overhang)"
+      },
+      {
+        "part": "frame",
+        "className": "data-[layout=flush]:frame-item:-mx-(--frame-overhang)"
+      },
+      {
+        "part": "frame",
+        "className": "data-[layout=flush]:frame-item:[--frame-corner:--theme(--radius-xl)]"
+      },
+      {
+        "part": "frame",
+        "className": "data-[layout=flush]:frame-last-item:-mb-(--frame-overhang)"
+      },
+      {
+        "part": "frame",
+        "className": "data-[layout=flush]:frame-panel-item:before:hidden"
+      },
+      {
+        "part": "frame",
+        "className": "data-[layout=flush]:frame-table-item:w-auto"
+      },
+      {
+        "part": "frame",
+        "className": "data-[layout=flush]:p-0"
+      },
+      {
+        "part": "frame",
+        "className": "frame-section:[clip-path:inset(calc(-1*max(var(--frame-overhang),var(--frame-shadow-blur)-var(--frame-shadow-y)))_calc(-1*(var(--frame-shadow-blur)+var(--frame-overhang)))_calc(-1*(var(--frame-shadow-y)+var(--frame-shadow-blur)+var(--frame-overhang))))]"
+      },
+      {
+        "part": "frame",
+        "className": "frame-section:flow-root"
+      },
+      {
+        "part": "frame",
+        "className": "frame-section:overflow-visible"
+      },
+      {
+        "part": "frame",
+        "className": "frame-table-item:[--table-caption-align:start]"
+      },
+      {
+        "part": "frame",
+        "className": "frame-table-item:[--table-edge-px:var(--frame-text-inset)]"
+      },
+      {
+        "part": "frame",
+        "className": "not-data-[layout=gutter]:frame-seam-lower:[--frame-panel-top-corner:0px]"
+      },
+      {
+        "part": "frame",
+        "className": "not-data-[layout=gutter]:frame-seam-lower:border-t-0"
+      },
+      {
+        "part": "frame",
+        "className": "not-data-[layout=gutter]:frame-seam-upper:[--frame-panel-bottom-corner:0px]"
+      },
+      {
+        "part": "frame",
+        "className": "not-data-[layout=gutter]:frame-seam-upper:before:hidden"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:*:[svg]:shrink-0"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:*:[svg]:size-4"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:*:[svg]:text-muted-foreground"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:cursor-pointer"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:data-panel-open:*:[svg]:rotate-180"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:flex"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:focus-visible:ring-inset"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:font-semibold"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:gap-2"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:items-center"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:justify-between"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:px-[var(--frame-bar-inset,var(--surface-pad-lg))]"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:py-[calc(var(--surface-pad-lg)/2)]"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:rounded-inner"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:text-sm"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:text-start"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "frame-header-trigger:w-full"
+      },
+      {
+        "part": "frame-panel-header",
+        "className": "has-[>[data-slot=collapsible-trigger]]:p-0"
+      },
+      {
+        "part": "panel-1",
+        "className": "data-[sole-table=true]:*:[--table-caption-align:start]"
+      },
+      {
+        "part": "panel-1",
+        "className": "data-[sole-table=true]:*:[--table-edge-px:var(--surface-pad-lg)]"
+      },
+      {
+        "part": "panel-1",
+        "className": "data-[sole-table=true]:*:data-[slot=vertical-table]:border-0"
+      },
+      {
+        "part": "panel-1",
+        "className": "data-[sole-table=true]:*:rounded-b-[max(0px,var(--frame-panel-bottom-corner)-1px)]"
+      },
+      {
+        "part": "panel-1",
+        "className": "data-[sole-table=true]:*:rounded-t-[max(0px,var(--frame-panel-top-corner)-1px)]"
+      },
+      {
+        "part": "panel-1",
+        "className": "data-[sole-table=true]:[--shell-inner:max(0px,var(--frame-corner,--theme(--radius-xl))-1px)]"
+      },
+      {
+        "part": "panel-1",
+        "className": "data-[sole-table=true]:p-0"
+      },
+      {
+        "part": "panel-2",
+        "className": "data-[sole-table=true]:*:[--table-caption-align:start]"
+      },
+      {
+        "part": "panel-2",
+        "className": "data-[sole-table=true]:*:[--table-edge-px:var(--surface-pad-lg)]"
+      },
+      {
+        "part": "panel-2",
+        "className": "data-[sole-table=true]:*:data-[slot=vertical-table]:border-0"
+      },
+      {
+        "part": "panel-2",
+        "className": "data-[sole-table=true]:*:rounded-b-[max(0px,var(--frame-panel-bottom-corner)-1px)]"
+      },
+      {
+        "part": "panel-2",
+        "className": "data-[sole-table=true]:*:rounded-t-[max(0px,var(--frame-panel-top-corner)-1px)]"
+      },
+      {
+        "part": "panel-2",
+        "className": "data-[sole-table=true]:[--shell-inner:max(0px,var(--frame-corner,--theme(--radius-xl))-1px)]"
+      },
+      {
+        "part": "panel-2",
+        "className": "data-[sole-table=true]:p-0"
+      },
+      {
+        "part": "panel-3",
+        "className": "data-[sole-table=true]:*:[--table-caption-align:start]"
+      },
+      {
+        "part": "panel-3",
+        "className": "data-[sole-table=true]:*:[--table-edge-px:var(--surface-pad-lg)]"
+      },
+      {
+        "part": "panel-3",
+        "className": "data-[sole-table=true]:*:data-[slot=vertical-table]:border-0"
+      },
+      {
+        "part": "panel-3",
+        "className": "data-[sole-table=true]:*:rounded-b-[max(0px,var(--frame-panel-bottom-corner)-1px)]"
+      },
+      {
+        "part": "panel-3",
+        "className": "data-[sole-table=true]:*:rounded-t-[max(0px,var(--frame-panel-top-corner)-1px)]"
+      },
+      {
+        "part": "panel-3",
+        "className": "data-[sole-table=true]:[--shell-inner:max(0px,var(--frame-corner,--theme(--radius-xl))-1px)]"
+      },
+      {
+        "part": "panel-3",
+        "className": "data-[sole-table=true]:p-0"
+      }
+    ],
     "date-range-picker": [
       {
         "part": "date-picker-input",
@@ -8336,6 +8566,18 @@
       "property": "display",
       "reason": "The span around the subject's icon is `display: contents`, so it generates no box and the Circle lays out in the subject's row, where the kit draws it as the subject's start icon.",
       "at": ["data-table-filter-bar/state=rest,filters=status 0/root/0/1/0/0/0"]
+    },
+    {
+      "set": "frame",
+      "part": "frame-panel",
+      "className": "tailwind preflight",
+      "property": "border",
+      "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
+      "at": [
+        "frame/layout=gutter 0/root/1::before",
+        "frame/layout=gutter 0/root/2::before",
+        "frame/layout=gutter 0/root/3::before"
+      ]
     }
   ],
   "alike": [

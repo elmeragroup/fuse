@@ -1010,15 +1010,46 @@ export function readColor(value: string, index: VariableIndex): ColorSpec | unde
 }
 
 /**
- * Parse a color literal through `@elmeragroup/color` as sRGB. Tailwind's theme writes black and
- * white as the shorthand `#000` and `#fff`, which the shared parser refuses, so the reader spells a
- * shorthand out to the six digits it takes. Fuse's built `styles.css` writes a translucent literal in
- * eight digits, as `shadow-xs`'s `#0000000d`, or four, as `transparent`'s `#0000`, which the reader
- * spells out to eight for the hex parser for translucent colors.
+ * An `oklab()` or `oklch()` color whose lightness is a percentage: the notation, the number and the
+ * rest. The number is a CSS Syntax 3 `<number-token>` as `@elmeragroup/color`'s `CSS_NUMBER` writes
+ * it, digits with a fraction or digits alone, so `1.` is no number, and the two branches cannot both
+ * match a run of digits, so a long one that fails fails in linear time. `@elmeragroup/color` refuses
+ * a percentage lightness until #942 lands, after which {@link parseLiteral} drops this rewrite.
+ */
+const OK_PERCENT_LIGHTNESS = /^(oklab|oklch)\(\s*([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)%(\s.*)$/i;
+
+/**
+ * Parse a color literal through `@elmeragroup/color` as sRGB, as written first. Tailwind writes a
+ * literal color's opacity modifier as `oklab()` with its lightness in percent, as
+ * `shadow-[…_black]/5`'s `oklab(0% 0 0 / .05)`, which the shared parser refuses until #942 lands. Where
+ * the value as written fails, the reader spells a percentage lightness of `oklab()` or `oklch()` out
+ * as the number it stands for, 100% being 1 (CSS Color 4 §9.2, §9.3), clamped to 0 to 1, and parses
+ * that. Remove the rewrite once #942 lands.
  *
  * @returns The color, or undefined for a value that is no color literal the parser reads.
  */
 function parseLiteral(value: string): Srgb.Srgb | undefined {
+  const percentLightness = OK_PERCENT_LIGHTNESS.exec(value);
+  if (percentLightness === null) {
+    return parseAsWritten(value);
+  }
+  const [, notation = "", lightness = "", rest = ""] = percentLightness;
+  // CSS clamps the lightness to 0% to 100% at parse time (CSS Color 4 §9.2, §9.3), so an exponent
+  // too large for a double, which reads as infinity, comes to 1.
+  const unit = Math.min(1, Math.max(0, Number(lightness) / 100));
+  return parseAsWritten(value) ?? parseAsWritten(`${notation}(${String(unit)}${rest}`);
+}
+
+/**
+ * Parse a color literal as written. Tailwind's theme writes black and white as the shorthand `#000`
+ * and `#fff`, which the shared parser refuses, so the reader spells a shorthand out to the six digits
+ * it takes. Fuse's built `styles.css` writes a translucent literal in eight digits, as `shadow-xs`'s
+ * `#0000000d`, or four, as `transparent`'s `#0000`, which the reader spells out to eight for the hex
+ * parser for translucent colors.
+ *
+ * @returns The color, or undefined for a value that is no color literal the parser reads.
+ */
+function parseAsWritten(value: string): Srgb.Srgb | undefined {
   // A shorthand with alpha, as the build writes `transparent` as `#0000`, spells out to eight digits.
   const translucentShorthand = /^#([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(value);
   const translucent =

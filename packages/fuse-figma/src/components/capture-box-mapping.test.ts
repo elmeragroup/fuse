@@ -864,6 +864,13 @@ describe("a box that hides its overflow", () => {
     expect(variant?.root.clips).toBe(true);
     expect(coverage.map((row) => [row.className, row.outcome])).toEqual([["overflow-hidden", "literal"]]);
   });
+
+  // CSS Overflow 3 §3: the shorthand's first value sets `overflow-x` and its second `overflow-y`, and
+  // both of `hidden auto` clip.
+  it("clips a part whose `overflow` shorthand gives each axis its own clipping value", async () => {
+    const { variant } = await buildWithDot("flex", "[overflow:hidden_auto] size-[8px]");
+    expect(frameOf(variant?.root)?.clips).toBe(true);
+  });
 });
 
 // Oracle: Tailwind emits no CSS for `group`, `group/<name>`, `peer` or `peer/<name>`. Each only names

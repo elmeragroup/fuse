@@ -701,6 +701,18 @@ export function borderWidths(reader: LayerStyle, variables: VariableIndex): Bord
   };
 }
 
+/**
+ * The property of the declaration that wins a side's border width, as `border-bottom-width` or a
+ * `border-bottom` shorthand, for a coverage row about that side's width.
+ *
+ * @param reader - The box's style.
+ * @param side - The side.
+ * @returns The property, or undefined where no declaration gives the side a width.
+ */
+export function borderWidthProperty(reader: LayerStyle, side: BorderSide): string | undefined {
+  return sideDeclaration(reader, side, "width")?.property;
+}
+
 /** Read each side's border once, from the declarations that win its width, style and color. */
 function sideBorders(root: LayerStyle, variables: VariableIndex): SideBorders {
   const of = (side: BorderSide): SideBorder => {

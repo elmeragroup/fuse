@@ -1,43 +1,50 @@
 /**
  * Unit under test: the fill of each set whose box clips its background at the border's inner edge
  * (`background-clip: padding-box`), as the kit builds it and an in-memory Figma file that the token
- * sync wrote resolves it under every combination of the file's modes. The sets are Calendar, Range
- * calendar, Sheet content and List detail sheet, each stroked with `--border`, which the neutral dark
- * theme makes translucent.
+ * sync wrote resolves it under every combination of the file's modes. The boxes are the roots of
+ * Calendar, Range calendar, Sheet content, List detail sheet and Frame, and Frame's first panel, each
+ * stroked with `--border`, which the neutral dark theme makes translucent.
+ * The pins come from `sweptFile` in `test/mode-sweep.ts`, which stops unless they are one per
+ * combination of the theme catalog's modes, so a mode the sync leaves out fails the suite.
  * Oracle: Chromium painting the real Fuse component on Fuse's built CSS over an opaque page color,
  * with the page stamped as `test:compare` stamps the same modes, and CSS Backgrounds 3 §5.2 for the
  * corner inside the border: the outer radius less the border width, at least 0.
  *
  * Two checks per set and pin, and one per set:
  *
- * - The pixel at the middle of the left border, where CSS shows the page through the border, and
- *   the pixel just inside it, where it shows the fill. The spec's pixel composites, over the same
- *   page color and as `@elmeragroup/color` composites, the root's fill, each layer that covers the
- *   root edge to edge and the root's stroke, as Figma paints a frame's fill under its layers and its
- *   inside stroke over them.
- * - The box that holds the spec's fill sits inside the root by Chromium's border widths and rounds
- *   by the inner radius.
- * - That box is the root's bottom layer, under the content CSS paints over the background, by the
+ * - The pixel at the middle of the left border, where CSS shows what lies behind the box through the
+ *   border, the pixel just inside it, where it shows the fill, and the pixel at the middle of the
+ *   bottom border, where a Frame panel's highlight paints its line over the border. The spec's pixel
+ *   composites, over what lies behind and as `@elmeragroup/color` composites, the box's fill, then
+ *   each layer that covers the box edge to edge in Figma's paint order, its unblurred shadows outside
+ *   it, its fill and its inside stroke, and last the box's stroke, as Figma paints a frame's fill under
+ *   its layers and its inside stroke over them (probe FR4). Behind a root lies the page color, and
+ *   behind a Frame panel the spec's pixel just inside the Frame's root.
+ * - The box rounds by Chromium's radius, and the box that holds the spec's fill sits inside it by
+ *   Chromium's border widths and rounds by the inner radius.
+ * - That box is the box's bottom layer, under the content CSS paints over the background, by the
  *   Figma plugin typings' child order: the first child paints at the bottom, or the last in a frame
  *   that paints its first child on top.
  */
-import { Effect, Schema } from "effect";
-import { TestConsole } from "effect/testing";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { PNG } from "pngjs";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import * as Srgb from "@elmeragroup/color/srgb";
 
 import { builtKit, variantRoot } from "../../test/built-kit.ts";
 import type { BuiltSets } from "../../test/built-kit.ts";
-import { FILE_KEY, run, TOKEN } from "../../test/cli-fixture.ts";
+import { buildCaptured, chip, rest } from "../../test/capture-fixtures.ts";
 import { fuseModule, openFusePage } from "../../test/fuse-page.ts";
-import { InMemoryFigma } from "../../test/in-memory-figma.ts";
-import { everyPin, pinName, pinStamps } from "../../test/mode-pins.ts";
-import type { Pin } from "../../test/mode-pins.ts";
+import type { InMemoryFigma } from "../../test/in-memory-figma.ts";
+import { colorIn, named, pixelsIn, sweptFile } from "../../test/mode-sweep.ts";
+import type { SweptMode } from "../../test/mode-sweep.ts";
+import { frame } from "../compare/frame-cell.ts";
+import { themeStamps } from "../compare/preview-theme.ts";
 import type { ThemeStamps } from "../compare/preview-theme.ts";
+import type { Rgba } from "../variable-set.ts";
 import { cornerLengths } from "./corner-spec.ts";
 import type { BoxSpec, ColorSpec, FrameLayerSpec, NumberSpec } from "./kit-spec.ts";
 import { SHEET_VIEWPORT } from "./sheet-text.ts";
@@ -48,34 +55,78 @@ const PAGE = { r: 255, g: 0, b: 255 } as const;
 /** How far apart a channel of the spec's pixel and Chromium's may lie, for color conversion. */
 const CHANNEL_TOLERANCE = 2;
 
-/** Where the page draws each set's component: its slot's top left corner, in CSS pixels. */
+/**
+ * Each box: the variant that draws it and the keys of the layers down to it, none for the root, the
+ * slot the page draws its component in, with the slot's top left corner in CSS pixels, the `data-slot`
+ * of the box's first element on the page, and the box it sits in, whose pixel just inside its border
+ * lies behind it, or none for a root over the page.
+ */
 const SETS = [
-  { key: "sheet-content/side=right", slot: "sheet", slotLeft: 0, slotTop: 0, part: "sheet-content" },
-  { key: "calendar/state=rest", slot: "calendar", slotLeft: 680, slotTop: 0, part: "calendar" },
+  {
+    key: "sheet-content/side=right",
+    path: [],
+    slot: "sheet",
+    slotLeft: 0,
+    slotTop: 0,
+    part: "sheet-content",
+    within: undefined,
+  },
+  {
+    key: "calendar/state=rest",
+    path: [],
+    slot: "calendar",
+    slotLeft: 680,
+    slotTop: 0,
+    part: "calendar",
+    within: undefined,
+  },
   {
     key: "range-calendar/state=rest",
+    path: [],
     slot: "range-calendar",
     slotLeft: 680,
     slotTop: 420,
     part: "range-calendar",
+    within: undefined,
+  },
+  {
+    key: "frame/layout=gutter",
+    path: [],
+    slot: "frame",
+    slotLeft: 0,
+    slotTop: 940,
+    part: "frame",
+    within: undefined,
+  },
+  {
+    key: "frame/layout=gutter",
+    path: ["panel-1"],
+    slot: "frame",
+    slotLeft: 0,
+    slotTop: 940,
+    part: "frame-panel",
+    within: 3,
   },
   {
     key: "list-detail-sheet/content=value",
+    path: [],
     slot: "list-detail-sheet",
     slotLeft: 0,
     slotTop: 460,
     part: "list-detail-detail",
+    within: undefined,
   },
 ] as const;
 
 /**
- * The page's script: the open Sheet portalled into a host as large as its viewport, a Calendar and
- * a RangeCalendar, and List detail's overlay layout, its detail open in a Sheet portalled into a
- * second such host, each in a slot over the page color. `split: "never"` picks the Sheet, and the
- * detail passes `showCloseButton={false}`, as the List detail sheet capture does. The scrims are
- * hidden, so the page shows behind each panel. Shadows are off: CSS clips an outer shadow at the border box (CSS Backgrounds 3
- * §7.1.1), and Chromium still bleeds it under a 1px border, so it would tint the pixel this test
- * reads for the fill.
+ * The page's script: the open Sheet portalled into a host as large as its viewport, a Calendar, a
+ * RangeCalendar, the `frame` compare cell's markup, and List detail's overlay layout, its detail open
+ * in a Sheet portalled into a second such host, each in a slot over the page color. `split: "never"`
+ * picks the Sheet, and the detail passes `showCloseButton={false}`, as the List detail sheet capture
+ * does. The scrims are hidden, so the page shows behind each panel. The components' own shadows are
+ * off: CSS clips an outer shadow at the border box (CSS Backgrounds 3 §7.1.1), and Chromium still
+ * bleeds it under a 1px border, so it would tint the pixel this test reads for the fill. A
+ * pseudo-element keeps its shadow, as a Frame panel's highlight does.
  */
 const ENTRY = `
 import { createElement } from "react";
@@ -90,6 +141,9 @@ const sets = ${JSON.stringify(SETS)};
 const page = "rgb(${String(PAGE.r)}, ${String(PAGE.g)}, ${String(PAGE.b)})";
 const slots = new Map();
 for (const set of sets) {
+  if (slots.has(set.slot)) {
+    continue;
+  }
   const slot = document.createElement("div");
   slot.dataset.slotFor = set.slot;
   slot.style.cssText = "position:absolute;left:" + set.slotLeft + "px;top:" + set.slotTop + "px;background:" + page;
@@ -130,6 +184,7 @@ flushSync(() => {
       createElement(ListDetail.Detail, { "aria-label": "Customer details", showCloseButton: false, container: detailHost },
         createElement(ListDetail.Title, null, "Henrik Aasen")))));
 });
+slots.get("frame").innerHTML = ${JSON.stringify(renderToStaticMarkup(frame.element({ layout: "gutter" }, new Set())))};
 `;
 
 /** An 8-bit color with no alpha. */
@@ -137,9 +192,13 @@ type Pixel = { readonly r: number; readonly g: number; readonly b: number };
 
 /** What Chromium shows of one set's component under one pin. */
 type Measured = {
-  /** The pixel at the middle of the left border, and the one just inside the border. */
+  /**
+   * The pixel at the middle of the left border, the one just inside the border, and the one at the
+   * middle of the bottom border, where a Frame panel's highlight draws its line.
+   */
   readonly border: Pixel;
   readonly inside: Pixel;
+  readonly bottom: Pixel;
   /** The computed border widths and the top left corner's computed radius, in CSS pixels. */
   readonly widths: {
     readonly top: number;
@@ -155,6 +214,8 @@ type Sampling = {
   readonly x: number;
   readonly y: number;
   readonly insideX: number;
+  readonly bottomX: number;
+  readonly bottomY: number;
   readonly widths: Measured["widths"];
   readonly radius: number;
 };
@@ -192,6 +253,8 @@ function stampAndLocate(page: Page, stamps: ThemeStamps): Promise<readonly Sampl
           x: Math.floor(box.left),
           y: Math.floor(box.top + box.height / 2),
           insideX: Math.floor(box.left + widths.left + 1),
+          bottomX: Math.floor(box.left + box.width / 2),
+          bottomY: Math.ceil(box.bottom) - 1,
           widths,
           radius: Number.parseFloat(style.borderTopLeftRadius),
         };
@@ -218,6 +281,7 @@ async function measurePins(
       samplings.map((sampling) => ({
         border: at(sampling.x, sampling.y),
         inside: at(sampling.insideX, sampling.y),
+        bottom: at(sampling.bottomX, sampling.bottomY),
         widths: sampling.widths,
         radius: sampling.radius,
       }))
@@ -226,51 +290,59 @@ async function measurePins(
   return out;
 }
 
+/**
+ * Two sharp shadows 4px down that overlap below a 20px box, as CSS lists them, first on top: red at
+ * half alpha over blue at half alpha, inline for Chromium and as the class the kit builds from. The
+ * box sits over the page color.
+ */
+const STACKED_SHADOWS = {
+  css: "0 4px 0 0 rgb(255 0 0 / 0.5), 0 4px 0 0 rgb(0 0 255 / 0.5)",
+  className: "shadow-[0_4px_0_0_rgb(255_0_0/0.5),0_4px_0_0_rgb(0_0_255/0.5)]",
+  offsetY: 4,
+} as const;
+
 let browser: Browser | undefined;
 let kit: BuiltSets;
 let figma: InMemoryFigma;
-let pins: readonly Pin[];
+let modes: readonly SweptMode[];
 let measured: readonly (readonly Measured[])[];
+/** Chromium's pixel in the second row below the box that casts {@link STACKED_SHADOWS}, where both paint. */
+let stackedShadowPixel: Pixel;
 
 beforeAll(async () => {
-  kit = await builtKit();
-  figma = new InMemoryFigma(FILE_KEY, TOKEN);
-  await Effect.runPromise(
-    run(figma, ["--file-key", FILE_KEY, "sync"]).pipe(Effect.provide(TestConsole.layer))
-  );
-  pins = everyPin(figma);
-  const stamps = pins.map(pinStamps);
+  const [built, file] = await Promise.all([builtKit(), sweptFile()]);
+  kit = built;
+  ({ figma, modes } = file);
+  const stamps = modes.map((mode) => themeStamps(mode.theme));
   browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1100, height: 960 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width: 1100, height: 1440 }, deviceScaleFactor: 1 });
   await openFusePage(page, { entry: ENTRY });
   measured = await measurePins(page, stamps);
+  const shadowPage = await browser.newPage({ viewport: { width: 60, height: 60 }, deviceScaleFactor: 1 });
+  await shadowPage.setContent(
+    `<body style="margin:0;background:rgb(${String(PAGE.r)}, ${String(PAGE.g)}, ${String(PAGE.b)})"><div style="position:absolute;left:20px;top:20px;width:20px;height:20px;box-shadow:${STACKED_SHADOWS.css}"></div></body>`
+  );
+  const shot = PNG.sync.read(await shadowPage.screenshot());
+  const index = (41 * shot.width + 30) * 4;
+  stackedShadowPixel = {
+    r: shot.data[index] ?? -1,
+    g: shot.data[index + 1] ?? -1,
+    b: shot.data[index + 2] ?? -1,
+  };
 });
 
 afterAll(async () => {
   await browser?.close();
 });
 
-/** A color's channels and alpha, each from 0 to 1, as the file holds a COLOR value. */
-const Channels = Schema.Struct({ r: Schema.Number, g: Schema.Number, b: Schema.Number, a: Schema.Number });
+/** A FLOAT field as the file resolves it under a pin. */
+const length = (spec: NumberSpec, mode: SweptMode): number => pixelsIn(figma, spec, mode);
 
-/** A FLOAT field as the file resolves it under a pin. A value that is no number fails the parse. */
-function length(spec: NumberSpec, pin: Pin): number {
-  return spec.kind === "literal"
-    ? spec.value
-    : Schema.decodeUnknownSync(Schema.Number)(
-        figma.resolve(spec.variable.collection, spec.variable.name, pin)
-      );
-}
-
-/** A COLOR field as the file resolves it under a pin. A value that is no color fails the parse. */
-function color(spec: ColorSpec, pin: Pin): typeof Channels.Type {
-  return spec.kind === "literal"
-    ? spec.color
-    : Schema.decodeUnknownSync(Channels)(figma.resolve(spec.variable.collection, spec.variable.name, pin));
-}
+/** A COLOR field as the file resolves it under a pin. */
+const color = (spec: ColorSpec, mode: SweptMode): Rgba => colorIn(figma, spec, mode);
 
 /** An sRGB color from 0..1 channels and alpha. A value outside that range fails the test. */
-function srgb({ r, g, b, a }: typeof Channels.Type): Srgb.Srgb {
+function srgb({ r, g, b, a }: Rgba): Srgb.Srgb {
   const made = Srgb.make({ r, g, b, alpha: a });
   if (made._tag !== "ok") {
     throw new Error(`the file holds a color outside sRGB: ${JSON.stringify({ r, g, b, a })}`);
@@ -318,25 +390,61 @@ function insetsOf(layer: FrameLayerSpec | undefined): Measured["widths"] {
   };
 }
 
-/**
- * The spec's pixel `x` pixels in from the root's left edge, at mid-height: the page, the root's fill,
- * each covering layer's fill where the point lies inside it, and the root's stroke where the point
- * lies in its band on the left.
- */
-function specPixel(root: BoxSpec, pin: Pin, x: number): Pixel {
-  let pixel: Pixel = PAGE;
-  if (root.fill !== undefined && root.fill.kind !== "image") {
-    pixel = over(pixel, color(root.fill, pin));
-  }
-  for (const layer of coveringLayers(root)) {
-    if (layer.fill !== undefined && layer.fill.kind !== "image" && x >= insetsOf(layer).left) {
-      pixel = over(pixel, color(layer.fill, pin));
+/** A point the suite samples: `depth` pixels in from the left edge at mid-height, or up from the bottom at mid-width. */
+type Sample = { readonly side: "left" | "bottom"; readonly depth: number };
+
+/** A box's paint at a sample, as one frame paints it: its shadows outside it, its fill, and its stroke's band. */
+function paintAt(box: BoxSpec, mode: SweptMode, at: Sample, inset: number, pixel: Pixel): Pixel {
+  let shown = pixel;
+  // A drop shadow paints outside the frame alone, as CSS clips an outer shadow at the border box.
+  // The spec stores the bottom shadow first, as Figma lists a frame's effects.
+  for (const shadow of box.shadows) {
+    const blur = length(shadow.radius, mode);
+    if (blur !== 0) {
+      throw new Error("a layer casts a blurred shadow, which this suite does not composite");
+    }
+    const offset = at.side === "left" ? shadow.offsetX : -shadow.offsetY;
+    const edge = inset + offset - length(shadow.spread, mode);
+    if (at.depth >= edge && at.depth < inset) {
+      shown = over(shown, color(shadow.color, mode));
     }
   }
-  const stroke = root.stroke;
-  const band = stroke === undefined ? 0 : "sides" in stroke ? stroke.sides.left : length(stroke.weight, pin);
-  if (stroke !== undefined && x < band) {
-    pixel = over(pixel, color(stroke.color, pin));
+  if (at.depth < inset) {
+    return shown;
+  }
+  if (box.fill !== undefined && box.fill.kind !== "image") {
+    shown = over(shown, color(box.fill, mode));
+  }
+  return shown;
+}
+
+/** The band a box's stroke takes on a sample's side, 0 for no stroke. */
+function strokeBand(box: BoxSpec, mode: SweptMode, side: Sample["side"]): number {
+  const { stroke } = box;
+  return stroke === undefined ? 0 : "sides" in stroke ? stroke.sides[side] : length(stroke.weight, mode);
+}
+
+/**
+ * The spec's pixel at a sample: what lies behind the box, the box's fill, each covering layer in
+ * Figma's paint order with its shadows, its fill and its stroke where the point lies in each, and the
+ * box's stroke over its layers where the point lies in its band.
+ */
+function specPixel(root: BoxSpec, mode: SweptMode, at: Sample, behind: Pixel): Pixel {
+  let pixel = paintAt({ ...root, shadows: [] }, mode, at, 0, behind);
+  const layers = coveringLayers(root);
+  for (const layer of root.firstOnTop === true ? layers.toReversed() : layers) {
+    const inset = insetsOf(layer)[at.side];
+    pixel = paintAt(layer, mode, at, inset, pixel);
+    if (
+      layer.stroke !== undefined &&
+      at.depth >= inset &&
+      at.depth < inset + strokeBand(layer, mode, at.side)
+    ) {
+      pixel = over(pixel, color(layer.stroke.color, mode));
+    }
+  }
+  if (root.stroke !== undefined && at.depth < strokeBand(root, mode, at.side)) {
+    pixel = over(pixel, color(root.stroke.color, mode));
   }
   return pixel;
 }
@@ -353,27 +461,62 @@ function shown(pixel: Pixel): string {
   return `rgb(${[pixel.r, pixel.g, pixel.b].map((channel) => Math.round(channel)).join(", ")})`;
 }
 
-describe.each(SETS.map((set, index) => ({ ...set, index })))("the $key fill", ({ key, index }) => {
-  it("paints the border and the pixel inside it as Chromium does under every pin", () => {
-    const root = variantRoot(kit.spec, key);
-    const apart = pins.flatMap((pin, pinIndex) => {
-      const chromium = measured[pinIndex]?.[index];
+/**
+ * The box a set entry names: its variant's root, or the frame layer its path of keys leads to.
+ *
+ * @throws When the variant holds no frame layer down that path, a defect in the entry.
+ */
+function boxOf(set: (typeof SETS)[number]): BoxSpec {
+  let box: BoxSpec = variantRoot(kit.spec, set.key);
+  for (const key of set.path) {
+    const child = box.children.find((layer) => layer.kind === "frame" && layer.key === key);
+    if (child?.kind !== "frame") {
+      throw new Error(`${set.key} holds no frame ${key}`);
+    }
+    box = child;
+  }
+  return box;
+}
+
+/** What lies behind a set entry's box under a pin: the page, or the spec's pixel inside its parent box. */
+function behindOf(set: (typeof SETS)[number], mode: SweptMode, modeIndex: number): Pixel {
+  if (set.within === undefined) {
+    return PAGE;
+  }
+  const parent = SETS[set.within];
+  const parentWidth = measured[modeIndex]?.[set.within]?.widths.left ?? 0;
+  return specPixel(
+    boxOf(parent),
+    mode,
+    { side: "left", depth: parentWidth + 1 },
+    behindOf(parent, mode, modeIndex)
+  );
+}
+
+describe.each(SETS.map((set, index) => ({ ...set, index })))("the $key $path fill", (set) => {
+  const { index } = set;
+  it("paints its left and bottom borders and the pixel inside the left one as Chromium does under every pin", () => {
+    const root = boxOf(set);
+    const apart = modes.flatMap((mode, modeIndex) => {
+      const chromium = measured[modeIndex]?.[index];
       if (chromium === undefined) {
-        return [`${pinName(pin)}: unmeasured`];
+        return [`${named(mode)}: unmeasured`];
       }
-      const border = specPixel(root, pin, 0);
-      const inside = specPixel(root, pin, chromium.widths.left + 1);
-      return near(border, chromium.border) && near(inside, chromium.inside)
+      const behind = behindOf(set, mode, modeIndex);
+      const border = specPixel(root, mode, { side: "left", depth: 0 }, behind);
+      const inside = specPixel(root, mode, { side: "left", depth: chromium.widths.left + 1 }, behind);
+      const bottom = specPixel(root, mode, { side: "bottom", depth: 0 }, behind);
+      return near(border, chromium.border) && near(inside, chromium.inside) && near(bottom, chromium.bottom)
         ? []
         : [
-            `${pinName(pin)}: spec border ${shown(border)} inside ${shown(inside)}, Chromium border ${shown(chromium.border)} inside ${shown(chromium.inside)}`,
+            `${named(mode)}: spec border ${shown(border)} inside ${shown(inside)} bottom ${shown(bottom)}, Chromium border ${shown(chromium.border)} inside ${shown(chromium.inside)} bottom ${shown(chromium.bottom)}`,
           ];
     });
     expect(apart).toEqual([]);
   });
 
-  it("paints the box that holds its fill below the root's other layers", () => {
-    const root = variantRoot(kit.spec, key);
+  it("paints the box that holds its fill below the box's other layers", () => {
+    const root = boxOf(set);
     const holder = coveringLayers(root).find((layer) => layer.fill !== undefined);
     // Figma paints a frame's first child at the bottom, or its last where the frame paints its first
     // child on top.
@@ -382,24 +525,62 @@ describe.each(SETS.map((set, index) => ({ ...set, index })))("the $key fill", ({
     expect(bottom?.key).toBe(holder?.key);
   });
 
+  it("rounds as Chromium does under every pin", () => {
+    const root = boxOf(set);
+    const apart = modes.flatMap((mode, modeIndex) => {
+      const chromium = measured[modeIndex]?.[index];
+      const corners = cornerLengths(root.cornerRadius).map((corner) => length(corner, mode));
+      return chromium !== undefined && corners.every((corner) => corner === chromium.radius)
+        ? []
+        : [`${named(mode)}: spec corners ${JSON.stringify(corners)}, Chromium ${String(chromium?.radius)}`];
+    });
+    expect(apart).toEqual([]);
+  });
+
   it("holds its fill in a box inset by the border and rounded by the inner radius under every pin", () => {
-    const root = variantRoot(kit.spec, key);
+    const root = boxOf(set);
     const holder = coveringLayers(root).find((layer) => layer.fill !== undefined);
-    const apart = pins.flatMap((pin, pinIndex) => {
-      const chromium = measured[pinIndex]?.[index];
+    const apart = modes.flatMap((mode, modeIndex) => {
+      const chromium = measured[modeIndex]?.[index];
       if (chromium === undefined) {
-        return [`${pinName(pin)}: unmeasured`];
+        return [`${named(mode)}: unmeasured`];
       }
       const inner = Math.max(0, chromium.radius - chromium.widths.left);
-      const corners = cornerLengths((holder ?? root).cornerRadius).map((corner) => length(corner, pin));
+      const corners = cornerLengths((holder ?? root).cornerRadius).map((corner) => length(corner, mode));
       const insets = insetsOf(holder);
       return JSON.stringify(insets) === JSON.stringify(chromium.widths) &&
         corners.every((corner) => corner === inner)
         ? []
         : [
-            `${pinName(pin)}: spec insets ${JSON.stringify(insets)} corners ${JSON.stringify(corners)}, Chromium borders ${JSON.stringify(chromium.widths)} inner radius ${String(inner)}`,
+            `${named(mode)}: spec insets ${JSON.stringify(insets)} corners ${JSON.stringify(corners)}, Chromium borders ${JSON.stringify(chromium.widths)} inner radius ${String(inner)}`,
           ];
     });
     expect(apart).toEqual([]);
+  });
+});
+
+// `paintAt` is this suite's own compositor, so it answers to Chromium before the sets do. The box
+// is the one the kit builds from the same shadows, so an order the build or the compositor gets wrong
+// shows in the same pixel.
+describe("the suite's shadow compositor", () => {
+  it("paints two overlapping sharp shadows, as the kit builds them, in the order Chromium does", async () => {
+    const [mode] = modes;
+    if (mode === undefined) {
+      throw new Error("the file holds no pin");
+    }
+    const { variant } = await buildCaptured(
+      chip(),
+      rest({ slot: "chip", classes: `w-[20px] h-[20px] ${STACKED_SHADOWS.className}` })
+    );
+    if (variant === undefined) {
+      throw new Error("the build drew no variant");
+    }
+    const box = variant.root;
+    // The box's bottom edge sits the shadows' offset up from the edge the depth counts from, so
+    // Chromium's pixel, in the second row below the box, lies 2px up from that edge.
+    const spec = paintAt(box, mode, { side: "bottom", depth: 2 }, STACKED_SHADOWS.offsetY, PAGE);
+    expect(near(spec, stackedShadowPixel), `spec ${shown(spec)}, Chromium ${shown(stackedShadowPixel)}`).toBe(
+      true
+    );
   });
 });

@@ -1579,6 +1579,56 @@ const OVERFLOWS = ["overflow", "overflow-x", "overflow-y"] as const;
 const CLIPPING: ReadonlySet<string> = new Set(["hidden", "clip", "auto", "scroll"]);
 
 /**
+ * An `overflow`, `overflow-x` or `overflow-y` value's keyword on each axis: the first for x, and the
+ * second, or the first again, for y, as the shorthand sets its longhands (CSS Overflow 3 §3). A
+ * longhand's one keyword stands for both.
+ */
+function overflowAxes(value: string): readonly [x: string, y: string] {
+  const [x = "", y = x] = normalizeCss(value).split(/\s+/u);
+  return [x, y];
+}
+
+/**
+ * Whether an `overflow`, `overflow-x` or `overflow-y` value clips on any axis it sets, as `hidden
+ * auto` does on both.
+ *
+ * @param value - The computed value.
+ * @returns Whether a keyword it holds clips the box's content at its padding box.
+ */
+export function overflowClips(value: string): boolean {
+  return overflowAxes(value).some((keyword) => CLIPPING.has(keyword));
+}
+
+/** The axes on which a box clips its content at its padding box. */
+export type ClippedAxes = {
+  /** Whether the box clips across, by its `overflow-x`. */
+  readonly horizontal: boolean;
+  /** Whether the box clips down, by its `overflow-y`. */
+  readonly vertical: boolean;
+};
+
+/** The overflow values that make a `visible` on the other axis compute to `auto` (CSS Overflow 3 §3). */
+const SCROLLING: ReadonlySet<string> = new Set(["hidden", "auto", "scroll"]);
+
+/**
+ * The axes on which a box clips its content at its padding box, without recording a read. An axis
+ * takes its `overflow-x` or `overflow-y`, or else its keyword of the `overflow` shorthand, as
+ * {@link overflowAxes} splits it. `clip` clips its own axis only, while `hidden`, `auto` or `scroll`
+ * on either axis clips both, since a `visible` beside one computes to `auto` (CSS Overflow 3 §3).
+ *
+ * @param reader - The box's style.
+ * @returns Whether the box clips across, and whether it clips down.
+ */
+export function clippedAxes(reader: LayerStyle): ClippedAxes {
+  const value = (property: string): string => normalizeCss(reader.resolved(property) ?? "");
+  const [x, y] = overflowAxes(value("overflow"));
+  const horizontal = value("overflow-x") || x;
+  const vertical = value("overflow-y") || y;
+  const both = SCROLLING.has(horizontal) || SCROLLING.has(vertical);
+  return { horizontal: both || horizontal === "clip", vertical: both || vertical === "clip" };
+}
+
+/**
  * Read a box's sizing and limits on both axes, `field-sizing: content`, and its overflow.
  * `field-sizing: content` sizes a form control to its content on each side no length sets (CSS
  * Basic UI 4). The kit hugs such a side already, so it reads where the height hugs. An `overflow`,
@@ -1634,15 +1684,17 @@ export function readSizing(
     reader.feed("sizing")
   );
   readContainment(reader, room, horizontal.size);
-  // A `visible` axis beside one that clips computes to `auto` (CSS Overflow 3 §3), so either clips both.
-  const clips = OVERFLOWS.map((property) =>
+  for (const property of OVERFLOWS) {
     reader.read(
       property,
-      (value) => (CLIPPING.has(normalizeCss(value)) ? true : undefined),
+      (value) => (overflowClips(value) ? true : undefined),
       () => ({ outcome: "literal", detail: "the box clips its content" }),
       reader.feed("clips")
-    )
-  ).some((clipped) => clipped === true);
+    );
+  }
+  // Figma clips both axes or neither, so a box that clips either clips both.
+  const axes = clippedAxes(reader);
+  const clips = axes.horizontal || axes.vertical;
   return {
     sizing: { horizontal: horizontal.size, vertical: vertical.size },
     limits: {

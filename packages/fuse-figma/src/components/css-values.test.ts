@@ -196,6 +196,41 @@ describe("readColor", () => {
     }
   );
 
+  // Oracle: CSS Color 4 §9.2 and §9.3, where an `oklab()` or `oklch()` lightness of 100% is 1, so
+  // lightness 0 is black and 1 is white, and the alpha after the slash is the color's alpha. Tailwind
+  // compiles Frame's `shadow-[…_black]/5` to `oklab(0% 0 0 / .05)`. A number may take an exponent
+  // (CSS Syntax 3 §4.3.12): Chromium computes `oklab(1e2% 0 0 / 50%)` as `oklab(1 0 0 / 0.5)`.
+  it.each([
+    ["oklab(0% 0 0 / .05)", { r: 0, g: 0, b: 0, a: 0.05 }],
+    ["oklab(100% 0 0)", { r: 1, g: 1, b: 1, a: 1 }],
+    ["oklch(0% 0 0 / 50%)", { r: 0, g: 0, b: 0, a: 0.5 }],
+    ["oklab(1e2% 0 0 / 50%)", { r: 1, g: 1, b: 1, a: 0.5 }],
+  ])("reads %s, whose lightness is a percentage", (value, color) => {
+    const read = readColor(value, index);
+    expect(read?.kind).toBe("literal");
+    if (read?.kind !== "literal") {
+      return;
+    }
+    for (const channel of ["r", "g", "b", "a"] as const) {
+      expect(read.color[channel], channel).toBeCloseTo(color[channel], 6);
+    }
+  });
+
+  // Oracle: Chromium, which computes `oklab(1e400% 0 0)` as `oklab(1 0 0)`, clamping the lightness to
+  // 100% (CSS Color 4 §9.2), and refuses `oklab(1.% 0 0)`, since a CSS number's fraction needs a digit
+  // after the point (CSS Syntax 3 §4.3.12).
+  it("clamps a percentage lightness past 100% to white", () => {
+    const read = readColor("oklab(1e400% 0 0)", index);
+    const channels = read?.kind === "literal" ? read.color : undefined;
+    expect(
+      channels === undefined ? channels : Object.values(channels).map((channel) => channel.toFixed(6))
+    ).toEqual(["1.000000", "1.000000", "1.000000", "1.000000"]);
+  });
+
+  it("leaves a lightness with no digit after its point unmapped", () => {
+    expect(readColor("oklab(1.% 0 0)", index)).toBeUndefined();
+  });
+
   // Oracle: CSS Color 5 §2.1, whose `color-mix()` grammar takes a percentage from 0% to 100%, so a
   // share past 100% is no color, and no paint takes an alpha above 1.
   it("leaves a mix whose share lies outside 0% to 100% unmapped", () => {
