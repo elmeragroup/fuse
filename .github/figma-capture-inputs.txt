@@ -1,13 +1,17 @@
-# What fuse-figma's `test:capture` capture check reads, as git pathspecs, one per line. The merge
-# workflow's figma-capture job captures only when one of these changed since its base
-# (.github/scripts/figma-compare-affected.sh with INPUTS naming this file).
-# test/merge-task-graph.test.mjs checks that every package the task's turbo graph builds is listed.
+# What fuse-figma's `test:capture` capture check reads, as git pathspecs, one per line. On a pull
+# request or push with a known base, the merge workflow's figma-capture legs skip the check when
+# none of these changed since that base (.github/scripts/figma-compare-affected.sh with INPUTS
+# naming this file); a manual dispatch or an unknown base always runs it.
+# test/merge-task-graph.test.mjs checks that the package of every task the legs schedule and every
+# file Turbo hashes for the legs' capture tasks is listed.
 # Its unit tests and the plugin's fake-file Plan differential run in the job, so they count.
 
 # fuse-figma's sources and scripts
 packages/fuse-figma
 :(exclude)packages/fuse-figma/README.md
-:(exclude)packages/fuse-figma/test
+# The facts leg's suites import the helpers in test/, but not its tests or fixtures
+:(exclude,glob)packages/fuse-figma/test/**/*.test.ts
+:(exclude)packages/fuse-figma/test/fixtures
 
 # The Fuse build the cells render, its build scripts, and the sources the kit reads directly
 packages/fuse/src
@@ -42,3 +46,7 @@ turbo.json
 
 # The API references whose placement defaults the anchored manifests name
 :(glob)apps/docs/src/app/(docs)/components/*/api.json
+
+# The docs pages whose ledes the kit build reads, and their frontmatter reader
+:(glob)apps/docs/src/app/(docs)/components/*/page.mdx
+apps/docs/scripts/lib/page-frontmatter.ts

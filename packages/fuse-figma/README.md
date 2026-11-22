@@ -916,7 +916,7 @@ An open composite adds the `data-slot` of each element its cells measure (`union
    pnpm --filter @elmeragroup/fuse-figma figma:capture [<set>…] [--repeat 3] [--check]
    ```
 
-   `--repeat` captures each set that many times and fails unless every run writes the same bytes. `--check` writes nothing and fails where a fresh capture differs from the kept file.
+   `--repeat` captures each set that many times and fails unless every run writes the same bytes. `--check` writes nothing and fails where a fresh capture differs from the kept file. `--shard <k>/<n>` captures every n-th set, starting at the k-th, and fails on any other form.
 
 3. Probe the sizing:
 
@@ -1000,7 +1000,19 @@ A literal value is uncovered on purpose: a row that binds no variable and maps a
 
 `test:compare` is no oracle for the build. Its self-check renders browser cells and checks the comparison tool itself, and reads no build output.
 
-CI runs `test:capture` in a `figma-capture` job of its own: `figma:capture --check`, `figma:probe`, the oracle tests and the Plan round trip. Like `figma-compare`, it runs only when a path in `.github/figma-capture-inputs.txt` changed.
+`test:capture` runs the whole check: `test:capture:sets` runs `figma:capture --check`, and `test:capture:facts` runs `figma:probe`, the oracle tests and the Plan round trip. CI runs the two halves in a `figma-capture` job of its own, split over parallel legs. Each of six `sets` legs runs `turbo run test:capture:sets -- --shard=<k>/6`, one for each k from 1 to 6, and one `facts` leg runs `test:capture:facts`. Shard k keeps every n-th capture target in kit order, starting at the k-th. To run the whole check from the repo root:
+
+```sh
+pnpm exec turbo run test:capture --filter=@elmeragroup/fuse-figma
+```
+
+To run one shard as its CI leg does:
+
+```sh
+pnpm exec turbo run test:capture:sets --filter=@elmeragroup/fuse-figma -- --shard=1/6
+```
+
+Both build Fuse first. On a pull request or push with a known base, the legs skip the check when no path in `.github/figma-capture-inputs.txt` changed, as `figma-compare` does. A manual dispatch or an unknown base always runs it.
 
 ## Code map
 
@@ -1205,6 +1217,7 @@ CI runs `test:capture` in a `figma-capture` job of its own: `figma:capture --che
 | `compare/cell-measure.ts`                    | A cell's box, the union of its measured elements, and its crop, which starts on the pixel grid and, for a client cell, stays inside its slot                                                                                                                                                                                                 |
 | `compare/unchanged-by-design.ts`             | The hover and focus cells the built kit draws exactly as at rest in a preview's theme, which the page does not hover or focus and does not flag as missing a state                                                                                                                                                                           |
 | `capture/capture-format.ts`                  | The capture file: its schema, its parser and its printer                                                                                                                                                                                                                                                                                     |
+| `capture/capture-shard.ts`                   | Picks the capture targets one `--shard <k>/<n>` keeps, for CI's figma-capture legs                                                                                                                                                                                                                                                           |
 | `capture/page-facts.ts`                      | The facts the capture measures of a root's tree in Chromium, read by a page function over DevTools                                                                                                                                                                                                                                           |
 | `capture/page-modes.ts`                      | Every color scheme, density and legal theme a fact must hold in, which the page function and the calendar sweep stamp                                                                                                                                                                                                                        |
 | `capture/page-clearances.ts`                 | The margins by which the page keeps a fact that text a fraction of a pixel wider on one platform could move, and Chromium's layout unit                                                                                                                                                                                                      |
