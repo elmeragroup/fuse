@@ -219,6 +219,10 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
       ["described", "Whether the Item or Alert shows a description under its title."],
       ["collapsed", "Whether the Sidebar is collapsed to its icon rail."],
       [
+        "floating",
+        "Whether a Sidebar section sits in a floating Sidebar's rounded surface, which pads it with the small surface tier and rounds its rows inside the surface's corner.",
+      ],
+      [
         "outside",
         "Whether a calendar day belongs to a neighboring month, which the grid shows without its number.",
       ],

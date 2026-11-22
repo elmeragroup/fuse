@@ -20,7 +20,9 @@
  *   badge at the item's left edge, so its crop sits on the pixel grid.
  *
  * The section renderers render each section as `sidebar-section-kit.ts` draws it, in a host that
- * stands for the desktop `Sidebar.Root` as the menu button's does, collapsed where the cell is:
+ * stands for the desktop `Sidebar.Root` as the menu button's does, collapsed where the cell is. A
+ * floating header, group or footer cell's host carries the Root's `data-variant="floating"` and holds
+ * the section in a `data-slot="sidebar-inner"` surface, as a floating Root holds it:
  *
  * - A `sidebar-group` cell renders `Sidebar.Group` holding `Navigation` and the icon collapse demo's
  *   five rows in a `Sidebar.GroupContent` and a `Sidebar.Menu`, `Orders` active, in a 256px host.
@@ -239,21 +241,34 @@ function footerSection(): ReactElement {
   );
 }
 
-/** A `sidebar-group` cell: the icon collapse demo's group, expanded or collapsed. */
+/**
+ * A panel section's host: the desktop `Sidebar.Root` around it, collapsed where the cell is. A
+ * floating cell's host also carries the Root's `data-variant="floating"` and holds the section in a
+ * `data-slot="sidebar-inner"` surface, the two ancestors the floating section and row classes read.
+ */
+function sectionHost(cell: Cell, section: ReactElement): ReactElement {
+  const around = rootAround(cell.collapsed === "true");
+  return cell.floating === "true"
+    ? host(SIDEBAR_SECTION_WIDTH, createElement("div", { "data-slot": "sidebar-inner" }, section), {
+        ...around,
+        "data-variant": "floating",
+      })
+    : host(SIDEBAR_SECTION_WIDTH, section, around);
+}
+
+/** A `sidebar-group` cell: the icon collapse demo's group, expanded or collapsed, floating or not. */
 export const sidebarGroup: CellRendering = {
-  element: (cell: Cell) => host(SIDEBAR_SECTION_WIDTH, groupSection(), rootAround(cell.collapsed === "true")),
+  element: (cell: Cell) => sectionHost(cell, groupSection()),
 };
 
-/** A `sidebar-header` cell: the app frame demo's header, expanded or collapsed. */
+/** A `sidebar-header` cell: the app frame demo's header, expanded or collapsed, floating or not. */
 export const sidebarHeader: CellRendering = {
-  element: (cell: Cell) =>
-    host(SIDEBAR_SECTION_WIDTH, headerSection(), rootAround(cell.collapsed === "true")),
+  element: (cell: Cell) => sectionHost(cell, headerSection()),
 };
 
-/** A `sidebar-footer` cell: the landing dashboard's footer row, expanded or collapsed. */
+/** A `sidebar-footer` cell: the landing dashboard's footer row, expanded or collapsed, floating or not. */
 export const sidebarFooter: CellRendering = {
-  element: (cell: Cell) =>
-    host(SIDEBAR_SECTION_WIDTH, footerSection(), rootAround(cell.collapsed === "true")),
+  element: (cell: Cell) => sectionHost(cell, footerSection()),
 };
 
 /** The `sidebar-menu-sub` cell: the rich menu demo's sub menu in an expanded Sidebar. */

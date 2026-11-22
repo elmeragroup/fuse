@@ -5,14 +5,15 @@
  *
  * - `Sidebar group`: `Sidebar.Group` holding the `Navigation` group label and a menu of the icon
  *   collapse demo's five rows, `Orders` active, each a `Sidebar menu button` instance that fills the
- *   menu column, expanded and collapsed to the icon rail, 2 cells. Collapsed, the label fades out and
- *   the rows move up by its height, so it draws in no layer, and each row is the menu button's
- *   `collapsed=true` variant.
+ *   menu column, expanded and collapsed to the icon rail, outside and inside a floating surface, 4
+ *   cells. Collapsed, the label fades out and the rows move up by its height, so it draws in no
+ *   layer, and each row is the menu button's `collapsed=true` variant.
  * - `Sidebar header`: `Sidebar.Header` holding the app frame demo's `Sidebar.Input`, an `Input`
- *   instance showing `Search orders`, expanded and collapsed, 2 cells.
+ *   instance showing `Search orders`, expanded and collapsed, outside and inside a floating surface,
+ *   4 cells.
  * - `Sidebar footer`: `Sidebar.Footer` holding a menu of one large menu button, as the landing
  *   dashboard signs its seller in, with the User icon and the seller's name, expanded and collapsed,
- *   2 cells.
+ *   outside and inside a floating surface, 4 cells.
  * - `Sidebar sub menu`: `Sidebar.MenuSub` holding the rich menu demo's three sub rows, `Open` active
  *   and `Archived (small)` at `sm`, each a `Sidebar menu sub button` instance in its `<li>`, behind the
  *   sub menu's left border, 1 cell. The collapsed rail hides the sub menu, so it has no collapsed
@@ -24,6 +25,12 @@
  * Each section sits 256px wide, the docs' 16rem Sidebar, as the row sets' 240px rows sit inside a
  * group's dense 8px inset, and the sub menu and the item sit in a 240px menu row. The collapsed cells
  * keep that width, since the `Sidebar` set draws the icon rail's own width.
+ *
+ * A floating Sidebar pads its header, group and footer with `surface-pad-sm`, or 8px in the rail,
+ * where the other variants pad `row-px`. An instance cannot change its root's padding, so these
+ * three sets draw the floating surface as their `floating` axis. The rows inside round inside the
+ * surface's corner, which their instances draw as a corner override, so the row sets need no such
+ * axis.
  */
 import type { InstanceManifest, PartManifest, SetManifest } from "../capture/manifest";
 import type { Cell } from "./component-spec";
@@ -70,8 +77,18 @@ export const SIDEBAR_SUB_ROWS = [
 /** The rich menu demo's row that holds the first badge. */
 export const SIDEBAR_BADGE_ROW = { label: "Orders", icon: "Package" } as const;
 
-/** The axis a section's cells take: expanded and collapsed to the icon rail. */
-const COLLAPSED_AXES = [{ name: "collapsed", values: ["false", "true"] }];
+/**
+ * The axes a panel section's cells take: expanded and collapsed to the icon rail, and in the
+ * `sidebar` or `inset` surface or the floating one. The sets first held the collapsed axis alone, so
+ * `floating` is an added axis and its `false` cells keep their keys.
+ */
+const SECTION_AXES = [
+  { name: "collapsed", values: ["false", "true"] },
+  { name: "floating", values: ["false", "true"] },
+];
+
+/** The axis each panel section added after a file first held it. */
+const SECTION_ADDED_AXES: ReadonlySet<string> = new Set(["floating"]);
 
 /** A menu row's label and icon, and its size and whether it is active where they are not the defaults. */
 type MenuRow = {
@@ -139,7 +156,8 @@ export const SIDEBAR_GROUP_MANIFEST: SetManifest = {
   name: "Sidebar group",
   api: { page: "sidebar", parts: ["Sidebar.Group"] },
   slot: "sidebar-group",
-  axes: COLLAPSED_AXES,
+  axes: SECTION_AXES,
+  addedAxes: SECTION_ADDED_AXES,
   columnAxis: "collapsed",
   label: undefined,
   iconsFor: () => [],
@@ -166,7 +184,8 @@ export const SIDEBAR_HEADER_MANIFEST: SetManifest = {
   name: "Sidebar header",
   api: { page: "sidebar", parts: ["Sidebar.Header"] },
   slot: "sidebar-header",
-  axes: COLLAPSED_AXES,
+  axes: SECTION_AXES,
+  addedAxes: SECTION_ADDED_AXES,
   columnAxis: "collapsed",
   label: undefined,
   iconsFor: () => [],
@@ -191,7 +210,8 @@ export const SIDEBAR_FOOTER_MANIFEST: SetManifest = {
   name: "Sidebar footer",
   api: { page: "sidebar", parts: ["Sidebar.Footer"] },
   slot: "sidebar-footer",
-  axes: COLLAPSED_AXES,
+  axes: SECTION_AXES,
+  addedAxes: SECTION_ADDED_AXES,
   columnAxis: "collapsed",
   label: undefined,
   iconsFor: () => [],
