@@ -366,7 +366,7 @@ export const KIT_PARITY = {
       "sidebar-menu-item-with-badge",
       "sidebar",
     ],
-    missing: "The app frame, its Workspace group and the floating Sidebar (#847).",
+    missing: "The app frame and its Workspace group.",
     issue: NICE_TO_HAVE,
   },
   skeleton: {

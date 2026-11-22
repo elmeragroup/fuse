@@ -1,8 +1,14 @@
 /**
- * Unit under test: the Sidebar header, group and footer sets' `floating=true` variants, as the kit
- * builds them: each root's padding and the corner each row instance inside it draws, its corner
- * override or else its inner variant's corner, resolved in an in-memory Figma file the token sync
- * wrote.
+ * Unit under test: two parts of the kit build, with each length resolved in an in-memory Figma
+ * file the token sync wrote. The first is the Sidebar header, group and footer sets' `floating=true`
+ * variants, with each root's padding and the corner each row instance inside it draws, its corner
+ * override or else its inner variant's corner. The second is the Sidebar set's `variant=floating`
+ * variants, with the container's padding and width, the surface's corner, and, for each section
+ * instance, the padding of the variant it shows and the corners that variant's rows draw there.
+ * The test does not check the surface's 1px `sidebar-border` ring or its `shadow-sm`. The built spec
+ * draws them as the surface frame's shadows, the ring as a 1px spread. `test:compare` compares
+ * browser cells with a browser snapshot, so it cannot show that Figma draws them as Chromium does.
+ * The owner's Apply to a real file shows that.
  * Oracle: Chromium's computed padding and `border-*-radius` of the same sections in the real Fuse
  * floating Sidebar: the docs floating demo's `Sidebar.Provider bounds="container"` and
  * `Sidebar.Root variant="floating"`, with `collapsible="icon"`, open and collapsed to the icon rail.
@@ -13,7 +19,9 @@
  * The sets' own captures render each section in a host that stands for the floating Root and its
  * surface. This test renders the real Provider, Root and surface, so it goes red where that host
  * misses an ancestor the floating classes read, where the build pads a floating section with
- * `row-px`, and where a row draws its `rounded-md` in place of the surface's inner corner.
+ * `row-px`, where a row draws its `rounded-md` in place of the surface's inner corner, where the
+ * panel draws no floating variant or rounds no surface, and where a floating panel shows a section
+ * variant that pads or rounds its rows as the `sidebar` variant's sections do.
  */
 import { createElement } from "react";
 import type { ReactElement } from "react";
@@ -119,10 +127,23 @@ type MeasuredSection = {
   readonly rows: Readonly<Record<string, Four>>;
 };
 
-/** Each panel's sections under one pin, by collapsed state and then section. */
-type Measured = Readonly<Record<string, Readonly<Record<string, MeasuredSection>>>>;
+/** What Chromium computes for one panel under one pin, in CSS pixels. */
+type MeasuredPanel = {
+  /** The `sidebar-container`'s padding and border-box width. */
+  readonly container: { readonly padding: Four; readonly width: number };
+  /** The `sidebar-inner` surface's corners. */
+  readonly surface: Four;
+  /** Each section, by the name in {@link SECTIONS}. */
+  readonly sections: Readonly<Record<string, MeasuredSection>>;
+};
 
-/** Stamp each pin's theme in turn and read every section's padding and its rows' corners. */
+/** Each panel under one pin, by collapsed state. */
+type Measured = Readonly<Record<string, MeasuredPanel>>;
+
+/**
+ * Stamp each pin's theme in turn and read each panel's container and surface, and every section's
+ * padding and its rows' corners.
+ */
 function measurePins(page: Page, stamps: readonly ThemeStamps[]): Promise<readonly Measured[]> {
   return page.evaluate(
     ({ pins, sections, rowSets }) =>
@@ -133,39 +154,51 @@ function measurePins(page: Page, stamps: readonly ThemeStamps[]): Promise<readon
         for (const [name, value] of Object.entries(pin.body)) {
           document.body.setAttribute(name, value);
         }
-        const panels: Record<string, Record<string, MeasuredSection>> = {};
+        const corners = (element: Element): Four => {
+          const style = getComputedStyle(element);
+          return [
+            Number.parseFloat(style.borderTopLeftRadius),
+            Number.parseFloat(style.borderTopRightRadius),
+            Number.parseFloat(style.borderBottomRightRadius),
+            Number.parseFloat(style.borderBottomLeftRadius),
+          ];
+        };
+        const padding = (element: Element): Four => {
+          const style = getComputedStyle(element);
+          return [
+            Number.parseFloat(style.paddingTop),
+            Number.parseFloat(style.paddingRight),
+            Number.parseFloat(style.paddingBottom),
+            Number.parseFloat(style.paddingLeft),
+          ];
+        };
+        const panels: Record<string, MeasuredPanel> = {};
         for (const frame of document.querySelectorAll("[data-collapsed]")) {
+          const container = frame.querySelector('[data-slot="sidebar-container"]');
+          const surface = frame.querySelector('[data-slot="sidebar-inner"]');
+          if (container === null || surface === null) {
+            throw new Error("a panel holds no container or surface");
+          }
           const found: Record<string, MeasuredSection> = {};
           for (const section of sections) {
             const box = frame.querySelector(`[data-slot="sidebar-${section}"]`);
             if (box === null) {
               throw new Error(`a panel holds no ${section}`);
             }
-            const style = getComputedStyle(box);
             const rows: Record<string, Four> = {};
             for (const rowSet of rowSets) {
               const row = box.querySelector(`[data-slot="${rowSet}"]`);
               if (row !== null) {
-                const corners = getComputedStyle(row);
-                rows[rowSet] = [
-                  Number.parseFloat(corners.borderTopLeftRadius),
-                  Number.parseFloat(corners.borderTopRightRadius),
-                  Number.parseFloat(corners.borderBottomRightRadius),
-                  Number.parseFloat(corners.borderBottomLeftRadius),
-                ];
+                rows[rowSet] = corners(row);
               }
             }
-            found[section] = {
-              padding: [
-                Number.parseFloat(style.paddingTop),
-                Number.parseFloat(style.paddingRight),
-                Number.parseFloat(style.paddingBottom),
-                Number.parseFloat(style.paddingLeft),
-              ],
-              rows,
-            };
+            found[section] = { padding: padding(box), rows };
           }
-          panels[frame.getAttribute("data-collapsed") ?? ""] = found;
+          panels[frame.getAttribute("data-collapsed") ?? ""] = {
+            container: { padding: padding(container), width: container.getBoundingClientRect().width },
+            surface: corners(surface),
+            sections: found,
+          };
         }
         return panels;
       }),
@@ -280,8 +313,49 @@ describe("the Sidebar sections' floating variants", () => {
       const rows = drawnCorners(root);
       expect(rows.length > 0).toBe(section !== "header");
       const apart = pins.flatMap((pin, index) =>
-        sectionApart(pin, section, root, rows, measured[index]?.[collapsed]?.[section])
+        sectionApart(pin, section, root, rows, measured[index]?.[collapsed]?.sections[section])
       );
+      expect(apart).toEqual([]);
+    }
+  );
+});
+
+describe("the Sidebar set's floating variants", () => {
+  it.each(
+    COLLAPSED.map((collapsed) => ({ collapsed, key: `sidebar/variant=floating,collapsed=${collapsed}` }))
+  )(
+    "draws $key's container, surface and sections as Chromium draws the real floating Sidebar under every pin",
+    ({ collapsed, key }) => {
+      const root = variantRoot(kit.spec, key);
+      const surface = walkLayers(root).find((layer) => layer.kind === "frame" && layer.key === "inner");
+      const sections = SECTIONS.map((section) => {
+        const layer = walkLayers(root).find((each) => each.kind === "instance" && each.key === section);
+        if (layer?.kind !== "instance") {
+          return expect.fail(`${key} shows no ${section} instance`);
+        }
+        const shown = variantRoot(kit.spec, layer.variant);
+        return { section, shown, rows: drawnCorners(shown) };
+      });
+      expect(sections.map(({ section, rows }) => [section, rows.length > 0])).toEqual(
+        SECTIONS.map((section) => [section, section !== "header"])
+      );
+      const width = root.sizing.horizontal.kind === "fixed" ? [root.sizing.horizontal.length] : [];
+      const apart = pins.flatMap((pin, index) => {
+        const computed = measured[index]?.[collapsed];
+        return [
+          ...apartLine(pin, "container padding", resolved(paddingOf(root), pin), computed?.container.padding),
+          ...apartLine(pin, "container width", resolved(width, pin), [computed?.container.width]),
+          ...apartLine(
+            pin,
+            "surface corner",
+            surface?.kind === "frame" ? resolved(fourCorners(surface.cornerRadius), pin) : [],
+            computed?.surface
+          ),
+          ...sections.flatMap(({ section, shown, rows }) =>
+            sectionApart(pin, section, shown, rows, computed?.sections[section])
+          ),
+        ];
+      });
       expect(apart).toEqual([]);
     }
   );

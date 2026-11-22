@@ -2665,27 +2665,7 @@
       },
       {
         "part": "sidebar-inner",
-        "className": "group-data-[variant=floating]:rounded-lg"
-      },
-      {
-        "part": "sidebar-inner",
-        "className": "group-data-[variant=floating]:[--shell-inner:--theme(--radius-lg)]"
-      },
-      {
-        "part": "sidebar-inner",
-        "className": "group-data-[variant=floating]:shadow-sm"
-      },
-      {
-        "part": "sidebar-inner",
         "className": "group-data-[collapsible=offcanvas]:invisible"
-      },
-      {
-        "part": "sidebar-inner",
-        "className": "group-data-[variant=floating]:ring-1"
-      },
-      {
-        "part": "sidebar-inner",
-        "className": "group-data-[variant=floating]:ring-sidebar-border"
       },
       {
         "part": "sidebar-separator",
