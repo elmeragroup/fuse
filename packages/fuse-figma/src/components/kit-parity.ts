@@ -170,9 +170,13 @@ export const KIT_PARITY = {
     missing: "The calendar popup; the `sm` size, the trigger at the start, and a date and time.",
     issue: MISSING_SETS,
   },
-  // #802: the text spans inside the label, error and description reach no coverage row, and the
-  // ledger can name them only for a built set.
-  "date-range-picker": { kind: "issue", issue: MISSING_SETS },
+  "date-range-picker": {
+    kind: "partial",
+    sets: ["date-range-picker"],
+    missing:
+      "The calendar popup and its presets; the `sm` size, a range of dates and times, and the shorter box a narrower picker gets below 24rem.",
+    issue: MISSING_SETS,
+  },
   "description-list": {
     kind: "partial",
     sets: ["description-list-item", "description-list"],

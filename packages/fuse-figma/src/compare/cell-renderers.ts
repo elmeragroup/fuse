@@ -560,6 +560,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./date-picker-cell.ts")).datePicker,
   },
   {
+    set: "date-range-picker",
+    entry: "dist/date-range-picker.js",
+    load: async () => (await import("./date-range-picker-cell.ts")).dateRangePicker,
+  },
+  {
     set: "tabs-trigger",
     entry: "dist/tabs.js",
     load: async () => (await import("./tabs-cell.ts")).tabsTrigger,

@@ -69,10 +69,12 @@ function segmentLabel(segment: Segment): LabelManifest {
  * them, `field-group` in a Date field and `date-picker-input` in a picker.
  *
  * @param holder - The `data-slot` of the element whose children the segments are.
- * @returns The five segments, in source order, filled with {@link DATE_FIELD_VALUE}.
+ * @param iso - The date the filled segments show, {@link DATE_FIELD_VALUE} unless a range's end
+ *   shows another.
+ * @returns The five segments, in source order.
  */
-export function dateSegmentParts(holder: string): readonly PartManifest[] {
-  return segmentsOf(DATE_FIELD_VALUE).map((segment, index): PartManifest => ({
+export function dateSegmentParts(holder: string, iso: string = DATE_FIELD_VALUE): readonly PartManifest[] {
+  return segmentsOf(iso).map((segment, index): PartManifest => ({
     key: segment.key,
     slot: undefined,
     place: `${holder}/${String(index)}`,

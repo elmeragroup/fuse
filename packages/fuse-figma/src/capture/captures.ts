@@ -39,6 +39,7 @@ import confirmButton from "../../captures/confirm-button.json" with { type: "jso
 import dataTableFilterBar from "../../captures/data-table-filter-bar.json" with { type: "json" };
 import dateField from "../../captures/date-field.json" with { type: "json" };
 import datePicker from "../../captures/date-picker.json" with { type: "json" };
+import dateRangePicker from "../../captures/date-range-picker.json" with { type: "json" };
 import descriptionListItem from "../../captures/description-list-item.json" with { type: "json" };
 import descriptionList from "../../captures/description-list.json" with { type: "json" };
 import dialogContent from "../../captures/dialog-content.json" with { type: "json" };
@@ -212,6 +213,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["range-calendar", rangeCalendar],
   ["date-field", dateField],
   ["date-picker", datePicker],
+  ["date-range-picker", dateRangePicker],
   ["tabs-trigger", tabsTrigger],
   ["tabs-list", tabsList],
   ["tabs-content", tabsContent],
