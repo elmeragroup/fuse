@@ -31,6 +31,7 @@ import {
   fittingRoom,
   growingRoom,
   hugsUncapped,
+  instancePlace,
   leastContentWidth,
   lessMargins,
   outOfFlow,
@@ -1464,10 +1465,10 @@ function mapPart(
       parent,
       first
     );
-    const { layer: built, painted } = scope.instances.map(
-      part,
-      fixed?._tag === "placed" ? viewportRoom(part.cascade.style, fixed.viewport) : room
-    );
+    const { layer: built, painted } =
+      fixed?._tag === "placed"
+        ? scope.instances.map(part, viewportRoom(part.cascade.style, fixed.viewport), "elsewhere")
+        : scope.instances.map(part, room, instancePlace({ style: parent, layout }, part.cascade.style, room));
     if (fixed?._tag === "placed") {
       placeCentredFixed(part.cascade.style, fixed.at);
     } else if (fixed?._tag === "refused") {

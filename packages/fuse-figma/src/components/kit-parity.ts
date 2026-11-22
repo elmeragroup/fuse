@@ -172,8 +172,7 @@ export const KIT_PARITY = {
   },
   // #802: the field box wraps its row (`flex-wrap`), which keeps its inputs' `self-stretch` unproven,
   // and the capture measures `freeAlongMain` for the trigger's `ms-auto` only on a row that does not
-  // wrap. The Label instance's `w-fit` fills its stretching column where the Label set's text hugs,
-  // and the text spans inside the label, error and description reach no coverage row.
+  // wrap. The text spans inside the label, error and description reach no coverage row.
   "date-range-picker": { kind: "issue", issue: MISSING_SETS },
   "description-list": {
     kind: "partial",

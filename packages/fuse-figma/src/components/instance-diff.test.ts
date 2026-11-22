@@ -12,6 +12,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { settleInstanceRoot } from "./hugging-rows.ts";
 import { diffInstance } from "./instance-diff.ts";
 import { NO_LIMITS } from "./kit-spec.ts";
 import type { BoxSpec, ComponentRootSpec, FrameLayerSpec, SizingSpec, TextLayerSpec } from "./kit-spec.ts";
@@ -56,9 +57,18 @@ function inPlace(fields: Partial<ComponentRootSpec> = {}): ComponentRootSpec {
   return { ...VARIANT, sizing: FILLS, primaryAlign: "MIN", ...fields };
 }
 
+/** Diff an instance whose root keeps the sizing it has in place, as every block here places it. */
+function diffAsBuilt(built: ComponentRootSpec, variant: ComponentRootSpec) {
+  return diffInstance(
+    built,
+    variant,
+    settleInstanceRoot(built, variant, "elsewhere", { neverWraps: () => false, fitsItsLine: false })
+  );
+}
+
 describe("a root's alignment along its direction, built in place", () => {
   it("becomes an override on an instance that fills along its direction", () => {
-    const diff = diffInstance(inPlace(), VARIANT);
+    const diff = diffAsBuilt(inPlace(), VARIANT);
     expect([diff.overrides, diff.unmapped]).toEqual([
       [{ path: [], field: "primaryAlign", value: "MIN" }],
       [],
@@ -75,13 +85,13 @@ describe("a root's alignment along its direction, built in place", () => {
     ],
     ["in a column that fills only across", inPlace({ direction: "VERTICAL" })],
   ])("stays unmapped on an instance %s", (_, root) => {
-    const diff = diffInstance(root, { ...VARIANT, direction: root.direction });
+    const diff = diffAsBuilt(root, { ...VARIANT, direction: root.direction });
     expect(diff.overrides).toEqual([]);
     expect(diff.unmapped.map(({ path, field }) => [path, field])).toEqual([[[], "primaryAlign"]]);
   });
 
   it("stays unmapped beside a difference no instance field carries", () => {
-    const diff = diffInstance(inPlace({ counterAlign: "MAX" }), VARIANT);
+    const diff = diffAsBuilt(inPlace({ counterAlign: "MAX" }), VARIANT);
     expect(diff.overrides).toEqual([]);
     expect(diff.unmapped.map(({ field }) => field).toSorted()).toEqual(["counterAlign", "primaryAlign"]);
   });
@@ -96,7 +106,7 @@ describe("a root's alignment along its direction, built in place", () => {
       primaryAlign,
       children: [],
     });
-    const diff = diffInstance(inPlace({ primaryAlign: "CENTER", children: [frame("MIN")] }), {
+    const diff = diffAsBuilt(inPlace({ primaryAlign: "CENTER", children: [frame("MIN")] }), {
       ...VARIANT,
       children: [frame("CENTER")],
     });
@@ -117,7 +127,7 @@ describe("a root's stroke on some sides, built in place", () => {
   const ONE = { kind: "literal", value: 1 } as const;
 
   it("overrides the four weights and the color of a variant's stroke on every side", () => {
-    const diff = diffInstance(
+    const diff = diffAsBuilt(
       inPlace({ primaryAlign: "CENTER", sizing: VARIANT.sizing, stroke: { color: BORDER, sides: START } }),
       {
         ...VARIANT,
@@ -140,7 +150,7 @@ describe("a root's stroke on some sides, built in place", () => {
       { color: CLEAR, weight: { kind: "variable", variable: { collection: "Fuse tokens", name: "w" } } },
     ],
   ] as const)("stays unmapped over a %s stroke on every side", (_, stroke) => {
-    const diff = diffInstance(
+    const diff = diffAsBuilt(
       inPlace({ primaryAlign: "CENTER", sizing: VARIANT.sizing, stroke: { color: CLEAR, sides: START } }),
       {
         ...VARIANT,
@@ -181,7 +191,7 @@ describe("a label's face, built in place", () => {
     inPlace({ primaryAlign: "CENTER", sizing: VARIANT.sizing, children: [label] });
 
   it("overrides a literal weight's face in the same family", () => {
-    const diff = diffInstance(built({ ...LABEL, fontStyle: "Regular" }), held(LABEL));
+    const diff = diffAsBuilt(built({ ...LABEL, fontStyle: "Regular" }), held(LABEL));
     expect([diff.overrides, diff.unmapped]).toEqual([
       [{ path: ["label"], field: "fontStyle", style: "Regular" }],
       [],
@@ -189,7 +199,7 @@ describe("a label's face, built in place", () => {
   });
 
   it("stays unmapped where the variant's weight binds a variable", () => {
-    const diff = diffInstance(built({ ...LABEL, fontStyle: "Regular" }), held({ ...LABEL, weight: WEIGHT }));
+    const diff = diffAsBuilt(built({ ...LABEL, fontStyle: "Regular" }), held({ ...LABEL, weight: WEIGHT }));
     expect([diff.overrides, diff.unmapped.map(({ field }) => field)]).toEqual([[], ["fontStyle", "weight"]]);
   });
 });
@@ -203,18 +213,18 @@ describe("a root's widest width, built in place", () => {
     inPlace({ primaryAlign: "CENTER", sizing: VARIANT.sizing, limits });
 
   it("becomes the instance's own maximum", () => {
-    const diff = diffInstance(built({ ...NO_LIMITS, maxWidth: CAP }), VARIANT);
+    const diff = diffAsBuilt(built({ ...NO_LIMITS, maxWidth: CAP }), VARIANT);
     expect([diff.maxWidth, diff.unmapped]).toEqual([CAP, []]);
   });
 
   it("becomes the instance's own maximum beside a least width the variant lacks", () => {
     const FLOOR = { kind: "literal", value: 144 } as const;
-    const diff = diffInstance(built({ ...NO_LIMITS, minWidth: FLOOR, maxWidth: CAP }), VARIANT);
+    const diff = diffAsBuilt(built({ ...NO_LIMITS, minWidth: FLOOR, maxWidth: CAP }), VARIANT);
     expect([diff.minWidth, diff.maxWidth, diff.unmapped]).toEqual([FLOOR, CAP, []]);
   });
 
   it("stays unmapped beside a minimum that differs too", () => {
-    const diff = diffInstance(built({ ...NO_LIMITS, maxWidth: CAP, minHeight: CAP }), VARIANT);
+    const diff = diffAsBuilt(built({ ...NO_LIMITS, maxWidth: CAP, minHeight: CAP }), VARIANT);
     expect([diff.maxWidth, diff.unmapped.map(({ field }) => field)]).toEqual([undefined, ["limits"]]);
   });
 });
