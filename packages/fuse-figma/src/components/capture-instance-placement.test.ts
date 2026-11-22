@@ -276,8 +276,8 @@ describe("an align-self on an instance part", () => {
 });
 
 // Oracle: Figma's instance model, under which an instance of the row's set draws that set's variant
-// and carries only what an override or its own sizing sets, and no override adds a layer or sets a
-// padding. The chip's custom property reaches the tag inside a Review row instance, where the row
+// and carries only what an override or its own sizing sets, and no override adds a layer or sets the
+// padding of a frame below its root. The chip's custom property reaches the tag inside a Review row instance, where the row
 // instance's root holds the tag and draws what the composite draws around it. The row's own variant
 // takes the property's fallback, which draws nothing around the tag.
 describe("a margin or translate drawn around an instance part inside an instance", () => {
@@ -373,16 +373,23 @@ describe("a margin or translate drawn around an instance part inside an instance
 
   // A translate moves only the tag's painting (CSS Transforms 1 §6), which the column draws by taking
   // 1px from its left padding and giving it to its right, where the row's variant pads 8px each side.
+  // The column is a frame below the row's root, whose paddings no override sets.
   it("leaves a translate unmapped where the row instance cannot carry the column's paddings", async () => {
     const MOVED: FixtureElement = { slot: "tag", classes: "size-[20px] [translate:var(--shift,0px)]" };
-    const { coverage } = await buildNested(
+    const COLUMN: FixtureElement = {
+      slot: "column",
+      classes: "flex flex-col w-[100px] px-[8px]",
+      children: [MOVED],
+    };
+    const { coverage } = await buildNestedRow(
       "flex w-[200px] [--shift:-1px]",
-      { slot: "row", classes: "flex flex-col w-[100px] px-[8px]", children: [MOVED] },
+      [{ ...part({ key: "column", slot: "column" }), parts: [TAG] }],
+      { slot: "row", classes: "flex w-[100px]", children: [COLUMN] },
       MOVED
     );
     const [note] = notesOf(coverage, "[--shift:-1px]");
     expect(note?.slice(0, 2)).toEqual(["--shift", "unmapped"]);
-    expect(note?.[2]).toMatch(/^the root draws padding(Left|Right) /);
+    expect(note?.[2]).toMatch(/^column draws padding(Left|Right) /);
   });
 });
 
@@ -541,8 +548,8 @@ describe("a declaration whose reads several instances decide", () => {
     ]).toEqual([["unmapped"], ["unmapped"]]);
   });
 
-  // The chip draws the frame for the tag's margin, but the other instance's 8px padding differs from
-  // its variant's 2px, which no override sets.
+  // The chip draws the frame for the tag's margin, but the other instance's 8px least height differs
+  // from its variant's 2px, which no instance field carries.
   it("gives one unmapped row for a declaration two sibling instances read", async () => {
     const { coverage } = await buildCaptured(
       chip({ parts: [TAG, OTHER_PART] }),
@@ -551,13 +558,13 @@ describe("a declaration whose reads several instances decide", () => {
         classes: "flex w-[200px] [--g:8px]",
         children: [
           { slot: "tag", classes: "flex size-[20px] ms-[var(--g,0px)]" },
-          { slot: "other", classes: "flex size-[20px] ps-[var(--g,2px)]" },
+          { slot: "other", classes: "flex w-[20px] min-h-[var(--g,2px)]" },
         ],
       }),
       {
         inner: [
           { manifest: tag, cells: rest({ slot: "tag", classes: "flex size-[20px] ms-[var(--g,0px)]" }) },
-          { manifest: other, cells: rest({ slot: "other", classes: "flex size-[20px] ps-[var(--g,2px)]" }) },
+          { manifest: other, cells: rest({ slot: "other", classes: "flex w-[20px] min-h-[var(--g,2px)]" }) },
         ],
       }
     );
@@ -583,7 +590,7 @@ describe("a declaration whose reads several instances decide", () => {
   });
 
   // Each branch's wrapper declares its own `--g`, two declarations of one class. The first tag reads
-  // its wrapper's as a padding the tag's variant lacks, which no override sets. The second reads its
+  // its wrapper's as a least height the tag's variant lacks, which no instance field carries. The second reads its
   // wrapper's as a margin the chip draws as a frame (CSS Flexbox 1 §4.2), so each keeps its own row.
   it("gives each captured declaration of one class its own row", async () => {
     const branch = (index: number, spacing: string) => {
@@ -601,18 +608,18 @@ describe("a declaration whose reads several instances decide", () => {
           {
             slot: "wrap",
             classes: "flex [--g:8px]",
-            children: [{ slot: "tag", classes: `flex size-[20px] ${spacing}` }],
+            children: [{ slot: "tag", classes: `flex w-[20px] ${spacing}` }],
           },
         ],
       };
       return { manifest, element };
     };
-    const padded = branch(1, "ps-[var(--g)]");
+    const padded = branch(1, "min-h-[var(--g)]");
     const spaced = branch(2, "ms-[var(--g)]");
     const { coverage } = await buildCaptured(
       chip({ parts: [padded.manifest, spaced.manifest] }),
       rest({ slot: "chip", classes: "flex w-[200px]", children: [padded.element, spaced.element] }),
-      { inner: [{ manifest: tag, cells: rest({ slot: "tag", classes: "flex size-[20px]" }) }] }
+      { inner: [{ manifest: tag, cells: rest({ slot: "tag", classes: "flex w-[20px]" }) }] }
     );
     expect(
       outcomesOf(coverage, "[--g:8px]").toSorted((left = "", right = "") => left.localeCompare(right))

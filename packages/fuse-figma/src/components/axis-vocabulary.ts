@@ -181,6 +181,13 @@ export const FIGMA_AXES: ReadonlyMap<string, FigmaAxis> = new Map<string, FigmaA
   ["pages", { values: ["3"], draws: "How many page links a Pagination row holds." }],
   ["rows", { values: ["3"], draws: "How many rows a Sidebar sub menu holds." }],
   [
+    "filters",
+    {
+      values: ["none", "status"],
+      draws: "Which filters a Data table filter bar holds: none, or the Status field's chip and Clear.",
+    },
+  ],
+  [
     "selection",
     {
       values: [

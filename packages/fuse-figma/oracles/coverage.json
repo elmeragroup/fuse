@@ -153,6 +153,62 @@
       "className": "flex",
       "property": "display",
       "reason": "#773: where the composite leaves a row's shortcut margin unmapped, its row packs the label and the shortcut at its start, while the Dropdown menu item variant the instance shows, measured fitting in its own 160px host, lets the label fill the row, and an instance carries no sizing, alignment or layout of its own."
+    },
+    {
+      "set": "data-table-filter-bar",
+      "part": "button",
+      "className": "rounded-none",
+      "property": "border-radius",
+      "reason": "On Remove, the chip's last segment, `rounded-none` sets `border-radius` beside the end corners' longhands from `last:rounded-e-[calc(var(--radius-md)-1px)]`. Which of them wins depends on their order, which the build does not read, so `readCorners` maps no corner, and Remove takes the square fallback `mapBox` gives a box whose corners do not map, 0 on every corner. The other segments set `rounded-none` alone and map it. Remove is a transparent ghost button inside the chip's own rounded border, so its square end corners paint nothing at rest that the chip's corners do not."
+    },
+    {
+      "set": "data-table-filter-bar",
+      "part": "button",
+      "className": "last:rounded-e-[calc(var(--radius-md)-1px)]",
+      "property": "border-start-end-radius",
+      "reason": "Remove, the chip's last segment, rounds its end corners at the chip's `radius-md` less its 1px border, `calc(var(--radius-md) - 1px)`. `radius-md` follows the corner identity, and no synced variable holds it less 1px, so no corner draws it in every mode. `rounded-none`'s `border-radius` beside these longhands leaves every corner unread as well, and Remove takes the square fallback `mapBox` gives a box whose corners do not map, 0 on every corner. Remove is a transparent ghost button inside the chip's own rounded border, so its square end corners paint nothing at rest that the chip's corners do not."
+    },
+    {
+      "set": "data-table-filter-bar",
+      "part": "button",
+      "className": "last:rounded-e-[calc(var(--radius-md)-1px)]",
+      "property": "border-end-end-radius",
+      "reason": "Remove, the chip's last segment, rounds its end corners at the chip's `radius-md` less its 1px border, `calc(var(--radius-md) - 1px)`. `radius-md` follows the corner identity, and no synced variable holds it less 1px, so no corner draws it in every mode. `rounded-none`'s `border-radius` beside these longhands leaves every corner unread as well, and Remove takes the square fallback `mapBox` gives a box whose corners do not map, 0 on every corner. Remove is a transparent ghost button inside the chip's own rounded border, so its square end corners paint nothing at rest that the chip's corners do not."
+    },
+    {
+      "set": "data-table-filter-bar",
+      "part": "data-table-filter-chip",
+      "className": "items-stretch",
+      "property": "align-items",
+      "reason": "Each segment's `h-full` fills the chip's height, which each segment instance draws as a fill down the chip, so the segments stand as tall as the stretch makes them. The subject paints nothing, hugs its height and sits centred, where its own `items-center` puts its icon and name in the stretched box."
+    },
+    {
+      "set": "data-table-filter-bar",
+      "part": "data-table-filter-chips",
+      "className": "scroll-fade-inline",
+      "property": "mask-image",
+      "reason": "With no chip past either end the strip does not scroll, so its two scroll timelines stay inactive and both fade widths keep their registered 0px: the mask is opaque across the strip and hides nothing. Figma has no mask of a frame's own content that would fade it where chips overflow."
+    },
+    {
+      "set": "data-table-filter-bar",
+      "part": "span",
+      "className": "min-w-0",
+      "property": "min-width",
+      "reason": "The value's summary span lets its text shrink and end in an ellipsis once the summary passes the room the value's 224px `max-w-56` leaves it, which the demo's `Paid` never reaches. An instance carries no text truncation override, so the value's label hugs its text as Button's does."
+    },
+    {
+      "set": "data-table-filter-bar",
+      "part": "span",
+      "className": "truncate",
+      "property": "overflow",
+      "reason": "The value's summary span lets its text shrink and end in an ellipsis once the summary passes the room the value's 224px `max-w-56` leaves it, which the demo's `Paid` never reaches. An instance carries no text truncation override, so the value's label hugs its text as Button's does."
+    },
+    {
+      "set": "data-table-filter-bar",
+      "part": "span",
+      "className": "truncate",
+      "property": "text-overflow",
+      "reason": "The value's summary span lets its text shrink and end in an ellipsis once the summary passes the room the value's 224px `max-w-56` leaves it, which the demo's `Paid` never reaches. An instance carries no text truncation override, so the value's label hugs its text as Button's does."
     }
   ],
   "unbound": [
@@ -4110,6 +4166,42 @@
     ],
     "data-table-filter-bar": [
       {
+        "part": "button",
+        "className": "@max-[36rem]/dtf-bar:aspect-square"
+      },
+      {
+        "part": "button",
+        "className": "@max-[36rem]/dtf-bar:px-0"
+      },
+      {
+        "part": "button",
+        "className": "focus-visible:relative"
+      },
+      {
+        "part": "button",
+        "className": "focus-visible:z-10"
+      },
+      {
+        "part": "button",
+        "className": "pointer-coarse:[--hit-area-l:0px]"
+      },
+      {
+        "part": "button",
+        "className": "pointer-coarse:[--hit-area-r:0px]"
+      },
+      {
+        "part": "button",
+        "className": "pointer-coarse:hit-area-[max(0px,calc((44px_-_100%)/2))]"
+      },
+      {
+        "part": "data-table-filter-chip",
+        "className": "data-ghost:border-dashed"
+      },
+      {
+        "part": "data-table-filter-chip",
+        "className": "data-ghost:text-muted-foreground"
+      },
+      {
         "part": "data-table-filter-chips",
         "className": "not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size)"
       },
@@ -7219,7 +7311,7 @@
       "part": "data-table-filter-chips",
       "className": "-m-0.5",
       "property": "margin",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7227,7 +7319,7 @@
       "part": "data-table-filter-chips",
       "className": "flex",
       "property": "display",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7235,7 +7327,7 @@
       "part": "data-table-filter-chips",
       "className": "fuse.css base layer",
       "property": "border-color",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7243,7 +7335,7 @@
       "part": "data-table-filter-chips",
       "className": "fuse.css base layer",
       "property": "border-style",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7251,7 +7343,7 @@
       "part": "data-table-filter-chips",
       "className": "fuse.css base layer",
       "property": "box-sizing",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7259,7 +7351,7 @@
       "part": "data-table-filter-chips",
       "className": "gap-(--surface-gap-sm)",
       "property": "gap",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7267,7 +7359,7 @@
       "part": "data-table-filter-chips",
       "className": "no-scrollbar",
       "property": "scrollbar-width",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7275,7 +7367,7 @@
       "part": "data-table-filter-chips",
       "className": "overflow-x-auto",
       "property": "overflow-x",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7283,7 +7375,7 @@
       "part": "data-table-filter-chips",
       "className": "overscroll-x-contain",
       "property": "overscroll-behavior-x",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7291,7 +7383,7 @@
       "part": "data-table-filter-chips",
       "className": "p-0.5",
       "property": "padding",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7299,7 +7391,7 @@
       "part": "data-table-filter-chips",
       "className": "scroll-fade-inline",
       "property": "--scroll-fade-size",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7307,7 +7399,7 @@
       "part": "data-table-filter-chips",
       "className": "scroll-fade-inline",
       "property": "--scroll-fade-toward",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7315,7 +7407,7 @@
       "part": "data-table-filter-chips",
       "className": "scroll-fade-inline",
       "property": "animation",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7323,7 +7415,7 @@
       "part": "data-table-filter-chips",
       "className": "scroll-fade-inline",
       "property": "animation-range",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7331,7 +7423,7 @@
       "part": "data-table-filter-chips",
       "className": "scroll-fade-inline",
       "property": "animation-timeline",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7339,7 +7431,7 @@
       "part": "data-table-filter-chips",
       "className": "scroll-fade-inline",
       "property": "mask-image",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7347,7 +7439,7 @@
       "part": "data-table-filter-chips",
       "className": "scroll-px-8",
       "property": "scroll-padding-inline",
-      "reason": "At rest the bar holds no chip, so its chip strip is empty: it paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it. Drawing chips is #821.",
+      "reason": "In `filters=none`, the chip strip is empty. It paints nothing and its `-m-0.5` cancels its `p-0.5`, so it takes no room down the row. Figma keeps an auto-layout frame that hugs both axes with no layers at its last size: a live probe on 2026-11-19 (EF1 to EF3) left a new one at 100x100 and kept an old size after a padding change, a resize or a child added and removed, and instances copy the main's size. Drawn, the strip would stand the bar 100px tall, so the kit draws no layer for it there. The `filters=status` cell draws the strip around its chip.",
       "at": ["data-table-filter-bar/state=rest 0/root/0/1"]
     },
     {
@@ -7380,6 +7472,50 @@
         "toast/status=success 0/root::after",
         "toast/status=warning 0/root::after"
       ]
+    },
+    {
+      "set": "data-table-filter-bar",
+      "part": "span",
+      "className": "fuse.css base layer",
+      "property": "border-color",
+      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
+      "at": [
+        "data-table-filter-bar/state=rest,filters=status 0/root/0/1/0/0/0",
+        "data-table-filter-bar/state=rest,filters=status 0/root/0/1/0/1/0",
+        "data-table-filter-bar/state=rest,filters=status 0/root/0/2/1"
+      ]
+    },
+    {
+      "set": "data-table-filter-bar",
+      "part": "span",
+      "className": "tailwind preflight",
+      "property": "box-sizing",
+      "reason": "Preflight and Fuse's base layer set the box sizing, border color and border style of every element; this element draws no border and has no padding, so none of them changes what it draws.",
+      "at": [
+        "data-table-filter-bar/state=rest,filters=status 0/root/0/1/0/0/0",
+        "data-table-filter-bar/state=rest,filters=status 0/root/0/1/0/1/0",
+        "data-table-filter-bar/state=rest,filters=status 0/root/0/2/1"
+      ]
+    },
+    {
+      "set": "data-table-filter-bar",
+      "part": "span",
+      "className": "tailwind preflight",
+      "property": "border",
+      "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
+      "at": [
+        "data-table-filter-bar/state=rest,filters=status 0/root/0/1/0/0/0",
+        "data-table-filter-bar/state=rest,filters=status 0/root/0/1/0/1/0",
+        "data-table-filter-bar/state=rest,filters=status 0/root/0/2/1"
+      ]
+    },
+    {
+      "set": "data-table-filter-bar",
+      "part": "span",
+      "className": "contents",
+      "property": "display",
+      "reason": "The span around the subject's icon is `display: contents`, so it generates no box and the Circle lays out in the subject's row, where the kit draws it as the subject's start icon.",
+      "at": ["data-table-filter-bar/state=rest,filters=status 0/root/0/1/0/0/0"]
     }
   ],
   "alike": [

@@ -81,9 +81,9 @@ describe("a root's alignment along its direction, built in place", () => {
   });
 
   it("stays unmapped beside a difference no instance field carries", () => {
-    const diff = diffInstance(inPlace({ paddingLeft: { kind: "literal", value: 8 } }), VARIANT);
+    const diff = diffInstance(inPlace({ counterAlign: "MAX" }), VARIANT);
     expect(diff.overrides).toEqual([]);
-    expect(diff.unmapped.map(({ field }) => field).toSorted()).toEqual(["paddingLeft", "primaryAlign"]);
+    expect(diff.unmapped.map(({ field }) => field).toSorted()).toEqual(["counterAlign", "primaryAlign"]);
   });
 
   it("stays unmapped on a frame below the root", () => {

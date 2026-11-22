@@ -550,10 +550,11 @@ export type NestedPropertiesSpec = {
 };
 
 /**
- * A paint, stroke weight, font style, corner, shadow or alignment an instance layer overrides on the inner
+ * A paint, stroke weight, font style, corner, shadow, padding or alignment an instance layer overrides on the inner
  * variant's root, at the empty `path`, or on a layer below it, at the keys of the layers from the root
  * down. `fill`, `strokeColor`, `strokeSides`, `cornerRadius` and `effects` apply to the root or a
- * frame, `primaryAlign`, where the auto layout places its layers along its direction, to the root
+ * frame, `primaryAlign`, where the auto layout places its layers along its direction, and a side's
+ * padding, `paddingTop`, `paddingRight`, `paddingBottom` or `paddingLeft`, to the root
  * alone, `textColor`, `textAlign`, the alignment across a text's lines, and `fontStyle`, the face of
  * a label whose weight is a literal, to a text, and `glyph` to an icon's glyph. A `fill` or `strokeColor` of undefined paints none.
  */
@@ -577,7 +578,26 @@ export type InstanceOverrideValue =
   | { readonly field: "fontStyle"; readonly style: string }
   | { readonly field: "cornerRadius"; readonly value: CornerRadiusSpec }
   | { readonly field: "primaryAlign"; readonly value: PrimaryAlignSpec }
-  | { readonly field: "effects"; readonly shadows: readonly ShadowSpec[] };
+  | { readonly field: "effects"; readonly shadows: readonly ShadowSpec[] }
+  | { readonly field: PaddingField; readonly value: NumberSpec };
+
+/** A side's padding of a box, as the spec and Figma's auto layout name it. */
+export type PaddingField = "paddingTop" | "paddingRight" | "paddingBottom" | "paddingLeft";
+
+/**
+ * Whether an override of `field` applies to the inner variant's root alone, at the empty `path`, as
+ * a side's padding does. The build carries a padding that differs on the root only, so the kit check
+ * refuses one at another path, and the plugin leaves a padding a layer below the root holds to the
+ * designer who set it.
+ *
+ * @param field - The override's field.
+ * @returns True for a side's padding.
+ */
+export function rootOnlyOverride(field: InstanceOverride["field"]): field is PaddingField {
+  return (
+    field === "paddingTop" || field === "paddingRight" || field === "paddingBottom" || field === "paddingLeft"
+  );
+}
 
 /**
  * An instance layer: an instance of another component set's variant inside a variant, such as an
