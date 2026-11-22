@@ -12,10 +12,20 @@
  * its second, so the manifest names it at each place, in the cells that put it there. Fuse gives it
  * no `data-slot`, which would be consumer API for a layout `<div>` inside `BuiltInToast`.
  *
- * The close, `Toast.Close` at `absolute top-2 right-2`, stays out (#820): its containing block is the
- * root, which pads the content that holds it, so no placement rule draws it where CSS puts it.
+ * The close, `Toast.Close` at `absolute top-2 right-2`, sits in the content column after the row, as
+ * the markup puts it, though its containing block is the root, which pads the column. The capture
+ * measured the root as its block two steps up in every mode (`blockSteps`), so the root lifts it out
+ * of the column and draws it as its last layer, 8px from its right and top (`block-frame.ts`). Its
+ * `icon-sm` size changes with density, so it sits in a placement wrapper.
  */
-import type { IconManifest, LabelManifest, PartManifest, SetManifest } from "../capture/manifest";
+import type {
+  IconManifest,
+  InstanceManifest,
+  LabelManifest,
+  PartManifest,
+  SetManifest,
+} from "../capture/manifest";
+import { ICON_BUTTON_MANIFEST } from "./button-kit";
 import type { Cell } from "./component-spec";
 import { always } from "./popup-facts";
 import {
@@ -83,6 +93,18 @@ function textColumn(place: "toast-content/0/0" | "toast-content/0/1"): PartManif
   };
 }
 
+/** The close, `Toast.Close` rendering the ghost `icon-sm` Icon button with X, after the content's row. */
+const CLOSE: InstanceManifest = {
+  kind: "instance",
+  key: "close",
+  of: ICON_BUTTON_MANIFEST,
+  slot: "toast-close",
+  cell: () => ({ variant: "ghost", size: "icon-sm", state: "rest" }),
+  properties: () => ({ swap: { Icon: "X" } }),
+  shownIn: always,
+  exposed: true,
+};
+
 /** The toast's manifest, which the capture-backed build reads with `captures/toast.json`. */
 export const TOAST_MANIFEST: SetManifest = {
   key: "toast",
@@ -112,6 +134,7 @@ export const TOAST_MANIFEST: SetManifest = {
           iconsFor: statusIcon,
           parts: [textColumn("toast-content/0/0"), textColumn("toast-content/0/1")],
         },
+        CLOSE,
       ],
     },
   ],

@@ -338,7 +338,7 @@ export type PartFields = {
   readonly label?: LabelManifest;
   readonly iconsFor?: (cell: Cell) => readonly IconManifest[];
   readonly optional?: BooleanPropertySpec;
-  readonly parts?: readonly PartManifest[];
+  readonly parts?: readonly (PartManifest | InstanceManifest)[];
 };
 
 /**

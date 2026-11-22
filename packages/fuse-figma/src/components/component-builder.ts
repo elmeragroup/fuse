@@ -15,7 +15,7 @@ import {
 import type { AnchorWidth, OpenPlacement } from "../capture/capture-cascade";
 import type { CapturedRoot, SetCapture } from "../capture/capture-format";
 import { kitFamily } from "../kit-fonts";
-import { mapBox, NO_VALUES, partName } from "./box-mapping";
+import { mapBox, NO_VALUES } from "./box-mapping";
 import type { MapScope } from "./box-mapping";
 import { readBackdrop } from "./box-paint";
 import { rootRoom } from "./box-sizing";
@@ -47,6 +47,7 @@ import type {
   VariantSpec,
 } from "./kit-spec";
 import { booleanPropertiesOf, optionalParts } from "./optional-parts";
+import { partName, prepareParts } from "./part-preparation";
 import { placeRoot } from "./placement";
 import { clipsInCss, rootClips } from "./root-clip";
 import { PaintedInstances } from "./stacking";
@@ -183,7 +184,7 @@ function buildComponentSet(
       rootCascade.drawnSlots === undefined
         ? definition
         : inDrawnOrder(definition, rootCascade.drawnSlots, cell);
-    const box = mapBox(ordered, rootCascade, scope, room);
+    const box = mapBox(ordered, rootCascade, scope, room, prepareParts(ordered, rootCascade, scope));
     const behind = box.fill === undefined ? cellCascade.backdrop() : undefined;
     const backdrop = behind && readBackdrop(behind, rootCascade.style, context.variables);
     const mapped = backdrop === undefined ? box : { ...box, fill: backdrop };

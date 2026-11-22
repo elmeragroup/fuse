@@ -4,17 +4,34 @@
  */
 import type { CDPSession } from "playwright";
 
+import { blockFrame } from "./block-frame.ts";
 import type { MeasuredFacts } from "./capture-format.ts";
 import { coincidingAround } from "./coinciding-around.ts";
-import type { AroundReading } from "./coinciding-around.ts";
+import {
+  containingBlockAbove,
+  grownAlike,
+  offsetEdges,
+  paddingEdges,
+  stackingOf,
+} from "./containing-block.ts";
 import { roomAlong } from "./flex-room.ts";
 import { gridColumns } from "./grid-facts.ts";
+import { judgedFacts } from "./judged-facts.ts";
+import type { PageFacts } from "./judged-facts.ts";
 import { generatesNoBox, holdsOwnText, pseudoInFlow } from "./no-box.ts";
+import {
+  FIT_CLEARANCE_PX,
+  FREE_SPACE_CLEARANCE_PX,
+  GRID_CLEARANCE_PX,
+  LAYOUT_UNIT_PX,
+  MAX_WIDTH_CLEARANCE_PX,
+  TRACK_CLEARANCE_PX,
+} from "./page-clearances.ts";
 import { EVERY_MODE } from "./page-modes.ts";
 import { paintsLast } from "./paints-last.ts";
+import { boxesOver, generatedBoxes } from "./paints-over.ts";
 import { parentSpansBlock } from "./parent-spans-block.ts";
-import { paints, pseudoBox, pseudoPaintOf } from "./pseudo-boxes.ts";
-import type { PseudoPaint } from "./pseudo-boxes.ts";
+import { pseudoBox, pseudoPaintOf } from "./pseudo-boxes.ts";
 import { ratioReading } from "./ratio-facts.ts";
 import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
 
@@ -127,6 +144,13 @@ import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
  *   box, the padding box of the element's containing block, the root or an element below it, in
  *   every mode of {@link EVERY_MODE} once
  *   its faces have loaded, as `parent-spans-block.ts` decides.
+ * - `blockSteps`: on an absolute element below the root whose containing block is an element above
+ *   its parent, the root or one below it, how many steps up that block sits, where in every mode of
+ *   {@link EVERY_MODE} once its faces have loaded the element paints as the last layer of the block's
+ *   frame and sits on its offsets from the block's padding edge, as `block-frame.ts` decides. The
+ *   page returns the fill of each generated box over the element, and `clearFill` must judge each
+ *   one clear. One sweep of the modes reads this fact and `parentSpansBlock`, since both start from
+ *   the same containing block.
  * - `paintsLast`: a child of the root whose positive `z-index` paints it over every other box of the
  *   root, as the root's last child, in every mode of {@link EVERY_MODE} once its faces have loaded,
  *   as `paints-last.ts` decides.
@@ -199,93 +223,10 @@ export async function measuredFacts(
  * the page measures `spansHost` on, or `root`, any other.
  */
 export type RootRole = "anchor" | "root";
-
-/**
- * An element's facts as the page returns them: `coincidingAround` holds the boxes Node measures the
- * fact against, and `pseudoPaint` the paint Node judges into `pseudoBoxes`.
- */
-type PageFacts = Omit<MeasuredFacts, "coincidingAround" | "pseudoBoxes"> & {
-  readonly coincidingAround?: AroundReading;
-  readonly pseudoPaint?: Record<string, PseudoPaint>;
-};
-
-/**
- * An element's facts with the readings the page took judged into facts. `coincidingAround` takes
- * the count Node measured, in the same place, so the facts keep the order the page put them in, and
- * goes where the count is 0. `pseudoPaint` gives `pseudoBoxes` for each absolute `::before` and
- * `::after` whose box paints, as `paints` judges it.
- */
-function judgedFacts(
-  path: string,
-  { pseudoPaint, ...facts }: PageFacts,
-  coinciding: number
-): readonly (readonly [string, MeasuredFacts])[] {
-  const { coincidingAround: _reading, ...rest } = facts;
-  const judged: MeasuredFacts = coinciding > 0 ? { ...facts, coincidingAround: coinciding } : rest;
-  const boxes = (["before", "after"] as const).filter((name) => {
-    const paint = pseudoPaint?.[name];
-    return paint !== undefined && paints(paint);
-  });
-  const kept: MeasuredFacts = boxes.length === 0 ? judged : { ...judged, pseudoBoxes: boxes };
-  return Object.keys(kept).length === 0 ? [] : [[path, kept]];
-}
-
-/**
- * The least room, in CSS pixels, a one-column grid's column must keep past its items' least width
- * for the page to record `trackFits`. Chromium sets the same text a fraction of a pixel wider on one
- * platform than the other: on 2026-11-17 the same Roboto 600 24px words gave a grid a min-content
- * column of 140.859px on macOS and 141px in Playwright's Linux image. The page records the fact
- * only with a whole pixel to spare, the room `ellipsisFits` keeps for the same reason, so a grid
- * whose least width comes close to its column records nothing and the build leaves it unmapped. A
- * least width within the platforms' fraction of a pixel of that bound could still land on either
- * side, so `figma:capture --check` in the Linux image is what shows each kept capture agrees.
- */
-const TRACK_CLEARANCE_PX = 1;
-
-/**
- * The least lead, in CSS pixels, by which the page counts a grid's column as wider than its items'
- * min-content width, or one item as setting its track over the others (`gridHolds`, `gridWidest`,
- * `gridTallest`). The same Roboto file sets "Selection" at 14px 57.59px wide on macOS and 56px wide in
- * Playwright's Linux image (C5 review, 2026-11-18), a gap wider than {@link TRACK_CLEARANCE_PX}, so the
- * page keeps two whole pixels.
- */
-const GRID_CLEARANCE_PX = 2;
-
 /** The page threw while it measured a root's facts, so the capture has none to keep. */
 export class FactsUnmeasured extends Error {
   readonly _tag = "FactsUnmeasured" as const;
 }
-
-/**
- * How far below its `max-width` a box's width must stay, in CSS pixels, for the page to record
- * `underMaxWidth`: the page lowers the maximum by this much and checks the width did not move. It
- * absorbs the fraction of a pixel by which the same text sets wider on one platform than the other,
- * which {@link TRACK_CLEARANCE_PX} records at under a pixel, many times over. No measurement of type
- * across fonts backs the 24px; `figma:capture --check` in the Linux image shows each kept capture
- * agrees.
- */
-const MAX_WIDTH_CLEARANCE_PX = 24;
-
-/**
- * The least free space, in CSS pixels, a flex line must leave its items' auto margins along its
- * direction for the page to record `freeAlongMain`. It keeps the same margin as
- * {@link MAX_WIDTH_CLEARANCE_PX}, for the same reason and with the same evidence.
- */
-const FREE_SPACE_CLEARANCE_PX = 24;
-
-/**
- * The least free space, in CSS pixels, a flex line must leave along its direction, with its auto
- * margins at zero, for the page to record `fitsAlongMain`: the line's items fit it. It is the whole
- * pixel {@link TRACK_CLEARANCE_PX} keeps for the same reason, so a line whose items come within the
- * platforms' fraction of a pixel of its end records nothing.
- */
-const FIT_CLEARANCE_PX = TRACK_CLEARANCE_PX;
-
-/**
- * Chromium's layout unit, 1/64 of a CSS pixel: a box's width moves by at least this much when its
- * maximum narrows it, so a smaller difference between two readings of one layout is no change.
- */
-const LAYOUT_UNIT_PX = 1 / 64;
 
 /**
  * How far, in CSS pixels, the page lengthens or shortens the side an aspect ratio reads to see the
@@ -293,7 +234,6 @@ const LAYOUT_UNIT_PX = 1 / 64;
  * side; 10px leaves the reading clear of rounding.
  */
 const RATIO_RAISE_PX = 10;
-
 /** The page side of {@link measuredFacts}, called on the root. */
 const MEASURE_IN_PAGE = `async function (role) {
   const modes = ${JSON.stringify(EVERY_MODE)};
@@ -851,12 +791,39 @@ const MEASURE_IN_PAGE = `async function (role) {
       put(path, "pseudoPaint", { ...(out[path]?.pseudoPaint ?? {}), [name]: pseudoPaintOf(element, pseudo) });
     }
   }
-  // The paint-order reads both facts below make, as \`stacking.ts\` decides them.
+  // The paint-order reads the facts below make, as \`stacking.ts\` decides them.
   const stacking = { containerDisplay: (${containerDisplay.toString()}), appliedLevel: (${appliedLevel.toString()}), keepsTreeOrder: (${keepsTreeOrder.toString()}) };
-  // An absolute element whose parent spans its containing block, in every mode.
+  // An absolute element whose containing block lies above its parent: whether the parent spans the
+  // block, and the steps up to a block whose frame it can draw in, each where every mode agrees.
+  const blockHelpers = {
+    containingBlockAbove: (${containingBlockAbove.toString()}),
+    offsetEdges: (${offsetEdges.toString()}),
+    paddingEdges: (${paddingEdges.toString()}),
+    stackingOf: (${stackingOf.toString()}),
+    grownAlike: (${grownAlike.toString()}),
+    withStyles,
+    generatedBoxes: (${generatedBoxes.toString()}),
+    boxesOver: (${boxesOver.toString()}),
+  };
   const parentSpansBlock = (${parentSpansBlock.toString()});
-  const spanned = elements.filter(({ element }) => element !== root && parentSpansBlock(element, root, stacking));
-  for (const { path } of await holdsInEveryMode(spanned, (each) => parentSpansBlock(each, root, stacking))) { put(path, "parentSpansBlock", true); }
+  const blockFrame = (${blockFrame.toString()});
+  const placedAbove = elements
+    .filter(({ element }) => element !== root && blockHelpers.containingBlockAbove(element, root) !== undefined)
+    .map((each) => ({ ...each, spans: true, steps: undefined, fills: [] }));
+  const readPlaced = (each, first) => {
+    each.spans &&= parentSpansBlock(each.element, root, stacking, blockHelpers);
+    const reading = each.steps === null ? undefined : blockFrame(each.element, root, blockHelpers, stacking);
+    each.steps = reading === undefined || (!first && reading.steps !== each.steps) ? null : reading.steps;
+    each.fills.push(...(reading?.fills ?? []));
+  };
+  for (const each of placedAbove) { readPlaced(each, true); }
+  if (placedAbove.some(({ spans, steps }) => spans || steps !== null)) {
+    await inEveryMode(() => { for (const each of placedAbove) { readPlaced(each, false); } });
+  }
+  for (const { path, spans, steps, fills } of placedAbove) {
+    if (spans) { put(path, "parentSpansBlock", true); }
+    if (steps !== null) { put(path, "blockReading", { steps, fills: [...new Set(fills)] }); }
+  }
   // A child of the root that paints over every other box of the root by its z-index, in every mode.
   const paintsLast = (${paintsLast.toString()});
   const raised = elements.filter(({ element }) => paintsLast(element, root, stacking));

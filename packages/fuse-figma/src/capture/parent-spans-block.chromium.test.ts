@@ -11,7 +11,7 @@ import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { measuredFacts } from "./page-facts.ts";
+import { measureMarkup } from "../../test/measured-markup.ts";
 
 let browser: Browser;
 let page: Page;
@@ -72,23 +72,21 @@ async function measure(options: {
         : options.outside === undefined
           ? `<div id="root" style="${options.block ?? BLOCK}">${held}${options.after ?? ""}</div>`
           : `<div id="root" style="position: relative">${options.outside}<div style="${options.block ?? BLOCK}">${held}</div></div>`;
-  await page.setContent(
-    `<!doctype html><style>body { margin: 0 } ${options.legend === true ? LEGEND_COVER : ""} ${options.head ?? ""}</style><main data-compare-cell>${body}</main>${options.overlay ?? ""}`
-  );
-  if (options.popover === true) {
-    await page.evaluate(() => {
-      document.getElementById("over")?.showPopover();
-    });
-  }
-  const style = await page.evaluate(() => document.getElementById("root")?.getAttribute("style"));
-  const cdp = await page.context().newCDPSession(page);
-  const { root: tree } = await cdp.send("DOM.getDocument", { depth: -1 });
-  const { nodeId } = await cdp.send("DOM.querySelector", { nodeId: tree.nodeId, selector: "#root" });
-  const facts = await measuredFacts(cdp, nodeId);
-  await cdp.detach();
+  const { facts, restored } = await measureMarkup(page, {
+    head: `${options.legend === true ? LEGEND_COVER : ""} ${options.head ?? ""}`,
+    body,
+    after: options.overlay ?? "",
+    root: "#root",
+    watched: "root",
+    prepare: async () => {
+      if (options.popover === true) {
+        await page.evaluate(() => {
+          document.getElementById("over")?.showPopover();
+        });
+      }
+    },
+  });
   const spans = [...facts].flatMap(([path, fact]) => (fact.parentSpansBlock === true ? [path] : []));
-  const restored =
-    (await page.evaluate(() => document.getElementById("root")?.getAttribute("style"))) === style;
   await page.evaluate((resized) => {
     const root = document.getElementById("root");
     if (root !== null) {
