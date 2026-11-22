@@ -138,7 +138,7 @@ import { TEXTAREA_FIELD_MANIFEST } from "./textarea-field-kit";
 import { TEXTAREA_MANIFEST } from "./textarea-kit";
 import { TIMELINE_LIST_LINKS_MANIFEST, TIMELINE_LIST_MANIFEST } from "./timeline-list-kit";
 import { TOAST_MANIFEST } from "./toast-kit";
-import { TOGGLE_GROUP_MANIFEST } from "./toggle-group-kit";
+import { SEGMENTED_TOGGLE_GROUP_MANIFEST, TOGGLE_GROUP_MANIFEST } from "./toggle-group-kit";
 import { ICON_TOGGLE_MANIFEST, TOGGLE_MANIFEST } from "./toggle-kit";
 import { TOOLBAR_MANIFEST } from "./toolbar-kit";
 import { TOOLTIP_CONTENT_MANIFEST, TOOLTIP_OPEN_MANIFEST } from "./tooltip-kit";
@@ -471,8 +471,8 @@ export const KIT: readonly KitEntry[] = [
   {
     page: TOGGLE_PAGE,
     previewCells: [
-      ...previewCells(TOGGLE_MANIFEST, "default", { icon: "none" }, ["pressed"]),
-      ...iconCells(TOGGLE_MANIFEST, "default", { pressed: "false" }),
+      ...previewCells(TOGGLE_MANIFEST, "default", { icon: "none", segment: "none" }, ["pressed"]),
+      ...iconCells(TOGGLE_MANIFEST, "default", { pressed: "false", segment: "none" }),
     ],
     manifest: TOGGLE_MANIFEST,
   },
@@ -486,6 +486,12 @@ export const KIT: readonly KitEntry[] = [
     page: TOGGLE_PAGE,
     previewCells: possibleCells(TOGGLE_GROUP_MANIFEST),
     manifest: TOGGLE_GROUP_MANIFEST,
+  },
+  // A segmented Toggle group has no state either, so its previews place every cell too.
+  {
+    page: TOGGLE_PAGE,
+    previewCells: possibleCells(SEGMENTED_TOGGLE_GROUP_MANIFEST),
+    manifest: SEGMENTED_TOGGLE_GROUP_MANIFEST,
   },
   // A Badge has no state, so its previews place every cell of its matrix.
   {

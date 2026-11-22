@@ -740,6 +740,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./toggle-group-cell.ts")).toggleGroup,
   },
   {
+    set: "segmented-toggle-group",
+    entry: "dist/toggle-group.js",
+    load: async () => (await import("./toggle-group-cell.ts")).segmentedToggleGroup,
+  },
+  {
     set: "tooltip-content",
     entry: "dist/tooltip.js",
     module: { url: new URL("tooltip-cell.ts", import.meta.url), name: "tooltipContent" },

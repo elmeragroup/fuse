@@ -1,4 +1,3 @@
-import { evaluateLength, normalizeCss } from "./css-values";
 /**
  * The size a box that hugs holds where it holds one layer of a literal size: that layer's length and
  * the box's literal paddings and borders around it. A box that hugs takes its length from its
@@ -6,6 +5,8 @@ import { evaluateLength, normalizeCss } from "./css-values";
  * corner does, or a box whose one layer hides, which Figma's auto layout would let collapse, reads it
  * here.
  */
+import type { BorderWidths } from "./box-paint";
+import { evaluateLength, normalizeCss } from "./css-values";
 import { outOfLayout } from "./kit-spec";
 import type { ChildLayerSpec, LimitsSpec, SizeSpec, SizingSpec } from "./kit-spec";
 import type { LayerStyle } from "./layer-style";
@@ -18,18 +19,12 @@ const INSETS = {
 
 /**
  * The pixels a box's padding and border take on one side, or undefined where either is no literal.
- * A side's border width is its own longhand, or the `border-width` a shorthand such as `border-[3px]`
- * leaves on the box, and counts 0 where the side's style, its own or `border-style`'s, is `none` or
- * `hidden` (CSS Backgrounds 3 §4.3).
+ * The side's border width is the used width its stroke draws, as `borderWidths` in `box-paint.ts`
+ * reads it from the declaration that wins the side, a shorthand such as `border: 2px solid` included.
  */
-function sidePixels(reader: LayerStyle, side: string): number | undefined {
+function sidePixels(reader: LayerStyle, borders: BorderWidths, side: keyof BorderWidths): number | undefined {
   const padding = evaluateLength(reader.resolved(`padding-${side}`) ?? "0px");
-  const style = normalizeCss(
-    reader.resolved(`border-${side}-style`) ?? reader.resolved("border-style") ?? "none"
-  );
-  const width = ["none", "hidden"].includes(style)
-    ? 0
-    : evaluateLength(reader.resolved(`border-${side}-width`) ?? reader.resolved("border-width") ?? "0px");
+  const width = borders[side];
   return padding === undefined || width === undefined ? undefined : padding + width;
 }
 
@@ -41,14 +36,19 @@ function sidePixels(reader: LayerStyle, side: string): number | undefined {
  * conflict, and where the box sets one its limits do not hold as a literal, which could bind, the
  * axis stays as it was. Every other axis stays as it was.
  *
- * @param reader - The box's style, whose paddings, borders and limits the length reads.
- * @param box - The box's sizing and the limits it maps.
+ * @param reader - The box's style, whose paddings and limits the length reads.
+ * @param box - The box's sizing, the limits it maps, and its border widths, as `borderWidths` in
+ *   `box-paint.ts` reads them.
  * @param children - The box's layers.
  * @returns The sizing.
  */
 export function heldSizing(
   reader: LayerStyle,
-  { sizing, limits }: { readonly sizing: SizingSpec; readonly limits: LimitsSpec },
+  {
+    sizing,
+    limits,
+    borders,
+  }: { readonly sizing: SizingSpec; readonly limits: LimitsSpec; readonly borders: BorderWidths },
   children: readonly ChildLayerSpec[]
 ): SizingSpec {
   const flowing = children.filter((child) => !outOfLayout(child));
@@ -56,7 +56,7 @@ export function heldSizing(
   const held = (axis: "horizontal" | "vertical"): SizeSpec => {
     const size = sizing[axis];
     const own = only === undefined || flowing.length !== 1 ? undefined : literalLength(only, axis);
-    const insets = INSETS[axis].map((side) => sidePixels(reader, side));
+    const insets = INSETS[axis].map((side) => sidePixels(reader, borders, side));
     if (size.kind !== "hug" || own === undefined || insets.some((inset) => inset === undefined)) {
       return size;
     }
@@ -78,11 +78,16 @@ export function heldSizing(
  * Whether a box's paddings and borders on an axis are literal lengths, which the length it holds adds.
  *
  * @param reader - The box's style.
+ * @param borders - The box's border widths, as `borderWidths` in `box-paint.ts` reads them.
  * @param axis - The axis.
  * @returns True where every inset on the axis is a literal length.
  */
-export function literalInsets(reader: LayerStyle, axis: "horizontal" | "vertical"): boolean {
-  return INSETS[axis].every((side) => sidePixels(reader, side) !== undefined);
+export function literalInsets(
+  reader: LayerStyle,
+  borders: BorderWidths,
+  axis: "horizontal" | "vertical"
+): boolean {
+  return INSETS[axis].every((side) => sidePixels(reader, borders, side) !== undefined);
 }
 
 /** The limits each axis reads: its CSS properties, and the fields the box's limits hold them in. */

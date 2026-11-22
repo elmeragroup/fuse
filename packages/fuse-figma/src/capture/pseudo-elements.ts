@@ -5,12 +5,13 @@ import type { IconSlot } from "../components/component-spec.ts";
  * shorthands split into their longhands, and each declaration's verdict, which says whether the
  * pseudo-element paints, paints nothing, or sets a longhand the build does not read.
  * `capture-cascade.ts` cascades each pseudo-element over its box and asks this module what becomes
- * of its declarations.
+ * of its declarations. `border-shorthands.ts` splits the border shorthands.
  */
-import { evaluateLength, normalizeCss, readColor, splitTopLevel } from "../components/css-values.ts";
+import { evaluateLength, normalizeCss, readColor } from "../components/css-values.ts";
 import type { VariableIndex } from "../components/css-values.ts";
 import type { NumberSpec } from "../components/kit-spec.ts";
 import type { Applied, CoverageNote, InPlace, LayerStyle } from "../components/layer-style.ts";
+import { BORDER_STYLES, borderLonghands, WIDTH_KEYWORDS } from "./border-shorthands.ts";
 
 /**
  * The longhands a pseudo-element's style can set and still paint nothing a box shows: its place,
@@ -37,98 +38,28 @@ const PSEUDO_SILENT = new RegExp(
 /** The border styles that draw no border, whatever its width (CSS Backgrounds 3 §4.2). */
 const NO_BORDER = new Set(["none", "hidden"]);
 
-/** The border width keywords, each above zero (CSS Backgrounds 3 §4.3). */
-const WIDTH_KEYWORDS: ReadonlyMap<string, number> = new Map([
-  ["thin", 1],
-  ["medium", 3],
-  ["thick", 5],
-]);
-
-/** The border styles a `border` shorthand names (CSS Backgrounds 3 §4.2). */
-const BORDER_STYLES = new Set([
-  "none",
-  "hidden",
-  "dotted",
-  "dashed",
-  "solid",
-  "double",
-  "groove",
-  "ridge",
-  "inset",
-  "outset",
-]);
-
-/** The sides of a box, in the order a one-to-four-value shorthand names them. */
-const SIDES = ["top", "right", "bottom", "left"] as const;
-
-/** The values of a one-to-four-value shorthand for each side, top, right, bottom and left (CSS Backgrounds 3 §4). */
-function perSide(values: readonly string[]): readonly string[] | undefined {
-  const [top, right, bottom, left] = values;
-  if (top === undefined || values.length > 4) {
-    return undefined;
-  }
-  const across = right ?? top;
-  return [top, across, bottom ?? top, left ?? across];
-}
-
-/**
- * A border shorthand as the longhands it sets, each side's width, style and color, with the initial
- * value for a part it leaves out: `medium`, `none` and `currentcolor` (CSS Backgrounds 3 §4). A
- * `border` or a side's shorthand names each part at most once, in any order. Undefined for a
- * property that is no border shorthand, and for one whose parts the build cannot tell apart, as a
- * `var()` that stands for one of them.
- */
-export function borderLonghands(
-  property: string,
-  value: string
-): readonly (readonly [string, string])[] | undefined {
-  const tokens = splitTopLevel(normalizeCss(value), " ");
-  const side = /^border(?:-(top|right|bottom|left))?$/.exec(property);
-  if (side !== null) {
-    let width: string | undefined;
-    let lineStyle: string | undefined;
-    let color: string | undefined;
-    for (const token of tokens) {
-      const lower = token.toLowerCase();
-      if (token.includes("var(")) {
-        return undefined;
-      }
-      if (BORDER_STYLES.has(lower) && lineStyle === undefined) {
-        lineStyle = lower;
-      } else if ((evaluateLength(token) !== undefined || WIDTH_KEYWORDS.has(lower)) && width === undefined) {
-        width = token;
-      } else if (color === undefined) {
-        color = token;
-      } else {
-        return undefined;
-      }
-    }
-    const sides = side[1] === undefined ? SIDES : [side[1]];
-    return sides.flatMap((each) => [
-      [`border-${each}-width`, width ?? "medium"] as const,
-      [`border-${each}-style`, lineStyle ?? "none"] as const,
-      [`border-${each}-color`, color ?? "currentcolor"] as const,
-    ]);
-  }
-  const part = /^border-(width|style|color)$/.exec(property)?.[1];
-  const values = part === undefined ? undefined : perSide(tokens);
-  return part === undefined || values === undefined
-    ? undefined
-    : SIDES.map((each, index) => [`border-${each}-${part}`, values[index] ?? ""] as const);
-}
-
 /**
  * Declarations with each border shorthand split into its longhands, as {@link borderLonghands} says,
  * so the cascade decides each side's width, style and color by its usual precedence.
+ *
+ * @param applied - The declarations.
+ * @param resolve - A declaration's value with its `var()`s substituted, by its property and value as
+ *   written, or undefined where it does not resolve. The split asks for it only where a
+ *   `border-width` is one `var()`.
  */
-export function withBorderLonghands(applied: readonly Applied[]): Applied[] {
+export function withBorderLonghands(
+  applied: readonly Applied[],
+  resolve: (property: string, value: string) => string | undefined
+): Applied[] {
   return applied.map((each) => ({
     ...each,
     declarations: each.declarations.flatMap(({ property, value }) =>
-      (borderLonghands(property, value) ?? [[property, value] as const]).map(([longhand, part]) => ({
-        property: longhand,
-        value: part,
-      }))
+      (borderLonghands(property, value, () => resolve(property, value)) ?? [[property, value] as const]).map(
+        ([longhand, part]) => ({
+          property: longhand,
+          value: part,
+        })
+      )
     ),
   }));
 }
