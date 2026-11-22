@@ -1,10 +1,11 @@
 /**
- * Switch, as one component set: two sizes, off and on, in four states, with no label: 16 cells.
+ * Switch, as one component set: two sizes, off and on, in five states, with no label: 20 cells.
  *
  * - The root is Base UI's switch `<span data-slot="switch">`, the track.
  * - The thumb, `<span data-slot="switch-thumb">`, is a part below the track, which Base UI mounts in
  *   every cell.
- * - Invalid renders the switch in an invalid Field.
+ * - Invalid renders the switch in an invalid Field. Invalid focus renders it there with focus
+ *   forced, where the recipe draws its error ring.
  */
 import { switchVariants } from "@elmeragroup/fuse/recipe-catalog";
 
@@ -32,7 +33,7 @@ export const SWITCH_MANIFEST: SetManifest = {
   axes: [
     { name: "size", values: SIZES },
     { name: "checked", values: ["false", "true"] },
-    { name: "state", values: ["rest", "focus", "disabled", "invalid"] },
+    { name: "state", values: ["rest", "focus", "disabled", "invalid", "invalid-focus"] },
   ],
   columnAxis: "state",
   label: undefined,

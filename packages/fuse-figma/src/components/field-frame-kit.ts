@@ -12,20 +12,10 @@
  *   cell's overrides.
  */
 import type { InstanceManifest, PartManifest } from "../capture/manifest";
-import type { Cell } from "./component-spec";
+import { isInvalid } from "./axis-vocabulary";
 import { FIELD_DESCRIPTION_MANIFEST, FIELD_ERROR_MANIFEST } from "./field-text-kit";
 import { LABEL_MANIFEST } from "./label-kit";
 import { always } from "./popup-facts";
-
-/**
- * Whether a cell is invalid, where Base UI renders the Field's error.
- *
- * @param cell - A Field composite's cell.
- * @returns True at `state=invalid`.
- */
-export function isInvalid(cell: Cell): boolean {
-  return cell.state === "invalid";
-}
 
 /**
  * A field frame's label row as a manifest names it, at its place below the Field root, holding the

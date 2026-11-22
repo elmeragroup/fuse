@@ -1,6 +1,6 @@
 /**
  * Number field, as two component sets on a page of their own: the stepper, and `NumberField` with
- * the docs Basic demo's label and description in five states.
+ * the docs Basic demo's label and description in six states.
  *
  * - `Number field stepper` is the increase stepper, Base UI's increment `<button>` that Fuse stamps
  *   `data-slot="number-field-increment"`, at rest, hovered, disabled and read-only: 4 cells. It
@@ -12,7 +12,8 @@
  *   denomination and the two steppers, then the error in an invalid Field and the description. The
  *   value is the input's own text, `4`, which the `Value` text property sets. The denomination,
  *   `kWh`, sits behind the `Denomination` BOOLEAN, which starts off, as the Basic demo sets none.
- *   The input takes the field's states.
+ *   The input takes the field's states. Invalid focus is the invalid field with focus forced on the
+ *   input, where the recipe draws the group's error ring.
  * - Base UI's NumberField parts carry no `data-slot`, so the manifest names each part by its place,
  *   except the steppers, which Fuse stamps `number-field-decrement` and `number-field-increment`.
  */
@@ -153,7 +154,7 @@ export const NUMBER_FIELD_MANIFEST: SetManifest = {
   slot: "field",
   statePlace: "field/1/0/0",
   previewWidth: FIELD_BOX_PREVIEW_WIDTH,
-  axes: [{ name: "state", values: ["rest", "focus", "disabled", "readonly", "invalid"] }],
+  axes: [{ name: "state", values: ["rest", "focus", "disabled", "readonly", "invalid", "invalid-focus"] }],
   columnAxis: "state",
   label: undefined,
   iconsFor: () => [],

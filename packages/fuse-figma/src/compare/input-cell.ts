@@ -9,7 +9,8 @@
  * - `invalid` wraps the input in an invalid `Field.Root`, the only source Base UI reads an input's
  *   validity from, which then marks it `aria-invalid="true"` and `data-invalid`, and passes its
  *   `data-invalid:text-error` down to a typed value. A vertical Field stretches the input to its
- *   width, the host's.
+ *   width, the host's. `invalid-focus` renders the invalid cell, and the page forces focus on the
+ *   input.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.
@@ -20,6 +21,7 @@ import type { ComponentProps } from "react";
 
 import { Field } from "../../../fuse/dist/field.js";
 import { Input } from "../../../fuse/dist/input.js";
+import { isInvalid } from "../components/axis-vocabulary.ts";
 import type { Cell } from "../components/component-spec.ts";
 import { INPUT_TEXT } from "../components/input-kit.ts";
 import { FIELD_BOX_PREVIEW_WIDTH } from "../components/kit-lengths.ts";
@@ -38,7 +40,7 @@ export const input: CellRendering = {
     return createElement(
       "div",
       { style: { width: `${FIELD_BOX_PREVIEW_WIDTH}px` } },
-      cell.state === "invalid" ? createElement(Field.Root, { invalid: true }, field) : field
+      isInvalid(cell) ? createElement(Field.Root, { invalid: true }, field) : field
     );
   },
 };
