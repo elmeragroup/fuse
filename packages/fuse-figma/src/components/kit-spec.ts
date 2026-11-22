@@ -347,8 +347,11 @@ export type TextRangeSpec = {
 /**
  * A text's line height: a number field in pixels, or a percent of the font size, as Figma's
  * `lineHeight` holds it in `PERCENT`. A unitless CSS line height over a font size a variable sets is
- * that share of the size in every mode. A real file kept a percent as written and drew the line box
- * at that share of a font size bound to `label-text` in each density mode (PH).
+ * that share of the size in every mode. CSS resolves a percentage against the declaring element's
+ * font size. Children inherit that length. So a percentage over a synced font size is that share
+ * only on a box whose font size binds the declaring element's variable. A real file kept a percent
+ * as written and drew the line box at that share of a font size bound to `label-text` in each
+ * density mode (PH).
  */
 export type LineHeightSpec = NumberSpec | { readonly kind: "percent"; readonly value: number };
 

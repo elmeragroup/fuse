@@ -212,6 +212,12 @@ export type Provenance = Declaration & {
 };
 
 /**
+ * A declaration a read takes besides the property's own, as the font size an `em` takes. Where the
+ * read maps, it notes the declaration with `note`, or with the read's own note where `note` is unset.
+ */
+export type AlsoRead = Provenance & { readonly note?: CoverageNote };
+
+/**
  * A declaration in a layer's computed style. A computed entry's value was resolved where it was
  * declared: an inherited value, an `inherit`, a `currentcolor`, and a declaration of the page the
  * root inherits, each as the element outside computed it. Its `var()`s are synced variables that
@@ -833,7 +839,7 @@ export class LayerStyle {
    * @param feed - The spec fields the mapped value fills, which an instance part built in place uses
    *   to tell which of its fields a declaration sets.
    * @param also - Declarations the mapping reads besides the property's own, as the font size an `em`
-   *   takes, which the read notes with the same outcome.
+   *   takes, which the read notes with their own note or the read's.
    * @returns The mapped value, or undefined when the property is unset or does not map.
    */
   read<T>(
@@ -841,7 +847,7 @@ export class LayerStyle {
     map: (value: string) => T | undefined,
     describe: (mapped: T) => CoverageNote,
     feed: Feed,
-    also: readonly Provenance[] = []
+    also: readonly AlsoRead[] = []
   ): T | undefined {
     return this.#read(property, map, describe, feed, undefined, also);
   }
@@ -884,7 +890,7 @@ export class LayerStyle {
     describe: (mapped: T) => CoverageNote,
     feed: Feed,
     holder: { readonly layer: Layer; readonly feed: Feed } | undefined,
-    also: readonly Provenance[] = []
+    also: readonly AlsoRead[] = []
   ): T | undefined {
     const entry = this.#layer.style.get(property);
     if (entry === undefined) {
@@ -901,9 +907,13 @@ export class LayerStyle {
             detail: `no Figma field reads ${resolved ?? entry.value ?? "an invalid value"}`,
           }
         : describe(mapped);
-    for (const source of [...sourcesOf(this.#layer, entry, read), ...consumed, ...also]) {
+    const notes = [
+      ...[...sourcesOf(this.#layer, entry, read), ...consumed].map((source) => ({ source, note })),
+      ...also.map((source) => ({ source, note: mapped === undefined ? note : (source.note ?? note) })),
+    ];
+    for (const { source, note: each } of notes) {
       holder?.layer.inPlace?.fed(source, holder.feed);
-      this.#ledger.noteRead(source, note, feed, this.#layer, holder?.feed);
+      this.#ledger.noteRead(source, each, feed, this.#layer, holder?.feed);
     }
     return mapped;
   }
