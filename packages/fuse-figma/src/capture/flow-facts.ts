@@ -1,7 +1,7 @@
 /**
  * Where an element that sets border sides or corners by their flow-relative names lays out other than
  * left to right in horizontal lines, which puts those edges elsewhere than the capture reads them
- * (`otherFlow`). The capture's page function calls {@link flowObserver} with the root's elements and
+ * (`otherFlow`), and whether its used border widths stay 0 in every mode (`zeroWidths`). The capture's page function calls {@link flowObserver} with the root's elements and
  * reads the flow in each mode it stamps, so `flowObserver` is passed to the page as its source and
  * reads nothing outside its own body.
  */
@@ -46,9 +46,18 @@ export type FlowObserver = {
   readonly sweeps: boolean;
   /** Read each element's flow in the mode the page stamps. */
   readonly read: () => void;
-  /** The elements that laid out otherwise in a mode {@link FlowObserver.read} read, with the edges each sets so. */
-  readonly turned: () => readonly FlowRelativeElement[];
+  /** The elements that laid out otherwise in a mode {@link FlowObserver.read} read, as {@link TurnedElement} says. */
+  readonly turned: () => readonly TurnedElement[];
 };
+
+/**
+ * An element that laid out otherwise in some mode, with the edges it sets by their flow-relative
+ * names, and whether its side styles are among them and every side's used border width was 0 in
+ * every mode {@link FlowObserver.read} read. A logical style can then move no width, as preflight's
+ * `border: 0 solid` leaves it, where a box of another mode's 3px width gives that width the side a
+ * logical style draws (CSS Backgrounds 3 §4.3).
+ */
+export type TurnedElement = FlowRelativeElement & { readonly zeroWidths: boolean };
 
 /**
  * Observe a root's elements for `otherFlow`. An element's edges are those `flowRelative` gives it,
@@ -59,8 +68,8 @@ export type FlowObserver = {
  * rule under a media query the page does not match, as `@media print`, a sheet's or an `@import`'s
  * included, applies in no mode the page stamps, so it counts for nothing. A sheet the page cannot read
  * counts as setting every edge, and a rule whose selector the page cannot match on its own, as a
- * nested rule or the declarations of an at-rule nested in one, as matching every element. Runs in the
- * page.
+ * nested rule or the declarations of an at-rule nested in one, as matching every element. It reads
+ * each element's used border widths in every mode, whatever its flow there. Runs in the page.
  *
  * @param elements - The root's elements.
  * @param argument - The elements that set edges by their flow-relative names, and the patterns.
@@ -139,15 +148,15 @@ export function flowObserver(elements: readonly PathElement[], argument: FlowArg
       turns ||= turnsFlow(element.style);
     }
   }
-  const leftToRight = (element: Element): boolean => {
-    const style = getComputedStyle(element);
-    return style.direction === "ltr" && style.writingMode === "horizontal-tb";
-  };
+  const leftToRight = (style: CSSStyleDeclaration): boolean =>
+    style.direction === "ltr" && style.writingMode === "horizontal-tb";
+  const widths = ["border-top-width", "border-right-width", "border-bottom-width", "border-left-width"];
   const every = patterns.map(([edge]) => edge);
   const edgesAt = new Map(flowRelative.map(({ path, edges }) => [path, edges]));
   const flowing = elements.map((each) => ({
     ...each,
     turned: false,
+    drawn: false,
     edges: new Set<FlowRelativeEdges>(edgesAt.get(each.path) ?? []),
   }));
   const matches = (element: Element, selector: string | undefined): boolean => {
@@ -159,7 +168,9 @@ export function flowObserver(elements: readonly PathElement[], argument: FlowArg
   };
   const read = (): void => {
     for (const each of flowing) {
-      if (leftToRight(each.element)) {
+      const style = getComputedStyle(each.element);
+      each.drawn ||= widths.some((width) => Number.parseFloat(style.getPropertyValue(width)) !== 0);
+      if (leftToRight(style)) {
         continue;
       }
       each.turned = true;
@@ -174,11 +185,13 @@ export function flowObserver(elements: readonly PathElement[], argument: FlowArg
     }
   };
   return {
-    sweeps: turns || unread || !elements.every(({ element }) => leftToRight(element)),
+    sweeps: turns || unread || !elements.every(({ element }) => leftToRight(getComputedStyle(element))),
     read,
     turned: () =>
-      flowing.flatMap(({ path, turned, edges }) =>
-        turned && edges.size > 0 ? [{ path, edges: [...edges].toSorted() }] : []
+      flowing.flatMap(({ path, turned, drawn, edges }) =>
+        turned && edges.size > 0
+          ? [{ path, edges: [...edges].toSorted(), zeroWidths: edges.has("styles") && !drawn }]
+          : []
       ),
   };
 }

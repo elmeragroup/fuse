@@ -13,8 +13,10 @@ import type {
   FrameLayerSpec,
   IconLayerSpec,
   InstanceLayerSpec,
+  InstanceOverride,
   KitSpec,
   NumberSpec,
+  StrokeSpec,
   TextLayerSpec,
   TextStyleSpec,
 } from "../../src/components/kit-spec.ts";
@@ -359,6 +361,48 @@ export function outerKit(label: TextLayerSpec, shown?: string, defaultValue = la
         })),
       ],
     })),
+  };
+}
+
+/** An override that leaves the root's left side bare, as a group member's `border-l-0` does. */
+export const BARE_LEFT: InstanceOverride = { path: [], field: "strokeSides", bare: ["left"] };
+
+/**
+ * The outer kit with its inner root stroked by `stroke` and its instance carrying `overrides`.
+ *
+ * @param stroke - The inner root's stroke, or undefined for none.
+ * @param overrides - The instance's overrides.
+ * @returns The kit.
+ */
+export function strokedOuterKit(
+  stroke: StrokeSpec | undefined,
+  overrides: readonly InstanceOverride[]
+): KitSpec {
+  const base = outerKit(LABEL);
+  const [inner, outer] = base.componentSets;
+  if (inner === undefined || outer === undefined) {
+    throw new Error("the outer kit holds no two sets");
+  }
+  return {
+    ...base,
+    componentSets: [
+      {
+        ...inner,
+        variants: inner.variants.map((variant) => ({ ...variant, root: { ...variant.root, stroke } })),
+      },
+      {
+        ...outer,
+        variants: outer.variants.map((variant) => ({
+          ...variant,
+          root: {
+            ...variant.root,
+            children: variant.root.children.map((layer) =>
+              layer.kind === "instance" ? { ...layer, overrides } : layer
+            ),
+          },
+        })),
+      },
+    ],
   };
 }
 

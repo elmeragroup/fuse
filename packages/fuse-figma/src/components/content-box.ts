@@ -16,7 +16,7 @@ import { isInfiniteLength, normalizeCss } from "./css-values";
  * the content length, stays as it reads with its `box-sizing` unmapped, and so does one in an
  * instance part built in place, whose fields the diff reads from one frame.
  */
-import { NO_LIMITS, outOfLayout, ZERO } from "./kit-spec";
+import { NO_LIMITS, outOfLayout, sideWeights, ZERO } from "./kit-spec";
 import type { BoxSpec, ChildLayerSpec, FrameLayerSpec, LimitsSpec, SizeSpec, StrokeSpec } from "./kit-spec";
 import type { LayerStyle } from "./layer-style";
 
@@ -56,9 +56,8 @@ function strokes(stroke: StrokeSpec | undefined, side: "top" | "bottom" | "left"
   if (stroke === undefined || "inLayout" in stroke) {
     return false;
   }
-  return "sides" in stroke
-    ? stroke.sides[side] > 0
-    : stroke.weight.kind === "variable" || stroke.weight.value > 0;
+  const weight = sideWeights(stroke)[side];
+  return weight.kind === "variable" || weight.value > 0;
 }
 
 /** The radius longhands and shorthand a box rounds its corners by. */

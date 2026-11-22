@@ -912,12 +912,16 @@ function scaled(spec: NumberSpec, share: number): NumberSpec {
 
 /** A stroke at a share of its size: its weight and each dash and gap length scale with the paint. */
 function scaledStroke(stroke: StrokeSpec, share: number): StrokeSpec {
-  if ("sides" in stroke) {
+  if (stroke.sides !== undefined) {
     const { top, right, bottom, left } = stroke.sides;
     return {
       ...stroke,
       sides: { top: top * share, right: right * share, bottom: bottom * share, left: left * share },
     };
+  }
+  // A bare stroke's weight is bound, which keeps its variable at any share.
+  if (stroke.bare !== undefined) {
+    return stroke;
   }
   const weight = scaled(stroke.weight, share);
   const { dashPattern } = stroke;

@@ -202,8 +202,8 @@ import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
  *   widens by 10px with it, in every mode of {@link EVERY_MODE} once its faces have loaded, and the
  *   width is the same in each. A minimum or maximum that sets the anchor's width, or padding a
  *   `content-box` width adds, leaves it out.
- * - `otherFlow`: as `flowObserver` in `flow-facts.ts` reads it, on the first sweep of the modes a
- *   fact above makes, or on one of its own.
+ * - `otherFlow` and `zeroWidths`: as `flowObserver` in `flow-facts.ts` reads them, on the first
+ *   sweep of the modes a fact above makes, or on one of its own.
  *
  * The page restores every element it changes before it returns, and the mode it stamps for the
  * facts above too, also where a measurement throws. A cell's roots share one page and its mode, so a
@@ -990,6 +990,6 @@ const MEASURE_IN_PAGE = `async function (role, cornered, flowRead) {
   }
   // \`otherFlow\`, read on a sweep of its own where no fact above swept the modes.
   if (riders.length > 0) { await inEveryMode(() => {}); }
-  for (const { path, edges } of flow.turned()) { put(path, "otherFlow", edges); }
+  for (const { path, edges, zeroWidths } of flow.turned()) { put(path, "otherFlow", edges); if (zeroWidths) { put(path, "zeroWidths", true); } }
   return out;
 }`;

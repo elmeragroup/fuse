@@ -7,6 +7,7 @@
 import { createHash } from "node:crypto";
 
 import { borderLonghands, borderWidthLength } from "../capture/border-shorthands.ts";
+import { flowRelativeEdges } from "../capture/winners.ts";
 import { KitUnmappable } from "./build-errors";
 import {
   describeNumber,
@@ -17,7 +18,11 @@ import {
   readShadows,
 } from "./css-values";
 import type { VariableIndex } from "./css-values";
+import { makeBareSides } from "./kit-spec";
 import type {
+  BareSides,
+  BareStroke,
+  BoundNumber,
   BoxSpec,
   ColorSpec,
   EverySideStroke,
@@ -29,6 +34,7 @@ import type {
   VariableRef,
 } from "./kit-spec";
 import type { CoverageNote, Feed, LayerStyle } from "./layer-style";
+import type { LogicalSides } from "./logical-sides";
 
 /**
  * What a color read from CSS became, for the coverage table.
@@ -109,8 +115,12 @@ function readBackgroundBlur(reader: LayerStyle): NumberSpec | undefined {
  *   borders no box sharing their edges contests, as the capture read it, so its border takes no
  *   room, on every side or on some, as {@link COLLAPSED} says. A row or row group without it leaves
  *   its border unmapped, as {@link unownedRowBorder} says.
- * @returns The box's fill, stroke and shadows, and the border's widths where the fill draws inside
- *   the border on a layer of its own, as {@link readBackgroundClip} says.
+ * @param logical - Where the box's logical sides, their widths and their styles lie, as
+ *   `logical-sides.ts` reads them.
+ * @returns The box's fill, stroke and shadows, the used width of its border on each side, and the
+ *   border's widths where the fill draws inside the border on a layer of its own, as
+ *   {@link readBackgroundClip} says. A box whose widths lie elsewhere, as {@link widthsPlaced} reads
+ *   them, has no width known on any side.
  * @throws When a box that shows a picture sets no `object-fit`, as {@link readImage} says.
  */
 export function readPaint(
@@ -118,14 +128,17 @@ export function readPaint(
   image: (() => Uint8Array) | undefined,
   variables: VariableIndex,
   variant: string,
-  collapsed: boolean
-): { readonly paint: BoxPaint; readonly paddingBox?: PaddingBoxInsets } {
+  collapsed: boolean,
+  logical: BorderFlow
+): { readonly paint: BoxPaint; readonly widths: BorderWidths; readonly paddingBox?: PaddingBoxInsets } {
   const borders = sideBorders(reader, variables);
-  // A side that may draw: one of a width other than 0, or of a width that does not map.
-  const draws = BORDER_SIDES.some((side) => borders[side].used !== 0);
+  const placed = widthsPlaced(logical);
+  const widths = placed.kind === "elsewhere" ? UNKNOWN_WIDTHS : usedWidths(borders);
+  // A side that may draw: one of a width other than 0, or of a width that does not map or is unknown.
+  const draws = BORDER_SIDES.some((side) => widths[side] !== 0);
   const border = unownedRowBorder(reader, draws, collapsed)
     ? undefined
-    : readBorder(reader, variables, collapsed, borders);
+    : readBorder(reader, variables, collapsed, borders, logical.sides);
   const cleared = readClearOutline(reader, variables);
   // A box holds one stroke, so its border keeps it, even one of no width.
   const bordered = !BORDER_SIDES.every((side) => unsetSide(borders[side]));
@@ -144,11 +157,18 @@ export function readPaint(
       : readImage(reader, image, variant);
   const shown = fill === NO_FILL ? undefined : fill;
   const background = shown ?? (paintsNoBackground(reader, image, fill) ? NO_BACKGROUND : undefined);
-  const paddingBox = readBackgroundClip(reader, draws ? border : NO_BORDER, borders, background, variables);
+  const paddingBox = readBackgroundClip(
+    reader,
+    draws ? border : NO_BORDER,
+    widths,
+    placed,
+    background,
+    variables
+  );
   const paint = { fill: shown, stroke, shadows };
   const backgroundBlur = readBackgroundBlur(reader);
   const blurred = backgroundBlur === undefined ? paint : { ...paint, backgroundBlur };
-  return paddingBox === undefined ? { paint: blurred } : { paint: blurred, paddingBox };
+  return paddingBox === undefined ? { paint: blurred, widths } : { paint: blurred, widths, paddingBox };
 }
 
 /**
@@ -343,9 +363,11 @@ function readShadowStack(root: LayerStyle, variables: VariableIndex): readonly S
  * A CSS border becomes a stroke, read from each side's winning width, style and color as
  * {@link sideBorders} resolves them. Where all four sides agree on all three, the border draws one
  * stroke, as {@link readStroke} reads it, so a later `border-left-width` that equals the
- * `border-width` beside it leaves a dashed border dashed. Otherwise it draws a stroke with a weight
- * on each side, as {@link readSideStroke} reads it, and anything else stays unmapped. A side whose
- * style is `none` or `hidden` has a used width of 0, whatever width it declares (CSS Backgrounds 3
+ * `border-width` beside it leaves a dashed border dashed. A border of one bound weight that leaves
+ * some sides bare draws that one stroke with those sides named, as {@link bareSides} reads them.
+ * Otherwise it draws a stroke with a weight on each side, as {@link readSideStroke} reads it, and
+ * anything else stays unmapped. A box whose logical sides lie elsewhere draws none, as
+ * {@link leaveSides} says. A side whose style is `none` or `hidden` has a used width of 0, whatever width it declares (CSS Backgrounds 3
  * §4.3). On a side that draws nothing, the stroke notes only the longhands that set it, so a
  * border shorthand there, as Tailwind preflight's `border: 0 solid` on every element, keeps the row
  * the ledger gives a rule no part reads. A box none of whose sides any longhand sets, and that draws
@@ -355,14 +377,176 @@ function readBorder(
   root: LayerStyle,
   variables: VariableIndex,
   collapsed: boolean,
-  borders: SideBorders
+  borders: SideBorders,
+  logical: LogicalSides
 ): StrokeFromBorder {
+  if (logical.kind === "elsewhere") {
+    leaveSides(root, logical.reason);
+    return undefined;
+  }
   if (BORDER_SIDES.every((side) => unsetSide(borders[side]))) {
     return undefined;
   }
-  return BORDER_SIDES.every((side) => sameBorder(root, variables, borders.top, borders[side]))
-    ? readStroke(root, variables, collapsed, borders)
-    : readSideStroke(root, variables, collapsed, borders);
+  if (BORDER_SIDES.every((side) => sameBorder(root, variables, borders.top, borders[side]))) {
+    return readStroke(root, variables, collapsed, borders);
+  }
+  const bare = bareSides(root, variables, borders);
+  return bare === undefined
+    ? readSideStroke(root, variables, collapsed, borders)
+    : readBareStroke(root, variables, collapsed, borders, bare);
+}
+
+/**
+ * Where a box's logical border sides lie, as `logicalSidesOf` reads them: the sides, which a color, a
+ * width or a style sets, their widths, which a width or a border shorthand sets, and their styles. A
+ * box whose logical sides lie elsewhere draws no stroke, and {@link widthsPlaced} reads whether it
+ * knows its widths.
+ */
+type BorderFlow = {
+  readonly sides: LogicalSides;
+  readonly widths: LogicalSides;
+  readonly styles: LogicalSides;
+  /** The capture measured every side's used width 0 in every mode (`zeroWidths`). */
+  readonly zeroWidths: boolean;
+};
+
+/**
+ * Where a box's border widths lie: elsewhere, so no side's width is known, where a logical width lies
+ * elsewhere, or a logical style does and the capture did not measure every side's used width 0 in
+ * every mode. The capture checks the widths it resolves against the browser's in the page's own mode
+ * alone, so in another mode a logical width may sit on another side, and a logical style may zero or
+ * draw another side than the capture reads, as `border-inline-start-style: none` zeroes the top
+ * under `vertical-rl`, and a dark rule's `border-width: 3px` with `border-inline-start-style: solid`
+ * draws the right side right to left where light draws none. A style moves no width where every
+ * side's used width is 0 in every mode, as preflight's `border: 0 solid` leaves it, which the
+ * capture measures only where it reads the box's flow, so a pseudo-element's widths stay unknown. A
+ * logical color moves no width.
+ */
+function widthsPlaced(logical: BorderFlow): LogicalSides {
+  if (logical.widths.kind === "elsewhere") {
+    return logical.widths;
+  }
+  return logical.styles.kind === "elsewhere" && !logical.zeroWidths
+    ? logical.styles
+    : { kind: "left-to-right" };
+}
+
+/**
+ * Leave every border declaration of the box's own unmapped, and so its stroke, where its logical
+ * sides lie elsewhere. The capture records the side a flow-relative declaration wins as on the kit's
+ * left-to-right, horizontal page, where right to left `border-inline-start-width` sets the right side
+ * (CSS Logical Properties 1 §4), so it may name the wrong declaration for any side. It splits a
+ * `border-width` that loses a side into the sides it wins, which then go with the others. A box none
+ * of whose own declarations names a side by its flow-relative name, as where only a rule of another
+ * mode sets one (`otherFlow`), notes each declaration with why.
+ */
+function leaveSides(root: LayerStyle, reason: string): void {
+  const own = root.ownProperties().filter((property) => BORDER_DECLARATION.test(property));
+  const logical = own.filter((property) => flowRelativeEdges(property).includes("sides"));
+  for (const property of own) {
+    root.mark(
+      property,
+      "unmapped",
+      logical.length === 0 || logical.includes(property)
+        ? reason
+        : "a flow-relative side of the box does not map, so none of its sides does",
+      root.feed("stroke")
+    );
+  }
+}
+
+/** A declaration of a box's border sides: a longhand or a shorthand, on every side or on some. */
+const BORDER_DECLARATION =
+  /^border(?:-(?:top|right|bottom|left|block|inline)(?:-start|-end)?)?(?:-(?:width|style|color))?$/;
+
+/** A side a border leaves bare, with the declaration of the box's own that leaves it so. */
+type BareSide = {
+  readonly side: BorderSide;
+  /** Its width of a literal 0, or its style of `none` or `hidden`, which computes the width to 0. */
+  readonly by: "width" | "style";
+};
+
+/** A border of one bound weight that leaves some sides bare, as {@link bareSides} reads it. */
+type BareBorder = {
+  readonly weight: BoundNumber;
+  readonly bare: readonly [BareSide, ...BareSide[]];
+  /** The bare sides as the stroke names them. */
+  readonly sides: BareSides;
+  /** The sides that draw, in {@link BORDER_SIDES}' order. */
+  readonly drawing: readonly BorderSide[];
+  /** The properties of the declarations that win a width, a style or a color of a side that draws. */
+  readonly drawn: ReadonlySet<string>;
+};
+
+/**
+ * The bound weight of a border that leaves some sides bare, and those sides in {@link BORDER_SIDES}'
+ * order, as a group member's `border-l-0` collapses the left side of an outline Button's
+ * `button-outline-width`. Figma weighs each side on its own, so a stroke of the one weight that names
+ * its bare sides draws them, where a stroke on some sides holds literal weights alone. Each bare side
+ * draws nothing by a declaration of the box's own that wins no side that draws: a width of a literal
+ * 0, or a style of `none` or `hidden`, which computes the width to 0 (CSS Backgrounds 3 §4.3), and
+ * not a border shorthand's zero from another rule, as preflight's `border: 0 solid`, which
+ * {@link unsetSide} leaves unnoted. Each bare side keeps the declaration that leaves it bare, a
+ * `none` or `hidden` style ahead of a width. The sides that draw agree on their width and style, the
+ * style solid, and {@link resolveSideColor} decides their color. Undefined for any other border, a
+ * literal weight among them, which {@link readSideStroke} reads.
+ */
+function bareSides(root: LayerStyle, variables: VariableIndex, borders: SideBorders): BareBorder | undefined {
+  const drawing = BORDER_SIDES.filter((side) => borders[side].used !== 0);
+  const unweighted = BORDER_SIDES.filter((side) => borders[side].used === 0);
+  if (unweighted.some((side) => unsetSide(borders[side]))) {
+    return undefined;
+  }
+  const [first] = drawing;
+  if (first === undefined || unweighted.length === 0) {
+    return undefined;
+  }
+  const lead = borders[first];
+  const weight = readBorderWidth(lead.width?.value ?? "", variables);
+  if (
+    weight?.kind !== "variable" ||
+    lead.lineStyle !== "solid" ||
+    !drawing.every((side) => sameWidthAndStyle(variables, lead, borders[side]))
+  ) {
+    return undefined;
+  }
+  const drawn = drawingDeclarations(borders, drawing);
+  const owned = (side: BorderSide, part: SidePart): boolean => {
+    const declaration = borders[side][part];
+    return (
+      declaration !== undefined &&
+      root.winnerOf(`border-${side}-${part}`) === declaration.property &&
+      !drawn.has(declaration.property)
+    );
+  };
+  const zeroed = (side: BorderSide): boolean => {
+    const width = readBorderWidth(borders[side].width?.value ?? "", variables);
+    return width?.kind === "literal" && width.value === 0;
+  };
+  const hidden = (side: BorderSide): boolean => ["none", "hidden"].includes(borders[side].lineStyle);
+  const bare = unweighted.flatMap((side): readonly BareSide[] =>
+    hidden(side) && owned(side, "style")
+      ? [{ side, by: "style" }]
+      : zeroed(side) && owned(side, "width")
+        ? [{ side, by: "width" }]
+        : []
+  );
+  const [head, ...rest] = bare;
+  const sides = makeBareSides(bare.map(({ side }) => side));
+  return head === undefined || sides === undefined || bare.length !== unweighted.length
+    ? undefined
+    : { weight, bare: [head, ...rest], sides, drawing, drawn };
+}
+
+/** The properties of the declarations that win a width, a style or a color of the sides that draw. */
+function drawingDeclarations(borders: SideBorders, drawing: readonly BorderSide[]): ReadonlySet<string> {
+  return new Set(
+    drawing.flatMap((side) =>
+      [borders[side].width?.property, borders[side].style?.property, borders[side].color].filter(
+        (property) => property !== undefined
+      )
+    )
+  );
 }
 
 /**
@@ -427,10 +611,7 @@ function readStroke(
     root.read(
       property,
       () => readBorderWidth(value ?? "", variables),
-      (read) => {
-        const note = describeNumber(read);
-        return collapsed ? { ...note, detail: `${note.detail}, a stroke that ${COLLAPSED}` } : note;
-      },
+      (read) => describeWeight(read, collapsed),
       stroke
     )
   );
@@ -459,6 +640,110 @@ function readStroke(
   const drawn =
     style.dashPattern === undefined ? { color, weight } : { color, weight, dashPattern: style.dashPattern };
   return collapsed ? { ...drawn, inLayout: false } : drawn;
+}
+
+/** A stroke weight as the coverage table notes it, on a table row whose table collapses its borders too. */
+function describeWeight(read: NumberSpec, collapsed: boolean): CoverageNote {
+  const note = describeNumber(read);
+  return collapsed ? { ...note, detail: `${note.detail}, a stroke that ${COLLAPSED}` } : note;
+}
+
+/**
+ * A border of one bound weight that leaves some sides bare, as {@link bareSides} reads it, becomes a
+ * solid stroke of that weight that names the bare sides. The sides that draw take one color, as
+ * {@link resolveSideColor} reads it, which the stroke resolves before it notes any width or style as
+ * drawn. A color that does not map leaves the stroke out, with the widths and styles unmapped and
+ * each bare side's declaration noting why its side was bare, as {@link noteBareSides} says.
+ */
+function readBareStroke(
+  root: LayerStyle,
+  variables: VariableIndex,
+  collapsed: boolean,
+  borders: SideBorders,
+  border: BareBorder
+): BareStroke | undefined {
+  const stroke = root.feed("stroke");
+  const { weight, sides, drawing } = border;
+  const { color, notes } = resolveSideColor(root, variables, borders, drawing, []);
+  const widths = declarationsOf(drawing.map((side) => borders[side].width));
+  const styles = declarationsOf(drawing.map((side) => borders[side].style));
+  if (color === undefined) {
+    for (const { property } of [...widths, ...styles]) {
+      root.mark(property, "unmapped", STROKE_LEFT_OUT, stroke);
+    }
+    noteSideColor(root, variables, notes, stroke);
+    noteBareSides(root, borders, border, "left out", stroke);
+    return undefined;
+  }
+  for (const { property } of widths) {
+    root.read(
+      property,
+      () => weight,
+      (read) => describeWeight(read, collapsed),
+      stroke
+    );
+  }
+  for (const { property } of styles) {
+    root.read(
+      property,
+      (value) => value,
+      () => ({ outcome: "literal", detail: "a solid stroke" }),
+      stroke
+    );
+  }
+  noteSideColor(root, variables, notes, stroke);
+  noteBareSides(root, borders, border, "drawn", stroke);
+  const drawn = { color, weight, bare: sides };
+  return collapsed ? { ...drawn, inLayout: false } : drawn;
+}
+
+/**
+ * Note the declarations that set only bare sides of a stroke of one bound weight, as
+ * {@link bareSides} reads them. The declaration that leaves a side bare, its width of 0 or its
+ * `none` or `hidden` style, reads as no stroke there where the stroke draws, and stays unmapped with
+ * that reason where the stroke is left out. Any other width, style or color of a bare side alone
+ * drops, since it draws nothing.
+ */
+function noteBareSides(
+  root: LayerStyle,
+  borders: SideBorders,
+  { bare, drawn }: BareBorder,
+  stroke: "drawn" | "left out",
+  feed: Feed
+): void {
+  const parts = bare.flatMap(({ side, by }) => [
+    { side, by: "width", property: borders[side].width?.property, bares: by === "width" },
+    { side, by: "style", property: borders[side].style?.property, bares: by === "style" },
+    { side, by: "color", property: borders[side].color, bares: false },
+  ]);
+  for (const [property, owned] of Map.groupBy(parts, (each) => each.property)) {
+    if (property === undefined || drawn.has(property) || !root.has(property)) {
+      continue;
+    }
+    const [first, ...others] = owned.filter((each) => each.bares);
+    if (first === undefined) {
+      root.mark(property, "dropped", "it sets only sides the border leaves bare, which draw nothing", []);
+      continue;
+    }
+    const sides = [first, ...others].map(({ side }) => side);
+    const named = `${namedSides(sides)} ${sides.length === 1 ? "side" : "sides"}`;
+    const { lineStyle } = borders[first.side];
+    if (stroke === "left out") {
+      const by = first.by === "style" ? `its ${lineStyle} style` : "its width of 0";
+      root.mark(property, "unmapped", `${by} leaves the ${named} bare, but the stroke is left out`, feed);
+      continue;
+    }
+    const detail =
+      first.by === "style"
+        ? `no stroke on the ${named}, whose style is ${lineStyle}`
+        : `no stroke on the ${named}, where the other sides keep the border's weight`;
+    root.read(
+      property,
+      (value) => value,
+      () => ({ outcome: "literal", detail }),
+      feed
+    );
+  }
 }
 
 /**
@@ -507,7 +792,7 @@ function unownedRowBorder(reader: LayerStyle, draws: boolean, collapsed: boolean
 const UNOWNED_ROW_BORDER =
   "a table row's or row group's border, which the capture did not measure as the row's own on its grid lines (CSS 2.1 §17.6.2.1), so the stroke is left out";
 
-/** A box with no border, whose padding box is its border box. */
+/** A box every side of whose border is known to have a used width of 0, so its padding box is its border box. */
 const NO_BORDER = "none";
 
 /** A box that paints no background, as {@link paintsNoBackground} proves. */
@@ -554,12 +839,14 @@ function paintsNoBackground(
  * the left. A side whose own style is `none` or `hidden` draws no border, so its inset is 0 and the
  * other sides keep theirs.
  * A fractional width, which Chromium snaps to whole device pixels, leaves the clip unmapped, and so
- * does any other border or value.
+ * does a box whose widths lie elsewhere, which knows no side's width, and any other
+ * border or value.
  *
  * @param reader - The box's style.
  * @param border - The stroke the box's border draws, undefined where it does not map, or
- *   {@link NO_BORDER} for a box with no border.
- * @param borders - Each side's border, which gives the side's inset.
+ *   {@link NO_BORDER} for a box whose every side's width is known to be 0.
+ * @param widths - Each side's used width, which gives the side's inset, unknown where `flow` says.
+ * @param flow - Where the box's border widths lie, as {@link widthsPlaced} reads them.
  * @param fill - The box's fill, {@link NO_BACKGROUND} for a box that paints none, or undefined where
  *   the background does not map.
  * @param variables - The synced variables, which say whether a color is opaque in every mode.
@@ -568,7 +855,8 @@ function paintsNoBackground(
 function readBackgroundClip(
   reader: LayerStyle,
   border: StrokeFromBorder | typeof NO_BORDER,
-  borders: SideBorders,
+  widths: BorderWidths,
+  flow: LogicalSides,
   fill: BoxPaint["fill"] | typeof NO_BACKGROUND,
   variables: VariableIndex
 ): PaddingBoxInsets | undefined {
@@ -581,6 +869,15 @@ function readBackgroundClip(
           ? "the box's border draws as a solid stroke, opaque in every mode, over the fill beneath it"
           : undefined;
   const clipped = normalizeCss(reader.resolved("background-clip") ?? "") === "padding-box";
+  if (detail === undefined && clipped && flow.kind === "elsewhere") {
+    reader.mark(
+      "background-clip",
+      "unmapped",
+      `${flow.reason}, so the kit cannot tell where its padding box starts`,
+      []
+    );
+    return undefined;
+  }
   const insets =
     detail === undefined &&
     clipped &&
@@ -588,7 +885,7 @@ function readBackgroundClip(
     fill !== undefined &&
     fill !== NO_BACKGROUND &&
     fill.kind !== "image"
-      ? paddingInsets(border, borders)
+      ? paddingInsets(border, widths)
       : undefined;
   if (insets !== undefined && Object.values(insets).some((width) => !Number.isInteger(width))) {
     reader.mark("background-clip", "unmapped", FRACTIONAL, []);
@@ -618,21 +915,21 @@ export type PaddingBoxInsets = Readonly<Record<StrokeSide, number>>;
 
 /**
  * Each side's used width, where the stroke takes its room in the layout, as a CSS border does, and
- * every side's width is a literal. Undefined for no stroke, a bound width, or a stroke drawn out of
- * the layout.
+ * every side's width is a known literal. Undefined for no stroke, a bound or unknown width, or a
+ * stroke drawn out of the layout.
  */
-function paddingInsets(stroke: StrokeFromBorder, borders: SideBorders): PaddingBoxInsets | undefined {
+function paddingInsets(stroke: StrokeFromBorder, widths: BorderWidths): PaddingBoxInsets | undefined {
   if (stroke === undefined || stroke.inLayout === false) {
     return undefined;
   }
-  const [top, right, bottom, left] = BORDER_SIDES.map((side) => borders[side].used);
+  const { top, right, bottom, left } = widths;
   return top === undefined || right === undefined || bottom === undefined || left === undefined
     ? undefined
     : { top, right, bottom, left };
 }
 
 /** The stroke a box's border draws, on every side or some, or undefined where it does not map. */
-type StrokeFromBorder = EverySideStroke | SideStroke | undefined;
+type StrokeFromBorder = EverySideStroke | BareStroke | SideStroke | undefined;
 
 /** Whether a color is fully opaque in every mode: a literal at alpha 1, or a variable that is. */
 function opaqueIn(color: ColorSpec, variables: VariableIndex): boolean {
@@ -715,21 +1012,20 @@ function sideDeclaration(root: LayerStyle, side: BorderSide, part: SidePart): Si
   };
 }
 
-/** A box's used border width on each physical side, in pixels, or undefined for one that is no literal. */
-export type BorderWidths = Readonly<Record<"top" | "right" | "bottom" | "left", number | undefined>>;
+/**
+ * A box's used border width on each physical side, in pixels, as {@link readPaint} reads it, or
+ * undefined for one that is no literal or that the build cannot place, as on a box whose logical
+ * sides lie elsewhere. A reader that adds the border to the box's size, as `held-size.ts` does, takes
+ * it from there, so the size and the stroke agree.
+ */
+export type BorderWidths = Readonly<Record<BorderSide, number | undefined>>;
 
 /**
- * A box's used border width on each side, as its stroke draws it: 0 on a side whose style is `none`
- * or `hidden` or that no declaration gives a width, and a width a shorthand such as `border: 2px
- * solid` sets included. A reader that adds the border to the box's size, as `held-size.ts` does,
- * reads it here, so the size and the stroke agree.
- *
- * @param reader - The box's style.
- * @param variables - The synced variables a width can bind.
- * @returns Each side's width.
+ * Each side's used width, as its stroke draws it: 0 on a side whose style is `none` or `hidden` or
+ * that no declaration gives a width, and a width a shorthand such as `border: 2px solid` sets
+ * included.
  */
-export function borderWidths(reader: LayerStyle, variables: VariableIndex): BorderWidths {
-  const borders = sideBorders(reader, variables);
+function usedWidths(borders: SideBorders): BorderWidths {
   return {
     top: borders.top.used,
     right: borders.right.used,
@@ -737,6 +1033,9 @@ export function borderWidths(reader: LayerStyle, variables: VariableIndex): Bord
     left: borders.left.used,
   };
 }
+
+/** No side's width known. */
+const UNKNOWN_WIDTHS: BorderWidths = { top: undefined, right: undefined, bottom: undefined, left: undefined };
 
 /**
  * The property of the declaration that wins a side's border width, as `border-bottom-width` or a
@@ -774,12 +1073,20 @@ function sideBorders(root: LayerStyle, variables: VariableIndex): SideBorders {
 }
 
 /**
- * Whether a side draws nothing and no longhand gives it a width: a border shorthand's zero, as
- * preflight's `border: 0 solid`, or no width at all. The stroke notes nothing for it.
+ * Whether a side draws nothing and neither a longhand nor the side's own shorthand gives it a width:
+ * a border shorthand's zero, as preflight's `border: 0 solid`, or no width at all. The stroke notes
+ * nothing for it. The side's own shorthand, as `[border-left:2px_hidden_blue]`, sets that side alone,
+ * so the stroke notes it.
  */
 function unsetSide(border: SideBorder): boolean {
-  return border.used === 0 && (border.width === undefined || !isLonghand(border.width.property));
+  const property = border.width?.property;
+  return (
+    border.used === 0 && (property === undefined || (!isLonghand(property) && !SIDE_SHORTHAND.test(property)))
+  );
 }
+
+/** A border shorthand of one physical side, as `border-left`. */
+const SIDE_SHORTHAND = /^border-(?:top|right|bottom|left)$/;
 
 /** Whether a property is a longhand of a box's border, as {@link BORDER_LONGHAND} says. */
 function isLonghand(property: string): boolean {
@@ -787,11 +1094,26 @@ function isLonghand(property: string): boolean {
 }
 
 /**
- * Whether two sides take the same width, style and color: from one declaration, or values that
- * compute alike, as `calc(1px + 1px)` and `2px` are one width and `rgb(255 0 0)` and `#ff0000` one
- * color. Two widths or colors that bind different variables differ.
+ * Whether two sides take the same width, style and color: the same width and style, as
+ * {@link sameWidthAndStyle} reads them, and from one declaration or values that compute alike, as
+ * `rgb(255 0 0)` and `#ff0000` are one color. Two colors that bind different variables differ.
  */
 function sameBorder(root: LayerStyle, variables: VariableIndex, one: SideBorder, other: SideBorder): boolean {
+  const color = (border: SideBorder) => root.resolved(border.color) ?? "";
+  return (
+    sameWidthAndStyle(variables, one, other) &&
+    (one.color === other.color ||
+      normalizeCss(color(one)) === normalizeCss(color(other)) ||
+      sameColor(readColor(color(one), variables), readColor(color(other), variables)))
+  );
+}
+
+/**
+ * Whether two sides take the same width and style: from one declaration, or values that compute
+ * alike, as `calc(1px + 1px)` and `2px` are one width. Two widths that bind different variables
+ * differ.
+ */
+function sameWidthAndStyle(variables: VariableIndex, one: SideBorder, other: SideBorder): boolean {
   const same = (
     left: SideDeclaration | undefined,
     right: SideDeclaration | undefined,
@@ -800,15 +1122,10 @@ function sameBorder(root: LayerStyle, variables: VariableIndex, one: SideBorder,
     left?.value === undefined || right?.value === undefined
       ? left?.property === right?.property && left?.value === right?.value
       : normalizeCss(left.value) === normalizeCss(right.value) || alike(left.value, right.value);
-  const color = (border: SideBorder) => root.resolved(border.color) ?? "";
   return (
     same(one.width, other.width, (left, right) =>
       sameNumber(readBorderWidth(left, variables), readBorderWidth(right, variables))
-    ) &&
-    same(one.style, other.style, () => one.lineStyle === other.lineStyle) &&
-    (one.color === other.color ||
-      normalizeCss(color(one)) === normalizeCss(color(other)) ||
-      sameColor(readColor(color(one), variables), readColor(color(other), variables)))
+    ) && same(one.style, other.style, () => one.lineStyle === other.lineStyle)
   );
 }
 
@@ -881,6 +1198,9 @@ function describeSideWidths(
     .join("; ");
 }
 
+/** Why a side's width or style that reads stays unmapped where another part of the stroke does not. */
+const STROKE_LEFT_OUT = "another side's width, style or color does not map, so the stroke is left out";
+
 /** Why a border shorthand whose part for a side the build cannot split leaves the stroke out. */
 const UNREAD_SIDE_SHORTHAND =
   "a border shorthand sets a side's width or style, and the build cannot split it";
@@ -913,6 +1233,9 @@ function readSideStroke(
   const noted = BORDER_SIDES.filter((side) => !unsetSide(borders[side]));
   const styledNone = (side: BorderSide): boolean =>
     borders[side].lineStyle === "none" || borders[side].lineStyle === "hidden";
+  // The widths and styles the stroke draws read once it is known to map, so a stroke left out notes
+  // none of them as drawn.
+  const drawnReads: { readonly property: string; readonly mapped: boolean; readonly read: () => void }[] = [];
   for (const [property, owned] of Map.groupBy(noted, (side) => borders[side].width?.property)) {
     if (property === undefined) {
       continue;
@@ -927,12 +1250,17 @@ function readSideStroke(
       continue;
     }
     const weights = drawing.map((side) => sides[side]);
-    root.read(
+    drawnReads.push({
       property,
-      () => (weights.every((weight) => weight !== undefined) ? weights : undefined),
-      (read) => ({ outcome: "literal", detail: describeSideWidths(drawing, read, collapsed) }),
-      stroke
-    );
+      mapped: weights.every((weight) => weight !== undefined),
+      read: () =>
+        root.read(
+          property,
+          () => (weights.every((weight) => weight !== undefined) ? weights : undefined),
+          (read) => ({ outcome: "literal", detail: describeSideWidths(drawing, read, collapsed) }),
+          stroke
+        ),
+    });
   }
   for (const [property, owned] of Map.groupBy(noted, (side) => borders[side].style?.property)) {
     const drawing = owned.filter((side) => sides[side] !== 0);
@@ -947,12 +1275,17 @@ function readSideStroke(
     }
     if (drawing.length > 0) {
       const solid = drawing.every((side) => borders[side].lineStyle === "solid");
-      root.read(
+      drawnReads.push({
         property,
-        (value) => (solid ? value : undefined),
-        () => ({ outcome: "literal", detail: "a solid stroke" }),
-        stroke
-      );
+        mapped: solid,
+        read: () =>
+          root.read(
+            property,
+            (value) => (solid ? value : undefined),
+            () => ({ outcome: "literal", detail: "a solid stroke" }),
+            stroke
+          ),
+      });
       for (const side of solid ? [] : drawing) {
         sides[side] = undefined;
       }
@@ -978,7 +1311,24 @@ function readSideStroke(
       root.mark(property, "dropped", "its side has no width, so it draws nothing", []);
     }
   }
-  const color = readSideColor(root, variables, borders, sides, stroke);
+  // A border none of whose sides draws maps as no stroke, and notes its widths so.
+  const drawsNone = BORDER_SIDES.every((side) => sides[side] === 0);
+  const { color, notes } = resolveSideColor(
+    root,
+    variables,
+    borders,
+    BORDER_SIDES.filter((side) => (sides[side] ?? 0) > 0),
+    BORDER_SIDES.filter((side) => sides[side] === undefined)
+  );
+  const maps = BORDER_SIDES.every((side) => sides[side] !== undefined) && (drawsNone || color !== undefined);
+  for (const { property, mapped, read } of drawnReads) {
+    if (maps || !mapped) {
+      read();
+    } else {
+      root.mark(property, "unmapped", STROKE_LEFT_OUT, stroke);
+    }
+  }
+  noteSideColor(root, variables, notes, stroke);
   const { top, right, bottom, left } = sides;
   if (
     color === undefined ||
@@ -1027,92 +1377,157 @@ function sideColorProperty(root: LayerStyle, side: BorderSide): string {
 }
 
 /**
- * Read the color of a stroke on some sides from the sides that draw. Figma strokes every side in one
- * color, so the sides that draw must share one, and a color that reaches only sides of no width draws
- * nothing, as a segment's `border-transparent` beside its `border-s-border` does. A side whose width
- * or style does not map may draw, so its color stays unmapped rather than dropped. A shorthand that
- * wins a drawing side's color, as `border-left` or `border`, stays unmapped, and so does the stroke,
- * since the build reads a color only from a color property.
+ * A coverage note a side color's resolution plans, which {@link noteSideColor} writes: a mark,
+ * unmapped on the stroke or dropped; a declaration the build does not read, noted by a read since
+ * the stroke may read the same shorthand's width or style, and a read takes the row over a mark; a
+ * color read; or the border color no rule sets, which the width that needs it names.
  */
-function readSideColor(
+type ColorNote =
+  | {
+      readonly kind: "mark";
+      readonly property: string;
+      readonly outcome: "unmapped" | "dropped";
+      readonly detail: string;
+    }
+  | { readonly kind: "unread"; readonly property: string; readonly detail: string }
+  | { readonly kind: "color"; readonly property: string }
+  | { readonly kind: "missing"; readonly neededBy: string; readonly detail: string };
+
+/** The one color the sides that draw take, or undefined where the stroke stays out, and its notes. */
+type SideColor = { readonly color: ColorSpec | undefined; readonly notes: readonly ColorNote[] };
+
+/**
+ * Resolve the color of a stroke on some sides from the sides that draw, noting nothing. Figma
+ * strokes every side in one color, so the sides that draw must share one, and a color that reaches
+ * only sides of no width draws nothing, as a segment's `border-transparent` beside its
+ * `border-s-border` does. A side whose width or style does not map may draw, so its color stays
+ * unmapped rather than dropped. A shorthand that wins a drawing side's color, as `border-left` or
+ * `border`, stays unmapped, and so does the stroke, since the build reads a color only from a color
+ * property. The color is undefined where no side draws, too.
+ *
+ * @param root - The box's style.
+ * @param variables - The synced variables the color can bind.
+ * @param borders - Each side's border.
+ * @param drawing - The sides that draw.
+ * @param unknown - The sides whose width or style does not map, which may draw.
+ * @returns The color and the notes {@link noteSideColor} writes.
+ */
+function resolveSideColor(
   root: LayerStyle,
   variables: VariableIndex,
   borders: SideBorders,
-  sides: Readonly<SideWidths>,
-  stroke: Feed
-): ColorSpec | undefined {
-  const drawing = BORDER_SIDES.filter((side) => (sides[side] ?? 0) > 0);
+  drawing: readonly BorderSide[],
+  unknown: readonly BorderSide[]
+): SideColor {
   const drawn = new Set(drawing.map((side) => borders[side].color));
-  const unknown = new Set(
-    BORDER_SIDES.filter((side) => sides[side] === undefined).map((side) => borders[side].color)
-  );
-  for (const property of unknown) {
-    if (!drawn.has(property)) {
-      root.mark(
-        property,
-        "unmapped",
-        "its side's width or style does not map, so the stroke is left out",
-        stroke
-      );
-    }
-  }
+  const unread = new Set(unknown.map((side) => borders[side].color));
+  const notes: ColorNote[] = [...unread]
+    .filter((property) => !drawn.has(property))
+    .map((property) => ({
+      kind: "mark",
+      property,
+      outcome: "unmapped",
+      detail: "its side's width or style does not map, so the stroke is left out",
+    }));
   const [first = "left"] = drawing;
   if (drawn.has("border-color")) {
-    root.missing(
-      "border-color",
-      borders[first].width?.property ?? "border-width",
-      "no class or base rule colors the border, so the stroke is left out"
-    );
+    notes.push({
+      kind: "missing",
+      neededBy: borders[first].width?.property ?? "border-width",
+      detail: "no class or base rule colors the border, so the stroke is left out",
+    });
   }
   const bare = BORDER_SIDES.flatMap((side) =>
     sideColorProperties(side).filter(
-      (property) => root.has(property) && !drawn.has(property) && !unknown.has(property)
+      (property) => root.has(property) && !drawn.has(property) && !unread.has(property)
     )
   );
   for (const property of new Set(bare)) {
-    root.mark(property, "dropped", "it colors only sides the border gives no width, which draw nothing", []);
+    notes.push({
+      kind: "mark",
+      property,
+      outcome: "dropped",
+      detail: "it colors only sides the border gives no width, which draw nothing",
+    });
   }
+  const out = (more: readonly ColorNote[]): SideColor => ({ color: undefined, notes: [...notes, ...more] });
+  const each = (detail: string, properties: Iterable<string> = drawn): readonly ColorNote[] =>
+    [...properties].map((property) => ({ kind: "mark", property, outcome: "unmapped", detail }));
   // With no side that draws, the box has no stroke, whatever colors it.
   if (drawn.size === 0) {
-    return undefined;
+    return out([]);
   }
-  const shorthands = drawing
-    .map((side) => [side, borders[side].color] as const)
-    .filter(([side, property]) => !sideColorProperties(side).includes(property));
-  if (shorthands.length > 0) {
-    // A read, not a mark, since the stroke may read the same shorthand's width or style, and a
-    // read takes the row over a mark.
-    for (const property of new Set(shorthands.map(([, property]) => property))) {
+  const shorthands = new Set(
+    drawing
+      .filter((side) => !sideColorProperties(side).includes(borders[side].color))
+      .map((side) => borders[side].color)
+  );
+  if (shorthands.size > 0) {
+    return out([
+      ...[...shorthands].map((property): ColorNote => ({
+        kind: "unread",
+        property,
+        detail: "a border shorthand colors a side that draws, and the build does not read it",
+      })),
+      ...each(
+        STROKE_LEFT_OUT,
+        [...drawn].filter((property) => !shorthands.has(property))
+      ),
+    ]);
+  }
+  // A side whose width or style does not map leaves the stroke out, whatever its color.
+  if (unread.size > 0) {
+    return out(each(STROKE_LEFT_OUT));
+  }
+  const colors = [...drawn].map((property) => ({
+    property,
+    color: readColor(root.resolved(property) ?? "", variables),
+  }));
+  // A color the build cannot read, as `CanvasText`, notes why itself, ahead of any comparison with
+  // the others, which a color it reads cannot settle.
+  const unreadable = colors.filter(({ color }) => color === undefined).map(({ property }) => property);
+  if (unreadable.length > 0) {
+    return out([
+      ...unreadable.map((property): ColorNote => ({ kind: "color", property })),
+      ...each(
+        STROKE_LEFT_OUT,
+        [...drawn].filter((property) => !unreadable.includes(property))
+      ),
+    ]);
+  }
+  if (new Set(colors.map(({ color }) => JSON.stringify(color))).size > 1) {
+    return out(each("Figma strokes every side in one color, and the sides that draw take two"));
+  }
+  const [one] = colors;
+  return {
+    color: one?.color,
+    notes: [...notes, ...[...drawn].map((property): ColorNote => ({ kind: "color", property }))],
+  };
+}
+
+/** Write the notes {@link resolveSideColor} planned, an unmapped one on the stroke's feed. */
+function noteSideColor(
+  root: LayerStyle,
+  variables: VariableIndex,
+  notes: readonly ColorNote[],
+  stroke: Feed
+): void {
+  for (const note of notes) {
+    if (note.kind === "mark") {
+      root.mark(note.property, note.outcome, note.detail, note.outcome === "unmapped" ? stroke : []);
+    } else if (note.kind === "unread") {
       root.read(
-        property,
+        note.property,
         (value) => value,
-        () => ({
-          outcome: "unmapped",
-          detail: "a border shorthand colors a side that draws, and the build does not read it",
-        }),
+        () => ({ outcome: "unmapped", detail: note.detail }),
         stroke
       );
+    } else if (note.kind === "color") {
+      root.read(note.property, (value) => readColor(value, variables), describeColor, stroke);
+    } else {
+      root.missing("border-color", note.neededBy, note.detail);
     }
-    return undefined;
   }
-  const shared = new Set(
-    [...drawn].map((property) => JSON.stringify(readColor(root.resolved(property) ?? "", variables) ?? null))
-  );
-  if (shared.size > 1) {
-    for (const property of drawn) {
-      root.mark(
-        property,
-        "unmapped",
-        "Figma strokes every side in one color, and the sides that draw take two",
-        stroke
-      );
-    }
-    return undefined;
-  }
-  const colors = [...drawn].map((property) =>
-    root.read(property, (value) => readColor(value, variables), describeColor, stroke)
-  );
-  return colors.every((color) => color !== undefined) ? colors[0] : undefined;
 }
 
 /** A border style the stroke draws: the dash pattern of a dashed one, and its coverage detail. */

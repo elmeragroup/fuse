@@ -270,13 +270,18 @@ const MeasuredFactsSchema = Schema.Struct({
    */
   spansBeside: Schema.optionalKey(Schema.Finite),
   /**
-   * On an element that sets border sides or corners by their flow-relative names, those edges
-   * (`FlowRelativeEdges` in `winners.ts`), where its computed `direction` is not `ltr` or its
-   * `writing-mode` is not `horizontal-tb` in some mode, as a `dir` on an ancestor makes it. Its
-   * logical sides or corners then lie elsewhere than on the horizontal, left-to-right page the
+   * On an element that sets border sides, their widths or styles, or corners by their flow-relative
+   * names, those edges (`FlowRelativeEdges` in `winners.ts`), where its computed `direction` is not
+   * `ltr` or its `writing-mode` is not `horizontal-tb` in some mode, as a `dir` on an ancestor makes
+   * it. Its logical sides or corners then lie elsewhere than on the horizontal, left-to-right page the
    * capture reads them on.
    */
-  otherFlow: Schema.optionalKey(Schema.Array(Schema.Literals(["corners", "sides"]))),
+  otherFlow: Schema.optionalKey(Schema.Array(Schema.Literals(["corners", "sides", "widths", "styles"]))),
+  /**
+   * On an element whose `otherFlow` names its side styles: every side's used border width is 0 in
+   * every mode, so no logical style moves a width onto another side than the capture reads it on.
+   */
+  zeroWidths: Schema.optionalKey(Schema.Literal(true)),
 });
 
 /** What the capture measured of an element, as {@link MeasuredFactsSchema} lists. */

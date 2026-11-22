@@ -4,9 +4,16 @@
  * axis as fixed, hugging or filling its parent, and keeps within the spec's limits.
  */
 
-import { ringFill } from "../../src/components/kit-spec.ts";
-import type { BoxSpec, LimitsSpec, SideStroke } from "../../src/components/kit-spec.ts";
+import { ringFill, sideWeights, STROKE_SIDES, uniformWeight } from "../../src/components/kit-spec.ts";
+import type {
+  BoxSpec,
+  LimitsSpec,
+  SideStroke,
+  SideWeights,
+  StrokeSide,
+} from "../../src/components/kit-spec.ts";
 import {
+  describeNumber,
   planCorners,
   LAYOUT_SIZING,
   near,
@@ -103,6 +110,85 @@ export function planStrokeSides(
     for (const [field, weight] of weights) {
       node[field] = weight;
     }
+  });
+}
+
+/** The field of each side's stroke weight. */
+const SIDE_WEIGHTS = {
+  top: "strokeTopWeight",
+  right: "strokeRightWeight",
+  bottom: "strokeBottomWeight",
+  left: "strokeLeftWeight",
+} as const satisfies Record<StrokeSide, string>;
+
+/** Who owns a stroke whose sides the plan writes: a box the kit draws, or a layer of an instance. */
+export type SideOwner = "kit" | "instance";
+
+/**
+ * Plan a weight on each side, bound or literal, as a group member's `border-l-0` leaves the left
+ * side of an outline Button's bound weight at 0. A side holds its weight where it binds the weight's
+ * variable, or holds the literal unbound.
+ *
+ * On a box the kit owns, the change writes `strokeWeight` first, since a side binding counts as no
+ * write and the first side write on a stroke whose weight was never written sets the other sides to
+ * 0 (PS2, FS1), then binds or writes every side. A layer of an instance writes only the sides that
+ * differ, each alone: on 2026-11-21 a real file's instance listed only `strokeLeftWeight` after a 0
+ * there, and its other sides kept following the main's weight through a change of it (CR1, CR2),
+ * also where the main had only ever bound its sides (CR7). So a side the plan leaves alone keeps
+ * following the main, and a side it writes back to the main's weight stays the instance's own.
+ *
+ * @param run - The run.
+ * @param node - The box, or a layer of an instance.
+ * @param label - The box's label, for change lines.
+ * @param weights - Each side's weight.
+ * @param owner - Whether the kit owns the box or the node is a layer of an instance.
+ */
+export function planSideWeights(
+  run: Run,
+  node: LayerParent | InstanceNode,
+  label: string,
+  weights: SideWeights,
+  owner: SideOwner
+): void {
+  const holds = (side: StrokeSide): boolean => {
+    const field = SIDE_WEIGHTS[side];
+    const weight = weights[side];
+    const binding = node.boundVariables?.[field];
+    return weight.kind === "variable"
+      ? binding?.id === run.variables.variable(weight.variable).id
+      : binding === undefined && near(node[field], weight.value);
+  };
+  if (STROKE_SIDES.every(holds)) {
+    return;
+  }
+  const described = STROKE_SIDES.map((side) => describeNumber(weights[side])).join(" ");
+  change(run.plan, label, `stroke weights → ${described}`, () => {
+    if (owner === "kit") {
+      for (const side of STROKE_SIDES) {
+        node.setBoundVariable(SIDE_WEIGHTS[side], null);
+      }
+      // The kit's own box takes weights side by side only for a bare stroke, whose other sides bind
+      // their weight, so any weight here does, and the side writes replace it.
+      node.strokeWeight = 1;
+    }
+    const write = (side: StrokeSide): void => {
+      const field = SIDE_WEIGHTS[side];
+      const weight = weights[side];
+      if (weight.kind === "literal") {
+        node.setBoundVariable(field, null);
+        node[field] = weight.value;
+      } else {
+        node.setBoundVariable(field, run.variables.variable(weight.variable));
+      }
+    };
+    if (owner === "kit") {
+      STROKE_SIDES.forEach(write);
+      return;
+    }
+    // A first side write on a layer whose weight was never written sets the other sides to 0 (PS2,
+    // FS1), so each side that no longer holds its weight after the writes takes it again.
+    STROKE_SIDES.filter((side) => !holds(side)).forEach(write);
+    STROKE_SIDES.filter((side) => !holds(side)).forEach(write);
   });
 }
 
@@ -291,7 +377,12 @@ export function planBox(run: Run, node: LayerParent, label: string, spec: BoxSpe
       if ("sides" in stroke) {
         planStrokeSides(run, node, label, stroke.sides);
       } else {
-        planNumber(run, node, label, strokeWeightField(node), stroke.weight);
+        const weight = uniformWeight(stroke);
+        if (weight === undefined) {
+          planSideWeights(run, node, label, sideWeights(stroke), "kit");
+        } else {
+          planNumber(run, node, label, strokeWeightField(node), weight);
+        }
       }
       planScalar(run, label, "strokeAlign", node.strokeAlign, "INSIDE", () => {
         node.strokeAlign = "INSIDE";

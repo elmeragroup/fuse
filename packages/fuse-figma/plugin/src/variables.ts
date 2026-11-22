@@ -6,6 +6,7 @@
 
 import { Effect, Layer, Result } from "effect";
 
+import { checkKitSpec } from "../../src/components/kit-check.ts";
 import type { ModeRef, VariableRef } from "../../src/components/kit-spec.ts";
 import { kitCollections } from "./check-kit.ts";
 import { DuplicateCollections, FileNotSynced } from "./errors.ts";
@@ -121,13 +122,16 @@ export const loadKitVariables = Effect.fnUntraced(function* (figma: PluginAPI, n
 
 /**
  * Read the collections the kit names from the file. Each build reads the file again, so a run that
- * follows an Apply sees what the Apply wrote.
+ * follows an Apply sees what the Apply wrote. The kit is JSON, which carries no type, so the layer
+ * checks it against itself first, as the planning pass does again: a variable it reads the
+ * collection of may name none.
  */
 export const kitVariablesLayer = Layer.effect(
   FileVariables,
   Effect.gen(function* () {
     const figma = yield* FigmaPlugin;
     const kit = yield* Kit;
+    yield* Effect.fromResult(checkKitSpec(kit, (text) => figma.base64Decode(text)));
     return yield* loadKitVariables(figma, kitCollections(kit));
   })
 );

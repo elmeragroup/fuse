@@ -18,8 +18,9 @@ const INSETS = {
 } as const;
 
 /**
- * The pixels a box's padding and border take on one side, or undefined where either is no literal.
- * The side's border width is the used width its stroke draws, as `borderWidths` in `box-paint.ts`
+ * The pixels a box's padding and border take on one side, or undefined where either is no literal
+ * or the build cannot place the width.
+ * The side's border width is the used width its stroke draws, as `readPaint` in `box-paint.ts`
  * reads it from the declaration that wins the side, a shorthand such as `border: 2px solid` included.
  */
 function sidePixels(reader: LayerStyle, borders: BorderWidths, side: keyof BorderWidths): number | undefined {
@@ -37,7 +38,7 @@ function sidePixels(reader: LayerStyle, borders: BorderWidths, side: keyof Borde
  * axis stays as it was. Every other axis stays as it was.
  *
  * @param reader - The box's style, whose paddings and limits the length reads.
- * @param box - The box's sizing, the limits it maps, and its border widths, as `borderWidths` in
+ * @param box - The box's sizing, the limits it maps, and its border widths, as `readPaint` in
  *   `box-paint.ts` reads them.
  * @param children - The box's layers.
  * @returns The sizing.
@@ -78,7 +79,7 @@ export function heldSizing(
  * Whether a box's paddings and borders on an axis are literal lengths, which the length it holds adds.
  *
  * @param reader - The box's style.
- * @param borders - The box's border widths, as `borderWidths` in `box-paint.ts` reads them.
+ * @param borders - The box's border widths, as `readPaint` in `box-paint.ts` reads them.
  * @param axis - The axis.
  * @returns True where every inset on the axis is a literal length.
  */

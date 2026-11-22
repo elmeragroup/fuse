@@ -1,17 +1,18 @@
 /**
- * The overrides a chip segment and a group member need on a Button instance, on the in-memory file in
- * `fake-figma.ts`: the stroke's side weights on the root, its corners, a bound padding, the label's
- * face and the root's widest width. Unit under test: `instance-overrides.ts` and the sizing stage of
- * `instance-layers.ts`, through `reconcileKit` on a synced file. Oracle: the kit spec, here List detail's first row Button with an
- * override added, as a chip segment's `border-0 border-s` keeps only its start edge of Button's 1px
- * border, an operator's `font-normal` shows Regular where Button's label is Medium and a value's
- * `max-w-56` caps it at 224px, and what a real file's `overrides` listed on 2026-11-20: each side a
- * write changed, a text's `fontName` and an instance's `maxWidth`, each kept listed after the main's
+ * The overrides a chip segment and a group member need on a Button instance, on the in-memory file
+ * in `fake-figma.ts`: the stroke's side weights on the root, the sides a bound stroke leaves bare,
+ * its corners, a bound padding, the label's face and the root's widest width. Unit under test:
+ * `instance-overrides.ts` and the sizing stage of `instance-layers.ts`, through `reconcileKit` on a
+ * synced file. Oracle: the kit spec, here List detail's first row Button with an override added, as
+ * a chip segment's `border-0 border-s` keeps only its start edge of Button's 1px border, an
+ * operator's `font-normal` shows Regular where Button's label is Medium and a value's `max-w-56`
+ * caps it at 224px, and what a real file's `overrides` listed on 2026-11-20: each side a write
+ * changed, a text's `fontName` and an instance's `maxWidth`, each kept listed after the main's
  * value was written back (SW). On 2026-11-21 a literal width limit's write kept the paired height
  * limit the instance showed through a change of the main's literal, and the instance showed a
  * binding the main held (MH). The fonts each write needs and leaves follow the fake's text rules 7,
- * 10, 50 and 51 (PG8, PG13). No real file has run the plugin's writes yet: the owner's Apply is their
- * check.
+ * 10, 50 and 51 (PG8, PG13). No real file has run the plugin's writes yet: the owner's Apply is
+ * their check.
  */
 import { describe, expect, it } from "vitest";
 
@@ -26,9 +27,10 @@ import type {
   VariantSpec,
 } from "../../src/components/kit-spec.ts";
 import { walkLayers } from "../../src/components/kit-spec.ts";
+import { BARE_LEFT, BLACK, fixture, strokedOuterKit } from "./button-kit-fixture.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
-import { childNamed } from "./fake-fixtures.ts";
+import { childNamed, float } from "./fake-fixtures.ts";
 import { keyOf } from "./identity.ts";
 import { appliedFile, applyTo, kitFixture, kitPage, setOn } from "./kit-fixture.ts";
 import { firstRow, onFirstRowButton } from "./list-detail-fixture.ts";
@@ -217,7 +219,7 @@ function huggingButtons(kit: KitSpec, edit: (root: VariantSpec["root"]) => Limit
 /** `kit` with every Button variant's stroke of one weight dashed by `dashPattern`. */
 function withDashedButton(kit: KitSpec, dashPattern: readonly number[]): KitSpec {
   return withButtonRoots(kit, (root) =>
-    root.stroke === undefined || "sides" in root.stroke
+    root.stroke === undefined || "sides" in root.stroke || root.stroke.bare !== undefined
       ? root
       : { ...root, stroke: { ...root.stroke, dashPattern } }
   );
@@ -245,7 +247,7 @@ describe("an instance's stroke weights on an applied file", () => {
     const { file, button } = await firstRow();
     await reconcile(file, withOverride(kit, { path: [], field: "strokeSides", sides: START }), true);
     expect(await reconcile(file, kit)).toContain(
-      "List detail / content=empty / list-detail-list / row-1 / button: strokeWeight → 1"
+      "List detail / content=empty / list-detail-list / row-1 / button: stroke weights → 1 1 1 1"
     );
     await reconcile(file, kit, true);
     expect([
@@ -270,6 +272,22 @@ describe("an instance's stroke weights on an applied file", () => {
 /** Each corner of a layer, as its variable's name where it binds one, else its radius. */
 async function cornersOf(file: FakeFigma, node: InstanceNode): Promise<readonly (string | number)[]> {
   const fields = ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"] as const;
+  return Promise.all(
+    fields.map(async (field) => {
+      const id = node.boundVariables?.[field]?.id;
+      return id === undefined
+        ? node[field]
+        : ((await file.figma.variables.getVariableByIdAsync(id))?.name ?? id);
+    })
+  );
+}
+
+/** Each side's stroke weight of a layer, as its variable's name where it binds one, else its weight. */
+async function sidesOf(
+  file: FakeFigma,
+  node: InstanceNode | ComponentNode
+): Promise<readonly (string | number)[]> {
+  const fields = ["strokeTopWeight", "strokeRightWeight", "strokeBottomWeight", "strokeLeftWeight"] as const;
   return Promise.all(
     fields.map(async (field) => {
       const id = node.boundVariables?.[field]?.id;
@@ -375,6 +393,125 @@ describe("an instance's bound padding on an applied file", () => {
       id === undefined ? undefined : (await file.figma.variables.getVariableByIdAsync(id))?.name,
       await reconcile(file, kit),
     ]).toEqual(["button-label-px/md", []]);
+  });
+});
+
+/** The variable the outer kit's inner stroke binds. */
+const WIDTH = { collection: "Fuse tokens", name: "outline-width" } as const;
+
+/** The outer kit's instance on a file the kit was applied to. */
+async function outerInstance(file: FakeFigma): Promise<InstanceNode> {
+  const page = file.figma.root.children.find((node) => keyOf(node) === "page");
+  await page?.loadAsync();
+  const outer = page?.children.find((node) => node.name === "Outer");
+  const variant = outer?.type === "COMPONENT_SET" ? outer.children[0] : undefined;
+  const instance = variant?.type === "COMPONENT" ? variant.children[0] : undefined;
+  if (instance?.type !== "INSTANCE") {
+    throw new Error("the Outer variant holds no instance");
+  }
+  return instance;
+}
+
+// Oracle: probes CR1 and CR2, where a real file's instance took 0 on its left side alone, listed only
+// `strokeLeftWeight`, and kept its other sides following the main's weight. A group member's
+// `border-l-0` leaves the left side of an outline Button's bound weight bare.
+describe("an instance's bare sides on an applied file", () => {
+  const OUTLINE = {
+    kind: "variable",
+    variable: { collection: "Fuse tokens", name: "button-outline-width" },
+  } as const;
+
+  /** `kit` with each Button stroke of one weight bound to the outline width, as `outline` binds it. */
+  const outlined = (kit: KitSpec) =>
+    withButtonRoots(kit, (root) =>
+      root.stroke === undefined || "sides" in root.stroke
+        ? root
+        : { ...root, stroke: { ...root.stroke, weight: OUTLINE } }
+    );
+
+  it("leaves the main's bound weight on the other sides, and the next Plan lists nothing", async () => {
+    const { kit } = await kitFixture();
+    const bound = outlined(kit);
+    const { file, button } = await firstRow();
+    await reconcile(file, bound, true);
+    const bare = withOverride(bound, { path: [], field: "strokeSides", bare: ["left"] });
+    expect(await reconcile(file, bare)).toContain(
+      `${BUTTON}: stroke weights → button-outline-width button-outline-width button-outline-width 0`
+    );
+    await reconcile(file, bare, true);
+    expect([await sidesOf(file, button), await reconcile(file, bare)]).toEqual([
+      ["button-outline-width", "button-outline-width", "button-outline-width", 0],
+      [],
+    ]);
+  });
+
+  // Oracle: probes CR2 and CR7 on an instance made after its main's sides were bound, whose first
+  // side write spills nothing (rule 49). The untouched sides follow a later change of the main's.
+  it("go back to the main's bound weight side by side where the kit drops them", async () => {
+    const stroke = { color: BLACK, weight: { kind: "variable", variable: WIDTH } } as const;
+    const { file } = fixture("Roboto", true, [float(WIDTH.collection, WIDTH.name, 1)]);
+    await applyTo(file, strokedOuterKit(stroke, [BARE_LEFT]));
+    const plain = strokedOuterKit(stroke, []);
+    const dropped = await reconcile(file, plain);
+    await reconcile(file, plain, true);
+    const instance = await outerInstance(file);
+    const restored = await sidesOf(file, instance);
+    const again = await reconcile(file, plain);
+    const main = await mainOf(instance);
+    main.setBoundVariable("strokeTopWeight", null);
+    main.strokeTopWeight = 7;
+    expect([
+      dropped.filter((line) => line.includes("stroke weights")),
+      restored,
+      again,
+      await sidesOf(file, instance),
+    ]).toEqual([
+      ["Outer / size=md / Inner: stroke weights → outline-width outline-width outline-width outline-width"],
+      ["outline-width", "outline-width", "outline-width", "outline-width"],
+      [],
+      [7, "outline-width", "outline-width", "outline-width"],
+    ]);
+  });
+
+  // Oracle: `checkKitSpec`, which refuses the weight as JSON. The run reads the collections the kit's
+  // variables name before it plans, so the check must come first, and Apply writes nothing.
+  it("refuses a bare stroke's weight that names no variable before it reads the file", async () => {
+    const { file } = fixture("Roboto", true, [float(WIDTH.collection, WIDTH.name, 1)]);
+    const before = file.writes.length;
+    // @ts-expect-error The plugin reads the kit as JSON, which carries no type, so this weight reaches it.
+    const kit = strokedOuterKit({ color: BLACK, weight: { kind: "variable" }, bare: ["left"] }, []);
+    await expect(reconcileKit(file.figma, kit, true)).rejects.toThrow(
+      'Button: button in the variant button/size=md leaves sides bare of a stroke of the weight {"kind":"variable"}, which is no literal weight or variable.'
+    );
+    expect(file.writes.slice(before)).toEqual([]);
+  });
+
+  // Oracle: rule 49 and probe CR7. A box the kit owns writes `strokeWeight` before a bare side's
+  // 0, so the first side write spills nothing, and binds the other sides to the bound weight.
+  it("leave a bound weight on the other sides of a box the kit owns, and the next Plan lists nothing", async () => {
+    const { kit } = await kitFixture();
+    const bare = withButtonRoots(kit, (root) =>
+      root.stroke === undefined || "sides" in root.stroke
+        ? root
+        : { ...root, stroke: { color: root.stroke.color, weight: OUTLINE, bare: ["left"] } }
+    );
+    const { file, button } = await firstRow();
+    await reconcile(file, bare, true);
+    const main = await button.getMainComponentAsync();
+    if (main === null) {
+      throw new Error("the first row's Button shows no main");
+    }
+    const sides = ["strokeTopWeight", "strokeRightWeight", "strokeBottomWeight", "strokeLeftWeight"] as const;
+    const shown = await Promise.all(
+      sides.map(async (field) => {
+        const id = main.boundVariables?.[field]?.id;
+        return id === undefined ? main[field] : (await file.figma.variables.getVariableByIdAsync(id))?.name;
+      })
+    );
+    expect([shown, await reconcile(file, bare)]).toEqual([
+      ["button-outline-width", "button-outline-width", "button-outline-width", 0],
+      [],
+    ]);
   });
 });
 

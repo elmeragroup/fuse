@@ -3,7 +3,8 @@
  * grammar (CSS Backgrounds 3 §4 and §5.1). The capture holds each value as written, before CSS
  * substitutes a `var()`, so this module also decides where a `var()` leaves the split unknown. Both
  * the cascade of a box, for a shorthand that wins only some of its longhands, and the cascade of a
- * pseudo-element, which splits every border shorthand, read the split here, so they agree on it.
+ * pseudo-element, which splits every physical border shorthand, read the split here, so they agree on
+ * it.
  */
 import { evaluateLength, evaluateLengthOf, normalizeCss, splitTopLevel } from "../components/css-values.ts";
 
@@ -170,10 +171,49 @@ function fourSidedValues(
 }
 
 /**
+ * The physical sides an axis's border shorthand sets, start then end, on the kit's left-to-right,
+ * horizontal page (CSS Logical Properties 1 §4): the inline axis the left and right, the block axis
+ * the top and bottom. A box that lays out otherwise leaves its sides unmapped (`logical-sides.ts`),
+ * and a pseudo-element's cascade keeps an axis's shorthand whole (`withBorderLonghands`).
+ */
+const AXIS_SIDES = {
+  inline: ["left", "right"],
+  block: ["top", "bottom"],
+} as const satisfies Record<string, readonly [string, string]>;
+
+/**
+ * An axis shorthand of one part, as `border-inline-width: 0` sets both inline sides: one value for
+ * both sides, or the start side's and the end side's (CSS Logical Properties 1 §4.4). Undefined for a
+ * `var()`, which can stand for either count, a third value, or a width that is no border width.
+ */
+function axisValues(
+  sides: readonly [string, string],
+  part: string,
+  value: string
+): readonly (readonly [string, string])[] | undefined {
+  const [start, second, ...rest] = splitTopLevel(normalizeCss(value), " ");
+  const end = second ?? start;
+  if (
+    start === undefined ||
+    end === undefined ||
+    rest.length > 0 ||
+    value.includes("var(") ||
+    (part === "width" && !(singleWidth(start) && singleWidth(end)))
+  ) {
+    return undefined;
+  }
+  return [
+    [`border-${sides[0]}-${part}`, start],
+    [`border-${sides[1]}-${part}`, end],
+  ];
+}
+
+/**
  * A border shorthand as the longhands it sets, each side's width, style and color, with the initial
  * value for a part it leaves out: `medium`, `none` and `currentcolor` (CSS Backgrounds 3 §4). A
- * `border` or a side's shorthand names each part at most once, in any order. A pseudo-element draws
- * no corner, so `border-radius` stays whole.
+ * `border`, a side's or an axis's shorthand names each part at most once, in any order. An axis's
+ * shorthand of one part, as `border-inline-width`, splits as {@link axisValues} says. A pseudo-element
+ * draws no corner, so `border-radius` stays whole.
  *
  * @param property - The property.
  * @param value - Its value as written.
@@ -189,8 +229,14 @@ export function borderLonghands(
   value: string,
   resolve?: () => string | undefined
 ): readonly (readonly [string, string])[] | undefined {
+  const axis = /^border-(inline|block)(?:-(width|style|color))?$/.exec(property);
+  const across =
+    axis?.[1] === "inline" ? AXIS_SIDES.inline : axis?.[1] === "block" ? AXIS_SIDES.block : undefined;
+  if (across !== undefined && axis?.[2] !== undefined) {
+    return axisValues(across, axis[2], value);
+  }
   const side = /^border(?:-(top|right|bottom|left))?$/.exec(property);
-  if (side === null) {
+  if (side === null && across === undefined) {
     return property === "border-radius" ? undefined : fourSidedValues(property, value, resolve);
   }
   let width: string | undefined;
@@ -212,7 +258,7 @@ export function borderLonghands(
       return undefined;
     }
   }
-  const sides = side[1] === undefined ? SIDES : [side[1]];
+  const sides = across ?? (side?.[1] === undefined ? SIDES : [side[1]]);
   return sides.flatMap((each) => [
     [`border-${each}-width`, width ?? "medium"] as const,
     [`border-${each}-style`, lineStyle ?? "none"] as const,

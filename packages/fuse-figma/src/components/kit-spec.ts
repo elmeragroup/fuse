@@ -191,10 +191,13 @@ export function coveredShadow(
 }
 
 /**
- * A stroke drawn inside the box: one weight on every side, or a weight on each side, as a CSS border
- * on some sides draws.
+ * A stroke drawn inside the box: one weight on every side, one bound weight that leaves some sides
+ * bare, or a weight on each side, as a CSS border on some sides draws.
  */
-export type StrokeSpec = EverySideStroke | SideStroke;
+export type StrokeSpec = EverySideStroke | BareStroke | SideStroke;
+
+/** A number a synced variable sets. */
+export type BoundNumber = Extract<NumberSpec, { readonly kind: "variable" }>;
 
 /** A stroke of one weight on every side, counted in the auto layout as a CSS border is. */
 export type EverySideStroke = {
@@ -212,7 +215,38 @@ export type EverySideStroke = {
    * Absent for any other border, which takes its room, as `box-sizing: border-box` counts it.
    */
   readonly inLayout?: false;
+  readonly bare?: never;
+  readonly sides?: never;
 };
+
+/**
+ * A solid stroke of one bound weight that leaves some sides at 0, as a group member's `border-l-0`
+ * collapses the side it shares with the member before it of an outline Button's
+ * `button-outline-width`. Figma takes each side's weight on its own, so the other sides keep the
+ * weight. A stroke on some sides cannot hold a bound weight, so the build writes this one beside it,
+ * and draws a literal weight with bare sides as a stroke on some sides. A dashed border with bare
+ * sides maps no stroke. The kit check refuses any other shape the JSON holds.
+ */
+export type BareStroke = {
+  readonly color: ColorSpec;
+  readonly weight: BoundNumber;
+  /** The sides the border leaves at 0, in {@link STROKE_SIDES}' order. */
+  readonly bare: BareSides;
+  /** False for a table row's border where its table collapses its borders, as on {@link EverySideStroke}. */
+  readonly inLayout?: false;
+  readonly dashPattern?: never;
+  readonly sides?: never;
+};
+
+/**
+ * The sides a stroke leaves bare: one to three of the four, since a stroke that leaves every side bare
+ * draws none. The type cannot rule out a side named twice, which the kit check refuses
+ * (`bareSidesFault` in `kit-check.ts`), so the build names each once, in {@link STROKE_SIDES}' order.
+ */
+export type BareSides =
+  | readonly [StrokeSide]
+  | readonly [StrokeSide, StrokeSide]
+  | readonly [StrokeSide, StrokeSide, StrokeSide];
 
 /**
  * A solid stroke with a weight in pixels on each side, 0 on a side the CSS border leaves bare. It
@@ -229,45 +263,146 @@ export type SideStroke = {
    * room.
    */
   readonly inLayout?: false;
+  readonly weight?: never;
+  readonly bare?: never;
+  readonly dashPattern?: never;
 };
 
 /** A side of a box's stroke. */
 export type StrokeSide = "top" | "right" | "bottom" | "left";
 
+/** A weight on each side of a box's stroke, bound or literal. */
+export type SideWeights = Readonly<Record<StrokeSide, NumberSpec>>;
+
+/** The sides of a box's stroke, in the order Figma's weights and a change line name them. */
+export const STROKE_SIDES = ["top", "right", "bottom", "left"] as const satisfies readonly StrokeSide[];
+
+/**
+ * The bare sides of a stroke that leaves some of the given sides at 0, each once, in
+ * {@link STROKE_SIDES}' order.
+ *
+ * @param sides - The sides left bare, in any order, a side perhaps twice.
+ * @returns The bare sides, or undefined for no side or every side.
+ */
+export function makeBareSides(sides: readonly StrokeSide[]): BareSides | undefined {
+  const [first, second, third, ...rest] = STROKE_SIDES.filter((side) => sides.includes(side));
+  if (first === undefined || rest.length > 0) {
+    return undefined;
+  }
+  return second === undefined ? [first] : third === undefined ? [first, second] : [first, second, third];
+}
+
+/**
+ * The weight a stroke draws on each side: a stroke on some sides its own, and a stroke of one weight
+ * that weight, bound or literal, on every side but a bare one, which takes 0. The build, the kit
+ * check and the plugin read a stroke's sides through this and {@link uniformWeight}, and decide
+ * whether an instance may leave sides of a main's stroke bare through {@link bareableWeight}.
+ *
+ * @param stroke - The stroke.
+ * @returns Each side's weight.
+ */
+export function sideWeights(stroke: StrokeSpec): SideWeights {
+  const on = (side: StrokeSide): NumberSpec =>
+    "sides" in stroke
+      ? { kind: "literal", value: stroke.sides[side] }
+      : stroke.bare?.includes(side) === true
+        ? ZERO
+        : stroke.weight;
+  return { top: on("top"), right: on("right"), bottom: on("bottom"), left: on("left") };
+}
+
+/**
+ * The one weight a stroke draws on every side, which an instance's bare sides leave on the others.
+ *
+ * @param stroke - The stroke, or undefined for none.
+ * @returns The weight, or undefined for no stroke, a stroke on some sides or one with bare sides.
+ */
+export function uniformWeight(stroke: StrokeSpec | undefined): NumberSpec | undefined {
+  return stroke === undefined || "sides" in stroke || stroke.bare !== undefined ? undefined : stroke.weight;
+}
+
+/**
+ * The bound weight of a main's stroke an instance may leave bare on some sides, or why it may not.
+ * The build writes bare sides only as a solid stroke of one bound weight, and an instance's
+ * override only over a main whose stroke is that same solid weight on every side
+ * (`instance-diff.ts`), so the kit check and the plugin take that main alone. A literal weight
+ * with bare sides draws as a stroke on some sides, whose override names the four weights, and a
+ * dashed border with bare sides maps no stroke.
+ *
+ * @param inner - The main's stroke at the layer, or undefined for none.
+ * @returns The weight, or the reason the main takes no bare side, as the kit check words it.
+ */
+export function bareableWeight(
+  inner: StrokeSpec | undefined
+): { readonly weight: BoundNumber } | { readonly refused: string } {
+  if (inner === undefined) {
+    return { refused: "draws no stroke" };
+  }
+  if ("sides" in inner) {
+    return { refused: "takes a weight on each side" };
+  }
+  if (inner.bare !== undefined) {
+    return { refused: "leaves sides bare already" };
+  }
+  if (inner.dashPattern !== undefined) {
+    return { refused: "is dashed, and the build leaves no side of a dashed stroke bare" };
+  }
+  return inner.weight.kind === "variable"
+    ? { weight: inner.weight }
+    : { refused: "takes a literal weight, whose bare sides the build writes as a weight on each side" };
+}
+
+/**
+ * The weight on each side of an instance's layer that leaves some sides of its inner stroke bare:
+ * 0 there, and the inner stroke's one bound weight on the other sides, as {@link bareableWeight}
+ * takes it.
+ *
+ * @param inner - The inner variant's stroke at the layer, or undefined for none.
+ * @param bare - The sides the instance leaves bare.
+ * @returns Each side's weight, or undefined where the inner stroke takes no bare side.
+ */
+export function bareSideWeights(
+  inner: StrokeSpec | undefined,
+  bare: readonly StrokeSide[]
+): SideWeights | undefined {
+  const bareable = bareableWeight(inner);
+  if (!("weight" in bareable)) {
+    return undefined;
+  }
+  const on = (side: StrokeSide): NumberSpec => (bare.includes(side) ? ZERO : bareable.weight);
+  return { top: on("top"), right: on("right"), bottom: on("bottom"), left: on("left") };
+}
+
 /**
  * The room a box's stroke takes in its auto layout on one side: none for no stroke or one drawn out
- * of the layout, the weight of a stroke on every side, and the side's own weight of a stroke on some
- * sides (PS).
+ * of the layout, and else the side's weight (PS).
  *
  * @param stroke - The box's stroke, or undefined for none.
  * @param side - The side.
  * @returns The room in pixels, or the bound weight of a stroke on every side.
  */
 export function strokeRoom(stroke: StrokeSpec | undefined, side: StrokeSide): NumberSpec {
-  if (stroke === undefined) {
-    return ZERO;
-  }
-  if (stroke.inLayout === false) {
-    return ZERO;
-  }
-  return "sides" in stroke ? { kind: "literal", value: stroke.sides[side] } : stroke.weight;
+  return stroke === undefined || stroke.inLayout === false ? ZERO : sideWeights(stroke)[side];
 }
 
 /**
- * The weight of each side of a solid stroke: its own on some sides, or its one literal weight on
- * every side, as an instance overrides a stroke's sides.
+ * The literal weight of each side of a solid stroke, as an instance overrides a stroke's sides.
  *
  * @param stroke - The stroke.
  * @returns The four weights, or undefined for a dashed stroke or a bound weight, which four literal
  *   weights would not draw in every mode.
  */
 export function solidSides(stroke: StrokeSpec): SideStroke["sides"] | undefined {
-  if ("sides" in stroke) {
-    return stroke.sides;
+  if (!("sides" in stroke) && stroke.dashPattern !== undefined) {
+    return undefined;
   }
-  const { weight } = stroke;
-  return stroke.dashPattern === undefined && weight.kind === "literal"
-    ? { top: weight.value, right: weight.value, bottom: weight.value, left: weight.value }
+  const weights = sideWeights(stroke);
+  const { top, right, bottom, left } = weights;
+  return top.kind === "literal" &&
+    right.kind === "literal" &&
+    bottom.kind === "literal" &&
+    left.kind === "literal"
+    ? { top: top.value, right: right.value, bottom: bottom.value, left: left.value }
     : undefined;
 }
 
@@ -603,6 +738,8 @@ export type NestedPropertiesSpec = {
  * padding, `paddingTop`, `paddingRight`, `paddingBottom` or `paddingLeft`, to the root
  * alone, `textColor`, `textAlign`, the alignment across a text's lines, and `fontStyle`, the face of
  * a label whose weight is a literal, to a text, and `glyph` to an icon's glyph. A `fill` or `strokeColor` of undefined paints none.
+ * A `strokeSides` names a literal weight on each side, or the sides it leaves at 0 of the inner
+ * variant's stroke on every side, whose weight the other sides keep.
  */
 export type InstanceOverride = { readonly path: readonly string[] } & (
   | InstancePaintOverride
@@ -614,13 +751,43 @@ export type InstancePaintOverride =
   | { readonly field: "fill" | "strokeColor"; readonly color: ColorSpec | undefined }
   | { readonly field: "textColor" | "glyph"; readonly color: ColorSpec };
 
+/** An override of the four literal weights of a stroke's sides, as a chip segment's `border-0 border-s`. */
+export type StrokeSidesOverride = {
+  readonly field: "strokeSides";
+  readonly sides: SideStroke["sides"];
+  readonly bare?: never;
+};
+
+/**
+ * An override that leaves some sides of the inner variant's stroke on every side at 0, whose weight
+ * the other sides keep, as a group member's `border-l-0`.
+ */
+export type BareSidesOverride = {
+  readonly field: "strokeSides";
+  readonly bare: BareSides;
+  readonly sides?: never;
+};
+
+/**
+ * Whether an override leaves sides of the inner variant's stroke bare, by the sides it names.
+ *
+ * @param override - The override.
+ * @returns True for a `strokeSides` override that names bare sides.
+ */
+export function leavesSidesBare(
+  override: InstanceOverride
+): override is Extract<InstanceOverride, BareSidesOverride> {
+  return override.field === "strokeSides" && override.bare !== undefined;
+}
+
 /**
  * The value of an instance override that paints nothing, which the plugin writes as the spec gives
  * it.
  */
 export type InstanceOverrideValue =
   | { readonly field: "textAlign"; readonly horizontal: TextAlignSpec["horizontal"] }
-  | { readonly field: "strokeSides"; readonly sides: SideStroke["sides"] }
+  | StrokeSidesOverride
+  | BareSidesOverride
   | { readonly field: "fontStyle"; readonly style: string }
   | { readonly field: "cornerRadius"; readonly value: CornerRadiusSpec }
   | { readonly field: "primaryAlign"; readonly value: PrimaryAlignSpec }

@@ -1,6 +1,6 @@
 /**
- * Unit under test: `diffInstance`, here on a root's alignment, a stroke's sides, a label's face and a
- * root's widest width.
+ * Unit under test: `diffInstance`, here on a root's alignment, a stroke's sides, the sides a stroke
+ * leaves bare, a label's face and a root's widest width.
  * Each block names its oracle. The alignment's is probe LD1, run
  * in a real Figma file on 2026-11-19. An instance of a Button-like component that fills a vertical
  * auto layout, its `primaryAxisAlignItems` overridden from CENTER to MIN, listed the field in its
@@ -156,6 +156,45 @@ describe("a root's stroke on some sides, built in place", () => {
         ...VARIANT,
         stroke,
       }
+    );
+    expect([diff.overrides, diff.unmapped.map(({ field }) => field)]).toEqual([[], ["stroke"]]);
+  });
+
+  // Oracle: probes CR1 and CR2, where a real file's instance took 0 on its left side alone, listed
+  // only `strokeLeftWeight`, and kept its other sides following the main's weight. A group member's
+  // `border-l-0` leaves the left side of an outline Button's bound weight bare.
+  const WIDTH = { kind: "variable", variable: { collection: "Fuse tokens", name: "w" } } as const;
+
+  // A member that colors its border apart from the main's overrides the color beside the bare sides.
+  it.each([
+    ["the main's color", BORDER, []],
+    ["a color of its own", CLEAR, [{ path: [], field: "strokeColor", color: CLEAR }]],
+  ] as const)("overrides the sides a stroke of a bound weight leaves bare, in %s", (_, color, colored) => {
+    const diff = diffAsBuilt(
+      inPlace({
+        primaryAlign: "CENTER",
+        sizing: VARIANT.sizing,
+        stroke: { color, weight: WIDTH, bare: ["left"] },
+      }),
+      { ...VARIANT, stroke: { color: BORDER, weight: WIDTH } }
+    );
+    expect([diff.overrides, diff.unmapped]).toEqual([
+      [{ path: [], field: "strokeSides", bare: ["left"] }, ...colored],
+      [],
+    ]);
+  });
+
+  // The main's weight binds another variable, which `bareableWeight` takes, so only the weights'
+  // comparison refuses the bare sides.
+  it("stays unmapped where the bare stroke binds another weight than the variant's", () => {
+    const other = { kind: "variable", variable: { collection: "Fuse tokens", name: "w2" } } as const;
+    const diff = diffAsBuilt(
+      inPlace({
+        primaryAlign: "CENTER",
+        sizing: VARIANT.sizing,
+        stroke: { color: BORDER, weight: WIDTH, bare: ["left"] },
+      }),
+      { ...VARIANT, stroke: { color: BORDER, weight: other } }
     );
     expect([diff.overrides, diff.unmapped.map(({ field }) => field)]).toEqual([[], ["stroke"]]);
   });
