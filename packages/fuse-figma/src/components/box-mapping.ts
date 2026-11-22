@@ -72,6 +72,7 @@ import {
   readNumber,
 } from "./css-values";
 import type { Viewport } from "./css-values";
+import { placeDeclaredIcon } from "./declared-icon-place";
 import type { DrawnAt, DrawnParts } from "./drawn-parts";
 import { EMPTY_PART, leavesNoTrace, NO_TRACE, vanishes } from "./empty-part";
 import { drawRest } from "./end-frame";
@@ -653,10 +654,11 @@ function mapBoxBeforeClip(
     label !== undefined || (box.parts ?? []).some((child) => child.shownIn(cell))
   );
   for (const [place, slot] of slots.entries()) {
-    const style = iconStyles[place];
-    if (style === undefined) {
+    const iconCascade = iconCascades[place];
+    if (iconCascade === undefined) {
       continue;
     }
+    const { style } = iconCascade;
     if (stack !== undefined && place !== stack.shown) {
       style.dropOwn(STACK_HIDDEN);
       continue;
@@ -664,12 +666,19 @@ function mapBoxBeforeClip(
     if (stack !== undefined) {
       dropShownStackRest(style);
     }
-    const icon = mapIcon(slot, style, scope);
-    if (icon !== undefined) {
-      icons.push({ side: slot.side, style, icon, key: slot.key, at: iconCascades[place]?.drawnAt });
+    const inFlow = mapIcon(slot, style, scope);
+    if (inFlow !== undefined) {
+      const icon =
+        slot.placed === undefined
+          ? inFlow
+          : placeDeclaredIcon(slot.placed, iconCascade, inFlow, scope.variant);
+      icons.push({ side: slot.side, style, icon, key: slot.key, at: iconCascade.drawnAt });
     }
   }
-  const onSide = (side: IconSlot["side"]) => icons.filter((each) => each.side === side);
+  // An icon its kit module places sits out of the box's flow and draws last (`declared-icon-place.ts`).
+  const placedIcons = icons.filter(({ icon }) => icon.placement !== undefined);
+  const onSide = (side: IconSlot["side"]) =>
+    icons.filter((each) => each.side === side && each.icon.placement === undefined);
   // Every part cascades before any maps, since an absolute part sits out of the box's flow. The box's
   // flow, `holder.layers`, is the one membership every layout reader below reads: the rooms, the
   // stretch, the label, the display and the placement. The parts below whose containing block is
@@ -766,7 +775,7 @@ function mapBoxBeforeClip(
         items: cascade.measured?.gridItems,
         places: flowing.map((part) => part.cascade.measured?.gridItem),
       },
-      outOfFlow: shown.length - flowing.length,
+      outOfFlow: shown.length - flowing.length + placedIcons.length,
     }
   );
   const { layout } = flow;
@@ -1129,6 +1138,9 @@ function mapBoxBeforeClip(
     ...(placed === undefined ? [] : [placed.layer]),
     ...end.map(({ layer }) => layer),
   ];
+  for (const { at, key, icon } of placedIcons) {
+    scope.drawn?.note(at, key, icon);
+  }
   // The display reads once the layers are known, since a grid maps only around one item.
   const textBlock = readDisplay(reader, order, label?.name, layout, clamp, {
     width: across === undefined ? sizing.horizontal : FILL_ACROSS,
@@ -1257,6 +1269,7 @@ function mapBoxBeforeClip(
         })),
     ...after,
     ...placedLayers.slice(drawnBefore.length),
+    ...placedIcons.map(({ icon }) => icon),
   ];
   const joined = joinFlushLayers(
     reader,

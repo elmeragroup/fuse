@@ -1,7 +1,7 @@
 /**
- * Accordion's item, as one component set on the Accordion page: the default and card variants at
- * each radius, closed and open, in four trigger states, 48 cells, with columns by state. A designer
- * stacks items into an accordion.
+ * Accordion's item, as one component set on the Accordion page: the default, card and infodropdown
+ * variants at each radius, closed and open, in four trigger states, 72 cells, with columns by state.
+ * A designer stacks items into an accordion.
  *
  * - The root is Base UI's `<div data-slot="accordion-item">`. Its sample renders in a 384px host.
  * - The header, an `<h3>`, holds the trigger, a native `<button>`. It shows the docs Basic demo's
@@ -13,14 +13,20 @@
  * - `open=true` shows the panel, which Base UI mounts only while the item is open. The panel's text is
  *   the demo's `Delivered within 3–5 business days.`, which the `Content` property sets.
  * - The trigger takes the states.
+ * - `infodropdown` places the caret, `absolute right-0`, where this module declares it
+ *   (`infodropdownCaret`): on the trigger's right edge, centred down, 16px square, and a half turn
+ *   in an open item. The build reads no general rule for an absolute icon (#846), and
+ *   `accordion-caret.chromium.test.ts` holds the declared place to Chromium's layout of the real
+ *   item. The caret takes no room in the trigger's flow, so the label fills the whole trigger. Its
+ *   bottom border is `Accordion.Root`'s, an element around the item that the set draws no layer for.
  * - `hasIndicator` stays at its default, the trailing caret. The docs Leading indicator demo drops
- *   the caret for a leading icon of its own, and crossing it would double the set to 96 cells. The
- *   `infodropdown` variant draws a bottom border alone, which needs per-side strokes.
+ *   the caret for a leading icon of its own, and crossing it would double the set to 144 cells.
  */
 import { accordionVariants } from "@elmeragroup/fuse/recipe-catalog";
 
 import type { IconManifest, SetManifest } from "../capture/manifest";
 import type { Cell } from "./component-spec";
+import type { DeclaredIconPlace } from "./declared-icon-place";
 import { ownKey } from "./own-key";
 import { always } from "./popup-facts";
 
@@ -36,8 +42,8 @@ export const ACCORDION_CONTENT_TEXT = "Delivered within 3–5 business days.";
 type AccordionVariant = keyof typeof accordionVariants.variants.variant;
 type AccordionRadius = keyof typeof accordionVariants.variants.radius;
 
-/** The variants the set draws: the recipe's, but the `infodropdown` with its bottom border only. */
-const VARIANTS = ["default", "card"] as const satisfies readonly AccordionVariant[];
+/** The variants the set draws, in the recipe's order. */
+const VARIANTS = ["default", "card", "infodropdown"] as const satisfies readonly AccordionVariant[];
 
 function isVariant(value: string | undefined): value is (typeof VARIANTS)[number] {
   return VARIANTS.some((variant) => variant === value);
@@ -87,6 +93,31 @@ const CARET: IconManifest = {
 };
 
 /**
+ * The caret of an `infodropdown` item, where this module declares it sits: `absolute right-0` in the
+ * `relative flex items-center` trigger, which has no padding or border, puts its right edge on the
+ * trigger's right edge and its centre on the trigger's centre. `size-4` makes it 16px square, and
+ * `group-data-[panel-open]/accordion-trigger:rotate-180` turns it a half turn in an open item.
+ */
+function infodropdownCaret(open: boolean): IconManifest {
+  const placed: DeclaredIconPlace = {
+    set: "accordion-item",
+    part: "trigger",
+    icon: "CaretDown",
+    variant: "infodropdown",
+    end: 0,
+    size: 16,
+    turn: open ? 180 : 0,
+  };
+  return { ...CARET, placed };
+}
+
+/** The caret a cell's trigger renders: at its declared place in an `infodropdown` item, else in the flow. */
+function caretOf(cell: Cell): IconManifest {
+  const { variant, open } = accordionLook(cell);
+  return variant === "infodropdown" ? infodropdownCaret(open) : CARET;
+}
+
+/**
  * The item's manifest, which the capture-backed build reads with `captures/accordion-item.json`: an
  * Accordion item, as `<Accordion.Root variant radius>` around one `Accordion.Item`, open through the
  * root's `defaultValue`, disabled through the item's `disabled`, in a 384px container. It names the
@@ -129,7 +160,7 @@ export const ACCORDION_ITEM_MANIFEST: SetManifest = {
             textProperty: "Label",
             shownIn: always,
           },
-          iconsFor: () => [CARET],
+          iconsFor: (cell) => [caretOf(cell)],
         },
       ],
     },

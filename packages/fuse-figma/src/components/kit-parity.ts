@@ -48,7 +48,8 @@ export const KIT_PARITY = {
   accordion: {
     kind: "partial",
     sets: ["accordion-item"],
-    missing: "The `infodropdown` variant (#846), and `hasIndicator={false}`.",
+    missing:
+      "`hasIndicator={false}`, and the bottom border `infodropdown` draws on `Accordion.Root`, which only a stacked accordion holds.",
     issue: NICE_TO_HAVE,
   },
   "action-bar": {

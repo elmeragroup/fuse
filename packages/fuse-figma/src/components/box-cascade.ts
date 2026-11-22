@@ -42,12 +42,24 @@ export type PartElement = {
 };
 
 /**
- * The cascade of an icon: its `<svg>`'s computed style, and the place and `data-slot` of the `<svg>`,
- * whose box the icon layer draws. A wrapper around it, as a pending Button's spinner sits in a
- * slotted span, draws no layer of its own. Undefined where the icon's element is not in the cell's
- * own capture.
+ * The cascade of an icon: its `<svg>`'s computed style, the place and `data-slot` of the `<svg>`,
+ * whose box the icon layer draws, and what its box paints beside it. A wrapper around it, as a
+ * pending Button's spinner sits in a slotted span, draws no layer of its own. `drawnAt` and
+ * `beside` are undefined where the icon's element is not in the cell's own capture.
  */
-export type IconCascade = { readonly style: LayerStyle; readonly drawnAt: DrawnAt | undefined };
+export type IconCascade = {
+  readonly style: LayerStyle;
+  readonly drawnAt: DrawnAt | undefined;
+  readonly beside: PaintedBeside | undefined;
+};
+
+/** What an icon's box paints beside the icon, as the capture records the box's element. */
+export type PaintedBeside = {
+  /** The tags of the box's element children after the icon's, which paint after it in tree order. */
+  readonly later: readonly string[];
+  /** The box's `::before` and `::after` that render a box, which a `z-index` can lift over the icon. */
+  readonly generated: readonly ("before" | "after")[];
+};
 
 /** The cascade of one box, the root or a part, as the mapping reads it. */
 export type BoxCascade = {

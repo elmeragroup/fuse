@@ -65,6 +65,11 @@ export type SetSource = {
  * hand, so a set builds after the sets its instance parts show. A set that holds another as an
  * instance reads the classes the composite passes from the inner set's capture in the list.
  *
+ * It takes definitions, so it does not refuse an icon that declares a place it does not own, as
+ * `manifestDefinition` does. Every definition the build maps comes from `manifestDefinition` in
+ * `build-kit.ts`, so no production caller skips that check. Only tests hand it definitions of
+ * their own.
+ *
  * @param sources - Each set's definition and capture, each set after the sets it holds instances of.
  * @param context - The compiled utilities and the synced variables.
  * @returns Each built set, in the list's order.
