@@ -210,7 +210,7 @@ const ROLE_TINTS = [
   ["foreground", 10],
   ["muted-foreground", 50],
   // Link's resting `always` underline, the light arm of its `light-dark()` (see `readDecorationColor`
-  // in `components/label-layout.ts`).
+  // in `components/label-decoration.ts`).
   ["foreground", 35],
   ["primary", 35],
   ["brand", 35],

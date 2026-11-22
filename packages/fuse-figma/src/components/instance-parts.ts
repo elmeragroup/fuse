@@ -56,7 +56,7 @@ import type {
   InstancePropertiesSpec,
   VariantSpec,
 } from "./kit-spec";
-import { neverWraps } from "./label-layout";
+import { neverWraps } from "./label-wrap";
 import type { Declaration, Feed, FeedTarget, InPlace, Recorder, SpecField } from "./layer-style";
 import { fillOwner } from "./padding-box-fill";
 import { prepareParts } from "./part-preparation";

@@ -7,7 +7,7 @@
  * - The header, an `<h3>`, holds the trigger, a native `<button>`. It shows the docs Basic demo's
  *   `Shipping`, which the `Label` property sets, and the CaretDown at its end.
  * - The label fills the room before the caret and the trigger's gap, by `spacedFirst` in
- *   `label-layout.ts`. A label of several words wraps there and aligns each line to its start, as
+ *   `label-sizing.ts`. A label of several words wraps there and aligns each line to its start, as
  *   the trigger's `text-start` does in CSS. Figma breaks one word wider than the label. CSS keeps the
  *   word whole and widens the trigger, which pushes the caret into the item's end padding or past it.
  * - `open=true` shows the panel, which Base UI mounts only while the item is open. The panel's text is

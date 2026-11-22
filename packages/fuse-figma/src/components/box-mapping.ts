@@ -113,15 +113,10 @@ import type {
   SizeSpec,
   SizingSpec,
 } from "./kit-spec";
-import {
-  inertClamp,
-  labelElementHolder,
-  mapLabel,
-  readLineClamp,
-  readWithoutLabel,
-  spaceBeforeLabel,
-} from "./label-layout";
-import type { LabelScope, PlacedLabel, TextPlacement } from "./label-layout";
+import type { PlacedLabel, TextPlacement } from "./label-alignment";
+import { labelElementHolder, mapLabel, readWithoutLabel, spaceBeforeLabel } from "./label-layout";
+import type { LabelScope } from "./label-layout";
+import { inertClamp, readLineClamp } from "./label-wrap";
 import type { CoverageNote, Feed, LayerStyle, SpecField } from "./layer-style";
 import { logicalSidesOf } from "./logical-sides";
 import {
@@ -177,7 +172,7 @@ const ONE_COLUMN_GAP = "the grid lays its items in one column, which has no colu
  * items each span its columns, and a subgrid Item in it, read their own `display` in
  * `subgrid-row.ts`. Any other grid stays unmapped. A block box with no layers lays nothing out, so it
  * is a frame like any other. One that holds only its label sets the text in lines across its width, which the label's
- * own sizing draws, as `label-layout.ts` reads it for a block box. One that stacks block-level parts
+ * own sizing draws, as `label-sizing.ts` reads it for a block box. One that stacks block-level parts
  * is a vertical auto layout where its width is fixed or fills, which its parts fill. One with any
  * other layer stays unmapped. A `-webkit-box` maps only where it clamps its label, as
  * {@link readLineClamp} decides for the label too, as a column around the label. On any other display
