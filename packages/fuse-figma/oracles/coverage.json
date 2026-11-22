@@ -335,6 +335,27 @@
       "className": "focus-visible:z-10",
       "property": "z-index",
       "reason": "A focused item of a segmented Toggle group stacks above its neighbors, so Chromium paints its focus ring over the pressed neighbor's fill where the two meet. The neighbors are instances in the Segmented toggle group's row, and Figma paints a row's layers in their order, with no field that lifts one layer of an auto layout above the next, so the kit paints the later item over the ring there."
+    },
+    {
+      "set": "alert",
+      "part": "item",
+      "className": "flex-wrap",
+      "property": "flex-wrap",
+      "reason": "The item row wraps, and item-content grows beside the row's other layers with its content-based minimum. CSS breaks the line where those layers and the gaps leave the content less than that minimum (CSS Flexbox 1 §9.3 step 1), and a Figma row never wraps. Chromium sets the row on one line in every captured cell, and the build draws that one line. The capture measures one line in the cell's own mode only, and it reads a second line that a negative margin lifts over the first as one line, so no measurement proves the row never breaks."
+    },
+    {
+      "set": "item",
+      "part": "item",
+      "className": "flex-wrap",
+      "property": "flex-wrap",
+      "reason": "The item row wraps, and item-content grows beside the row's other layers with its content-based minimum. CSS breaks the line where those layers and the gaps leave the content less than that minimum (CSS Flexbox 1 §9.3 step 1), and a Figma row never wraps. Chromium sets the row on one line in every captured cell, and the build draws that one line. The capture measures one line in the cell's own mode only, and it reads a second line that a negative margin lifts over the first as one line, so no measurement proves the row never breaks."
+    },
+    {
+      "set": "item-link",
+      "part": "item",
+      "className": "flex-wrap",
+      "property": "flex-wrap",
+      "reason": "The item row wraps, and item-content grows beside the row's other layers with its content-based minimum. CSS breaks the line where those layers and the gaps leave the content less than that minimum (CSS Flexbox 1 §9.3 step 1), and a Figma row never wraps. Chromium sets the row on one line in every captured cell, and the build draws that one line. The capture measures one line in the cell's own mode only, and it reads a second line that a negative margin lifts over the first as one line, so no measurement proves the row never breaks."
     }
   ],
   "unbound": [

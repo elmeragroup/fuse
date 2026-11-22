@@ -1170,3 +1170,79 @@ describe("a wrapping row the capture measured on one line", () => {
     );
   });
 });
+
+// Oracle: CSS Flexbox 1 §9.3 step 1, worked by hand, and Chromium's layout of the same markup. A
+// wrapping row collects its items into a line until the next one's outer hypothetical main size, its
+// flex base size clamped by its minimum (§9.2), would not fit the row's inner width. In a 200px row,
+// two 80px items and two 10px gaps leave 20px, so a third item that grows from a zero basis under a
+// 64px minimum starts a second line, where Chromium sets it 200px wide at y 30. With a 16px minimum
+// the row fits on one line, but at comfortable density a 64px minimum breaks it, and the capture
+// measures `oneLine` in its cell's mode only. With `margin-top: -16px` on the third item, Chromium
+// still breaks the line and sets the item 200px wide at y 14, over the first line, and the capture
+// measures `oneLine` there too. So beside a grower `oneLine` proves no single line. A grower that
+// sets `overflow: hidden` is a scroll container, so its `min-width: auto` is zero, not a
+// content-based minimum (§4.5). `wrap-reverse` stacks the lines upward, which no Figma field reads
+// either way.
+describe("a wrapping row with one layer that grows", () => {
+  const breaks = (minimum: string) =>
+    `the layer that grows, c, keeps ${minimum}, and CSS collects items into a line until the next one's outer hypothetical main size, its flex base size clamped by its minimum, would not fit the row's inner width (CSS Flexbox 1 §9.3 step 1), so the row breaks a line where its other layers leave less than that, and a Figma row never wraps`;
+  const build = (wrap: string, grower: string, measured: MeasuredFacts) =>
+    buildCaptured(
+      chip({
+        parts: [part({ key: "a", slot: "a" }), part({ key: "b", slot: "b" }), part({ key: "c", slot: "c" })],
+      }),
+      rest({
+        slot: "chip",
+        classes: `flex ${wrap} items-center w-[200px] gap-[10px]`,
+        measured,
+        children: [
+          { slot: "a", classes: "w-[80px] h-[20px]" },
+          { slot: "b", classes: "w-[80px] h-[20px]" },
+          { slot: "c", classes: `flex-1 ${grower} h-[20px]` },
+        ],
+      })
+    );
+
+  it.each([
+    [
+      "leaves the wrap unmapped where the grower's minimum can break the line",
+      "flex-wrap",
+      "min-w-[64px]",
+      {},
+      breaks("a min-width of 64px"),
+    ],
+    [
+      "leaves the wrap unmapped where the capture measured the row on one line in its cell",
+      "flex-wrap",
+      "min-w-[16px]",
+      { oneLine: true },
+      breaks("a min-width of 16px"),
+    ],
+    [
+      "leaves the wrap unmapped where the grower's second line overlaps the first",
+      "flex-wrap",
+      "min-w-[64px] -mt-[16px]",
+      { oneLine: true },
+      breaks("a min-width of 64px"),
+    ],
+    [
+      "names a scrolling grower's minimum as auto",
+      "flex-wrap",
+      "overflow-hidden",
+      {},
+      breaks("a min-width of auto, which is zero on a scroll container (CSS Flexbox 1 §4.5)"),
+    ],
+    [
+      "leaves a reversed wrap unmapped as no Figma field reads it",
+      "flex-wrap-reverse",
+      "min-w-[64px]",
+      {},
+      "no Figma field reads wrap-reverse",
+    ],
+  ] as const)("%s", async (_case, wrap, grower, measured, detail) => {
+    const { coverage } = await build(wrap, grower, measured);
+    expect(
+      coverage.filter((row) => row.property === "flex-wrap").map((row) => [row.outcome, row.detail])
+    ).toEqual([["unmapped", detail]]);
+  });
+});

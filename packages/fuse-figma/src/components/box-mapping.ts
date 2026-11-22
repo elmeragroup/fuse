@@ -121,7 +121,7 @@ import {
   spaceBeforeLabel,
 } from "./label-layout";
 import type { LabelScope, PlacedLabel, TextPlacement } from "./label-layout";
-import type { Feed, LayerStyle, SpecField } from "./layer-style";
+import type { CoverageNote, Feed, LayerStyle, SpecField } from "./layer-style";
 import {
   adjoinsMargin,
   foldNegativeMargin,
@@ -865,7 +865,12 @@ function mapBoxBeforeClip(
       : undefined;
   const fitsOneLine = cascade.measured?.fitsOneLine;
   const oneLine = wrapsOnOneLine(holder, cascade.measured?.oneFlexLine === true);
-  readWraps(holder, growing, oneLine ? ONE_FLEX_LINE : fitsOneLine);
+  const grower = growing === undefined ? undefined : flowing[growing];
+  readWraps(
+    holder,
+    grower === undefined ? undefined : { name: grower.name, style: grower.cascade.style },
+    oneLine ? ONE_FLEX_LINE : fitsOneLine
+  );
   const lines =
     oneLine || normalizeCss(reader.resolved("flex-wrap") ?? "nowrap") === "nowrap" ? "one" : "several";
   const flush = SIDE_PADDINGS.every((property) => evaluateLength(reader.resolved(property) ?? "0px") === 0);
@@ -1516,45 +1521,63 @@ function wrapsOnOneLine(holder: Holder, measured: boolean): boolean {
  * Read a flex row's `flex-wrap` where the row never breaks a line. A wrapping row breaks a line only
  * where its layers overflow it (CSS Flexbox 1 §9.3), while a Figma row never wraps.
  *
- * - In a row of fixed or filling width with one layer that grows, that layer takes what the others
- *   leave, so the row breaks no line until they overflow it.
+ * - A row whose one layer grows sets that layer on its one line, since a line holds at least one
+ *   item (CSS Flexbox 1 §9.3 step 1).
  * - A row that hugs its width with nothing bounding the width CSS gives it lays its layers out on one
  *   line, so it never runs out of room, as {@link hugsUncapped} says.
- *
- * - A row its definition measured to fit its layers on one line in every cell drops it with that
+ * - A row with no layer that grows, which the capture measured on one line, drops it with that
  *   measurement, as {@link BoxDefinition.fitsOneLine} says.
  *
- * Elsewhere it stays unread, so it lands unmapped. Where it drops, so does the `row-gap` beside it,
- * which spaces lines the row never breaks into.
+ * Any other row with a layer that grows keeps its `flex-wrap` unmapped, naming the layer and its
+ * minimum. CSS sets that layer on a line at its flex base size clamped by its minimum (§9.2), so a
+ * minimum wider than the room the others leave breaks the line. No measurement rules that out. The
+ * capture measures one line in its cell's mode, where a minimum that grows with density, such as
+ * 16px dense and 64px comfortable, still fits, and it reads a second line that a negative margin
+ * lifts over the first as one line. A row with no layer that grows and no measurement stays unread,
+ * so it lands unmapped. Where it drops, so does the `row-gap` beside it, which spaces lines the row
+ * never breaks into.
  *
  * @param holder - The box.
- * @param growing - The place of the box's layer that grows, as `readGrowth` found it.
- * @param fitsOneLine - The measurement that the row's layers fit on one line, or undefined.
+ * @param grower - The box's layer that grows, as `readGrowth` found it: its name and style.
+ * @param fitsOneLine - The measurement that the row's layers fit on one line, or undefined. It drops
+ *   the wrap only in a row with no layer that grows.
  */
-function readWraps(holder: Holder, growing: number | undefined, fitsOneLine: string | undefined): void {
+function readWraps(
+  holder: Holder,
+  grower: { readonly name: string; readonly style: LayerStyle } | undefined,
+  fitsOneLine: string | undefined
+): void {
   const { style, layout } = holder;
   if (!layout.flex || layout.direction !== "HORIZONTAL") {
     return;
   }
   const detail =
-    growing === undefined && !hugsUncapped(holder)
-      ? fitsOneLine
-      : growing === undefined
+    grower !== undefined && holder.layers.length === 1
+      ? "the row's one layer grows, and a line holds at least one item (CSS Flexbox 1 §9.3 step 1), so the row breaks no line, and a Figma row never wraps"
+      : hugsUncapped(holder)
         ? "the row hugs its layers and nothing bounds the width CSS gives it, so it never runs out of room to break a line, and a Figma row never wraps"
-        : "the one layer that grows takes what the row's other layers leave, so the row breaks no line until they overflow it, and a Figma row never wraps";
-  if (detail === undefined) {
+        : grower === undefined
+          ? fitsOneLine
+          : undefined;
+  const note: CoverageNote | undefined =
+    detail !== undefined
+      ? { outcome: "dropped", detail }
+      : grower === undefined
+        ? undefined
+        : { outcome: "unmapped", detail: breaksBeside(grower) };
+  if (note === undefined) {
     return;
   }
   const wraps = style.has("flex-wrap");
   style.read(
     "flex-wrap",
     (value) => (normalizeCss(value) === "wrap" ? value : undefined),
-    () => ({ outcome: "dropped", detail }),
+    () => note,
     []
   );
   // `row-gap` spaces the lines a wrapping row breaks into (CSS Box Alignment 3 §8.1), so a row on one
   // line leaves it nothing to space.
-  if (wraps) {
+  if (wraps && detail !== undefined) {
     style.read(
       "row-gap",
       (value) => value,
@@ -1565,6 +1588,44 @@ function readWraps(holder: Holder, growing: number | undefined, fitsOneLine: str
       []
     );
   }
+}
+
+/**
+ * Why a wrapping row's `flex-wrap` stays unmapped beside its layer that grows: CSS collects items
+ * into a line until the next one's outer hypothetical main size would not fit (CSS Flexbox 1 §9.3
+ * step 1), and the grower's is its flex base size clamped by its minimum (§9.2), so that minimum can
+ * break the line. An unset or `auto` minimum is its content-based minimum (§4.5), except on a scroll
+ * container, where it is zero.
+ *
+ * @param grower - The row's layer that grows: its name and style.
+ */
+function breaksBeside(grower: { readonly name: string; readonly style: LayerStyle }): string {
+  const written = grower.style.resolved("min-width");
+  const minimum =
+    written !== undefined && normalizeCss(written) !== "auto"
+      ? `keeps a min-width of ${written}`
+      : scrolls(grower.style)
+        ? "keeps a min-width of auto, which is zero on a scroll container (CSS Flexbox 1 §4.5)"
+        : "keeps its content-based minimum size (CSS Flexbox 1 §4.5)";
+  return `the layer that grows, ${grower.name}, ${minimum}, and CSS collects items into a line until the next one's outer hypothetical main size, its flex base size clamped by its minimum, would not fit the row's inner width (CSS Flexbox 1 §9.3 step 1), so the row breaks a line where its other layers leave less than that, and a Figma row never wraps`;
+}
+
+/** The overflow values that make a box a scroll container. `clip` clips without one (CSS Overflow 3 §3). */
+const SCROLLING: ReadonlySet<string> = new Set(["hidden", "auto", "scroll"]);
+
+/**
+ * Whether a box is a scroll container: its `overflow`, `overflow-x` or `overflow-y` hides, scrolls or
+ * scrolls on overflow (CSS Overflow 3 §3).
+ *
+ * @param style - The box's style.
+ * @returns True where the box is a scroll container.
+ */
+function scrolls(style: LayerStyle): boolean {
+  return (["overflow", "overflow-x", "overflow-y"] as const).some((property) =>
+    normalizeCss(style.resolved(property) ?? "")
+      .split(" ")
+      .some((value) => SCROLLING.has(value))
+  );
 }
 
 /** A width a box's blocks fill, as a popup's rows fill it where `rowsAcross` sizes them. */
