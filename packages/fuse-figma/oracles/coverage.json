@@ -2540,10 +2540,6 @@
     "select-trigger": [
       {
         "part": "select-trigger",
-        "className": "[&[data-readonly]:not([data-disabled]):not(:disabled)]:bg-muted"
-      },
-      {
-        "part": "select-trigger",
         "className": "aria-disabled:cursor-not-allowed"
       },
       {
