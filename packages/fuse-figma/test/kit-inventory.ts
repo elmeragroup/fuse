@@ -414,6 +414,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   },
   // The default demo's vertical card at the default and the lg size.
   { slug: "card", name: "Card", sets: [{ key: "card", name: "Card", variants: 2, previewed: 2 }] },
+  // The default demo's Frame in its gutter layout: a header, three panels and a footer.
+  { slug: "frame", name: "Frame", sets: [{ key: "frame", name: "Frame", variants: 1, previewed: 1 }] },
   // The default demo's bar over two selected rows.
   {
     slug: "action-bar",

@@ -457,10 +457,14 @@ describe("fuseVariableSet", () => {
       .variables.map((variable) => variable.name)
       .filter((name) => /^radius-inner\/.+-border$/.test(name))
       .toSorted();
-    // A Calendar and a RangeCalendar clip their fill at a 1px border around radius-calendar. The field
-    // box corner's inner corner is the formula `radius-inner/field-border`, which a DatePicker's
-    // trigger binds.
-    expect(names).toEqual(["radius-inner/calendar-border", "radius-inner/field-border"]);
+    // A Calendar and a RangeCalendar clip their fill at a 1px border around radius-calendar, and a
+    // Frame's root at its 1px border around radius-xl. The field box corner's inner corner is the
+    // formula `radius-inner/field-border`, which a DatePicker's trigger binds.
+    expect(names).toEqual([
+      "radius-inner/calendar-border",
+      "radius-inner/field-border",
+      "radius-inner/xl-border",
+    ]);
     expect(spec("Fuse tokens", "radius-inner/calendar-border")).toMatchObject({
       type: "FLOAT",
       scopes: ["CORNER_RADIUS"],
@@ -475,6 +479,45 @@ describe("fuseVariableSet", () => {
     expect(value("Fuse brand", "light/branded/private/radius-inner/calendar-border", "Fjordkraft")).toEqual(
       px(3)
     );
+    // themes.css: Fjordkraft's branded theme sets --radius 0.75rem and steps 2px, so radius-xl is 16px,
+    // and the neutral theme's radius-xl is its 8px --radius.
+    expect(value("Fuse brand", "light/branded/private/radius-inner/xl-border", "Fjordkraft")).toEqual(px(15));
+    expect(value("Fuse brand", "dark/neutral/company/radius-inner/xl-border", "Fjordkraft")).toEqual(px(7));
+  });
+
+  it("syncs the corner inside a 1px border around a corner over density metrics as a density formula", () => {
+    // A Frame panel's fill and highlight clip at its 1px border around the corner the Frame hands
+    // it, radius-xl less 1px and surface-pad-sm. fuse.css: --surface-pad-sm is 0.25rem at both
+    // densities.
+    expect(spec("Fuse density", "radius-inner/xl-border-pad-sm-border")).toMatchObject({
+      type: "FLOAT",
+      scopes: ["CORNER_RADIUS"],
+      webSyntax:
+        "max(0px, max(0px, calc(var(--radius) + 2 * var(--radius-step, 0px)) - 1px - var(--surface-pad-sm)) - 1px)",
+    });
+    for (const [mode, density] of [
+      ["Dense", "dense"],
+      ["Comfortable", "comfortable"],
+    ] as const) {
+      expect(value("Fuse density", "radius-inner/xl-border-pad-sm-border", mode)).toEqual(
+        alias("Fuse tokens", `radius-inner/xl-border-pad-sm-border/${density}`)
+      );
+      // Fjordkraft's branded radius-xl is 16px: 16 - 1 - 4 - 1. The neutral one is 8px: 8 - 1 - 4 - 1.
+      expect(
+        value(
+          "Fuse brand",
+          `light/branded/private/radius-inner/xl-border-pad-sm-border/${density}`,
+          "Fjordkraft"
+        )
+      ).toEqual(px(10));
+      expect(
+        value(
+          "Fuse brand",
+          `light/neutral/private/radius-inner/xl-border-pad-sm-border/${density}`,
+          "Fjordkraft"
+        )
+      ).toEqual(px(2));
+    }
   });
 
   it("syncs each formula over density metrics as a density metric of its own", () => {
@@ -601,6 +644,11 @@ describe("fuseVariableSet", () => {
         "radius-inner/xl-border-pad-md",
         "max(0px, calc(var(--radius) + 2 * var(--radius-step, 0px)) - 1px - var(--surface-pad-md))",
       ],
+      // A Frame's panel, inside the root's 1px border and surface-pad-sm.
+      [
+        "radius-inner/xl-border-pad-sm",
+        "max(0px, calc(var(--radius) + 2 * var(--radius-step, 0px)) - 1px - var(--surface-pad-sm))",
+      ],
       // A floating Sidebar's header, footer or group, and Select.Group.
       ["radius-inner/lg-pad-sm", "max(0px, var(--radius) - var(--surface-pad-sm))"],
       // The DropdownMenu popups and Combobox.List.
@@ -664,6 +712,8 @@ describe("fuseVariableSet", () => {
       ["radius-inner/md-border-pad-row", "TrøndelagKraft", 5, 1],
       ["radius-inner/field-border-pad-md", "TrøndelagKraft", 5, 1],
       ["radius-inner/field-border-pad-md", "Elmera", 0, 0],
+      // Elmera's branded --radius 0.375rem steps 2px to a 10px radius-xl: 10 - 1 - 4 at both densities.
+      ["radius-inner/xl-border-pad-sm", "Elmera", 5, 5],
     ] as const;
     for (const [name, brand, dense, comfortable] of perDensity) {
       expect(value("Fuse brand", `light/branded/company/${name}/dense`, brand), `${name} dense`).toEqual(

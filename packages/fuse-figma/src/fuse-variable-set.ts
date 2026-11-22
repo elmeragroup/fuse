@@ -471,6 +471,15 @@ const FORMULA_VARIABLES = [
       "The corner inside a radius-xl shell with a 1px border, padded with surface-pad-md, such as a card Accordion item with the xl radius: radius-xl less 1px and surface-pad-md, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
   },
   {
+    name: "radius-inner/xl-border-pad-sm",
+    reads: "theme and density",
+    formula: "max(0px, calc(var(--radius) + 2 * var(--radius-step, 0px)) - 1px - var(--surface-pad-sm))",
+    length: (scheme, metric) => Math.max(0, scheme.rungs["radius-xl"].value - 1 - metric("surface-pad-sm")),
+    scopes: ["CORNER_RADIUS"],
+    description:
+      "The corner inside a radius-xl shell with a 1px border, padded with surface-pad-sm, such as a panel of a Frame: radius-xl less 1px and surface-pad-sm, at least 0. Figma variables cannot compute, so the sync writes the result for each theme and density.",
+  },
+  {
     name: "radius-inner/md-border-pad-md",
     reads: "theme and density",
     formula: "max(0px, calc(var(--radius) - var(--radius-step, 0px)) - 1px - var(--surface-pad-md))",
@@ -672,23 +681,14 @@ type FormulaReading<Reads extends FormulaVariable["reads"]> = Extract<
   { readonly reads: Reads }
 >;
 
-/** The formulas over theme tokens alone. */
-const THEME_FORMULAS = FORMULA_VARIABLES.filter(
-  (formula): formula is FormulaReading<"theme"> => formula.reads === "theme"
-);
-
-/** The formulas over density metrics alone. */
-const DENSITY_FORMULAS = FORMULA_VARIABLES.filter(
-  (formula): formula is FormulaReading<"density"> => formula.reads === "density"
-);
-
-/** The formulas over theme tokens and density metrics. */
-const THEME_DENSITY_FORMULAS = FORMULA_VARIABLES.filter(
-  (formula): formula is FormulaReading<"theme and density"> => formula.reads === "theme and density"
-);
-
-/** An outer corner a border's inner corner derives from: a radius rung or a corner formula over tokens. */
-type OuterCornerName = RadiusRungName | FormulaReading<"theme">["name"];
+/**
+ * An outer corner a border's inner corner derives from: a radius rung, a corner formula over tokens,
+ * or a corner formula over tokens and density metrics.
+ */
+type OuterCornerName =
+  | RadiusRungName
+  | FormulaReading<"theme">["name"]
+  | FormulaReading<"theme and density">["name"];
 
 /**
  * The corner inside a border around an outer corner, where a fill that `background-clip:
@@ -702,13 +702,53 @@ type BorderInnerName = `radius-inner/${string}-border` | `radius-inner/${string}
 
 /**
  * The inner corners the kit binds, one per outer corner and border width a set fills inside:
- * Calendar's and RangeCalendar's card inside its 1px border. Sheet content's panel has square
- * corners, so it needs none. Add a pair here when a set's fill stops at a border around another
- * corner.
+ * Calendar's and RangeCalendar's card inside its 1px border, a Frame's root inside its 1px border
+ * around `rounded-xl`, and a Frame panel's fill and highlight inside its 1px border around the
+ * corner the Frame hands it. Sheet content's panel has square corners, so it needs none. Add a pair
+ * here when a set's fill stops at a border around another corner.
  */
 const BORDER_INNER_CORNERS = [
   { outer: "radius-calendar", width: 1 },
+  { outer: "radius-xl", width: 1 },
+  { outer: "radius-inner/xl-border-pad-sm", width: 1 },
 ] as const satisfies readonly BorderInnerCorner[];
+
+/** A corner inside a border, as {@link borderInnerFormulas} derives it: a formula of its own. */
+type BorderInnerFormula = FormulaVariable & { readonly name: BorderInnerName };
+
+/** A formula the sync writes: one of `FORMULA_VARIABLES`, or a corner inside a border. */
+type SyncedFormula = (typeof FORMULA_VARIABLES)[number] | BorderInnerFormula;
+
+/** The synced formulas that read what `Reads` names. */
+type SyncedReading<Reads extends FormulaVariable["reads"]> = Extract<
+  SyncedFormula,
+  { readonly reads: Reads }
+>;
+
+/** The synced formulas, by what each reads, which decides where it syncs, as `FormulaVariable` says. */
+type SyncedFormulas = {
+  readonly theme: readonly SyncedReading<"theme">[];
+  readonly density: readonly SyncedReading<"density">[];
+  readonly themeAndDensity: readonly SyncedReading<"theme and density">[];
+};
+
+/**
+ * Every formula the sync writes, `FORMULA_VARIABLES` then the corners inside the borders of
+ * {@link BORDER_INNER_CORNERS}, by what each reads.
+ *
+ * @param template - A scheme whose radius rungs give an outer rung's code syntax.
+ * @returns The formulas over theme tokens, over density metrics, and over both.
+ */
+function syncedFormulas(template: ResolvedScheme): SyncedFormulas {
+  const formulas: readonly SyncedFormula[] = [...FORMULA_VARIABLES, ...borderInnerFormulas(template)];
+  return {
+    theme: formulas.filter((formula): formula is SyncedReading<"theme"> => formula.reads === "theme"),
+    density: formulas.filter((formula): formula is SyncedReading<"density"> => formula.reads === "density"),
+    themeAndDensity: formulas.filter(
+      (formula): formula is SyncedReading<"theme and density"> => formula.reads === "theme and density"
+    ),
+  };
+}
 
 /**
  * The pickers that offer each dimension token. A length can round corners, space a gap or
@@ -795,9 +835,8 @@ type BoundVariable = {
     | KitFontName
     | RadiusRungName
     | `${ColorTokenName}/${number}`
-    | FormulaReading<"theme">["name"]
-    | BorderInnerName
-    | `${FormulaReading<"theme and density">["name"]}/${Density}`;
+    | SyncedReading<"theme">["name"]
+    | `${SyncedReading<"theme and density">["name"]}/${Density}`;
   readonly type: VariableType;
 
   /** The pickers that offer the `Fuse tokens` variable. */
@@ -833,7 +872,11 @@ type ThemePath = {
  * tint holds its role's color at the tint's alpha, and each formula variable holds what its
  * formula gives.
  */
-function boundVariables(template: ResolvedScheme, metrics: MetricsByDensity): readonly BoundVariable[] {
+function boundVariables(
+  template: ResolvedScheme,
+  metrics: MetricsByDensity,
+  formulas: SyncedFormulas
+): readonly BoundVariable[] {
   const tokens = Object.values(template.tokens).map((entry): BoundVariable => ({
     name: entry.name,
     type: VARIABLE_TYPES[entry.kind],
@@ -862,15 +905,17 @@ function boundVariables(template: ResolvedScheme, metrics: MetricsByDensity): re
       return { _tag: "Color", color: { r, g, b, a: (alpha * percent) / 100 } };
     },
   }));
-  const formulas = THEME_FORMULAS.map(({ name, formula, length, scopes, description }): BoundVariable => ({
-    name,
-    type: VARIABLE_TYPES.dimension,
-    scopes,
-    webSyntax: formula,
-    description,
-    leafIn: (scheme) => ({ _tag: "Float", value: length(scheme) }),
-  }));
-  const perDensity = THEME_DENSITY_FORMULAS.flatMap(({ name, length }) =>
+  const themeFormulas = formulas.theme.map(
+    ({ name, formula, length, scopes, description }): BoundVariable => ({
+      name,
+      type: VARIABLE_TYPES.dimension,
+      scopes,
+      webSyntax: formula,
+      description,
+      leafIn: (scheme) => ({ _tag: "Float", value: length(scheme) }),
+    })
+  );
+  const perDensity = formulas.themeAndDensity.flatMap(({ name, length }) =>
     DENSITIES.map((mode): BoundVariable => ({
       name: perDensityName(name, mode),
       type: VARIABLE_TYPES.dimension,
@@ -878,58 +923,72 @@ function boundVariables(template: ResolvedScheme, metrics: MetricsByDensity): re
       leafIn: (scheme) => ({ _tag: "Float", value: length(scheme, metrics[mode]) }),
     }))
   );
-  return [
-    ...tokens,
-    ...kitFontVariables(),
-    ...rungs,
-    ...tints,
-    ...formulas,
-    ...borderInnerCorners(template),
-    ...perDensity,
-  ];
+  return [...tokens, ...kitFontVariables(), ...rungs, ...tints, ...themeFormulas, ...perDensity];
 }
 
 /**
  * The corner inside the border of each of {@link BORDER_INNER_CORNERS}: the outer corner less the
  * border width, at least 0, whose code syntax `innerCornerSyntax` spells, so the kit's builder binds
  * it from the outer corner a box maps. A 1px border's corner is `radius-inner/<corner>-border`, and a
- * wider one's `radius-inner/<corner>-border-<width>px`.
+ * wider one's `radius-inner/<corner>-border-<width>px`, where `<corner>` is the outer corner's name
+ * without its `radius-` or `radius-inner/` prefix. The corner reads what its outer corner reads, so
+ * it syncs over tokens alone, or over tokens and density metrics as the outer corner's formula does.
  */
-function borderInnerCorners(template: ResolvedScheme): readonly BoundVariable[] {
-  return BORDER_INNER_CORNERS.map(({ outer: name, width }: BorderInnerCorner): BoundVariable => {
+function borderInnerFormulas(template: ResolvedScheme): readonly BorderInnerFormula[] {
+  return BORDER_INNER_CORNERS.map(({ outer: name, width }: BorderInnerCorner): BorderInnerFormula => {
+    const stem = name.replace(/^radius-(?:inner\/)?/, "");
     const outer = outerCorner(template, name);
-    const stem = name.replace(/^radius-/, "");
-    return {
-      name: width === 1 ? `radius-inner/${stem}-border` : `radius-inner/${stem}-border-${String(width)}px`,
-      type: VARIABLE_TYPES.dimension,
+    const less = (length: number): number => Math.max(0, length - width);
+    const innerName: BorderInnerName =
+      width === 1 ? `radius-inner/${stem}-border` : `radius-inner/${stem}-border-${String(width)}px`;
+    const shared = {
+      name: innerName,
+      formula: innerCornerSyntax(outer.webSyntax, width),
       scopes: ["CORNER_RADIUS"],
-      webSyntax: innerCornerSyntax(outer.webSyntax, width),
-      description: `The corner inside a ${String(width)}px border around ${name}, where a fill that stops at the border rounds: ${name} less ${String(width)}px, at least 0. Figma variables cannot compute, so the sync writes the result for each theme.`,
-      leafIn: (scheme, path) => ({
-        _tag: "Float",
-        value: Math.max(0, outer.length(scheme, path.identity) - width),
-      }),
-    };
+    } as const;
+    const described = `The corner inside a ${String(width)}px border around ${name}, where a fill that stops at the border rounds: ${name} less ${String(width)}px, at least 0. Figma variables cannot compute, so the sync writes the result for each theme`;
+    return outer.reads === "theme and density"
+      ? {
+          ...shared,
+          reads: "theme and density",
+          length: (scheme, metric) => less(outer.length(scheme, metric)),
+          description: `${described} and density.`,
+        }
+      : {
+          ...shared,
+          reads: "theme",
+          length: (scheme) => less(outer.length(scheme)),
+          description: `${described}.`,
+        };
   });
 }
 
-/** A radius rung's or a corner formula's code syntax, and its length in a theme. */
-type OuterCorner = {
-  readonly webSyntax: string;
-  readonly length: (scheme: ResolvedScheme, identity: ThemeIdentity) => number;
-};
+/** A radius rung's or a corner formula's code syntax, and its length in a theme, or in a theme at a density. */
+type OuterCorner = { readonly webSyntax: string } & (
+  | {
+      readonly reads: "theme";
+      readonly length: (scheme: ResolvedScheme) => number;
+    }
+  | {
+      readonly reads: "theme and density";
+      readonly length: (scheme: ResolvedScheme, metric: MetricAt) => number;
+    }
+);
 
 /** The code syntax and per-theme length of the outer corner `name` names. */
 function outerCorner(template: ResolvedScheme, name: OuterCornerName): OuterCorner {
-  const formula = THEME_FORMULAS.find((each) => each.name === name);
-  if (formula !== undefined) {
-    return { webSyntax: formula.formula, length: formula.length };
+  const formula = FORMULA_VARIABLES.find((each) => each.name === name);
+  if (formula?.reads === "theme") {
+    return { reads: "theme", webSyntax: formula.formula, length: formula.length };
+  }
+  if (formula?.reads === "theme and density") {
+    return { reads: "theme and density", webSyntax: formula.formula, length: formula.length };
   }
   const rung = Object.values(template.rungs).find((entry) => entry.name === name);
   if (rung === undefined) {
     throw new Error(`no radius rung or corner formula is named ${name}`);
   }
-  return { webSyntax: rung.codeSyntax, length: (scheme) => scheme.rungs[rung.name].value };
+  return { reads: "theme", webSyntax: rung.codeSyntax, length: (scheme) => scheme.rungs[rung.name].value };
 }
 
 /**
@@ -1002,7 +1061,8 @@ type DensityLength = {
 /** Every density metric, then every formula over metrics alone, with its pixels per density. */
 function densityLengths(
   density: readonly DensityMetricEntry[],
-  metrics: MetricsByDensity
+  metrics: MetricsByDensity,
+  formulas: readonly SyncedReading<"density">[]
 ): readonly DensityLength[] {
   const catalogLengths = density.map((metric): DensityLength => ({
     name: metric.name,
@@ -1011,14 +1071,14 @@ function densityLengths(
     webSyntax: metric.codeSyntax,
     description: metric.description,
   }));
-  const formulas = DENSITY_FORMULAS.map(({ name, formula, length, scopes, description }): DensityLength => ({
+  const formulaLengths = formulas.map(({ name, formula, length, scopes, description }): DensityLength => ({
     name,
     px: { dense: length(metrics.dense), comfortable: length(metrics.comfortable) },
     scopes,
     webSyntax: formula,
     description,
   }));
-  return [...catalogLengths, ...formulas];
+  return [...catalogLengths, ...formulaLengths];
 }
 
 /**
@@ -1034,8 +1094,9 @@ export function fuseVariableSet(): Result.Result<VariableSet, InvalidVariableSet
   // The token list comes from the first theme; every theme holds the same tokens and rungs.
   const [first] = catalog.themes;
   const metrics = metricsByDensity(catalog.density);
-  const bound = boundVariables(first.schemes.light, metrics);
-  const lengths = densityLengths(catalog.density, metrics);
+  const formulas = syncedFormulas(first.schemes.light);
+  const bound = boundVariables(first.schemes.light, metrics, formulas);
+  const lengths = densityLengths(catalog.density, metrics, formulas.density);
   return makeVariableSet(
     [
       primitivesCollection(catalog.primitives),
@@ -1043,7 +1104,7 @@ export function fuseVariableSet(): Result.Result<VariableSet, InvalidVariableSet
       segmentCollection(bound),
       identityCollection(bound),
       tokensCollection(bound),
-      densityCollection(lengths),
+      densityCollection(lengths, formulas.themeAndDensity),
     ],
     RETIRED_COLLECTIONS,
     RENAMED_COLLECTIONS
@@ -1234,7 +1295,10 @@ function brandVariableName(path: ThemePath, name: string): string {
  * its hidden `Fuse tokens` value for each mode instead, which takes the frame's theme. A
  * metric's kind decides its scopes. Dense comes first, so a frame that pins no density gets it.
  */
-function densityCollection(lengths: readonly DensityLength[]): CollectionSpec {
+function densityCollection(
+  lengths: readonly DensityLength[],
+  themed: readonly SyncedReading<"theme and density">[]
+): CollectionSpec {
   const literal = lengths.map((length): VariableSpec => ({
     name: length.name,
     type: VARIABLE_TYPES.dimension,
@@ -1248,7 +1312,7 @@ function densityCollection(lengths: readonly DensityLength[]): CollectionSpec {
       ])
     ),
   }));
-  const themed = THEME_DENSITY_FORMULAS.map(({ name, formula, scopes, description }): VariableSpec => ({
+  const aliased = themed.map(({ name, formula, scopes, description }): VariableSpec => ({
     name,
     type: VARIABLE_TYPES.dimension,
     scopes,
@@ -1261,7 +1325,7 @@ function densityCollection(lengths: readonly DensityLength[]): CollectionSpec {
   return {
     name: DENSITY_COLLECTION,
     modes: DENSITIES.map((mode) => DENSITY_MODES[mode]),
-    variables: [...literal, ...themed],
+    variables: [...literal, ...aliased],
   };
 }
 

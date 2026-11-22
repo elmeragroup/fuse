@@ -68,6 +68,7 @@ import {
   FIELD_TITLE_MANIFEST,
 } from "./field-text-kit";
 import { FILE_UPLOAD_DROPZONE_MANIFEST } from "./file-upload-kit";
+import { FRAME_MANIFEST } from "./frame-kit";
 import { INPUT_GROUP_MANIFEST } from "./input-group-kit";
 import { INPUT_MANIFEST } from "./input-kit";
 import { ITEM_LINK_MANIFEST, ITEM_MANIFEST } from "./item-kit";
@@ -300,6 +301,9 @@ const TOAST_PAGE: KitPage = { slug: "toast", name: "Toast", example: "toast" };
 
 /** The page Card sits on alone. */
 const CARD_PAGE: KitPage = { slug: "card", name: "Card", example: "card" };
+
+/** The page Frame sits on alone. */
+const FRAME_PAGE: KitPage = { slug: "frame", name: "Frame", example: "frame" };
 
 /** The page Action bar sits on alone. */
 const ACTION_BAR_PAGE: KitPage = { slug: "action-bar", name: "Action bar", example: "action-bar" };
@@ -935,6 +939,7 @@ export const KIT: readonly KitEntry[] = [
     manifest: DIALOG_OPEN_MANIFEST,
   },
   { page: CARD_PAGE, previewCells: possibleCells(CARD_MANIFEST), manifest: CARD_MANIFEST },
+  { page: FRAME_PAGE, previewCells: possibleCells(FRAME_MANIFEST), manifest: FRAME_MANIFEST },
   {
     page: ACTION_BAR_PAGE,
     previewCells: possibleCells(ACTION_BAR_MANIFEST),

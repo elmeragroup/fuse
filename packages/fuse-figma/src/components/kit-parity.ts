@@ -227,17 +227,13 @@ export const KIT_PARITY = {
   "file-trigger": { kind: "excluded", reason: "It renders a Button, which the Button sets draw." },
   "file-upload": { kind: "sets", sets: ["file-upload-dropzone"] },
   form: { kind: "excluded", reason: "It adds behavior only." },
-  // A build of the docs default demo at `layout="gutter"` leaves rows unmapped that no paint order
-  // settles. The panels' corners are `max(0px, radius-xl - 1px - surface-pad-sm)`, and their
-  // highlight's 1px less, and `fuse-variable-set.ts` syncs no formula variable for either. The build
-  // reads the panels' `shadow-[shadow:0_var(--frame-shadow-y,1px)_…]/5` as
-  // `0 1px 2px 0  oklab(0% 0 0 / .05)`, which no Figma field reads. And the root and the panels clip
-  // their fill at the border, whose `--border` is translucent in the neutral dark theme, as Sheet
-  // content's is. `padding-box-fill.ts` rounds the root's fill with the corner inside its 1px border
-  // around `rounded-xl` once `BORDER_INNER_CORNERS` in `fuse-variable-set.ts` lists `radius-xl`. The
-  // panels' fill needs their corner less 1px, and no synced variable holds an inner corner of a corner
-  // that reads `surface-pad-sm`, so the panels' clip would stay unmapped.
-  frame: { kind: "issue", issue: 853 },
+  frame: {
+    kind: "partial",
+    sets: ["frame"],
+    missing:
+      "The stacked and flush layouts, whose fused panels round one end only, whose lower panel drops its top border, and whose flush items pull over the root's border with a negative margin; a collapsible section; a panel that holds only a Table; and a Table as the Frame's item.",
+    issue: 853,
+  },
   heading: { kind: "excluded", reason: TEXT_STYLE },
   input: {
     kind: "partial",

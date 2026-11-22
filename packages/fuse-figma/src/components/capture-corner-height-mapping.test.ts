@@ -109,3 +109,87 @@ describe("a radius per corner on a box whose height hugs its layers", () => {
     expect(radius?.kind === "corners" ? radius.topLeft : undefined).toEqual(corner);
   });
 });
+
+// CSS Backgrounds 3 §5.5 scales four equal radii r on a w by h box by min(1, w / 2r, h / 2r), so each
+// draws min(r, w / 2, h / 2), the radius capped at half the shorter side, which is where Figma caps
+// it (probe P10). Four equal radii therefore draw alike on a box of any size, as a Frame panel's
+// `rounded-t-*` and `rounded-b-*` give it, and bind with no length proven. Written as is, they keep
+// drawing alike once a designer resizes the box: four 40px radii on a 20px square draw 10px in both,
+// and 40px in both at 80px. Unequal radii scale by a factor Figma does not apply, so on a box whose
+// sides the build cannot tell they stay unmapped.
+describe("a radius per corner on a box whose sides the build cannot tell", () => {
+  const OTHER = { collection: "Fuse tokens", name: "radius-sm" } as const;
+
+  /** A hugging column around one 20px-wide layer `row-h` tall, as short as 4px, with these corners. */
+  function buildCornered(top: string, bottom: string) {
+    return buildCaptured(
+      chip({ parts: [part({ key: "row", slot: "row" })] }),
+      rest({
+        slot: "chip",
+        classes: "flex flex-col",
+        written: [
+          ["border-top-left-radius", top],
+          ["border-top-right-radius", top],
+          ["border-bottom-right-radius", bottom],
+          ["border-bottom-left-radius", bottom],
+        ].map(([property = "", value = ""]) => ({ className: "corners", property, value })),
+        children: [{ slot: "row", classes: "w-[20px] h-(--row-h)" }],
+      }),
+      {
+        variables: makeVariableIndex([
+          { ref: RADIUS, webSyntax: "var(--radius-lg)", minimum: 8, maximum: 16 },
+          { ref: OTHER, webSyntax: "var(--radius-sm)", minimum: 4, maximum: 12 },
+          { ref: ROW, webSyntax: "var(--row-h)", minimum: 4, maximum: 12 },
+        ]),
+      }
+    );
+  }
+
+  it("binds four equal radii", async () => {
+    const { variant, coverage } = await buildCornered("var(--radius-lg)", "var(--radius-lg)");
+    const bound = { kind: "variable", variable: RADIUS } as const;
+    expect([
+      variant?.root.cornerRadius,
+      coverage.filter((row) => row.className === "corners").map((row) => row.outcome),
+    ]).toEqual([
+      { kind: "corners", topLeft: bound, topRight: bound, bottomRight: bound, bottomLeft: bound },
+      ["bound", "bound", "bound", "bound"],
+    ]);
+  });
+
+  it("leaves unequal radii unmapped", async () => {
+    const { coverage } = await buildCornered("var(--radius-lg)", "var(--radius-sm)");
+    expect(coverage.filter((row) => row.className === "corners").map((row) => row.outcome)).toEqual([
+      "unmapped",
+      "unmapped",
+      "unmapped",
+      "unmapped",
+    ]);
+  });
+});
+
+describe("four equal radii on a box of literal sides they overrun", () => {
+  it("keeps the written radius, which CSS and Figma both cap at half the shorter side", async () => {
+    const { variant } = await buildCaptured(
+      chip(),
+      rest({
+        slot: "chip",
+        classes: "w-[20px] h-[20px]",
+        written: [
+          "border-top-left-radius",
+          "border-top-right-radius",
+          "border-bottom-right-radius",
+          "border-bottom-left-radius",
+        ].map((property) => ({ className: "corners", property, value: "40px" })),
+      })
+    );
+    const written = { kind: "literal", value: 40 } as const;
+    expect(variant?.root.cornerRadius).toEqual({
+      kind: "corners",
+      topLeft: written,
+      topRight: written,
+      bottomRight: written,
+      bottomLeft: written,
+    });
+  });
+});

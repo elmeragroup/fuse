@@ -210,6 +210,20 @@ describe("background-clip: padding-box", () => {
     });
   });
 
+  // CSS Backgrounds 3 §5.5 and §5.2: four 40px corners on a 20px box scale to 10px, so the corner
+  // inside the 1px border is 9px. Figma caps the 39px written inside the border at half the 18px
+  // padding box, the same 9px, as it caps the box's own 40px at 10px (probe P10).
+  it("rounds the fill by four equal corners inside an equal border, which Figma caps as CSS scales them", async () => {
+    const { coverage, variant } = await buildChip(
+      "bg-clip-padding bg-[#ffffff] border border-[#00000080] rounded-[40px] size-[20px]"
+    );
+    expect(notesOf(coverage, "bg-clip-padding")).toEqual([["background-clip", "literal", DRAWN]]);
+    expect({ outer: variant?.root.cornerRadius, inner: frameOf(variant?.root)?.cornerRadius }).toEqual({
+      outer: literal(40),
+      inner: literal(39),
+    });
+  });
+
   // Figma's STRETCH constraint resizes the layer with its parent, so an instance of a 160px component
   // resized to 240px carries no override for the layer, and nothing about it stays unmapped.
   it("draws a layer that an instance at another width resizes with no override", async () => {

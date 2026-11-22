@@ -58,6 +58,7 @@ import fieldError from "../../captures/field-error.json" with { type: "json" };
 import fieldLegend from "../../captures/field-legend.json" with { type: "json" };
 import fieldTitle from "../../captures/field-title.json" with { type: "json" };
 import fileUploadDropzone from "../../captures/file-upload-dropzone.json" with { type: "json" };
+import frame from "../../captures/frame.json" with { type: "json" };
 import iconButton from "../../captures/icon-button.json" with { type: "json" };
 import iconToggle from "../../captures/icon-toggle.json" with { type: "json" };
 import inputGroup from "../../captures/input-group.json" with { type: "json" };
@@ -194,6 +195,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["meter", meter],
   ["empty", empty],
   ["card", card],
+  ["frame", frame],
   ["aspect-ratio", aspectRatio],
   ["table-head", tableHead],
   ["table-cell", tableCell],

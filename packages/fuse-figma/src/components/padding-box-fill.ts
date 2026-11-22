@@ -50,7 +50,9 @@
  *   main with 2px borders, resized to 40px, paints 36px. The layer would have to be in the main for
  *   the instance to stretch it, and Figma cannot draw a frame of negative length, so the fill stays
  *   on the box and paints under the border.
- * - Figma would cap the corner inside the border at half the padding box's shorter side.
+ * - Figma would cap the corner inside the border at half the padding box's shorter side, where CSS
+ *   draws more. One radius inside four equal borders is never this case: CSS and Figma both draw it
+ *   as at most half the shorter side, less the border.
  *
  * A box that fills its parent or takes its placement's length could still be empty once placed, and
  * draws the layer.
@@ -64,7 +66,7 @@ import { cornerLengths, scaledCorners } from "./corner-spec";
 import type { CornerRadiusSpec, CornersSpec } from "./corner-spec";
 import { readNumber } from "./css-values";
 import type { ModeView, VariableIndex } from "./css-values";
-import { NO_LIMITS, outOfLayout, ringFill, ZERO } from "./kit-spec";
+import { edgeLayer, outOfLayout, ringFill, ZERO } from "./kit-spec";
 import type {
   BoxSpec,
   ChildLayerSpec,
@@ -258,9 +260,6 @@ const FLOORED =
 /** Why a clip stays unmapped where Figma would cap the corner inside the border. */
 const CAPPED =
   "the corner inside the border is more than half the padding box's shorter side, which Figma caps it at";
-
-/** The length a `stretch` placement leaves the layer, as `SizeSpec` says. */
-const PLACED: SizeSpec = { kind: "placed" };
 
 /** Why a clip stays unmapped where no synced variable holds the inner corner of a bound radius. */
 const UNSYNCED = "no synced variable holds the corner inside the border, the radius less the border width";
@@ -462,12 +461,15 @@ const PADDING_FIELD = {
 } as const satisfies Record<StrokeSide, keyof BoxSpec>;
 
 /**
- * Whether Figma draws every corner inside the border as written along one axis, where it caps a
- * corner at half the shorter side (probe P10, {@link cornerCap}), so at half each axis's length. Where
- * the build can tell the padding box's length along the axis, that length bounds the corner. Where it
- * cannot, the corner keeps the room the outer corner had along the axis where the borders at the
- * axis's ends take no more than twice the border at the corner, since the inner corner is the outer
- * one less that border.
+ * Whether Figma draws every corner inside the border as CSS does along one axis. Figma caps a corner
+ * at half the shorter side (probe P10, {@link cornerCap}), so at half each axis's length. One radius
+ * inside four equal borders draws alike at any size: CSS scales an outer radius r on a box whose
+ * shorter side is m to the least of r and m/2 (CSS Backgrounds 3 §5.5), so it draws min(r, m/2) - b
+ * inside borders b wide, and Figma caps the written r - b at half the padding box's shorter side,
+ * (m - 2b)/2, the same length. Otherwise the corner must fit as written. Where the build can tell the
+ * padding box's length along the axis, that length bounds the corner. Where it cannot, the corner
+ * keeps the room the outer corner had along the axis where the borders at the axis's ends take no
+ * more than twice the border at the corner, since the inner corner is the outer one less that border.
  */
 function cornersFitAlong(
   radius: CornerRadiusSpec,
@@ -476,6 +478,10 @@ function cornersFitAlong(
   length: number | undefined,
   variables: VariableIndex
 ): boolean {
+  const borders = [insets.top, insets.right, insets.bottom, insets.left];
+  if (radius.kind !== "corners" && borders.every((border) => border === insets.top)) {
+    return true;
+  }
   const cap = length === undefined ? Number.POSITIVE_INFINITY : cornerCap(length, length);
   return CORNERS.every((corner) => {
     const drawn = most(radius.kind === "corners" ? radius[corner.key] : radius, variables);
@@ -606,35 +612,13 @@ export function drawPaddingBoxFill(
     reader.feed("layers")
   );
   moveFill(reader, [...reader.path, PADDING_BOX_FILL]);
-  const layer: FrameLayerSpec = {
-    kind: "frame",
+  const layer = edgeLayer({
     key: PADDING_BOX_FILL,
-    name: PADDING_BOX_FILL,
-    placement: {
-      kind: "edges",
-      within: "parent",
-      horizontal: { kind: "stretch", start: insets.left, end: insets.right },
-      vertical: { kind: "stretch", start: insets.top, end: insets.bottom },
-    },
-    direction: "HORIZONTAL",
-    // The layer's constraints stretch it with the box, an instance's resized box included.
-    sizing: { horizontal: PLACED, vertical: PLACED },
-    limits: NO_LIMITS,
-    clips: false,
-    paddingTop: ZERO,
-    paddingRight: ZERO,
-    paddingBottom: ZERO,
-    paddingLeft: ZERO,
-    itemSpacing: ZERO,
-    primaryAlign: "MIN",
-    counterAlign: "MIN",
+    insets,
     cornerRadius: radius.value,
     fill: box.fill,
     stroke: undefined,
-    shadows: [],
-    opacity: 1,
-    children: [],
-  };
+  });
   const children = box.firstOnTop === true ? [...box.children, layer] : [layer, ...box.children];
   return { ...box, fill: undefined, children };
 }

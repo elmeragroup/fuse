@@ -124,6 +124,30 @@ export function ringFill(box: Pick<BoxSpec, "fill" | "shadows">): FillSpec | und
 }
 
 /**
+ * The fill a box that casts a shadow from nothing needs: one with no fill, no stroke and no layers,
+ * as a Frame panel's highlight, an empty `::before` whose `box-shadow` draws a line under it. CSS draws
+ * an outer shadow from the border box whatever it holds (CSS Backgrounds 3 §7.1.1). Figma draws a
+ * frame's shadow from what the frame paints, so an empty frame casts none, and one whose only fill is
+ * the clear one {@link ringFill} gives casts its whole shape's shadow, with clipping on or off (probes
+ * FR1 and FR3, 2026-11-21). Figma paints a frame's inside stroke over its layers and their shadows (FR4),
+ * so a parent whose border a highlight's line falls on draws that border on a layer under the
+ * highlight (`border-layer.ts`).
+ *
+ * @param box - The box's fill, stroke, shadows and layers.
+ * @returns The clear fill where the box casts a shadow and paints nothing else, or the box's fill.
+ */
+export function shadowCasterFill(
+  box: Pick<BoxSpec, "fill" | "stroke" | "shadows" | "children">
+): FillSpec | undefined {
+  return box.fill === undefined &&
+    box.stroke === undefined &&
+    box.children.length === 0 &&
+    box.shadows.length > 0
+    ? CLEAR
+    : box.fill;
+}
+
+/**
  * Whether a box's fill shows: a literal color only where its alpha moves an 8-bit channel by half a
  * step or more, so not the clear one {@link ringFill} gives a box for its ring.
  *
@@ -762,6 +786,58 @@ export const NO_LIMITS: LimitsSpec = {
   minHeight: undefined,
   maxHeight: undefined,
 };
+
+/** A layer that paints part of its box from edge to edge, as {@link edgeLayer} builds it. */
+export type EdgeLayer = {
+  /** The layer's key, which is its name as well. */
+  readonly key: string;
+  /** How far in from each of the box's edges the layer sits, in pixels. */
+  readonly insets: Readonly<Record<StrokeSide, number>>;
+  readonly cornerRadius: CornerRadiusSpec;
+  readonly fill: FillSpec | undefined;
+  readonly stroke: StrokeSpec | undefined;
+};
+
+/**
+ * An empty frame placed out of its box's auto layout at fixed insets from the box's edges and
+ * stretched with it on both axes, as the `padding box` and `border` layers are (probe SH1). Its
+ * constraints stretch it with the box, so an instance's resized box resizes it with no override. It
+ * takes no padding, spacing or shadow.
+ *
+ * @param layer - Its key, insets, corners and paint.
+ * @returns The layer.
+ */
+export function edgeLayer({ key, insets, cornerRadius, fill, stroke }: EdgeLayer): FrameLayerSpec {
+  const placed: SizeSpec = { kind: "placed" };
+  return {
+    kind: "frame",
+    key,
+    name: key,
+    placement: {
+      kind: "edges",
+      within: "parent",
+      horizontal: { kind: "stretch", start: insets.left, end: insets.right },
+      vertical: { kind: "stretch", start: insets.top, end: insets.bottom },
+    },
+    direction: "HORIZONTAL",
+    sizing: { horizontal: placed, vertical: placed },
+    limits: NO_LIMITS,
+    clips: false,
+    paddingTop: ZERO,
+    paddingRight: ZERO,
+    paddingBottom: ZERO,
+    paddingLeft: ZERO,
+    itemSpacing: ZERO,
+    primaryAlign: "MIN",
+    counterAlign: "MIN",
+    cornerRadius,
+    fill,
+    stroke,
+    shadows: [],
+    opacity: 1,
+    children: [],
+  };
+}
 
 /**
  * The fixed length of one axis.
