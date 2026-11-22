@@ -118,6 +118,17 @@ const BUTTON_LABEL_PX_MIN = {
 const BUTTON_LABEL_PX_MIN_PROPERTY = "button-label-px-min";
 
 /**
+ * The `--button-label-px-min` an identity declares, as the corner rules write it. The theme
+ * catalog resolves it to px for design tools.
+ *
+ * @param identity - A theme identity.
+ * @returns The identity's entry in {@link BUTTON_LABEL_PX_MIN}, a rem or px length.
+ */
+export function buttonLabelPxMinOf(identity: ThemeIdentity): string {
+  return BUTTON_LABEL_PX_MIN[identity];
+}
+
+/**
  * The corner set a theme rounds with.
  *
  * @param theme - A legal theme.
@@ -142,7 +153,7 @@ function cornerRule(selector: string, corners: Corners, identity: ThemeIdentity)
     selector,
     declarations: [
       ...CORNER_TOKEN_NAMES.map((name) => [name, corners[name]] as const),
-      [BUTTON_LABEL_PX_MIN_PROPERTY, BUTTON_LABEL_PX_MIN[identity]],
+      [BUTTON_LABEL_PX_MIN_PROPERTY, buttonLabelPxMinOf(identity)],
     ],
   };
 }

@@ -1,8 +1,9 @@
 /**
  * The theme catalog resolved for design tools: every legal theme in both color schemes, the
- * primitives, the density metrics and the density role of every part. Each custom property comes
- * with its CSS, its web code syntax, the one `var()` hop it takes, and the literal at the end of
- * its chain as a design-tool value. Exporters, such as the Figma sync and the docs DTCG export,
+ * primitives, the density metrics and the density role of every part. Each scheme also carries its
+ * identity's Button label floor in px, the private `--button-label-px-min` of `corners/corners.ts`.
+ * Each token and primitive comes with its CSS, its web code syntax, the one `var()` hop it takes,
+ * and the literal at the end of its chain as a design-tool value. The label floor is a bare number. Exporters, such as the Figma sync and the docs DTCG export,
  * read this tree instead of parsing CSS values, so every CSS reader stays private to this module.
  *
  * Token values are Fuse source, not caller input, so a value the resolver cannot read is a defect
@@ -14,6 +15,7 @@ import type { Srgb } from "@elmeragroup/color/srgb";
 
 import type { ResolvedColorScheme } from "./color-scheme-types";
 import { composeTheme } from "./compose-theme";
+import { buttonLabelPxMinOf } from "./corners/corners";
 import { RADIUS_RUNG_NAMES, RADIUS_RUNGS } from "./corners/radius-scale";
 import type { RadiusRungName } from "./corners/radius-scale";
 import { cssFontWeight, cssLengthToPx, cssVarReference, remToPx } from "./css-values";
@@ -21,7 +23,7 @@ import type { Density } from "./density";
 import { themeAttributes } from "./theme-attributes";
 import type { ThemeAttributes } from "./theme-attributes";
 import { LEGAL_THEMES, themeSlug } from "./theme-input";
-import type { ThemeInput, ThemeSlug } from "./theme-input";
+import type { ThemeIdentity, ThemeInput, ThemeSlug } from "./theme-input";
 import { readTokenColor } from "./token-color";
 import {
   isColorTokenName,
@@ -151,13 +153,20 @@ export type RungEntry<N extends RadiusRungName = RadiusRungName> = {
 /** Any resolved entry, distributive by kind, so `switch (entry.kind)` narrows `entry.value`. */
 export type AnyEntry = TokenEntry | PrimitiveEntry | RungEntry;
 
-/** One theme's role tokens and radius rungs in one color scheme. */
+/** One theme's role tokens, radius rungs and Button label floor in one color scheme. */
 export type ResolvedScheme = {
   /** Every role token, in `TOKEN_NAMES` order. */
   readonly tokens: { readonly [N in TokenName]: TokenEntry<N> };
 
   /** Every radius rung, in `fuse.css` order. */
   readonly rungs: { readonly [N in RadiusRungName]: RungEntry<N> };
+
+  /**
+   * The least inline padding of a Button label edge, in px at the 16px root: the
+   * `--button-label-px-min` the theme's identity declares in `corners/corners.ts`. It is not a role
+   * token, and the color scheme does not change it.
+   */
+  readonly buttonLabelPxMin: number;
 };
 
 /** One legal theme, with what describes it and its values in both color schemes. */
@@ -498,7 +507,7 @@ function resolvePrimitives(): ResolvedThemeCatalog["primitives"] {
 function resolveTheme(input: ThemeInput, primitives: ResolvedThemeCatalog["primitives"]): ResolvedTheme {
   const slug = themeSlug(input);
   const scheme = (colorScheme: ResolvedColorScheme): ResolvedScheme =>
-    resolveScheme(composeTheme(input, colorScheme), `${slug} (${colorScheme})`, primitives);
+    resolveScheme(composeTheme(input, colorScheme), input.identity, `${slug} (${colorScheme})`, primitives);
   return {
     slug,
     input,
@@ -513,6 +522,7 @@ function resolveTheme(input: ThemeInput, primitives: ResolvedThemeCatalog["primi
  */
 function resolveScheme(
   composed: TokenContract,
+  identity: ThemeIdentity,
   where: string,
   primitives: ResolvedThemeCatalog["primitives"]
 ): ResolvedScheme {
@@ -525,7 +535,18 @@ function resolveScheme(
     (reference) => primitives[reference.name]
   );
   const tokens = recordOf(TOKEN_NAMES, entries);
-  return { tokens, rungs: resolveRungs(tokens.radius.value, tokens["radius-step"].value) };
+  return {
+    tokens,
+    rungs: resolveRungs(tokens.radius.value, tokens["radius-step"].value),
+    buttonLabelPxMin: buttonLabelFloor(identity, where),
+  };
+}
+
+/** The Button label floor an identity declares, in px. */
+function buttonLabelFloor(identity: ThemeIdentity, where: string): number {
+  const css = buttonLabelPxMinOf(identity);
+  const site = { scope: `corner rule in ${where}`, name: "button-label-px-min", css };
+  return LITERAL_READERS.dimension(css, site);
 }
 
 /** A token's description, and a color token's paints. */

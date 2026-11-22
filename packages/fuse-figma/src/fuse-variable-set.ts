@@ -248,25 +248,14 @@ type FormulaVariable = {
 } & (
   | {
       readonly reads: "theme";
-      readonly length: (scheme: ResolvedScheme, identity: ThemeIdentity) => number;
+      readonly length: (scheme: ResolvedScheme) => number;
     }
   | { readonly reads: "density"; readonly length: (metric: MetricAt) => number }
   | {
       readonly reads: "theme and density";
-      readonly length: (scheme: ResolvedScheme, metric: MetricAt, identity: ThemeIdentity) => number;
+      readonly length: (scheme: ResolvedScheme, metric: MetricAt) => number;
     }
 );
-
-/**
- * The least inline padding of a Button's label edge in each identity, in pixels: the private
- * `--button-label-px-min` that `corners.ts` in `@elmeragroup/fuse` declares on every theme element,
- * 0.75rem for the branded identity and 0px for the neutral one. The theme catalog does not carry it,
- * so the sync keeps the two values here, as `kit-fonts.ts` keeps the families, until the catalog
- * carries it (#899).
- * `button-label-padding.chromium.test.ts` compares the synced floor with what Chromium computes for
- * the property under every pin of the synced modes.
- */
-const BUTTON_LABEL_PX_MIN = { neutral: 0, branded: 12 } as const satisfies Record<ThemeIdentity, number>;
 
 /** The text sizes of Button, each padding its label edges with its own `control-px-button-*`. */
 const BUTTON_LABEL_SIZES = ["xs", "sm", "md", "lg"] as const;
@@ -282,8 +271,8 @@ const buttonLabelPadding = (size: (typeof BUTTON_LABEL_SIZES)[number]) =>
     name: `button-label-px/${size}`,
     reads: "theme and density",
     formula: `max(var(--control-px-button-${size}), var(--button-label-px-min))`,
-    length: (_scheme: ResolvedScheme, metric: MetricAt, identity: ThemeIdentity) =>
-      Math.max(metric(`control-px-button-${size}`), BUTTON_LABEL_PX_MIN[identity]),
+    length: (scheme: ResolvedScheme, metric: MetricAt) =>
+      Math.max(metric(`control-px-button-${size}`), scheme.buttonLabelPxMin),
     scopes: ["GAP"],
     description: `The padding of a Button label edge at size ${size}: control-px-button-${size}, at least button-label-px-min. Figma variables cannot compute, so the sync writes the result for each theme and density.`,
   }) as const;
@@ -350,11 +339,11 @@ const FORMULA_VARIABLES = [
     name: "button-label-px-min",
     reads: "theme",
     formula: "var(--button-label-px-min)",
-    length: (_scheme: ResolvedScheme, identity: ThemeIdentity) => BUTTON_LABEL_PX_MIN[identity],
+    length: (scheme: ResolvedScheme) => scheme.buttonLabelPxMin,
     // No layer pads with the floor alone. The Button label paddings read it.
     scopes: [],
     description:
-      "The least inline padding of a Button label edge: 12px in branded themes, whose button often rounds as a pill, and 0px in neutral ones. Each button-label-px padding is the control-px-button of its size, at least this.",
+      "The least inline padding of a Button label edge in the selected theme identity. Each button-label-px padding is the control-px-button of its size, at least this.",
   },
   {
     name: "radius-compact",
@@ -854,14 +843,14 @@ function boundVariables(template: ResolvedScheme, metrics: MetricsByDensity): re
     scopes,
     webSyntax: formula,
     description,
-    leafIn: (scheme, path) => ({ _tag: "Float", value: length(scheme, path.identity) }),
+    leafIn: (scheme) => ({ _tag: "Float", value: length(scheme) }),
   }));
   const perDensity = THEME_DENSITY_FORMULAS.flatMap(({ name, length }) =>
     DENSITIES.map((mode): BoundVariable => ({
       name: perDensityName(name, mode),
       type: VARIABLE_TYPES.dimension,
       ...HIDDEN_METADATA,
-      leafIn: (scheme, path) => ({ _tag: "Float", value: length(scheme, metrics[mode], path.identity) }),
+      leafIn: (scheme) => ({ _tag: "Float", value: length(scheme, metrics[mode]) }),
     }))
   );
   return [...tokens, ...kitFontVariables(), ...rungs, ...tints, ...formulas, ...perDensity];
