@@ -7532,7 +7532,13 @@
       "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
       "at": [
         "dialog-content/content=basic 0/root/2::before",
-        "dialog-content/content=footer-close 0/root/2::before"
+        "dialog-content/content=basic,size=lg 0/root/2::before",
+        "dialog-content/content=basic,size=sm 0/root/2::before",
+        "dialog-content/content=basic,size=xl 0/root/2::before",
+        "dialog-content/content=footer-close 0/root/2::before",
+        "dialog-content/content=footer-close,size=lg 0/root/2::before",
+        "dialog-content/content=footer-close,size=sm 0/root/2::before",
+        "dialog-content/content=footer-close,size=xl 0/root/2::before"
       ]
     },
     {

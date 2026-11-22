@@ -65,8 +65,11 @@ describe("absolute instances at their parent's end", () => {
         [key],
       ] as const;
     expect(wrapped).toEqual([
-      close("dialog-content/content=basic", "close"),
-      close("dialog-content/content=footer-close", "close"),
+      ...["basic", "footer-close"].flatMap((content) =>
+        ["", ",size=sm", ",size=lg", ",size=xl"].map((size) =>
+          close(`dialog-content/content=${content}${size}`, "close")
+        )
+      ),
       close("sheet-content/side=right", "corner-close"),
       ...["neutral", "info", "success", "warning", "error", "loading"].map((status) =>
         close(`toast/status=${status}`, "close", 8)

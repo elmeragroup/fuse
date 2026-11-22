@@ -4,9 +4,9 @@
  * open on the compare page in a host as large as the viewport the definitions declare, its popup and
  * scrim portalled into that host, which is their containing block, as `viewport-host.ts` says.
  *
- * - `dialogContent`: the popup, measured alone, basic or with the footer close; the page hides the
- *   scrim.
- * - `dialogOpen`: the Basic popup over the scrim, measured together, the scrim as large as the viewport.
+ * - `dialogContent`: the popup, measured alone, basic or with the footer close, at the cell's size;
+ *   the page hides the scrim.
+ * - `dialogOpen`: the Basic `md` popup over the scrim, measured together, the scrim as large as the viewport.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.
@@ -17,6 +17,7 @@ import { createElement } from "react";
 import { Button } from "../../../fuse/dist/button.js";
 import { Dialog } from "../../../fuse/dist/dialog.js";
 import { LocaleProvider } from "../../../fuse/dist/theme.js";
+import { dialogSize } from "../components/alert-dialog-text.ts";
 import type { Cell } from "../components/component-spec.ts";
 import { DIALOG_VIEWPORT, dialogCopy } from "../components/dialog-text.ts";
 import type { ClientCellRendering } from "./cell-renderers.ts";
@@ -45,7 +46,7 @@ function footer(content: string | undefined) {
   });
 }
 
-/** The demo's Dialog, open, in a cell's content. */
+/** The demo's Dialog, open, in a cell's content and size. */
 function openDialog(cell: Cell) {
   const copy = dialogCopy(cell.content);
   return viewportHost(DIALOG_VIEWPORT, (host) =>
@@ -55,6 +56,7 @@ function openDialog(cell: Cell) {
         defaultOpen: true,
         children: createElement(Dialog.Content, {
           container: host,
+          size: dialogSize(cell),
           children: [
             createElement(Dialog.Header, {
               key: "header",
@@ -78,6 +80,6 @@ export const dialogContent: ClientCellRendering = {
 
 /** The open Dialog, its scrim and its Basic popup. */
 export const dialogOpen: ClientCellRendering = {
-  element: () => openDialog({ content: "basic" }),
+  element: () => openDialog({ content: "basic", size: "md" }),
   union: ["dialog-overlay", "dialog-content"],
 };

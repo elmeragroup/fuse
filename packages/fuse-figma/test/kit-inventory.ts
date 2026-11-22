@@ -384,8 +384,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     slug: "alert-dialog",
     name: "Alert dialog",
     sets: [
-      // The popup: destructive and neutral, at rest and performing the action.
-      { key: "alert-dialog-content", name: "Alert dialog content", variants: 4, previewed: 4 },
+      // The popup: destructive and neutral, at rest and performing the action, at 4 sizes.
+      { key: "alert-dialog-content", name: "Alert dialog content", variants: 16, previewed: 16 },
       // The destructive popup over the scrim.
       { key: "alert-dialog-open", name: "Alert dialog (open)", variants: 1, previewed: 1 },
     ],
@@ -394,8 +394,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
     slug: "dialog",
     name: "Dialog",
     sets: [
-      // The popup: the Basic demo's and the Footer close demo's.
-      { key: "dialog-content", name: "Dialog content", variants: 2, previewed: 2 },
+      // The popup: the Basic demo's and the Footer close demo's, at 4 sizes.
+      { key: "dialog-content", name: "Dialog content", variants: 8, previewed: 8 },
       // The Basic popup over the scrim.
       { key: "dialog-open", name: "Dialog (open)", variants: 1, previewed: 1 },
     ],
