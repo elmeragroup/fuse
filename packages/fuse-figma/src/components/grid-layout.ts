@@ -41,7 +41,7 @@
  * showed how a GRID frame hugs its tracks, places and fills its cells and aligns them, and the fake
  * models them as its rule 61.
  */
-import type { Room, WidthCap } from "./box-sizing";
+import type { Room } from "./box-room";
 import type { BoxDefinition, InstanceDefinition } from "./component-spec";
 import {
   describeNumber,
@@ -63,6 +63,7 @@ import type {
   SizingSpec,
 } from "./kit-spec";
 import type { CoverageNote, LayerStyle } from "./layer-style";
+import type { WidthCap } from "./width-cap";
 
 /** How an item sits in its cell on one axis: filling it, or at its start at its own length. */
 export type CellFit = "fill" | "start";

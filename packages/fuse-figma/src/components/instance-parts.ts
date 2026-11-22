@@ -26,7 +26,7 @@ import type { SetCapture } from "../capture/capture-format";
 import type { BoxCascade } from "./box-cascade";
 import { mapBox } from "./box-mapping";
 import type { MapScope, PropertyValues } from "./box-mapping";
-import type { Room } from "./box-sizing";
+import type { Room } from "./box-room";
 import { KitUnmappable } from "./build-errors";
 import type {
   BuildContext,

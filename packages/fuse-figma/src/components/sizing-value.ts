@@ -59,7 +59,7 @@ export type PercentBasis =
 /**
  * Read a `width` or `height` as the sizing of its axis. A length is fixed. `fit-content` is the size
  * of what the box holds where its container has room to spare, which a kit frame's default content
- * has, so it hugs, unless `readLength` in `box-sizing.ts` fills a text box's room. `max-content` is
+ * has, so it hugs, unless `readLength` in `box-length.ts` fills a text box's room. `max-content` is
  * the size of what the box holds laid out on one line whatever room it has (CSS Sizing 3 §5.1), which
  * a frame that hugs a hugging text draws, so it hugs. A percentage takes
  * the basis: against a length in pixels any share is that share of it, against a parent's auto

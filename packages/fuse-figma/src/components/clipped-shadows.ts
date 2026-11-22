@@ -11,10 +11,10 @@
  * add up. It measures once with each variable's bounds across all modes, then in each mode view,
  * and trusts a measure only where every height and padding it reads holds one value there.
  */
-import { heightBounds } from "./box-sizing";
 import type { ModeView, VariableIndex } from "./css-values";
 import { outOfLayout, strokeRoom } from "./kit-spec";
 import type { BoxSpec, ChildLayerSpec, ComponentRootSpec, NumberSpec, ShadowSpec } from "./kit-spec";
+import { heightBounds } from "./layer-bounds";
 
 /** A layer whose shadow reaches past the root, and how far in each measure that reaches it. */
 export type ClippedShadow = {

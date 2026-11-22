@@ -11,8 +11,8 @@
  */
 
 import type { CapturedText, TextRun } from "./box-cascade";
-import { hugsUncapped, UNREAD_SHARE, widthCapInside } from "./box-sizing";
-import type { Holder } from "./box-sizing";
+import { UNREAD_SHARE } from "./box-room";
+import type { Holder } from "./box-room";
 import { KitUnmappable } from "./build-errors";
 import type { BuildContext, Cell, LabelDefinition } from "./component-spec";
 import { labelCharacters } from "./component-spec";
@@ -41,6 +41,7 @@ import type { Layout } from "./placement";
 import { readRanges } from "./text-ranges";
 import { readType } from "./typography";
 import { weightBinding } from "./weight-binding";
+import { hugsUncapped, widthCapInside } from "./width-cap";
 
 /** A box's label, and the alignments a native control's placement gives the box, where it sets them. */
 export type MappedLabel = {

@@ -37,7 +37,7 @@
  * A word in the second cell wider than its share is a known limit. CSS widens the `auto` column for
  * every Item and pushes the list past its width, where the Figma row breaks the word.
  */
-import type { Room } from "./box-sizing";
+import type { Room } from "./box-room";
 import { evaluateLength, normalizeCss, splitTopLevel } from "./css-values";
 import { NO_LIMITS, outOfLayout, ZERO } from "./kit-spec";
 import type { BoxSpec, ChildLayerSpec, FrameLayerSpec, LimitsSpec, NumberSpec, SizingSpec } from "./kit-spec";

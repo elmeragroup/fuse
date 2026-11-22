@@ -13,12 +13,13 @@
  * in CSS where a fill wraps the word: a known limit, as for `flex: 1`.
  */
 import { paintsAnything } from "./box-paint";
-import { fitsRoom, partShare } from "./box-sizing";
-import type { Holder, RowShare } from "./box-sizing";
+import { partShare } from "./box-room";
+import type { Holder, RowShare } from "./box-room";
 import { evaluateLength, evaluateNumber, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { outOfLayout } from "./kit-spec";
 import type { ChildLayerSpec } from "./kit-spec";
+import { fitsRoom } from "./layer-bounds";
 import type { LayerStyle } from "./layer-style";
 
 /** The `justify-content` values that pack a row's layers from its start, its initial `normal` among them. */

@@ -1,5 +1,6 @@
 import { instancePlacement, leaveUnplaced, readPlacement, UNPAINTABLE } from "./absolute-placement";
 import type { PlacementPlan } from "./absolute-placement";
+import { marginsAcross } from "./box-insets";
 /**
  * Where the parts of a box sit, read from the CSS that places them rather than from auto layout:
  * `position` and the centering pattern, an absolute part by its parent's edges, as
@@ -9,8 +10,8 @@ import type { PlacementPlan } from "./absolute-placement";
  * alignment and the parts' layers, absolute where they sit outside the flow. A part that scales
  * draws as a slot around a dot, which the set's topology decides once for every cell.
  */
-import { marginsAcross, outOfFlow } from "./box-sizing";
-import type { Room } from "./box-sizing";
+import { outOfFlow } from "./box-room";
+import type { Room } from "./box-room";
 import { KitUnmappable } from "./build-errors";
 import { cornerLengths, scaledCorners } from "./corner-spec";
 import {
@@ -445,7 +446,7 @@ const INSET_AXES = [
  * both insets of an axis are set and the root's size on that axis is automatic, the insets size the
  * root from its containing block (CSS 2.1 §10.3.7, §10.6.4), so they and the position stay unmapped.
  * A fixed root in a declared viewport is the exception: there its opposing insets size it to the
- * viewport less the insets, as `viewportRoom` in `box-sizing.ts` reads them, so they read as its size.
+ * viewport less the insets, as `viewportRoom` in `root-room.ts` reads them, so they read as its size.
  *
  * @param style - The root's style.
  * @param widthFromContainer - Whether the root's width is the preview width, which an absolute box

@@ -4,12 +4,12 @@
  * such a row that centers the blocks beside it, as Calendar's card centers its month grid under a
  * header wider than the grid.
  *
- * `box-sizing.ts` asks {@link readCentredGrowth} while it reads the row's `flex` parts. `box-mapping.ts`
+ * `growing-part.ts` asks {@link readCentredGrowth} while it reads the row's `flex` parts. `box-mapping.ts`
  * then pads the middle layer's margin frame ({@link padCentred}), folds the row's gap into it
  * ({@link foldGap}), and asks whether the row's parent centers its layers ({@link centresBesideSpan}).
  */
 import type { BoxCascade } from "./box-cascade";
-import type { Holder } from "./box-sizing";
+import type { Holder } from "./box-room";
 import { KitUnmappable } from "./build-errors";
 import type { PartDefinition } from "./component-spec";
 import { evaluateLength, evaluatePercentage, normalizeCss } from "./css-values";

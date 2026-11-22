@@ -9,8 +9,8 @@
  */
 import { isDeepStrictEqual } from "node:util";
 
-import { outOfFlow, UNREAD_SHARE } from "./box-sizing";
-import type { RowShare } from "./box-sizing";
+import { outOfFlow, UNREAD_SHARE } from "./box-room";
+import type { RowShare } from "./box-room";
 import { describeNumber, evaluateLength, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { NO_LIMITS, ZERO } from "./kit-spec";

@@ -1,5 +1,4 @@
-import { viewportRoom } from "./box-sizing";
-import type { Room } from "./box-sizing";
+import type { Room } from "./box-room";
 import { evaluateLength, evaluateLengthOf, evaluatePercentage, inViewport, normalizeCss } from "./css-values";
 import type { Viewport } from "./css-values";
 /**
@@ -12,6 +11,7 @@ import type { Viewport } from "./css-values";
 import type { LayerStyle } from "./layer-style";
 import { translateShares } from "./placement";
 import type { Layout } from "./placement";
+import { viewportRoom } from "./root-room";
 
 /** The instance part as `fixedPlace` reads it: its inner root's viewport, its composite's, and its style in place. */
 export type FixedPart = {

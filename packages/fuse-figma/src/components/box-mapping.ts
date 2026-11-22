@@ -1,9 +1,9 @@
 /**
  * Map a box, the root or a part, and the parts and icons below it onto Figma fields, from the
  * cascade of each: its display, corner and icons, assembled from what the other modules read.
- * `box-flow.ts` lays out its flow, `box-sizing.ts` sizes it, `box-paint.ts` paints it,
- * `label-layout.ts` sets its label and `placement.ts` places its parts. `component-spec.ts`
- * assembles a set from the root of each cell.
+ * `box-flow.ts` lays out its flow, `box-sizing.ts` sizes it, `box-room.ts` gives its parts their
+ * room, `box-paint.ts` paints it, `label-layout.ts` sets its label and `placement.ts` places its
+ * parts. `component-spec.ts` assembles a set from the root of each cell.
  */
 
 import { PAINTED_OVER, placedRoom, planPlacement, UNPAINTABLE } from "./absolute-placement";
@@ -29,25 +29,19 @@ import type { BorderWidths } from "./box-paint";
 import type { BoxPaint } from "./box-paint";
 import {
   absoluteRoom,
-  boxHeightBounds,
-  leastHugWidth,
-  fitsRoom,
   fittingRoom,
   growingRoom,
-  hugsUncapped,
   instancePlace,
-  leastContentWidth,
   lessMargins,
   outOfFlow,
   partShare,
-  readItemSizing,
-  readSizing,
   roomInside,
   selfStretchedRoom,
   UNREAD_SHARE,
   unstretched,
-} from "./box-sizing";
-import type { Holder, Room, RowLayer } from "./box-sizing";
+} from "./box-room";
+import type { Holder, Room, RowLayer } from "./box-room";
+import { readSizing } from "./box-sizing";
 import { dropIdleOrigin, readRotation } from "./box-transform";
 import { KitUnmappable } from "./build-errors";
 import { centresBesideSpan, foldGap, holdsOnlyLabel, padCentred } from "./centred-row";
@@ -85,6 +79,7 @@ import type { DrawnWidth } from "./flex-item-width";
 import { joinFlushLayers } from "./flush-layers";
 import { readBleed, sectioned } from "./full-bleed";
 import { holdsEditableText, keyedCells, readGrid } from "./grid-layout";
+import { readItemSizing } from "./growing-part";
 import { heldSizing, literalInsets } from "./held-size";
 import { rowMinimum, rowRoom, rowsAcross } from "./hugging-rows";
 import { readInlineItem } from "./inline-item";
@@ -117,6 +112,7 @@ import type { PlacedLabel, TextPlacement } from "./label-alignment";
 import { labelElementHolder, mapLabel, readWithoutLabel, spaceBeforeLabel } from "./label-layout";
 import type { LabelScope } from "./label-layout";
 import { inertClamp, readLineClamp } from "./label-wrap";
+import { boxHeightBounds, fitsRoom, leastContentWidth, leastHugWidth } from "./layer-bounds";
 import type { CoverageNote, Feed, LayerStyle, SpecField } from "./layer-style";
 import { logicalSidesOf } from "./logical-sides";
 import {
@@ -148,6 +144,7 @@ import { drawSubgridCell } from "./subgrid-row";
 import { tableDisplayDetail } from "./table-layout";
 import { foldTranslate, sharedTranslate } from "./translate-fold";
 import type { CarriedTranslates } from "./translate-fold";
+import { hugsUncapped } from "./width-cap";
 
 function literalLayout(expected: readonly string[], detail: string) {
   return {
@@ -1003,7 +1000,7 @@ function mapBoxBeforeClip(
       return index === growing ? growingRoom(holder, layerIndex(index), room) : room;
     };
     // A layer its auto margins centre takes them as zero in the width it may hug up to (CSS Sizing 3
-    // §2.3), which `centredRoom` in `box-sizing.ts` gives it.
+    // §2.3), which `centredRoom` in `box-room.ts` gives it.
     const room =
       index === -1
         ? placedRoom(absoluteRoom(holder), part.cascade.style, edgePlanOf(plans.get(part.cascade.style)))

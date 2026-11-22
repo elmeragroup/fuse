@@ -6,9 +6,9 @@
  */
 import { isDeepStrictEqual } from "node:util";
 
+import { pixelsAcross } from "./box-insets";
 import { paintsAnything } from "./box-paint";
-import { pixelsAcross } from "./box-sizing";
-import type { Room } from "./box-sizing";
+import type { Room } from "./box-room";
 import type { VariableIndex } from "./css-values";
 import type { BoxSpec, LimitsSpec, NumberSpec, SizeSpec, SizingSpec } from "./kit-spec";
 import type { LayerStyle } from "./layer-style";
@@ -42,7 +42,7 @@ export function drawsAtOwnWidth(
 }
 
 /**
- * Where an instance part sits in its parent, as `instancePlace` in `box-sizing.ts` reads it in
+ * Where an instance part sits in its parent, as `instancePlace` in `box-room.ts` reads it in
  * `mapPart`: `column-start` where a column stretches it across and places a layer that hugs at its
  * start, in CSS and in Figma, and `elsewhere` for every other place.
  */

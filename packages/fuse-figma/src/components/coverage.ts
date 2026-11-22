@@ -40,3 +40,14 @@ export type CoverageRow = {
   /** The variable it binds, the literal it became, or why it was dropped or left unmapped. */
   readonly detail: string;
 };
+
+/**
+ * Layer names as prose.
+ *
+ * @param names - The names, in layer order.
+ * @returns `a`, `a and b`, or `a, b and c`.
+ */
+export function listNames(names: readonly string[]): string {
+  const last = names.at(-1) ?? "";
+  return names.length < 2 ? last : `${names.slice(0, -1).join(", ")} and ${last}`;
+}

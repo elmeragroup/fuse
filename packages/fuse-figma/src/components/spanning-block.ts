@@ -8,7 +8,7 @@
  *   which a hug with that width as its minimum draws, where the capture measured that width as one
  *   length in every mode ({@link spannedWidth}).
  *
- * `box-sizing.ts` asks while it reads the block's width.
+ * `box-sizing.ts` and `box-length.ts` ask while they read the block's width.
  */
 import { evaluateLength, evaluatePercentage, normalizeCss } from "./css-values";
 import type { LayerStyle } from "./layer-style";
@@ -61,7 +61,7 @@ export function spansBesideBlocks(width: number): string {
  * The box sets no width limit of its own, no horizontal margin, and keeps its padding and border
  * inside its width, as {@link spansHuggingParent} requires of the one block. Nothing but its blocks
  * may set the parent's width, no `min-width` or `max-width` of its own and no room around it that
- * could bind, as `hugsUncapped` in `box-sizing.ts` says, since those make the parent wider or
+ * could bind, as `hugsUncapped` in `width-cap.ts` says, since those make the parent wider or
  * narrower than its widest block.
  *
  * @param reader - The box's style.
