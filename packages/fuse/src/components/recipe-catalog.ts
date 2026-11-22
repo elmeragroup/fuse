@@ -1,25 +1,26 @@
 /**
- * Workspace-only facade for the Figma component sync. It is not published and not in the
- * root barrel. It re-exports the component recipes from their runtime-free `*-variants.ts` and
+ * Workspace-only facade for the Figma component sync. It is not published and not in the root
+ * barrel. It re-exports the component recipes from their runtime-free `*-variants.ts` and
  * `*-class.ts` modules, because Node scripts cannot load the component entries, which re-export
- * client TSX. The shared focus ring recipe comes along for the kits that draw a part's ring
- * outside its own recipe. The sync calls each recipe for every cell of a Figma variant matrix
- * and compiles the class string it returns. It also re-exports `cn`, with which the sync adds a
- * docs demo's consumer classes to a recipe as a component merges its `className`, and the icon
- * roster, from which the sync builds one Figma component per icon `/icons` publishes. Meter's
- * constants and its `meterToneCell` lookup come along, so the sync picks each Meter cell's tone
- * and icon from the table the component reads. Item's title face comes along with its part
+ * client TSX. The shared focus ring recipe comes along for the kits that draw a part's ring outside
+ * its own recipe. The sync reads a recipe's variant keys to list a component set's variants, and
+ * builds the set from a browser capture of the real component. It also re-exports `cn`, with which
+ * the sync adds a docs demo's consumer classes to a recipe as a component merges its `className`,
+ * and the icon roster, from which the sync builds one Figma component per icon `/icons` publishes.
+ * Meter's constants and its `meterToneCell` lookup come along, so the sync picks each Meter cell's
+ * tone and icon from the table the component reads. Item's title face comes along with its part
  * recipes, since `Item.Title` renders it as it is, and so does its unclamped description face,
- * which Alert's description renders with Alert's own type and color. Sidebar's desktop parts
- * come along, with the rail widths the Provider sets as `--sidebar-width` and
- * `--sidebar-width-icon`; its mobile Sheet's classes stay in `sidebar.tsx`. The menu families'
- * recipes come along with the shared group label, indicator and separator classes the menu kits
- * draw those rows from. Command's list and palette shells come along
- * from `styles/`, since `Command.List` adds the list's to the list recipe to pad its rows and publish
- * their corner, and `Command.Content` adds the palette's after the modal popup face, which comes along
- * from `overlay/`. The overlay corner close position comes along from `overlay/`, which Dialog
- * and Sheet add to their close button. The Text and Span recipes and Heading's class function, which
- * merges the level's theme roles over the Heading recipe, come along for the sync's text styles.
+ * which Alert's description renders with Alert's own type and color. Sidebar's desktop parts come
+ * along, with the rail widths the Provider sets as `--sidebar-width` and `--sidebar-width-icon`;
+ * its mobile Sheet's classes stay in `sidebar.tsx`. The menu families' recipes come along with the
+ * shared group label, indicator and separator classes the menu kits draw those rows from. Command's
+ * list and palette shells come along from `styles/`, since `Command.List` adds the list's to the
+ * list recipe to pad its rows and publish their corner, and `Command.Content` adds the palette's
+ * after the modal popup face, which comes along from `overlay/`. The overlay corner close position
+ * comes along from `overlay/`, which Dialog and Sheet add to their close button. The Text and
+ * Heading recipes come along with Heading's themed levels, but the sync calls neither: it lists its
+ * text style samples from Text's size and weight keys, for Text and Span, from Heading's size and
+ * font keys, and from the themed levels.
  */
 
 export { accordionVariants } from "./accordion/accordion-variants";
@@ -46,7 +47,7 @@ export { fieldLegendVariants, fieldVariants } from "./field/field-variants";
 export { fieldFrameVariants } from "./field/field-frame-variants";
 export { fileUploadVariants } from "./file-upload/file-upload-variants";
 export { inputClass, inputVariants } from "./input/input-class";
-export { headingClass, THEMED_HEADING_LEVELS } from "./heading/heading-class";
+export { THEMED_HEADING_LEVELS } from "./heading/heading-class";
 export { headingVariants } from "./heading/heading-variants";
 export { inputGroupInputControlClass } from "./input-group/input-group-class";
 export {
@@ -98,7 +99,6 @@ export {
 } from "./sidebar/sidebar-variants";
 export { SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from "./sidebar/sidebar-width";
 export { skeletonClass } from "./skeleton/skeleton-class";
-export { spanVariants } from "./span/span-variants";
 export { switchVariants } from "./switch/switch-variants";
 export { textareaVariants } from "./textarea/textarea-class";
 export { textareaFieldVariants } from "./textarea-field/textarea-field-variants";
