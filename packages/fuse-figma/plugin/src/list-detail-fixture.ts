@@ -61,12 +61,15 @@ export function onFirstRowButton(
 }
 
 /**
- * The first row's Button in the `List detail` set's `content=empty` variant of a freshly applied file.
+ * The first row's Button in the `List detail` set's `content=empty` variant of an applied file.
  *
+ * @param applied - The file, a freshly applied one by default.
  * @returns The file and the instance.
  */
-export async function firstRow(): Promise<{ readonly file: FakeFigma; readonly button: InstanceNode }> {
-  const file = await appliedFile();
+export async function firstRow(
+  applied?: FakeFigma
+): Promise<{ readonly file: FakeFigma; readonly button: InstanceNode }> {
+  const file = applied ?? (await appliedFile());
   const set = setOn(await kitPage(file, "page/list-detail"), "List detail");
   const list = childNamed(childNamed(set, "COMPONENT", "content=empty"), "FRAME", "list-detail-list");
   return { file, button: childNamed(childNamed(list, "FRAME", "row-1"), "INSTANCE", "button") };

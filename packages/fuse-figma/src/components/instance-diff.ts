@@ -2,7 +2,7 @@
  * The in-place diff of an instance part: what the inner component's root, built where the composite
  * renders it, draws differently from the inner set's variant, and what the instance layer carries for
  * each difference. A Figma instance takes everything from its main component but its property values,
- * the paints, stroke weights, corners, shadows and alignments it overrides, and its own sizing in its parent's auto
+ * the paints, stroke weights, font styles, corners, shadows and alignments it overrides, and its own sizing in its parent's auto
  * layout, so a difference the instance cannot carry stays unmapped, and the composite cannot drift
  * from its parts.
  */
@@ -122,6 +122,9 @@ type Found = {
  * - A solid stroke on some sides becomes an override of the four weights where the variant's stroke
  *   is solid with literal weights and both take their room in the layout alike, as a chip segment's
  *   `border-0 border-s` keeps the start edge of Button's 1px border.
+ * - A text's face becomes an override where both texts take a literal weight in the same family, as
+ *   a chip operator's `font-normal` shows Regular inside a Button whose label is Medium. A face a
+ *   bound weight picks stays unmapped.
  * - The root's `primaryAlign` becomes an override where the instance fills its parent along the
  *   root's direction and the alignment is its one difference no other field carries, as a
  *   `justify-start` on a Button that fills its row draws. On 2026-11-19 a real file kept such a
@@ -471,8 +474,9 @@ function diffNested(
 }
 
 /**
- * Diff a text: its characters become the value of the TEXT property that sets them, its color and its
- * alignment across its lines overrides, and every other field stays unmapped where it differs.
+ * Diff a text: its characters become the value of the TEXT property that sets them, its color, its
+ * alignment across its lines and the face of a literal weight in its family overrides, and every
+ * other field stays unmapped where it differs.
  * Characters on a label no property sets, or two labels that give one property two texts, stay
  * unmapped, and so does an alignment that differs down the text, which no override carries.
  */
@@ -494,6 +498,11 @@ function diffText(
     } else if (field === "sizing" && drawsAtOwnWidth(found.root, path, inPlace.sizing, variant.sizing)) {
       // The variant's filling text draws at its own width once the instance hugs (PH2).
       continue;
+    } else if (field === "fontStyle" && literalFace(inPlace, variant)) {
+      // An operator segment's `font-normal` shows Regular where Button's label is Medium.
+      if (inPlace.fontStyle !== variant.fontStyle) {
+        found.overrides.push({ path, field: "fontStyle", style: inPlace.fontStyle });
+      }
     } else if (field === "align" && inPlace.align.vertical === variant.align.vertical) {
       // A label's TEXT property can give it more lines, which the alignment across places, so the
       // instance carries a different one as an override (NA), as Empty's `text-center` reaches its
@@ -505,6 +514,18 @@ function diffText(
       diffField(found, path, field, built.get(field), held.get(field));
     }
   }
+}
+
+/**
+ * Whether two texts show a face of one family by a literal weight, so the face alone tells them apart.
+ * A bound weight picks its face in each mode, which a font written on the instance would replace.
+ */
+function literalFace(inPlace: TextLayerSpec, variant: TextLayerSpec): boolean {
+  return (
+    inPlace.weight === undefined &&
+    variant.weight === undefined &&
+    isDeepStrictEqual(inPlace.fontFamily, variant.fontFamily)
+  );
 }
 
 /** Diff a text's characters, which only the TEXT property that sets them can carry. */

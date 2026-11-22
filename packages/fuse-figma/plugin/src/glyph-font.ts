@@ -73,6 +73,39 @@ export function baseCharacters(run: Run, text: TextNode, rewrites: boolean): rea
   return held.filter((_, index) => !ranges.some((range) => index >= range.start && index < range.end));
 }
 
+/** The glyph ranges of a text that need the glyph font written, and those that need their family unbound. */
+type StaleRanges = { readonly refonted: readonly TextRange[]; readonly unbound: readonly TextRange[] };
+
+/**
+ * The glyph ranges of the characters a text holds that {@link planGlyphRanges} writes where the text
+ * keeps them: each a character of which shows another font than the glyph font in `style`, and each
+ * a character of which binds a family while it shows the glyph font's. A write of the glyph font
+ * drops a binding where it changes the family (G2) and keeps one where the family is already the
+ * glyph font's (G11), so only those need a null binding. The fonts preflight in `instance-layers.ts`
+ * reads the same ranges to know whether the run writes a label.
+ *
+ * @param style - The label's font style, which the glyph font takes.
+ * @returns The ranges.
+ */
+export function staleGlyphRanges(run: Run, text: TextNode, style: string): StaleRanges {
+  const font: FontName = { family: run.glyphFont.family, style };
+  const held = heldCharacters(text);
+  const ranges = glyphRanges(text.characters, run.glyphFont);
+  const within = (range: TextRange): readonly HeldCharacter[] => held.slice(range.start, range.end);
+  return {
+    refonted: ranges.filter((range) =>
+      within(range).some(
+        (character) => character.font.family !== font.family || character.font.style !== font.style
+      )
+    ),
+    unbound: ranges.filter((range) =>
+      within(range).some(
+        (character) => character.family !== undefined && character.font.family === font.family
+      )
+    ),
+  };
+}
+
 /**
  * Plan the glyph font on the glyph ranges of the characters a text shows, at the label's style, and
  * unbind the family where a range still binds one. A range bound to a variable that holds the glyph
@@ -118,18 +151,7 @@ export function planGlyphRanges(
     requireFont(run, label, font);
     return;
   }
-  const held = heldCharacters(text);
-  const within = (range: TextRange): readonly HeldCharacter[] => held.slice(range.start, range.end);
-  const refonted = ranges.filter((range) =>
-    within(range).some(
-      (character) => character.font.family !== font.family || character.font.style !== font.style
-    )
-  );
-  // A write of the glyph font drops a binding where it changes the family (G2) and keeps one where
-  // the family is already the glyph font's (G11), so only those need a null binding.
-  const unbound = ranges.filter((range) =>
-    within(range).some((character) => character.family !== undefined && character.font.family === font.family)
-  );
+  const { refonted, unbound } = staleGlyphRanges(run, text, style);
   if (refonted.length > 0) {
     change(run.plan, label, `font at ${shown(refonted)} → ${font.family} ${font.style}`, () => {
       for (const range of refonted) {

@@ -359,6 +359,7 @@ const OVERRIDE_TARGETS = {
   cornerRadius: "box",
   effects: "box",
   textColor: "text",
+  fontStyle: "text",
   textAlign: "text",
   glyph: "icon",
   primaryAlign: "box",
