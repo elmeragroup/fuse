@@ -26,6 +26,8 @@ import type {
   SizingSpec,
   TextLayerSpec,
 } from "./kit-spec";
+import { againstMainLayer, isPaddingBoxLayer } from "./padding-box-fill";
+import type { LayerAgainstMain } from "./padding-box-fill";
 
 /**
  * A field of a layer the inner root holds that the built root draws one way and the inner variant
@@ -126,7 +128,10 @@ type Found = {
  *   become property values.
  * - A fill, a stroke's color, a text's color, an icon's glyph color, a corner and shadows become
  *   overrides at the layer's key path. The root's fill is the one its ring needs, as the plugin
- *   writes it.
+ *   writes it. A box that paints no fill, where the variant's box draws its fill on a `padding box`
+ *   layer, clears that layer's fill. Where one of the two boxes draws its fill on that layer and the
+ *   other does not, or the two inset it differently, a difference in the fill, the stroke's weights
+ *   or the corner stays unmapped (`againstMainLayer` in `padding-box-fill.ts`).
  * - A solid stroke on some sides becomes an override of the four weights where the variant's stroke
  *   is solid with literal weights and both take their room in the layout alike, as a chip segment's
  *   `border-0 border-s` keeps the start edge of Button's 1px border.
@@ -170,7 +175,9 @@ type Found = {
  *   since a gap sits only between adjacent items (CSS Box Alignment 3 §8). A layer a BOOLEAN hides
  *   counts, since a designer can show it.
  * - Every other field, the kinds and keys of a box's layers among them, stays unmapped where it
- *   differs, and the diff compares no layer of a box whose layers differ.
+ *   differs, and the diff compares no layer of a box whose layers differ. A `padding box` layer only
+ *   one of the two boxes holds leaves its fill unmapped, and the diff compares the box's other layers
+ *   where their kinds, keys and order agree.
  *
  * @param inPlace - The inner root, built below the outer parts with the outer `className` merged in.
  * @param variant - The inner variant's root, as the inner set holds it.
@@ -195,7 +202,7 @@ export function diffInstance(
     mirrored: [],
     unmapped: [],
   };
-  diffBox(found, [], inPlace, variant, "root");
+  diffBox(found, [], inPlace, variant, "root", "compared");
   // The alignment the walk noted unmapped becomes an override where it is the one difference left.
   const { aligned } = found;
   const carried = aligned !== undefined && found.unmapped.length === 1 ? aligned : undefined;
@@ -244,15 +251,20 @@ function noteUnmapped(
 /**
  * Diff a box, the root or a frame. Its fill, stroke color, corner and shadows become overrides, the
  * root's sizing the instance's, and the diff compares its layers in turn where their kinds and keys
- * agree.
+ * agree. A box that is the `padding box` layer of a box whose layer the two trees do not share
+ * (`within`) takes no override of its fill or corner either, since it stays at the main's insets.
  */
 function diffBox(
   found: Found,
   path: readonly string[],
-  inPlace: BoxSpec,
+  asBuilt: BoxSpec,
   variant: BoxSpec,
-  kind: "root" | "frame"
+  kind: "root" | "frame",
+  within: LayerAgainstMain["layer"]
 ): void {
+  const compared = againstMainLayer(asBuilt, variant);
+  const inPlace = compared.box;
+  const layer = within === "unmatched" ? within : compared.layer;
   const built = fieldsOf(inPlace);
   const held = fieldsOf(variant);
   for (const field of fieldNames(inPlace, variant)) {
@@ -268,11 +280,12 @@ function diffBox(
           found,
           path,
           kind === "root" ? ringFill(inPlace) : inPlace.fill,
-          kind === "root" ? ringFill(variant) : variant.fill
+          kind === "root" ? ringFill(variant) : variant.fill,
+          layer
         );
         break;
       case "stroke":
-        diffStroke(found, path, inPlace.stroke, variant.stroke);
+        diffStroke(found, path, inPlace.stroke, variant.stroke, layer);
         break;
       case "primaryAlign":
         if (kind === "root" && fillsAlong(inPlace) && inPlace.primaryAlign !== variant.primaryAlign) {
@@ -284,7 +297,9 @@ function diffBox(
         diffField(found, path, field, built.get(field), held.get(field));
         break;
       case "cornerRadius":
-        if (!isDeepStrictEqual(inPlace.cornerRadius, variant.cornerRadius)) {
+        if (layer === "unmatched") {
+          diffField(found, path, field, built.get(field), held.get(field));
+        } else if (!isDeepStrictEqual(inPlace.cornerRadius, variant.cornerRadius)) {
           found.overrides.push({ path, field: "cornerRadius", value: inPlace.cornerRadius });
         }
         break;
@@ -304,7 +319,7 @@ function diffBox(
         }
         break;
       case "children":
-        diffLayers(found, path, inPlace.children, variant.children);
+        diffLayers(found, path, inPlace.children, variant.children, layer);
         break;
       case "limits":
         if (kind === "root") {
@@ -372,17 +387,21 @@ function diffField(
   }
 }
 
-/** Diff a fill: a color or none becomes an override, and an image fill that differs stays unmapped. */
+/**
+ * Diff a fill: a color or none becomes an override, and an image fill that differs stays unmapped,
+ * as does any fill beside a `padding box` layer the two boxes do not share (`layer`).
+ */
 function diffFill(
   found: Found,
   path: readonly string[],
   inPlace: BoxSpec["fill"],
-  variant: BoxSpec["fill"]
+  variant: BoxSpec["fill"],
+  layer: LayerAgainstMain["layer"]
 ): void {
   if (isDeepStrictEqual(inPlace, variant)) {
     return;
   }
-  if (inPlace?.kind === "image" || variant?.kind === "image") {
+  if (layer === "unmatched" || inPlace?.kind === "image" || variant?.kind === "image") {
     noteUnmapped(found, path, "fill", inPlace, variant);
     return;
   }
@@ -394,13 +413,15 @@ function diffFill(
  * stroke of the variant on its sides or of one literal weight on every side, becomes an override of
  * the four weights, as a chip segment's `border-0 border-s` keeps only its start edge of Button's
  * 1px border. Both strokes must take their room in the layout alike. Any other difference, a dash, a
- * bound weight or a stroke only one of the two draws, stays unmapped.
+ * bound weight or a stroke only one of the two draws, stays unmapped, and so do the weights beside a
+ * `padding box` layer the two boxes do not share (`layer`), which the weights inset.
  */
 function diffStroke(
   found: Found,
   path: readonly string[],
   inPlace: BoxSpec["stroke"],
-  variant: BoxSpec["stroke"]
+  variant: BoxSpec["stroke"],
+  layer: LayerAgainstMain["layer"]
 ): void {
   if (isDeepStrictEqual(inPlace, variant)) {
     return;
@@ -415,7 +436,12 @@ function diffStroke(
   }
   const sides = inPlace !== undefined && "sides" in inPlace ? inPlace.sides : undefined;
   const held = variant === undefined ? undefined : solidSides(variant);
-  if (sides !== undefined && held !== undefined && inPlace?.inLayout === variant?.inLayout) {
+  if (
+    layer === "compared" &&
+    sides !== undefined &&
+    held !== undefined &&
+    inPlace?.inLayout === variant?.inLayout
+  ) {
     found.overrides.push({ path, field: "strokeSides", sides });
     if (!isDeepStrictEqual(inPlace?.color, variant?.color) && inPlace !== undefined) {
       found.overrides.push({ path, field: "strokeColor", color: inPlace.color });
@@ -430,30 +456,84 @@ export function kindsAndKeys(layers: readonly ChildLayerSpec[]): readonly string
   return layers.map((layer) => `${layer.kind} ${layer.key}`);
 }
 
-/** Diff a box's layers pairwise where their kinds and keys agree, and note the layer tree otherwise. */
+/** The layers of two boxes the diff pairs, as {@link pairedLayers} says. */
+export type PairedLayers = {
+  readonly inPlace: readonly ChildLayerSpec[];
+  readonly variant: readonly ChildLayerSpec[];
+  /** The `padding box` layer only one of the two boxes holds, by its key, and its fill in each. */
+  readonly oneSided: { readonly key: string; readonly fills: readonly [FieldValue, FieldValue] } | undefined;
+};
+
+/**
+ * The layers of two boxes the diff pairs: all of them where their kinds and keys agree, or, where
+ * only one box draws its fill on a `padding box` layer, each box's other layers where those agree in
+ * kind, key and order.
+ *
+ * @param inPlace - The layers of the box built in place.
+ * @param variant - The layers of the variant's box at the same key path.
+ * @returns The layers the diff pairs, or undefined where it pairs none.
+ */
+export function pairedLayers(
+  inPlace: readonly ChildLayerSpec[],
+  variant: readonly ChildLayerSpec[]
+): PairedLayers | undefined {
+  if (isDeepStrictEqual(kindsAndKeys(inPlace), kindsAndKeys(variant))) {
+    return { inPlace, variant, oneSided: undefined };
+  }
+  const own = inPlace.find(isPaddingBoxLayer);
+  const held = variant.find(isPaddingBoxLayer);
+  const layer = own ?? held;
+  if (layer === undefined || (own !== undefined && held !== undefined)) {
+    return undefined;
+  }
+  const others = (layers: readonly ChildLayerSpec[]) => layers.filter((child) => !isPaddingBoxLayer(child));
+  const [ownOthers, heldOthers] = [others(inPlace), others(variant)];
+  return isDeepStrictEqual(kindsAndKeys(ownOthers), kindsAndKeys(heldOthers))
+    ? {
+        inPlace: ownOthers,
+        variant: heldOthers,
+        oneSided: { key: layer.key, fills: [own?.fill, held?.fill] },
+      }
+    : undefined;
+}
+
+/**
+ * Diff a box's layers pairwise where their kinds and keys agree, and note the layer tree otherwise.
+ * The box's `padding box` layer takes the box's `layer`, how the two trees draw the box's fill. Where
+ * only one of the two holds that layer, the layer tree and the layer's fill stay unmapped, and the
+ * diff pairs the other layers ({@link pairedLayers}).
+ */
 function diffLayers(
   found: Found,
   path: readonly string[],
-  inPlace: readonly ChildLayerSpec[],
-  variant: readonly ChildLayerSpec[]
+  built: readonly ChildLayerSpec[],
+  main: readonly ChildLayerSpec[],
+  layer: LayerAgainstMain["layer"]
 ): void {
-  if (!isDeepStrictEqual(kindsAndKeys(inPlace), kindsAndKeys(variant))) {
-    noteUnmapped(found, path, "layers", kindsAndKeys(inPlace), kindsAndKeys(variant));
+  const paired = pairedLayers(built, main);
+  if (paired === undefined || paired.oneSided !== undefined) {
+    noteUnmapped(found, path, "layers", kindsAndKeys(built), kindsAndKeys(main));
+  }
+  if (paired === undefined) {
     return;
   }
-  inPlace.forEach((layer, index) => {
+  const { inPlace, variant, oneSided } = paired;
+  if (oneSided !== undefined) {
+    noteUnmapped(found, [...path, oneSided.key], "fill", ...oneSided.fills);
+  }
+  inPlace.forEach((child, index) => {
     const held = variant[index];
-    const at = [...path, layer.key];
-    if (layer.kind === "frame" && held?.kind === "frame") {
-      diffBox(found, at, layer, held, "frame");
-    } else if (layer.kind === "text" && held?.kind === "text") {
-      diffText(found, at, layer, held);
-    } else if (layer.kind === "icon" && held?.kind === "icon") {
-      diffIcon(found, at, layer, held);
-    } else if (layer.kind === "instance" && held?.kind === "instance") {
-      diffNested(found, at, layer, held);
+    const at = [...path, child.key];
+    if (child.kind === "frame" && held?.kind === "frame") {
+      diffBox(found, at, child, held, "frame", isPaddingBoxLayer(held) ? layer : "compared");
+    } else if (child.kind === "text" && held?.kind === "text") {
+      diffText(found, at, child, held);
+    } else if (child.kind === "icon" && held?.kind === "icon") {
+      diffIcon(found, at, child, held);
+    } else if (child.kind === "instance" && held?.kind === "instance") {
+      diffNested(found, at, child, held);
     } else {
-      diffField(found, at, "instance", layer, held);
+      diffField(found, at, "instance", child, held);
     }
   });
 }

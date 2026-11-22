@@ -1,5 +1,7 @@
 /**
- * How the build paints a box: a background clipped to the padding box, `currentcolor` a custom property passes down, and a part under `visibility: hidden`. The unit under test is `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
+ * How the build paints a box: `currentcolor` a custom property passes down, a part under
+ * `visibility: hidden`, a radius per corner and a border on some sides. The unit under test is
+ * `buildSetsInOrder` on hand-built captures of one-cell `chip` sets
  * (`test/capture-fixtures.ts`). Each case names its oracle: the CSS specification that says what the
  * browser draws, or the Figma plugin typings that say what Figma draws, under the coverage contract,
  * where a declaration that does not reach Figma is `unmapped` and one with nothing to draw is
@@ -19,58 +21,6 @@ import {
   rest,
 } from "../../test/capture-fixtures";
 import { makeVariableIndex } from "./css-values";
-
-// Oracle: CSS Backgrounds 3 §3.7 and the Figma plugin typings. `padding-box` paints the background
-// inside the border only, where Figma paints a fill under the whole frame and an INSIDE stroke over
-// it: the two draw alike where the box has no border, or a solid border that hides the fill under it
-// because it is opaque. A translucent or dashed border shows what the clip leaves out.
-describe("background-clip: padding-box", () => {
-  it.each([
-    [
-      "bg-clip-padding bg-[#ffffff]",
-      "dropped",
-      "the box has no border, so its padding box is its border box",
-    ],
-    [
-      "bg-clip-padding bg-[#ffffff] border border-[#000000]",
-      "dropped",
-      "the box's border draws as a solid stroke, opaque in every mode, over the fill beneath it",
-    ],
-    [
-      "bg-clip-padding bg-[#ffffff] border border-[#00000080]",
-      "unmapped",
-      "no Figma field reads padding-box",
-    ],
-    [
-      "bg-clip-padding bg-[#ffffff] border border-dashed border-[#000000]",
-      "unmapped",
-      "no Figma field reads padding-box",
-    ],
-    [
-      "bg-clip-padding bg-[#ffffff] border-0 border-s border-[#00000080]",
-      "unmapped",
-      "no Figma field reads padding-box",
-    ],
-  ])("on %s is %s", async (classes, outcome, detail) => {
-    const { coverage } = await buildChip(classes);
-    expect(notesOf(coverage, "bg-clip-padding")).toEqual([["background-clip", outcome, detail]]);
-  });
-
-  it.each([
-    [true, "dropped"],
-    [false, "unmapped"],
-  ])("beside a border bound to a variable opaque in every mode (%s) is %s", async (opaque, outcome) => {
-    const variables = makeVariableIndex([
-      { ref: { collection: "Fuse tokens", name: "border" }, webSyntax: "var(--border)", opaque },
-    ]);
-    const { coverage } = await buildCaptured(
-      chip(),
-      rest({ slot: "chip", classes: "bg-clip-padding bg-[#ffffff] border border-(--border)" }),
-      { variables }
-    );
-    expect(notesOf(coverage, "bg-clip-padding").map(([, read]) => read)).toEqual([outcome]);
-  });
-});
 
 // Oracle: CSS Color 4 §6.4. `currentcolor` that a custom property passes down resolves where it is
 // used: on `color`, to the color the element inherits, and on any other property, to the element's

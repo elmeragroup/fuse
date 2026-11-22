@@ -68,6 +68,7 @@ import type {
   TokenPaint,
 } from "@elmeragroup/fuse/theme-catalog";
 
+import { innerCornerSyntax } from "./border-inner-corner.ts";
 import {
   hasOwnHeadingFamily,
   KIT_BODY_FAMILY,
@@ -686,6 +687,29 @@ const THEME_DENSITY_FORMULAS = FORMULA_VARIABLES.filter(
   (formula): formula is FormulaReading<"theme and density"> => formula.reads === "theme and density"
 );
 
+/** An outer corner a border's inner corner derives from: a radius rung or a corner formula over tokens. */
+type OuterCornerName = RadiusRungName | FormulaReading<"theme">["name"];
+
+/**
+ * The corner inside a border around an outer corner, where a fill that `background-clip:
+ * padding-box` stops at a translucent border rounds (CSS Backgrounds 3 §5.2): the outer corner and
+ * the border's width in pixels.
+ */
+type BorderInnerCorner = { readonly outer: OuterCornerName; readonly width: number };
+
+/** The name of a corner inside a border, as `radius-inner/calendar-border` inside 1px. */
+type BorderInnerName = `radius-inner/${string}-border` | `radius-inner/${string}-border-${string}px`;
+
+/**
+ * The inner corners the kit binds, one per outer corner and border width a set fills inside:
+ * Calendar's and RangeCalendar's card inside its 1px border. Sheet content's panel has square
+ * corners, so it needs none. Add a pair here when a set's fill stops at a border around another
+ * corner.
+ */
+const BORDER_INNER_CORNERS = [
+  { outer: "radius-calendar", width: 1 },
+] as const satisfies readonly BorderInnerCorner[];
+
 /**
  * The pickers that offer each dimension token. A length can round corners, space a gap or
  * size a stroke, so the kind alone does not pick a scope. A new dimension token fails to
@@ -772,6 +796,7 @@ type BoundVariable = {
     | RadiusRungName
     | `${ColorTokenName}/${number}`
     | FormulaReading<"theme">["name"]
+    | BorderInnerName
     | `${FormulaReading<"theme and density">["name"]}/${Density}`;
   readonly type: VariableType;
 
@@ -800,8 +825,8 @@ type ThemePath = {
 
 /**
  * Every `Fuse tokens` variable: each role token, then each synced radius rung, then each role
- * tint, then the formulas over tokens, then the hidden values of each formula over tokens and
- * density metrics. A rung's code syntax is the `calc()` `fuse.css` declares.
+ * tint, then the formulas over tokens, then the corners inside a 1px border the kit binds, then the hidden values
+ * of each formula over tokens and density metrics. A rung's code syntax is the `calc()` `fuse.css` declares.
  * `fuse.css` declares the rungs in `@theme inline`, so Tailwind inlines them into its utilities
  * and the built CSS does not define `--radius-sm` and most other rungs as custom properties.
  * Figma variables cannot compute, so each rung holds the px the catalog computes per theme, each
@@ -853,7 +878,58 @@ function boundVariables(template: ResolvedScheme, metrics: MetricsByDensity): re
       leafIn: (scheme) => ({ _tag: "Float", value: length(scheme, metrics[mode]) }),
     }))
   );
-  return [...tokens, ...kitFontVariables(), ...rungs, ...tints, ...formulas, ...perDensity];
+  return [
+    ...tokens,
+    ...kitFontVariables(),
+    ...rungs,
+    ...tints,
+    ...formulas,
+    ...borderInnerCorners(template),
+    ...perDensity,
+  ];
+}
+
+/**
+ * The corner inside the border of each of {@link BORDER_INNER_CORNERS}: the outer corner less the
+ * border width, at least 0, whose code syntax `innerCornerSyntax` spells, so the kit's builder binds
+ * it from the outer corner a box maps. A 1px border's corner is `radius-inner/<corner>-border`, and a
+ * wider one's `radius-inner/<corner>-border-<width>px`.
+ */
+function borderInnerCorners(template: ResolvedScheme): readonly BoundVariable[] {
+  return BORDER_INNER_CORNERS.map(({ outer: name, width }: BorderInnerCorner): BoundVariable => {
+    const outer = outerCorner(template, name);
+    const stem = name.replace(/^radius-/, "");
+    return {
+      name: width === 1 ? `radius-inner/${stem}-border` : `radius-inner/${stem}-border-${String(width)}px`,
+      type: VARIABLE_TYPES.dimension,
+      scopes: ["CORNER_RADIUS"],
+      webSyntax: innerCornerSyntax(outer.webSyntax, width),
+      description: `The corner inside a ${String(width)}px border around ${name}, where a fill that stops at the border rounds: ${name} less ${String(width)}px, at least 0. Figma variables cannot compute, so the sync writes the result for each theme.`,
+      leafIn: (scheme, path) => ({
+        _tag: "Float",
+        value: Math.max(0, outer.length(scheme, path.identity) - width),
+      }),
+    };
+  });
+}
+
+/** A radius rung's or a corner formula's code syntax, and its length in a theme. */
+type OuterCorner = {
+  readonly webSyntax: string;
+  readonly length: (scheme: ResolvedScheme, identity: ThemeIdentity) => number;
+};
+
+/** The code syntax and per-theme length of the outer corner `name` names. */
+function outerCorner(template: ResolvedScheme, name: OuterCornerName): OuterCorner {
+  const formula = THEME_FORMULAS.find((each) => each.name === name);
+  if (formula !== undefined) {
+    return { webSyntax: formula.formula, length: formula.length };
+  }
+  const rung = Object.values(template.rungs).find((entry) => entry.name === name);
+  if (rung === undefined) {
+    throw new Error(`no radius rung or corner formula is named ${name}`);
+  }
+  return { webSyntax: rung.codeSyntax, length: (scheme) => scheme.rungs[rung.name].value };
 }
 
 /**

@@ -10,7 +10,7 @@ import { PAINTED_OVER, placedRoom, planPlacement, UNPAINTABLE } from "./absolute
 import type { PlacementPlan } from "./absolute-placement";
 import { readLiftedLast } from "./block-frame";
 import type { BoxCascade } from "./box-cascade";
-import { readCorner } from "./box-corners";
+import { readCorner, setsCorner } from "./box-corners";
 import type { MarkerReading } from "./box-flow";
 import {
   HUGGING_ROWS_DETAIL,
@@ -59,6 +59,7 @@ import type {
 } from "./component-spec";
 import { labelCharacters } from "./component-spec";
 import { readContentBox } from "./content-box";
+import type { ContentBoxRead } from "./content-box";
 import {
   describeNumber,
   evaluateLength,
@@ -117,6 +118,7 @@ import {
   wrapInstanceMargins,
 } from "./margin-box";
 import type { FoldingBox, IconMarginBox } from "./margin-box";
+import { drawPaddingBoxFill, ownFill } from "./padding-box-fill";
 import { arrangePaint, inPaintOrder, readRaisedLevels } from "./paint-order";
 import type { PaintedLayer } from "./paint-order";
 import type { PreparedParts, ShownPart } from "./part-preparation";
@@ -535,6 +537,32 @@ export function mapBox(
   room: Room,
   prepared: () => PreparedParts
 ): BoxSpec {
+  const { box: mapped, clip } = mapBoxBeforeClip(box, cascade, scope, room, prepared);
+  // A root, or an instance's inner root, takes no inner frame for its content box, so a content box
+  // leaves its frame the content box's length.
+  const contentBox = normalizeCss(cascade.style.resolved("box-sizing") ?? "") === "content-box";
+  return clip(mapped, contentBox ? "refused" : "border box");
+}
+
+/**
+ * A box as {@link mapBox} maps it, with its fill still on it, and the step that moves the fill
+ * inside the border where `background-clip: padding-box` asks for that (`padding-box-fill.ts`). A
+ * part takes that step once its content box moves inside it (`content-box.ts`), so the layer sits
+ * against the frame whose edges are the border box's.
+ */
+type UnclippedBox = {
+  readonly box: BoxSpec;
+  readonly clip: (box: BoxSpec, edges: ContentBoxRead["edges"]) => BoxSpec;
+};
+
+/** Map a box as {@link mapBox} does, leaving the move of its fill inside the border to the caller. */
+function mapBoxBeforeClip(
+  box: BoxDefinition,
+  cascade: BoxCascade,
+  scope: MapScope,
+  room: Room,
+  prepared: () => PreparedParts
+): UnclippedBox {
   const { variant, cell, context } = scope;
   const reader = cascade.style;
   const number = (property: string, field: SpecField): NumberSpec | undefined =>
@@ -561,7 +589,7 @@ export function mapBox(
     ]);
   }
 
-  const paint = readPaint(
+  const { paint, paddingBox } = readPaint(
     reader,
     box.image,
     context.variables,
@@ -1273,23 +1301,20 @@ export function mapBox(
   }
   // The corners read last, since a radius per corner can take its side's least length from the box
   // as laid out.
-  laidOut = {
-    ...laidOut,
-    cornerRadius:
-      readCorner(
-        reader,
-        {
-          sizing,
-          held: heldSizing(reader, { sizing, limits, borders }, children),
-          leastHeight: boxHeightBounds(
-            grid === undefined ? laidOut : { ...laidOut, grid: keyedCells(grid, children) },
-            context.variables
-          ).min,
-          limits: limitsRead ? limits : undefined,
-        },
+  const corner = readCorner(
+    reader,
+    {
+      sizing,
+      held: heldSizing(reader, { sizing, limits, borders }, children),
+      leastHeight: boxHeightBounds(
+        grid === undefined ? laidOut : { ...laidOut, grid: keyedCells(grid, children) },
         context.variables
-      ) ?? ZERO,
-  };
+      ).min,
+      limits: limitsRead ? limits : undefined,
+    },
+    context.variables
+  );
+  laidOut = { ...laidOut, cornerRadius: corner ?? ZERO };
   // A grid frame aligns MIN, the one value Figma takes on a grid, and places its items by their cells.
   const mappedBox: BoxSpec =
     grid === undefined
@@ -1330,7 +1355,23 @@ export function mapBox(
     { order: ordered, firstOnTop }
   );
   const painted: BoxSpec = { ...mappedBox, children: ordered };
-  return firstOnTop ? { ...painted, firstOnTop: true } : painted;
+  const stacked: BoxSpec = firstOnTop ? { ...painted, firstOnTop: true } : painted;
+  // The fill moves onto a layer inside the border once the layers are in paint order, beneath them.
+  const corners = corner === undefined && setsCorner(reader) ? "unread" : "read";
+  return {
+    box: stacked,
+    clip:
+      paddingBox === undefined
+        ? (unclipped) => unclipped
+        : (unclipped, edges) =>
+            drawPaddingBoxFill(
+              reader,
+              unclipped,
+              { insets: paddingBox, corners, edges },
+              context.variables,
+              context.modes ?? []
+            ),
+  };
 }
 
 /** A part as the paint order reads it: absolute, or in the flow and positioned itself. */
@@ -1587,23 +1628,26 @@ function mapPart(
       layer,
       stacked: painted,
       style: part.cascade.style,
-      paints: painted.fill !== undefined,
+      paints: ownFill(painted) !== undefined,
       width: DECLARED_WIDTH,
       border: instance,
       part: { key: part.key, at: part.cascade.drawnAt },
     };
     return instance === layer ? mapped : { ...mapped, wrapped: instance };
   }
-  const frame = mapBox(part.child, part.cascade, scope, room, part.parts);
+  const { box: frame, clip } = mapBoxBeforeClip(part.child, part.cascade, scope, room, part.parts);
   const floored =
     minimum === undefined ? frame : { ...frame, limits: { ...frame.limits, minWidth: minimum } };
   const own =
     room.subgridCell === undefined
       ? floored
       : drawSubgridCell(part.cascade.style, floored, room.subgridCell, scope.main);
-  // Figma draws a part's spread ring only over a visible fill with clipping on (PR2).
-  const ringed = castsSpread(own.shadows) ? { ...own, fill: ringFill(own), clips: true } : own;
-  const box = readContentBox(part.cascade.style, ringed, part.cascade.inPlace() !== undefined);
+  // The fill moves inside the border once the content box moves inside the frame, so the layer sits
+  // against the border box's edges. Figma draws a part's spread ring only over a visible fill with
+  // clipping on (PR2), so the ring's clear fill comes last.
+  const content = readContentBox(part.cascade.style, own, part.cascade.inPlace() !== undefined);
+  const clipped = clip(content.box, content.edges);
+  const box = castsSpread(clipped.shadows) ? { ...clipped, fill: ringFill(clipped), clips: true } : clipped;
   const scaled = scope.scaling.has(part.child) ? slotAroundDot(part.cascade.style, box) : undefined;
   const drawn: FrameLayerSpec = {
     kind: "frame",

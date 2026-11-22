@@ -24,6 +24,9 @@
  * throws on any other override and on a property the instance sets.
  * The layout throws on what it cannot place as Figma would: a size limit, a layer that fills the axis
  * its frame hugs along, a hugging axis that every layer fills, and a grid, an icon or a placed layer.
+ * It skips the `padding box` layer that holds a fill inside the border where it sits outside the
+ * auto layout, since it stretches with its frame and takes no room in its hug, as probe SH1 in the
+ * README found. One in the auto layout meets the checks every other layer does.
  *
  * It goes red where the build draws a panel anywhere but against the scrim's right edge and as tall
  * as it, where Sheet's CSS moves the panel off that edge, where the open frame's instance shows
@@ -54,6 +57,7 @@ import type {
   SizeSpec,
   TextLayerSpec,
 } from "./kit-spec.ts";
+import { PADDING_BOX_FILL } from "./padding-box-fill.ts";
 
 /** How far apart, in CSS pixels, a Figma place and Chromium's may sit: a few 64ths of a pixel. */
 const TOLERANCE_PX = 0.05;
@@ -307,7 +311,8 @@ class FigmaLayout {
 
   /** A frame's children with their key paths, each in the auto layout, no icon, and with no limit. */
   #inFlow(frame: LaidOutFrame, path: readonly string[]) {
-    return frame.children.map((layer) => {
+    const laidOut = frame.children.filter((layer) => layer.key !== PADDING_BOX_FILL || !outOfLayout(layer));
+    return laidOut.map((layer) => {
       const at = [...path, layer.key];
       if (layer.kind === "icon" || outOfLayout(layer)) {
         throw new Error(

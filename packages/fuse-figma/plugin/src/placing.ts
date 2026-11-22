@@ -20,9 +20,11 @@
  * fell from 16 to 8, while the main kept 16 (PG14, PG14b). W5-P14's record does not say whether the
  * close changed size in its instance pinned Comfortable, so the two readings may not conflict. The
  * build follows PG14b: a placed instance a mode resizes sits in a placement wrapper, a row STRETCH
- * across the parent that pads the inset, which held it (PG16, `placement-wrapper.ts`). A meter's fill kept SCALE across and STRETCH down in its bar (P8). No real
- * file has yet held a `stretch` beside a parent that hugs its text, or one whose end lies past the
- * parent's edge, as a timeline connector's does.
+ * across the parent that pads the inset, which held it (PG16, `placement-wrapper.ts`). A meter's fill kept SCALE across and STRETCH down in its bar (P8). On
+ * 2026-11-21 a frame STRETCH on both axes 1px inside a column that hugs its text and a bound padding
+ * kept its insets as the text grew and shrank and the padding's mode switched, in the main and an
+ * instance (SH1), as a `padding box` layer sits. No real file has yet held a `stretch` whose end
+ * lies past the parent's edge, as a timeline connector's does.
  */
 import type { AxisPlacementSpec, EdgePlacementSpec, SizingSpec } from "../../src/components/kit-spec.ts";
 import { AXIS_CONSTRAINT } from "../../src/components/kit-spec.ts";
