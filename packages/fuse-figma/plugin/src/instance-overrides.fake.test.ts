@@ -216,13 +216,27 @@ function huggingButtons(kit: KitSpec, edit: (root: VariantSpec["root"]) => Limit
   }));
 }
 
-/** `kit` with every Button variant's stroke of one weight dashed by `dashPattern`. */
+/**
+ * `kit` with every Button variant's stroke of one weight dashed by `dashPattern`. A Button group's
+ * members leave a side of it bare, which the build leaves unmapped over a dashed main, so they keep
+ * every side.
+ */
 function withDashedButton(kit: KitSpec, dashPattern: readonly number[]): KitSpec {
-  return withButtonRoots(kit, (root) =>
+  return withButtonRoots(withoutBareGroups(kit), (root) =>
     root.stroke === undefined || "sides" in root.stroke || root.stroke.bare !== undefined
       ? root
       : { ...root, stroke: { ...root.stroke, dashPattern } }
   );
+}
+
+/** `kit` with no Button group member leaving a side bare. */
+function withoutBareGroups(kit: KitSpec): KitSpec {
+  return {
+    ...kit,
+    componentSets: kit.componentSets.map((set) =>
+      set.name === "Button group" ? withoutBareSides(set) : set
+    ),
+  };
 }
 
 const START = { top: 0, right: 0, bottom: 0, left: 1 };
@@ -396,6 +410,24 @@ describe("an instance's bound padding on an applied file", () => {
   });
 });
 
+/** `set` with no instance of it leaving sides bare. */
+function withoutBareSides(set: ComponentSetSpec): ComponentSetSpec {
+  return {
+    ...set,
+    variants: set.variants.map((variant) => ({
+      ...variant,
+      root: {
+        ...variant.root,
+        children: variant.root.children.map((layer) =>
+          layer.kind === "instance"
+            ? { ...layer, overrides: (layer.overrides ?? []).filter((override) => !("bare" in override)) }
+            : layer
+        ),
+      },
+    })),
+  };
+}
+
 /** The variable the outer kit's inner stroke binds. */
 const WIDTH = { collection: "Fuse tokens", name: "outline-width" } as const;
 
@@ -490,7 +522,9 @@ describe("an instance's bare sides on an applied file", () => {
   // 0, so the first side write spills nothing, and binds the other sides to the bound weight.
   it("leave a bound weight on the other sides of a box the kit owns, and the next Plan lists nothing", async () => {
     const { kit } = await kitFixture();
-    const bare = withButtonRoots(kit, (root) =>
+    // A Button group's members leave a side bare too, which the kit check refuses over a main that
+    // leaves one bare already, so the group's members here keep every side.
+    const bare = withButtonRoots(withoutBareGroups(kit), (root) =>
       root.stroke === undefined || "sides" in root.stroke
         ? root
         : { ...root, stroke: { color: root.stroke.color, weight: OUTLINE, bare: ["left"] } }

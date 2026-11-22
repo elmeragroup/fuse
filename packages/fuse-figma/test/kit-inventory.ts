@@ -45,6 +45,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
       // 2 variants in 4 states, armed off and on but never armed while disabled, and 2 at each of 3
       // other sizes.
       { key: "confirm-button", name: "Confirm button", variants: 56, previewed: 20 },
+      // The default demo's row and the Vertical demo's column.
+      { key: "button-group", name: "Button group", variants: 2, previewed: 2 },
     ],
   },
   {

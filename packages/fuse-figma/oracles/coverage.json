@@ -197,6 +197,13 @@
       "reason": "The value's summary span lets its text shrink and end in an ellipsis once the summary passes the room the value's 224px `max-w-56` leaves it, which the demo's `Paid` never reaches. An instance carries no text truncation override, so the value's label hugs its text as Button's does."
     },
     {
+      "set": "button-group",
+      "part": "button-group",
+      "className": "items-stretch",
+      "property": "align-items",
+      "reason": "Every member of a group is as long across it as the others, and fixed there: the horizontal group's Buttons each take `control-h-md` as their height, and the vertical group's Icon buttons each take `control-h-md` as their width. CSS stretches no item whose size across is fixed (CSS Flexbox 1 §9.4), so the stretch moves nothing, and the group hugs its members across as Figma draws it."
+    },
+    {
       "set": "dropdown-menu-submenu-open",
       "part": "dropdown-menu-shortcut",
       "className": "ml-auto",
@@ -998,6 +1005,32 @@
       {
         "part": "button",
         "className": "aria-expanded:text-secondary-foreground"
+      }
+    ],
+    "button-group": [
+      {
+        "part": "button-group",
+        "className": "*:focus-visible:relative"
+      },
+      {
+        "part": "button-group",
+        "className": "*:focus-visible:z-10"
+      },
+      {
+        "part": "button-group",
+        "className": "[&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit"
+      },
+      {
+        "part": "button-group",
+        "className": "[&>input]:flex-1"
+      },
+      {
+        "part": "button-group",
+        "className": "has-[>[data-slot=button-group]]:gap-2"
+      },
+      {
+        "part": "button-group",
+        "className": "has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md"
       }
     ],
     "card": [

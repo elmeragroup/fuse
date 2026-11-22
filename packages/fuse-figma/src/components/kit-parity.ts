@@ -91,8 +91,13 @@ export const KIT_PARITY = {
     ],
   },
   button: { kind: "sets", sets: ["button", "icon-button"] },
-  // The Button sets leave out the corners a Button takes inside a group.
-  "button-group": { kind: "issue", issue: 917 },
+  "button-group": {
+    kind: "partial",
+    sets: ["button-group"],
+    missing:
+      "`ButtonGroup.Separator`, `ButtonGroup.Text`, a nested group, and a field or Select trigger joined into a group.",
+    issue: NICE_TO_HAVE,
+  },
   calendar: {
     kind: "partial",
     sets: ["calendar", "calendar-day"],

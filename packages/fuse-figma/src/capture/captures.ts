@@ -20,6 +20,7 @@ import breadcrumbLink from "../../captures/breadcrumb-link.json" with { type: "j
 import breadcrumbPage from "../../captures/breadcrumb-page.json" with { type: "json" };
 import breadcrumbSeparator from "../../captures/breadcrumb-separator.json" with { type: "json" };
 import breadcrumbTrail from "../../captures/breadcrumb-trail.json" with { type: "json" };
+import buttonGroup from "../../captures/button-group.json" with { type: "json" };
 import button from "../../captures/button.json" with { type: "json" };
 import calendarDay from "../../captures/calendar-day.json" with { type: "json" };
 import calendar from "../../captures/calendar.json" with { type: "json" };
@@ -168,6 +169,7 @@ const FILES: ReadonlyMap<string, unknown> = new Map<string, unknown>([
   ["alert-dialog-content", alertDialogContent],
   ["alert-dialog-open", alertDialogOpen],
   ["icon-button", iconButton],
+  ["button-group", buttonGroup],
   ["tooltip-content", tooltipContent],
   ["tooltip-open", tooltipOpen],
   ["dialog-content", dialogContent],

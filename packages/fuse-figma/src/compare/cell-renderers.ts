@@ -157,6 +157,11 @@ const SOURCES: readonly RendererSource[] = [
     load: async () => (await import("./button-cell.ts")).iconButton,
   },
   {
+    set: "button-group",
+    entry: "dist/button-group.js",
+    load: async () => (await import("./button-group-cell.ts")).buttonGroup,
+  },
+  {
     set: "confirm-button",
     entry: "dist/confirm-button.js",
     load: async () => (await import("./confirm-button-cell.ts")).confirmButton,
