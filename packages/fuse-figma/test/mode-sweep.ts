@@ -57,17 +57,6 @@ export type SweptFile = {
   readonly modes: readonly SweptMode[];
 };
 
-/** Every combination of the file's collection modes, one mode per collection. */
-function everyPin(figma: InMemoryFigma): readonly Pin[] {
-  return figma
-    .collectionNames()
-    .reduce<readonly Pin[]>(
-      (pins, collection) =>
-        pins.flatMap((pin) => figma.modeNames(collection).map((mode) => ({ ...pin, [collection]: mode }))),
-      [{}]
-    );
-}
-
 const capitalized = (value: string): string => `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 
 /**
@@ -106,7 +95,7 @@ async function syncFile(): Promise<SweptFile> {
   await Effect.runPromise(
     run(figma, ["--file-key", FILE_KEY, "sync"]).pipe(Effect.provide(TestConsole.layer))
   );
-  const pins = everyPin(figma);
+  const pins = figma.everyPin();
   if (JSON.stringify(pins.map(themeModesOf).toSorted()) !== JSON.stringify(CATALOG_PINS)) {
     throw new Error("the sync's modes are not one per scheme, identity, segment, brand and density");
   }
@@ -117,7 +106,7 @@ async function syncFile(): Promise<SweptFile> {
     }
     return { pin, theme: theme.success };
   });
-  const stamped = new Set(modes.map(({ theme }) => JSON.stringify(themeStamps(theme))));
+  const stamped = new Set(modes.map((mode) => JSON.stringify(stampsOf(mode))));
   const measured = new Set(EVERY_MODE.map((mode) => JSON.stringify(mode)));
   if (stamped.size !== measured.size || [...stamped].some((stamps) => !measured.has(stamps))) {
     throw new Error("the sync's pins stamp other themes than the capture measures");
@@ -143,6 +132,35 @@ export function sweptFile(): Promise<SweptFile> {
 /** A pin as a failure names it. */
 export const named = (mode: SweptMode): string => Object.values(mode.pin).join(" / ");
 
+/**
+ * The attributes that stamp a page with a pin's theme, as `test:compare` stamps a preview.
+ *
+ * @param mode - The pin and its theme.
+ * @returns The stamps on the root and the body.
+ */
+export const stampsOf = (mode: SweptMode): ThemeStamps => themeStamps(mode.theme);
+
+/**
+ * A built field under a pin, unchecked: a literal's value, or what its variable resolves to in the
+ * file. A suite that shows a wrong kind of value in its mismatch line, rather than stopping on it,
+ * reads the field through this.
+ *
+ * @param figma - The file the token sync wrote.
+ * @param field - The field's value in the spec.
+ * @param mode - The pin to resolve the variable under.
+ * @returns The value the file renders.
+ */
+export function resolvedIn(
+  figma: InMemoryFigma,
+  field: NumberSpec | ColorSpec,
+  mode: SweptMode
+): ReturnType<InMemoryFigma["resolve"]> {
+  if (field.kind === "variable") {
+    return figma.resolve(field.variable.collection, field.variable.name, mode.pin);
+  }
+  return "value" in field ? field.value : field.color;
+}
+
 const isNumber = Schema.is(Schema.Number);
 
 /**
@@ -154,7 +172,7 @@ export function pixelsIn(figma: InMemoryFigma, length: NumberSpec, mode: SweptMo
   if (length.kind === "literal") {
     return length.value;
   }
-  const value = figma.resolve(length.variable.collection, length.variable.name, mode.pin);
+  const value = resolvedIn(figma, length, mode);
   if (!isNumber(value)) {
     throw new Error(`${length.variable.name} resolves to no number under ${named(mode)}`);
   }
@@ -174,9 +192,9 @@ export function colorIn(figma: InMemoryFigma, color: ColorSpec, mode: SweptMode)
   if (color.kind === "literal") {
     return color.color;
   }
-  const value = figma.resolve(color.variable.collection, color.variable.name, mode.pin);
+  const value = resolvedIn(figma, color, mode);
   if (!isRgba(value)) {
-    throw new Error(`${color.variable.name} resolves to no color under ${named(mode)}`);
+    throw new Error(`${color.variable.name} resolves to ${String(value)}, no color, under ${named(mode)}`);
   }
   return value;
 }
@@ -342,8 +360,8 @@ export function sweepSet(
   properties: readonly string[]
 ): Promise<readonly SweptCell[]> {
   const themes = new Map(
-    modes.map(({ theme }) => {
-      const stamps = themeStamps(theme);
+    modes.map((mode) => {
+      const stamps = stampsOf(mode);
       return [JSON.stringify(stamps), stamps] as const;
     })
   );
@@ -357,7 +375,7 @@ export function sweepSet(
       properties,
     });
     return modes.flatMap((mode) => {
-      const at = themeKeys.indexOf(JSON.stringify(themeStamps(mode.theme)));
+      const at = themeKeys.indexOf(JSON.stringify(stampsOf(mode)));
       return cells.map(({ key, cell }, index) => ({ key, cell, mode, elements: read[at]?.[index] ?? [] }));
     });
   });

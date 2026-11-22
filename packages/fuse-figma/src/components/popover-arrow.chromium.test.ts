@@ -1,5 +1,4 @@
-import { Effect, Result } from "effect";
-import { TestConsole } from "effect/testing";
+import { Effect } from "effect";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -20,17 +19,14 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
  * frame at its own width under a root that resizes. It goes red too where the popup's frame
  * draws other shadows than the popup without the arrow, which Chromium computes the same.
  */
-import * as CssColor from "@elmeragroup/color/css-color";
-
-import { FILE_KEY, run, TOKEN } from "../../test/cli-fixture.ts";
 import { fuseModule, openFusePage } from "../../test/fuse-page.ts";
-import { InMemoryFigma } from "../../test/in-memory-figma.ts";
+import type { InMemoryFigma } from "../../test/in-memory-figma.ts";
+import { colorIn, computedColor, named, sameColor, stampsOf, sweptFile } from "../../test/mode-sweep.ts";
+import type { SweptMode } from "../../test/mode-sweep.ts";
 import { placedBeside, specCentre } from "../../test/popup-place.ts";
 import type { Box } from "../../test/popup-place.ts";
-import { parsePreviewTheme, themeStamps } from "../compare/preview-theme.ts";
-import type { ThemeStamps } from "../compare/preview-theme.ts";
 import { buildComponentSets } from "./build-kit.ts";
-import type { BoxSpec, ChildLayerSpec, ColorSpec, FrameLayerSpec, VariantSpec } from "./kit-spec.ts";
+import type { BoxSpec, ChildLayerSpec, FrameLayerSpec, VariantSpec } from "./kit-spec.ts";
 import {
   POPOVER_DESCRIPTION_TEXT,
   POPOVER_FIELD_LABELS,
@@ -109,11 +105,9 @@ type MeasuredBefore = {
   readonly background: string;
 };
 
-/** What the page measures of one open Popover under one pin. */
-type Measured = {
+/** What the page measures of one open Popover under the pin it stamps. */
+type Shown = {
   readonly arrow: boolean;
-  /** The pin's index in `pins`. */
-  readonly pin: number;
   readonly placedSide: string;
   readonly placedAlign: string;
   readonly popup: Box;
@@ -128,13 +122,16 @@ type Measured = {
   readonly before: MeasuredBefore | undefined;
 };
 
-/** What one frame shows of one open Popover: its measures, and whether its entrance has ended. */
-type Frame = Measured & { readonly entered: boolean };
+/** One open Popover as measured under one pin. */
+type Measured = Shown & { readonly mode: SweptMode };
 
-/** Read every open Popover on the page's next animation frame, under the pin at `pin`. */
-async function readFrame(page: Page, pin: number): Promise<readonly Frame[]> {
+/** What one frame shows of one open Popover: its measures, and whether its entrance has ended. */
+type Frame = Shown & { readonly entered: boolean };
+
+/** Read every open Popover on the page's next animation frame. */
+async function readFrame(page: Page): Promise<readonly Frame[]> {
   return page.evaluate(
-    (index) =>
+    () =>
       new Promise<Frame[]>((resolve, reject) => {
         requestAnimationFrame(() => {
           const boxOf = (element: Element) => {
@@ -189,7 +186,6 @@ async function readFrame(page: Page, pin: number): Promise<readonly Frame[]> {
             }
             readings.push({
               arrow: slot.dataset.arrow === "true",
-              pin: index,
               placedSide: popup.dataset.side ?? "",
               placedAlign: popup.dataset.align ?? "",
               popup: boxOf(popup),
@@ -208,8 +204,7 @@ async function readFrame(page: Page, pin: number): Promise<readonly Frame[]> {
           }
           resolve(readings);
         });
-      }),
-    pin
+      })
   );
 }
 
@@ -232,9 +227,9 @@ function isReady(reading: Frame): boolean {
  * sets no timeout of its own, so a popup that never settles leaves only the hang guard to end the
  * test.
  */
-async function measureEveryPin(page: Page, stamps: readonly ThemeStamps[]): Promise<readonly Measured[]> {
+async function measureEveryPin(page: Page, modes: readonly SweptMode[]): Promise<readonly Measured[]> {
   const out: Measured[] = [];
-  for (const [index, stamp] of stamps.entries()) {
+  for (const mode of modes) {
     await page.evaluate(async (each) => {
       for (const [name, value] of Object.entries(each.root)) {
         document.documentElement.setAttribute(name, value);
@@ -246,12 +241,12 @@ async function measureEveryPin(page: Page, stamps: readonly ThemeStamps[]): Prom
       await Promise.all(popups.map((popup) => document.fonts.load(getComputedStyle(popup).font)));
       await document.fonts.ready;
       window.dispatchEvent(new Event("mount-popovers"));
-    }, stamp);
-    let readings = await readFrame(page, index);
+    }, stampsOf(mode));
+    let readings = await readFrame(page);
     while (!readings.every(isReady)) {
-      readings = await readFrame(page, index);
+      readings = await readFrame(page);
     }
-    out.push(...readings.map(({ entered: _entered, ...reading }) => reading));
+    out.push(...readings.map(({ entered: _entered, ...reading }) => ({ ...reading, mode })));
   }
   return out;
 }
@@ -286,39 +281,9 @@ function frameOf(layer: BoxSpec | ChildLayerSpec | undefined, what: string): Fra
   return layer;
 }
 
-/** A frame's mode for each collection of the synced file, by collection name. */
-type Pin = Readonly<Record<string, string>>;
-
-/** A pin's modes, joined for a mismatch line. */
-function pinName(pin: Pin | undefined): string {
-  return Object.values(pin ?? {}).join(" / ");
-}
-
-/** A color as the synced file resolves it under a pin, its channels and alpha from 0 to 1. */
-function syncedColor(color: ColorSpec, pin: Pin) {
-  if (color.kind === "literal") {
-    return color.color;
-  }
-  const value = figma.resolve(color.variable.collection, color.variable.name, pin);
-  if (!(value instanceof Object)) {
-    throw new Error(`${color.variable.name} resolves to no color under ${pinName(pin)}`);
-  }
-  return value;
-}
-
-/** A color Chromium computed, its channels and alpha from 0 to 1. */
-function computedColor(value: string) {
-  const parsed = CssColor.parse(value);
-  if (parsed._tag !== "ok") {
-    throw new Error(`Chromium computed the unreadable color ${value}`);
-  }
-  const { r, g, b, alpha } = CssColor.toSrgb(parsed.value);
-  return { r, g, b, a: alpha };
-}
-
 let browser: Browser;
 let figma: InMemoryFigma;
-let pins: readonly Pin[];
+let pins: readonly SweptMode[];
 let measured: readonly Measured[];
 let plain: VariantSpec;
 let withArrow: VariantSpec;
@@ -336,21 +301,10 @@ beforeAll(async () => {
   };
   plain = variantWith("false");
   withArrow = variantWith("true");
-  figma = new InMemoryFigma(FILE_KEY, TOKEN);
-  await Effect.runPromise(
-    run(figma, ["--file-key", FILE_KEY, "sync"]).pipe(Effect.provide(TestConsole.layer))
-  );
-  pins = figma.everyPin();
-  const stamps = pins.map((pin) => {
-    const theme = parsePreviewTheme(Object.entries(pin).map(([collection, mode]) => ({ collection, mode })));
-    if (Result.isFailure(theme)) {
-      throw new Error(theme.failure.message);
-    }
-    return themeStamps(theme.success);
-  });
+  ({ figma, modes: pins } = await sweptFile());
   const page = await browser.newPage({ viewport: { width: 480, height: 1000 } });
   await openFusePage(page, { entry: ENTRY });
-  measured = await measureEveryPin(page, stamps);
+  measured = await measureEveryPin(page, pins);
 });
 
 afterAll(async () => {
@@ -425,7 +379,7 @@ describe("Popover content's arrow, as the kit builds it", () => {
         Math.abs(expected.y - observed.y) > TOLERANCE_PX ||
         Math.abs((literal(arrow, "horizontal") ?? 0) - box.width) > TOLERANCE_PX ||
         Math.abs((literal(arrow, "vertical") ?? 0) - box.height) > TOLERANCE_PX
-        ? [{ pin: pinName(pins[reading.pin]), expected, observed, box }]
+        ? [{ pin: named(reading.mode), expected, observed, box }]
         : [];
     });
     expect(off).toEqual([]);
@@ -458,7 +412,7 @@ describe("Popover content's arrow, as the kit builds it", () => {
         Math.abs((literal(before, "vertical") ?? 0) - own.height) > TOLERANCE_PX ||
         Math.abs((before.rotation ?? 0) + own.turn) > TURN_TOLERANCE ||
         Math.abs(own.scale - 1) > TURN_TOLERANCE
-        ? [{ pin: pinName(pins[reading.pin]), expected, own, rotation: before.rotation }]
+        ? [{ pin: named(reading.mode), expected, own, rotation: before.rotation }]
         : [];
     });
     expect(off).toEqual([]);
@@ -496,17 +450,13 @@ describe("Popover content's arrow, as the kit builds it", () => {
       throw new Error("the ::before draws no stroke");
     }
     const apart = readings.flatMap((reading) => {
-      const pin = pins[reading.pin] ?? {};
-      const synced = syncedColor(color, pin);
-      return (reading.before?.borders ?? []).flatMap(([style, , side]) => {
-        const shown = computedColor(side);
-        return style === "none" ||
-          (["r", "g", "b", "a"] as const).every(
-            (channel) => Math.abs(synced[channel] - shown[channel]) <= CHANNEL_TOLERANCE
-          )
+      const pin = reading.mode;
+      const synced = colorIn(figma, color, pin);
+      return (reading.before?.borders ?? []).flatMap(([style, , side]) =>
+        style === "none" || sameColor(synced, computedColor(side), CHANNEL_TOLERANCE)
           ? []
-          : [`${pinName(pin)}: synced ${JSON.stringify(synced)}, Chromium ${side}`];
-      });
+          : [`${named(pin)}: synced ${JSON.stringify(synced)}, Chromium ${side}`]
+      );
     });
     expect(apart).toEqual([]);
     for (const reading of readings) {
@@ -522,9 +472,9 @@ describe("Popover content's arrow, as the kit builds it", () => {
   // Chromium computes the popup's shadow and ring the same with and without the arrow, so the arrow
   // variant's popup frame draws the plain variant's root shadows and clips for their spreads.
   it("keeps the popup's shadows and clip on its frame", () => {
-    for (const pin of new Set(measured.map((reading) => reading.pin))) {
+    for (const mode of new Set(measured.map((reading) => reading.mode))) {
       const shadows = new Set(
-        measured.filter((reading) => reading.pin === pin).map((reading) => reading.popupShadow)
+        measured.filter((reading) => reading.mode === mode).map((reading) => reading.popupShadow)
       );
       expect(shadows.size).toBe(1);
     }

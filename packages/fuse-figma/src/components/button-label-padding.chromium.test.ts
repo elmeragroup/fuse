@@ -39,13 +39,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { builtKit, variantRoot } from "../../test/built-kit.ts";
 import type { BuiltSets } from "../../test/built-kit.ts";
-import { named, pixelsIn, sweptFile } from "../../test/mode-sweep.ts";
+import { named, pixelsIn, stampsOf, sweptFile } from "../../test/mode-sweep.ts";
 import type { SweptFile, SweptMode } from "../../test/mode-sweep.ts";
 import { labelButton } from "../compare/button-cell.ts";
 import { dataTableFilterBar } from "../compare/data-table-filter-cell.ts";
 import { locateFuseBuild, readPageAssets } from "../compare/page-assets.ts";
 import { STYLES_LAYERS } from "../compare/preview-page.ts";
-import { themeStamps } from "../compare/preview-theme.ts";
 import type { ThemeStamps } from "../compare/preview-theme.ts";
 import { BUTTON_LABEL_SIZES } from "./button-kit.ts";
 import { walkLayers } from "./kit-spec.ts";
@@ -217,10 +216,7 @@ beforeAll(async () => {
   browser = await chromium.launch();
   const page = await browser.newPage();
   await page.setContent(tableDocument(`${assets.styles}\n${assets.themes}`));
-  measured = await measurePins(
-    page,
-    file.modes.map(({ theme }) => themeStamps(theme))
-  );
+  measured = await measurePins(page, file.modes.map(stampsOf));
 });
 
 /** The file's pins that take an identity and a density, each with its index among the file's. */

@@ -15,20 +15,16 @@
  * them, and must differ from the kit's paint past the tolerance, so the comparison can see a
  * highlight where one paints.
  */
-import { Effect } from "effect";
-import { TestConsole } from "effect/testing";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { builtKit, variantRoot } from "../../test/built-kit.ts";
-import { FILE_KEY, run, TOKEN } from "../../test/cli-fixture.ts";
 import { openFusePage } from "../../test/fuse-page.ts";
-import { InMemoryFigma } from "../../test/in-memory-figma.ts";
-import { everyPin, pinName, pinStamps } from "../../test/mode-pins.ts";
-import type { Pin } from "../../test/mode-pins.ts";
-import { EVERY_MODE } from "../capture/page-modes.ts";
+import type { InMemoryFigma } from "../../test/in-memory-figma.ts";
+import { colorIn, named, stampsOf, sweptFile } from "../../test/mode-sweep.ts";
+import type { SweptMode } from "../../test/mode-sweep.ts";
 import { attachment } from "../compare/attachment-cell.ts";
 import type { ThemeStamps } from "../compare/preview-theme.ts";
 import { crop, decodePng } from "../compare/raster.ts";
@@ -120,13 +116,13 @@ function stampsKey(stamps: ThemeStamps): string {
 }
 
 /** A theme the page stamps, with every pick of modes that stamps it. */
-type Theme = { readonly stamps: ThemeStamps; readonly pins: readonly Pin[] };
+type Theme = { readonly stamps: ThemeStamps; readonly pins: readonly SweptMode[] };
 
 /** The file's picks of modes, grouped by the theme each stamps on the page. */
-function themesOf(pins: readonly Pin[]): readonly Theme[] {
-  const byKey = new Map<string, { stamps: ThemeStamps; pins: Pin[] }>();
+function themesOf(pins: readonly SweptMode[]): readonly Theme[] {
+  const byKey = new Map<string, { stamps: ThemeStamps; pins: SweptMode[] }>();
   for (const pin of pins) {
-    const stamps = pinStamps(pin);
+    const stamps = stampsOf(pin);
     const key = stampsKey(stamps);
     const theme = byKey.get(key) ?? { stamps, pins: [] };
     theme.pins.push(pin);
@@ -140,15 +136,8 @@ function themesOf(pins: readonly Pin[]): readonly Theme[] {
  *
  * @throws When the variable resolves to no color, a defect in the synced file.
  */
-function cssColor(figma: InMemoryFigma, color: ColorSpec, pin: Pin): string {
-  const value =
-    color.kind === "literal"
-      ? color.color
-      : figma.resolve(color.variable.collection, color.variable.name, pin);
-  if (!(value instanceof Object)) {
-    throw new Error(`${pinName(pin)} resolves the title to ${String(value)}, no color`);
-  }
-  const { r, g, b, a } = value;
+function cssColor(figma: InMemoryFigma, color: ColorSpec, pin: SweptMode): string {
+  const { r, g, b, a } = colorIn(figma, color, pin);
   return `rgb(${String(r * 255)} ${String(g * 255)} ${String(b * 255)} / ${String(a)})`;
 }
 
@@ -330,7 +319,7 @@ async function measureEveryPin(
   for (const theme of themes) {
     const boxes = await stampTheme(page, theme.stamps);
     const truncated = new Map(boxes.map((box) => [box.id, box.truncated]));
-    const picksByColors = new Map<string, { colors: Record<string, string>; pins: Pin[] }>();
+    const picksByColors = new Map<string, { colors: Record<string, string>; pins: SweptMode[] }>();
     for (const pin of theme.pins) {
       const colors = Object.fromEntries([...fills].map(([key, color]) => [key, cssColor(figma, color, pin)]));
       const key = JSON.stringify(colors);
@@ -343,7 +332,7 @@ async function measureEveryPin(
       const differences = await compareTitles(page, boxes);
       for (const pin of pins) {
         for (const { row, difference } of differences) {
-          out.push({ row, pin: pinName(pin), truncated: truncated.get(rowId(row)) ?? false, difference });
+          out.push({ row, pin: named(pin), truncated: truncated.get(rowId(row)) ?? false, difference });
         }
       }
     }
@@ -357,11 +346,7 @@ let pinCount: number;
 let measured: readonly Measured[];
 
 beforeAll(async () => {
-  const figma = new InMemoryFigma(FILE_KEY, TOKEN);
-  await Effect.runPromise(
-    run(figma, ["--file-key", FILE_KEY, "sync"]).pipe(Effect.provide(TestConsole.layer))
-  );
-  const pins = everyPin(figma);
+  const { figma, modes: pins } = await sweptFile();
   pinCount = pins.length;
   themes = themesOf(pins);
   browser = await chromium.launch();
@@ -375,12 +360,6 @@ afterAll(async () => {
 });
 
 describe("the shimmering Attachment titles", () => {
-  it("stamps each mode the capture measures, from the file's picks", () => {
-    expect(themes.map((theme) => stampsKey(theme.stamps)).toSorted()).toEqual(
-      EVERY_MODE.map(stampsKey).toSorted()
-    );
-  });
-
   it.each(SIZES.flatMap((size) => SHIMMERING.map((state) => ({ size, state }))))(
     "draws the $state title at $size size in the fill Chromium paints with animations off, under every pick",
     ({ size, state }) => {

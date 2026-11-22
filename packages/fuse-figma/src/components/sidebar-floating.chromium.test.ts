@@ -39,6 +39,8 @@ import { LocaleProvider } from "../../../fuse/dist/theme.js";
 import { builtKit, variantRoot } from "../../test/built-kit.ts";
 import type { BuiltSets } from "../../test/built-kit.ts";
 import type { InMemoryFigma } from "../../test/in-memory-figma.ts";
+import { named, resolvedIn, stampsOf, sweptFile } from "../../test/mode-sweep.ts";
+import type { SweptMode } from "../../test/mode-sweep.ts";
 import { locateFuseBuild, readPageAssets } from "../compare/page-assets.ts";
 import { STYLES_LAYERS } from "../compare/preview-page.ts";
 import type { ThemeStamps } from "../compare/preview-theme.ts";
@@ -46,8 +48,6 @@ import { cornerLengths } from "./corner-spec.ts";
 import type { CornerRadiusSpec } from "./corner-spec.ts";
 import { walkLayers } from "./kit-spec.ts";
 import type { BoxSpec, ComponentRootSpec, NumberSpec } from "./kit-spec.ts";
-import { pinName, pixels, syncedPins } from "./synced-pins.ts";
-import type { Pin } from "./synced-pins.ts";
 
 /** The sections the floating surface pads, by the `data-slot` each root carries. */
 const SECTIONS = ["header", "group", "footer"] as const;
@@ -209,16 +209,12 @@ function measurePins(page: Page, stamps: readonly ThemeStamps[]): Promise<readon
 let browser: Browser | undefined;
 let kit: BuiltSets;
 let figma: InMemoryFigma;
-let pins: readonly Pin[];
+let pins: readonly SweptMode[];
 let measured: readonly Measured[];
 
 beforeAll(async () => {
   kit = await builtKit();
-  const synced = await syncedPins();
-  ({ figma, pins } = synced);
-  if (pins.length === 0) {
-    throw new Error("the synced file holds no mode, so no case would compare a length");
-  }
+  ({ figma, modes: pins } = await sweptFile());
   const assets = await Effect.runPromise(
     Effect.gen(function* () {
       return yield* readPageAssets(yield* locateFuseBuild(), new Map());
@@ -232,7 +228,7 @@ beforeAll(async () => {
 ${assets.styles}
 ${assets.themes}
 </style></head><body>${COLLAPSED.map(floatingSidebar).join("\n")}</body></html>`);
-  measured = await measurePins(page, synced.stamps);
+  measured = await measurePins(page, pins.map(stampsOf));
 }, 300_000);
 
 afterAll(async () => {
@@ -252,20 +248,20 @@ function paddingOf(box: BoxSpec): readonly NumberSpec[] {
 }
 
 /** The lengths the file renders under a pin. */
-function resolved(lengths: readonly NumberSpec[], pin: Pin) {
-  return lengths.map((length) => pixels(figma, length, pin));
+function resolved(lengths: readonly NumberSpec[], pin: SweptMode) {
+  return lengths.map((length) => resolvedIn(figma, length, pin));
 }
 
 /** A mismatch line where the file's lengths and Chromium's differ, and none where they agree. */
 function apartLine(
-  pin: Pin,
+  pin: SweptMode,
   what: string,
-  built: readonly ReturnType<typeof pixels>[],
+  built: readonly ReturnType<typeof resolvedIn>[],
   chromium: readonly (number | undefined)[] | undefined
 ): readonly string[] {
   return JSON.stringify(built) === JSON.stringify(chromium)
     ? []
-    : [`${pinName(pin)}: ${what} ${JSON.stringify(built)}, Chromium ${JSON.stringify(chromium)}`];
+    : [`${named(pin)}: ${what} ${JSON.stringify(built)}, Chromium ${JSON.stringify(chromium)}`];
 }
 
 /** The corner each row instance in a section variant draws: its own override, else its inner variant's. */
@@ -283,7 +279,7 @@ function drawnCorners(section: ComponentRootSpec) {
 
 /** The mismatch lines for one section's padding and its rows' corners under one pin. */
 function sectionApart(
-  pin: Pin,
+  pin: SweptMode,
   section: string,
   root: ComponentRootSpec,
   rows: ReturnType<typeof drawnCorners>,
