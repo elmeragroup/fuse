@@ -102,11 +102,14 @@ export const KIT_PARITY = {
       "The card's fill clipped inside a translucent border; more than one month, a month of four or six weeks, and a disabled calendar; and a day both unavailable and focused or hovered.",
     issue: CALENDAR_DAY,
   },
+  // The horizontal card is a known limit. Its parts grow from different bases, so on one line the
+  // content stays 64px wider than the footer, which neither a Figma row's equal fills nor a grid's
+  // FLEX shares keep. `card-kit.ts` gives the full reason.
   card: {
     kind: "partial",
     sets: ["card"],
     missing:
-      '`direction="horizontal"` (#852), `Card.Action`, `Card.Tag`, `Card.Section`, `Card.SectionButton`, a title `icon`, the title and description `size`s, and a card without its header, description or footer.',
+      '`direction="horizontal"`, `Card.Action`, `Card.Tag`, `Card.Section`, `Card.SectionButton`, a title `icon`, the title and description `size`s, and a card without its header, description or footer.',
     issue: NICE_TO_HAVE,
   },
   carousel: { kind: "issue", issue: NICE_TO_HAVE },
