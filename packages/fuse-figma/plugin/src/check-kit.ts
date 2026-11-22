@@ -87,6 +87,7 @@ function overrideRefs(override: InstanceOverride): BoundRef[] {
       ]);
     case "textAlign":
     case "primaryAlign":
+    case "strokeSides":
       return [];
     default:
       return boundColor(override.color);

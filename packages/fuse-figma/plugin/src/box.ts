@@ -37,7 +37,14 @@ function paddingField(node: LayerParent, side: "Top" | "Right" | "Bottom" | "Lef
   };
 }
 
-function strokeWeightField(node: LayerParent): NumberField {
+/**
+ * A stroke's one weight as a number field: it matches where every side holds it and binds each
+ * side, so a bound weight binds all four.
+ *
+ * @param node - The box, or an instance layer whose stroke goes back to its main's one weight.
+ * @returns The field.
+ */
+export function strokeWeightField(node: LayerParent | InstanceNode): NumberField {
   const sides = ["strokeTopWeight", "strokeRightWeight", "strokeBottomWeight", "strokeLeftWeight"] as const;
   return {
     name: "strokeWeight",
@@ -57,11 +64,16 @@ function strokeWeightField(node: LayerParent): NumberField {
  * writes each side, so every side ends at its planned weight, the sides that already matched included.
  *
  * @param run - The run.
- * @param node - The box.
+ * @param node - The box, or an instance layer that overrides its stroke's sides.
  * @param label - The box's label, for change lines.
  * @param sides - Each side's weight.
  */
-function planStrokeSides(run: Run, node: LayerParent, label: string, sides: SideStroke["sides"]): void {
+export function planStrokeSides(
+  run: Run,
+  node: LayerParent | InstanceNode,
+  label: string,
+  sides: SideStroke["sides"]
+): void {
   const weights = [
     ["strokeTopWeight", sides.top],
     ["strokeRightWeight", sides.right],

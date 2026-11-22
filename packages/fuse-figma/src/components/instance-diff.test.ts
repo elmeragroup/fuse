@@ -102,3 +102,49 @@ describe("a root's alignment along its direction, built in place", () => {
     expect(diff.unmapped.map(({ path, field }) => [path, field])).toEqual([[["inner"], "primaryAlign"]]);
   });
 });
+
+// Oracle: the Figma plugin typings, where an instance layer's `strokeTopWeight`,
+// `strokeRightWeight`, `strokeBottomWeight` and `strokeLeftWeight` are fields of its own that
+// `overrides` lists, beside the stroke's paints. A chip segment's `border-0 border-s` keeps only the
+// start edge of Button's 1px border, which four weights draw. A dashed stroke's pattern and a bound
+// weight are no such fields, so they stay unmapped.
+describe("a root's stroke on some sides, built in place", () => {
+  const CLEAR = { kind: "literal", color: { r: 0, g: 0, b: 0, a: 0 } } as const;
+  const BORDER = { kind: "literal", color: { r: 0.9, g: 0.9, b: 0.9, a: 1 } } as const;
+  const START = { top: 0, right: 0, bottom: 0, left: 1 };
+  const ONE = { kind: "literal", value: 1 } as const;
+
+  it("overrides the four weights and the color of a variant's stroke on every side", () => {
+    const diff = diffInstance(
+      inPlace({ primaryAlign: "CENTER", sizing: VARIANT.sizing, stroke: { color: BORDER, sides: START } }),
+      {
+        ...VARIANT,
+        stroke: { color: CLEAR, weight: ONE },
+      }
+    );
+    expect([diff.overrides, diff.unmapped]).toEqual([
+      [
+        { path: [], field: "strokeSides", sides: START },
+        { path: [], field: "strokeColor", color: BORDER },
+      ],
+      [],
+    ]);
+  });
+
+  it.each([
+    ["dashed", { color: CLEAR, weight: ONE, dashPattern: [3, 2] }],
+    [
+      "bound",
+      { color: CLEAR, weight: { kind: "variable", variable: { collection: "Fuse tokens", name: "w" } } },
+    ],
+  ] as const)("stays unmapped over a %s stroke on every side", (_, stroke) => {
+    const diff = diffInstance(
+      inPlace({ primaryAlign: "CENTER", sizing: VARIANT.sizing, stroke: { color: CLEAR, sides: START } }),
+      {
+        ...VARIANT,
+        stroke,
+      }
+    );
+    expect([diff.overrides, diff.unmapped.map(({ field }) => field)]).toEqual([[], ["stroke"]]);
+  });
+});
