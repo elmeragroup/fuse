@@ -12,6 +12,7 @@
  * ({@link drawsAtRoom}). A part wider than the room by one word, its min-content width, overflows
  * in CSS where a fill wraps the word: a known limit, as for `flex: 1`.
  */
+import { paintsAnything } from "./box-paint";
 import { fitsRoom, partShare } from "./box-sizing";
 import type { Holder, RowShare } from "./box-sizing";
 import { evaluateLength, evaluateNumber, normalizeCss, readNumber } from "./css-values";
@@ -285,9 +286,7 @@ export function drawsFromStart(layer: ChildLayerSpec): boolean {
       : layer.direction === "VERTICAL" && (layer.counterAlign === "MIN" || flowing.every(fillsAcross));
   return (
     fromStart &&
-    layer.fill === undefined &&
-    layer.stroke === undefined &&
-    layer.shadows.length === 0 &&
+    !paintsAnything(layer) &&
     layer.placement === undefined &&
     (layer.rotation ?? 0) === 0 &&
     flowing.length === layer.children.length &&
