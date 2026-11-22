@@ -269,6 +269,14 @@ const MeasuredFactsSchema = Schema.Struct({
    * whichever is wider.
    */
   spansBeside: Schema.optionalKey(Schema.Finite),
+  /**
+   * On an element that sets border sides or corners by their flow-relative names, those edges
+   * (`FlowRelativeEdges` in `winners.ts`), where its computed `direction` is not `ltr` or its
+   * `writing-mode` is not `horizontal-tb` in some mode, as a `dir` on an ancestor makes it. Its
+   * logical sides or corners then lie elsewhere than on the horizontal, left-to-right page the
+   * capture reads them on.
+   */
+  otherFlow: Schema.optionalKey(Schema.Array(Schema.Literals(["corners", "sides"]))),
 });
 
 /** What the capture measured of an element, as {@link MeasuredFactsSchema} lists. */

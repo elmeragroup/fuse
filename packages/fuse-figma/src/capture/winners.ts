@@ -132,6 +132,36 @@ export function physicalLonghand(longhand: string): string {
   return longhand;
 }
 
+/** The edges of a box a flow-relative property sets: its corners or its border sides. */
+export type FlowRelativeEdges = "corners" | "sides";
+
+/**
+ * The properties that set each edge by its flow-relative names: `border-start-end-radius` a corner,
+ * and `border-inline-start-width` or `border-block` a side. The capture's page reads its sheets with
+ * these patterns (`flow-facts.ts`), and the build its declarations, through {@link flowRelativeEdges}.
+ */
+export const FLOW_RELATIVE_NAMES = {
+  corners: /^border-(?:start|end)-(?:start|end)-radius$/,
+  sides: /^border-(?:block|inline)(?:-start|-end)?(?:-(?:width|style|color))?$/,
+} as const satisfies Record<FlowRelativeEdges, RegExp>;
+
+/** Every edge {@link FLOW_RELATIVE_NAMES} names. */
+export const FLOW_EDGES = ["corners", "sides"] as const satisfies readonly FlowRelativeEdges[];
+
+/**
+ * The edges a property sets by their flow-relative names, which land on other physical sides or
+ * corners where the box lays out right to left or in vertical lines (CSS Logical Properties 1 §4,
+ * §6.2). {@link physicalLonghand} reads each as on a horizontal, left-to-right page, so the capture
+ * measures whether a box that sets one lays out otherwise (`otherFlow`), and the build maps those
+ * edges only where it does not.
+ *
+ * @param property - A property, a longhand or a shorthand.
+ * @returns The edges it sets, none for a property of no flow-relative edge.
+ */
+export function flowRelativeEdges(property: string): readonly FlowRelativeEdges[] {
+  return FLOW_EDGES.filter((edges) => FLOW_RELATIVE_NAMES[edges].test(property));
+}
+
 /** Compare two rank tuples, shorter ones padded with zeros. */
 function compareRanks(left: readonly number[], right: readonly number[]): number {
   for (let index = 0; index < Math.max(left.length, right.length); index += 1) {

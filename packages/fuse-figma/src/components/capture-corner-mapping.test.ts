@@ -35,6 +35,7 @@ describe("a radius per corner", () => {
     ["size-[36px] rounded-t-[8px]", corners(8, 8, 0, 0)],
     ["size-[36px] rounded-ss-[4px] rounded-ee-[6px]", corners(4, 0, 6, 0)],
     ["size-[36px] rounded-tl-[20px] rounded-tr-[20px]", corners(18, 18, 0, 0)],
+    ["size-[36px] rounded-[8px] rounded-tl-[calc(1px-4px)]", corners(0, 8, 8, 8)],
   ])("draws %s on the corners it names", async (classes, expected) => {
     const { variant, coverage } = await buildChip(classes);
     expect(variant?.root.cornerRadius).toEqual(expected);
@@ -111,6 +112,205 @@ describe("a radius per corner", () => {
       bottomRight: literal(0),
       bottomLeft: literal(0),
     });
+  });
+
+  // Oracle: CSS Values 4 §10.12. A radius is a non-negative length, so Chromium computes a whole
+  // `calc(1px - 4px)` radius as 0px.
+  it("draws a whole radius whose calc() computes below 0 as 0", async () => {
+    const { variant, coverage } = await buildChip("size-[36px] rounded-[calc(1px-4px)]");
+    expect([variant?.root.cornerRadius, notesOf(coverage, "rounded-[calc(1px-4px)]")]).toEqual([
+      literal(0),
+      [["border-radius", "literal", "0px"]],
+    ]);
+  });
+
+  // Oracle: CSS Cascade 5 §6 and CSS Backgrounds 3 §5.1. A parent's later `rounded-r-none`, put on
+  // the Button by the parent's rule, wins the right corners, and the Button's `rounded-*` keeps the
+  // left ones. Fuse's ButtonGroup sets all four corners by longhands, so this is the case of a parent
+  // that sets only some. The capture measured the Button wider than twice its radius (`cornersFit`), and its 36px
+  // height holds two 16px radii, so CSS scales neither.
+  it("squares the corners a parent's rule takes from a Button's own radius", async () => {
+    const variables = makeVariableIndex([
+      {
+        ref: { collection: "Fuse tokens", name: "radius" },
+        webSyntax: "var(--radius)",
+        minimum: 4,
+        maximum: 16,
+      },
+    ]);
+    const { variant, coverage } = await buildCaptured(
+      chip(),
+      rest({
+        slot: "chip",
+        classes: "flex h-[36px] rounded-(--radius)",
+        fromParent: "rounded-r-none",
+        measured: { cornersFit: true },
+      }),
+      { variables }
+    );
+    const radius = { kind: "variable", variable: { collection: "Fuse tokens", name: "radius" } };
+    expect(variant?.root.cornerRadius).toEqual({
+      kind: "corners",
+      topLeft: radius,
+      topRight: literal(0),
+      bottomRight: literal(0),
+      bottomLeft: radius,
+    });
+    expect(coverage.filter((row) => row.outcome === "unmapped")).toEqual([]);
+  });
+
+  // Oracle: CSS Backgrounds 3 §5.5. A whole `border-radius: var(--r)` beside `rounded-b-none` rounds
+  // the top corners by `--r`. Two 16px radii fit a 36px top side, so CSS draws them as written at any
+  // width. Two 20px radii overrun it, so CSS scales them to 18px at 36px wide and draws 20px at 48px,
+  // which no one Figma length follows.
+  it.each([
+    {
+      radius: "16px",
+      cornerRadius: corners(16, 16, 0, 0),
+      outcome: "literal",
+    },
+    {
+      radius: "20px",
+      cornerRadius: literal(0),
+      outcome: "unmapped",
+      detail:
+        "CSS scales the radius `border-radius` gives the topLeft and topRight corners, with the others, to fit the box's sides, by a factor its size sets, which no Figma corner follows, so none of the box's corners maps",
+    },
+  ])(
+    "maps a whole radius of $radius beside a corner longhand only where CSS scales no corner",
+    async ({ radius, cornerRadius, outcome, detail }) => {
+      const { variant, coverage } = await buildChip(
+        `size-[36px] [--r:${radius}] rounded-(--r) rounded-b-none`
+      );
+      const notes = [...notesOf(coverage, "rounded-(--r)"), ...notesOf(coverage, "rounded-b-none")];
+      expect([
+        variant?.root.cornerRadius,
+        notes.map(([property, each]) => [property, each]),
+        detail === undefined ? [] : [...new Set(notes.map(([, , note]) => note))],
+      ]).toEqual([
+        cornerRadius,
+        [
+          ["border-radius", outcome],
+          ["border-bottom-left-radius", outcome],
+          ["border-bottom-right-radius", outcome],
+        ],
+        detail === undefined ? [] : [detail],
+      ]);
+    }
+  );
+
+  // Oracle: CSS Backgrounds 3 §5.5. An infinite radius scales every radius by one factor, which a
+  // variable beside it follows in no binding, so the variable is why neither corner maps.
+  it("names the variable beside an infinite radius as why no corner maps", async () => {
+    const variables = makeVariableIndex([
+      {
+        ref: { collection: "Fuse tokens", name: "radius" },
+        webSyntax: "var(--radius)",
+        minimum: 4,
+        maximum: 8,
+      },
+    ]);
+    const { variant, coverage } = await buildChip(
+      "size-[36px] rounded-tl-full rounded-tr-(--radius)",
+      [],
+      {},
+      { variables }
+    );
+    expect([
+      variant?.root.cornerRadius,
+      notesOf(coverage, "rounded-tl-full"),
+      notesOf(coverage, "rounded-tr-(--radius)"),
+    ]).toEqual([
+      literal(0),
+      [
+        [
+          "border-top-left-radius",
+          "unmapped",
+          "CSS scales the variable on the topRight corner beside this infinite radius by a factor no binding follows, so none of the box's corners maps",
+        ],
+      ],
+      [
+        [
+          "border-top-right-radius",
+          "unmapped",
+          "CSS scales this variable beside the infinite radius on the topLeft corner by a factor no binding follows, so none of the box's corners maps",
+        ],
+      ],
+    ]);
+  });
+
+  // Oracle: Chromium computed `border-top-right-radius` 8px under `direction: rtl` for
+  // `border-start-start-radius: 8px` (CSS Logical Properties 1 §6.2), the corner a left-to-right page
+  // gives the top left. The capture splits `rounded-[4px]` into the right corners it wins there.
+  it("leaves a right-to-left box's corners unmapped where it sets a logical corner", async () => {
+    const { variant, coverage } = await buildChip(
+      "size-[36px] [direction:rtl] rounded-[4px] rounded-s-[8px]"
+    );
+    const rtl =
+      "the box lays out other than left to right in horizontal lines, which puts its logical corners elsewhere than the capture reads them";
+    const other = "another of the box's corners does not map, so none of its corners does";
+    expect([
+      variant?.root.cornerRadius,
+      notesOf(coverage, "rounded-s-[8px]"),
+      notesOf(coverage, "rounded-[4px]"),
+    ]).toEqual([
+      literal(0),
+      [
+        ["border-end-start-radius", "unmapped", rtl],
+        ["border-start-start-radius", "unmapped", rtl],
+      ],
+      [
+        ["border-bottom-right-radius", "unmapped", other],
+        ["border-top-right-radius", "unmapped", other],
+      ],
+    ]);
+  });
+
+  // Oracle: CSS Logical Properties 1 §6.2 and Chromium 153's computed style of a `::before` below an
+  // ancestor's `dir="rtl"`: `border-start-start-radius: 6px` rounds its top right. The capture measures
+  // no flow for a pseudo-element, so a logical corner on the layer it draws may lie on any corner, and
+  // its own direction reads left to right where the `dir` sits outside its cascade.
+  it("leaves a drawn pseudo-element's logical corner unmapped, whose flow the capture does not measure", async () => {
+    const { variant, coverage } = await buildCaptured(
+      chip(),
+      rest({
+        slot: "chip",
+        classes: "relative size-[36px]",
+        pseudo: {
+          before: {
+            classes: "absolute top-0 left-0 size-[16px] bg-[#ff0000] rounded-ss-[6px]",
+            written: [{ className: "before:content-['']", property: "content", value: '""' }],
+          },
+        },
+        measured: { pseudoBoxes: ["before"] },
+      })
+    );
+    const before = variant?.root.children.find((layer) => layer.key === "::before");
+    expect([
+      before?.kind === "frame" ? before.cornerRadius : "no layer",
+      notesOf(coverage, "rounded-ss-[6px]"),
+    ]).toEqual([
+      literal(0),
+      [
+        [
+          "border-start-start-radius",
+          "unmapped",
+          "the capture does not measure where the box lays out, as on a pseudo-element, so the build cannot tell where its logical corners lie",
+        ],
+      ],
+    ]);
+  });
+
+  it("names an infinite radius on a box that fixes no side as why it stays unmapped", async () => {
+    const { variant, coverage } = await buildChip("rounded-s-full");
+    expect([variant?.root.cornerRadius, notesOf(coverage, "rounded-s-full")]).toEqual([
+      literal(0),
+      ["border-end-start-radius", "border-start-start-radius"].map((property) => [
+        property,
+        "unmapped",
+        "an infinite radius takes its length from the box's sides, which hold no literal length",
+      ]),
+    ]);
   });
 
   it("leaves a variable that CSS scales in some mode unmapped", async () => {
