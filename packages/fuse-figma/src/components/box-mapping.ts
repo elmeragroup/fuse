@@ -123,6 +123,7 @@ import {
 } from "./label-layout";
 import type { LabelScope, PlacedLabel, TextPlacement } from "./label-layout";
 import type { CoverageNote, Feed, LayerStyle, SpecField } from "./layer-style";
+import { logicalSidesOf } from "./logical-sides";
 import {
   adjoinsMargin,
   foldNegativeMargin,
@@ -1340,6 +1341,7 @@ function mapBoxBeforeClip(
       held: heldSizing(reader, { sizing, limits, borders }, children),
       leastWidth: leastHugWidth(laidOut, context.variables),
       holdsCorners: cascade.measured?.cornersFit === true,
+      logical: logicalSidesOf(reader, "corners", cascade.measured?.otherFlow ?? "unmeasured"),
       leastHeight: boxHeightBounds(
         grid === undefined ? laidOut : { ...laidOut, grid: keyedCells(grid, children) },
         context.variables

@@ -2,6 +2,7 @@
  * The cascade of one box, the root or a part, as the mapping reads it: its own style, and the
  * cascades of the parts and icons below it. `capture/capture-cascade.ts` runs it from a set's capture.
  */
+import type { FlowRelativeEdges } from "../capture/winners";
 import type { Cell, IconSlot, PreviewLength } from "./component-spec";
 import type { Origin } from "./coverage-log";
 import type { DrawnAt } from "./drawn-parts";
@@ -276,6 +277,11 @@ export type MeasuredBox = {
    * box sharing their edges contests, as the capture read it.
    */
   readonly bordersCollapse: boolean;
+  /**
+   * The edges the box sets by their flow-relative names, its corners or its border sides, where it
+   * lays out other than left to right in horizontal lines in some mode, as the capture measured.
+   */
+  readonly otherFlow: readonly FlowRelativeEdges[];
   /** The box is a flex row's `inline` item, which sits on the row's one line in every mode. */
   readonly inlineRow: boolean;
   readonly widest: boolean;

@@ -51,6 +51,7 @@ import type {
   VariableSource,
 } from "./capture-format.ts";
 import { factsOfWinners } from "./declared-facts.ts";
+import type { FlowRelativeElement } from "./flow-facts.ts";
 import type { SetManifest } from "./manifest.ts";
 import { measuredFacts } from "./page-facts.ts";
 import type { RootRole } from "./page-facts.ts";
@@ -65,6 +66,7 @@ import {
 import type { RawCell, RawElement } from "./read-page.ts";
 import {
   capturedDeclaration,
+  flowRelativeEdges,
   isRecorded,
   owningClass,
   classNamesIn,
@@ -602,6 +604,9 @@ type WinnerCheck = {
   readonly longhands: readonly string[];
 };
 
+/** A longhand whose computed value a forced winner changed, and how it changed. */
+type Changed = { readonly longhand: string; readonly change: string };
+
 /**
  * Force every winner of an element onto it at once, each as an important inline declaration in
  * cascade order, so each longhand ends at its winner's value, and return each longhand whose
@@ -612,7 +617,7 @@ async function contradictions(
   cdp: CDPSession,
   nodeId: number,
   checks: readonly WinnerCheck[]
-): Promise<readonly string[]> {
+): Promise<readonly Changed[]> {
   const { object } = await cdp.send("DOM.resolveNode", { nodeId });
   if (object.objectId === undefined || checks.length === 0) {
     return [];
@@ -629,11 +634,11 @@ async function contradictions(
       for (const check of checks) { this.style.setProperty(check.property, check.value, "important"); }
       const after = read();
       if (original === null) { this.removeAttribute("style"); } else { this.setAttribute("style", original); }
-      return names.flatMap((name, index) => before[index] === after[index] ? [] : [name + ": " + before[index] + " became " + after[index]]);
+      return names.flatMap((name, index) => before[index] === after[index] ? [] : [{ longhand: name, change: name + ": " + before[index] + " became " + after[index] }]);
     }`,
   });
-  // SAFETY: the function above returns an array of strings by value.
-  return (result.value ?? []) as readonly string[];
+  // SAFETY: the function above returns an array of longhands and their changes by value.
+  return (result.value ?? []) as readonly Changed[];
 }
 
 /**
@@ -763,9 +768,33 @@ function anchoredPair(
   return roots.length === 2 && popup !== undefined && anchor !== undefined ? { popup, anchor } : undefined;
 }
 
+/**
+ * The root's elements that a matched rule gives a border side or a corner by its flow-relative name,
+ * winning or not, by path, with the edges those rules set, which the page measures `otherFlow` on. A
+ * losing one counts too: on a right-to-left page `border-start-start-radius` and a later
+ * `border-top-left-radius` set two corners, and the capture's left-to-right cascade drops the first.
+ */
+function flowRelativeElements(element: RawElement, path: string): readonly FlowRelativeElement[] {
+  const edges = new Set(
+    element.rules.flatMap((rule) => rule.properties.flatMap(({ name }) => flowRelativeEdges(name)))
+  );
+  return [
+    ...(edges.size === 0 ? [] : [{ path, edges: [...edges].toSorted() }]),
+    ...element.children.flatMap((child, index) =>
+      flowRelativeElements(child, path === "" ? String(index) : `${path}/${String(index)}`)
+    ),
+  ];
+}
+
 /** A cell root's elements with what the page measured of each, as `role` names the root. */
 async function withMeasuredFacts(cdp: CDPSession, raw: RawCell, role: RootRole): Promise<RawCell> {
-  const facts = await measuredFacts(cdp, raw.root.nodeId, role, corneredPaths(raw.root, ""));
+  const facts = await measuredFacts(
+    cdp,
+    raw.root.nodeId,
+    role,
+    corneredPaths(raw.root, ""),
+    flowRelativeElements(raw.root, "")
+  );
   const attach = (element: RawElement, path: string): RawElement => {
     const children = element.children.map((child, index) =>
       attach(child, path === "" ? String(index) : `${path}/${String(index)}`)
@@ -793,16 +822,34 @@ function corneredPaths(element: RawElement, path: string): readonly string[] {
   ];
 }
 
+/**
+ * A winner of an element below a cell root that the browser computes otherwise, by the element's path.
+ * `turnable` marks a corner's on an element whose rules set a corner by its flow-relative name: the
+ * capture resolves those as on a left-to-right, horizontal page, so right to left
+ * `border-start-start-radius` beside an earlier `border-radius` and a later
+ * `border-top-left-radius` gives the top right to `border-radius` where the browser rounds it by the
+ * logical corner.
+ */
+type Contradiction = { readonly path: string; readonly turnable: boolean; readonly text: string };
+
+/** A physical corner's radius longhand. */
+const CORNER_RADIUS = /^border-(?:top|bottom)-(?:left|right)-radius$/;
+
 /** Check every winner of a cell's elements against the browser. */
-async function verifyCell(cdp: CDPSession, raw: RawCell): Promise<readonly string[] | UnknownLayer> {
-  const found: string[] = [];
-  const elements: RawElement[] = [];
-  const collect = (element: RawElement): void => {
-    elements.push(element);
-    element.children.forEach(collect);
+async function verifyCell(cdp: CDPSession, raw: RawCell): Promise<readonly Contradiction[] | UnknownLayer> {
+  const found: Contradiction[] = [];
+  const corners = new Set(
+    flowRelativeElements(raw.root, "").flatMap(({ path, edges }) => (edges.includes("corners") ? [path] : []))
+  );
+  const elements: { readonly element: RawElement; readonly path: string }[] = [];
+  const collect = (element: RawElement, path: string): void => {
+    elements.push({ element, path });
+    element.children.forEach((child, index) =>
+      collect(child, path === "" ? String(index) : `${path}/${String(index)}`)
+    );
   };
-  collect(raw.root);
-  for (const element of elements) {
+  collect(raw.root, "");
+  for (const { element, path } of elements) {
     const winners = resolveWinners(element.rules);
     if (winners instanceof UnknownLayer) {
       return winners;
@@ -810,11 +857,31 @@ async function verifyCell(cdp: CDPSession, raw: RawCell): Promise<readonly strin
     const checks = winners
       .filter((winner) => winner.rule.source !== "user-agent")
       .map(({ property, longhands }) => ({ property: property.name, value: property.value, longhands }));
-    for (const change of await contradictions(cdp, element.nodeId, checks)) {
-      found.push(`${elementName(element)} ${change}`);
+    for (const { longhand, change } of await contradictions(cdp, element.nodeId, checks)) {
+      found.push({
+        path,
+        turnable: corners.has(path) && CORNER_RADIUS.test(longhand),
+        text: `${elementName(element)} ${change}`,
+      });
     }
   }
   return found;
+}
+
+/** The element at a path from a cell root, as `flowRelativeElements` numbers it. */
+function elementAt(root: RawElement, path: string): RawElement | undefined {
+  return path === ""
+    ? root
+    : path
+        .split("/")
+        .reduce<RawElement | undefined>((element, index) => element?.children[Number(index)], root);
+}
+
+/** The cell's failure where any of its winners stays contradicted. */
+function contradicted(key: string, wrong: readonly Contradiction[]): WinnerContradicted {
+  return new WinnerContradicted(
+    `${key}: the browser computes other values than the resolved winners:\n  ${wrong.map(({ text }) => text).join("\n  ")}`
+  );
 }
 
 /** A matrix cell and the page cell that renders it. */
@@ -892,15 +959,25 @@ async function readCells(
   const checked = await Promise.all(
     grouped.map((roots) => Promise.all(roots.map((raw) => verifyCell(opened.cdp, raw))))
   );
+  // A contradicted corner a flow-relative name may have turned waits for the facts below: it drops
+  // where the element lays out other than left to right in horizontal lines in some mode, whose
+  // corners the build then leaves unmapped (`logical-sides.ts`). A side's winner never drops, since
+  // the build reads side widths for the layout too, as an inset or a containing block's border.
+  const turnable: {
+    readonly at: number;
+    readonly index: number;
+    readonly wrong: readonly Contradiction[];
+  }[] = [];
   for (const [at, roots] of checked.entries()) {
-    for (const wrong of roots) {
+    for (const [index, wrong] of roots.entries()) {
       if (wrong instanceof UnknownLayer) {
         return wrong;
       }
+      if (wrong.some((each) => !each.turnable)) {
+        return contradicted(cells[at]?.key ?? "", wrong);
+      }
       if (wrong.length > 0) {
-        return new WinnerContradicted(
-          `${cells[at]?.key ?? ""}: the browser computes other values than the resolved winners:\n  ${wrong.join("\n  ")}`
-        );
+        turnable.push({ at, index, wrong });
       }
     }
   }
@@ -913,6 +990,16 @@ async function readCells(
       facts.push(await withMeasuredFacts(opened.cdp, raw, raw === anchor ? "anchor" : "root"));
     }
     measured.push(await withAnchorFact(opened.cdp, facts));
+  }
+  for (const { at, index, wrong } of turnable) {
+    const root = measured[at]?.[index]?.root;
+    const left = wrong.filter(
+      ({ path }) =>
+        root === undefined || !(elementAt(root, path)?.measured?.otherFlow ?? []).includes("corners")
+    );
+    if (left.length > 0) {
+      return contradicted(cells[at]?.key ?? "", left);
+    }
   }
   return { cells: measured, styled: await styledClasses(opened.cdp) };
 }

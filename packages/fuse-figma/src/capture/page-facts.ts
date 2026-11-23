@@ -15,6 +15,8 @@ import {
   stackingOf,
 } from "./containing-block.ts";
 import { flexItems, itemBox, nowrapMovesNothing, roomAlong } from "./flex-room.ts";
+import { flowArgument, flowObserver } from "./flow-facts.ts";
+import type { FlowRelativeElement } from "./flow-facts.ts";
 import { gridColumns } from "./grid-facts.ts";
 import { judgedFacts } from "./judged-facts.ts";
 import type { PageFacts } from "./judged-facts.ts";
@@ -200,6 +202,8 @@ import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
  *   widens by 10px with it, in every mode of {@link EVERY_MODE} once its faces have loaded, and the
  *   width is the same in each. A minimum or maximum that sets the anchor's width, or padding a
  *   `content-box` width adds, leaves it out.
+ * - `otherFlow`: as `flowObserver` in `flow-facts.ts` reads it, on the first sweep of the modes a
+ *   fact above makes, or on one of its own.
  *
  * The page restores every element it changes before it returns, and the mode it stamps for the
  * facts above too, also where a measurement throws. A cell's roots share one page and its mode, so a
@@ -210,6 +214,7 @@ import { appliedLevel, containerDisplay, keepsTreeOrder } from "./stacking.ts";
  * @param role - Whether the root is an anchored composite's anchor, as {@link RootRole} says.
  * @param cornered - The paths of the elements that declare a per-corner radius longhand, the only
  *   ones the page measures `cornersFit` on, since no other box reads it.
+ * @param flowRelative - The elements `otherFlow` starts from, as `flowObserver` takes them.
  * @returns Each element's facts, by its path from the root.
  * @throws `FactsUnmeasured` where the page function throws, a defect in it or in the page, which
  *   stops the capture rather than keep facts it did not finish measuring.
@@ -218,7 +223,8 @@ export async function measuredFacts(
   cdp: CDPSession,
   nodeId: number,
   role: RootRole = "root",
-  cornered: readonly string[] = []
+  cornered: readonly string[] = [],
+  flowRelative: readonly FlowRelativeElement[] = []
 ): Promise<ReadonlyMap<string, MeasuredFacts>> {
   const { object } = await cdp.send("DOM.resolveNode", { nodeId });
   if (object.objectId === undefined) {
@@ -228,7 +234,7 @@ export async function measuredFacts(
     objectId: object.objectId,
     returnByValue: true,
     awaitPromise: true,
-    arguments: [{ value: role }, { value: cornered }],
+    arguments: [{ value: role }, { value: cornered }, { value: flowArgument(flowRelative) }],
     functionDeclaration: MEASURE_IN_PAGE,
   });
   if (exceptionDetails !== undefined) {
@@ -264,7 +270,7 @@ export class FactsUnmeasured extends Error {
  */
 const RATIO_RAISE_PX = 10;
 /** The page side of {@link measuredFacts}, called on the root. */
-const MEASURE_IN_PAGE = `async function (role, cornered) {
+const MEASURE_IN_PAGE = `async function (role, cornered, flowRead) {
   const modes = ${JSON.stringify(EVERY_MODE)};
   const root = this;
   const out = {};
@@ -430,9 +436,12 @@ const MEASURE_IN_PAGE = `async function (role, cornered) {
     await Promise.all([...faces].map((face) => document.fonts.load(face)));
     await document.fonts.ready;
   };
+  // Readings that take the next sweep of the modes, whatever fact makes it, in each mode after its visit.
+  const riders = [];
   // Stamp the page in each mode, settle the mode's faces and visit it, then put the page's own mode
   // back, whatever a visit throws.
   const inEveryMode = async (visit) => {
+    const along = riders.splice(0);
     const html = document.documentElement;
     const body = document.body;
     const saved = [html, body].map((element) => [element, [...element.attributes].filter((attribute) => attribute.name.startsWith("data-")).map((attribute) => [attribute.name, attribute.value])]);
@@ -442,6 +451,7 @@ const MEASURE_IN_PAGE = `async function (role, cornered) {
         for (const [name, value] of Object.entries(mode.body)) { body.setAttribute(name, value); }
         await settleFonts();
         visit();
+        for (const read of along) { read(); }
       }
     } finally {
       for (const [element, attributes] of saved) {
@@ -468,6 +478,9 @@ const MEASURE_IN_PAGE = `async function (role, cornered) {
     });
     return least;
   };
+  // Each element's flow-relative edges, read in every mode a sweep visits, for \`otherFlow\`.
+  const flow = (${flowObserver.toString()})(elements, flowRead);
+  if (flow.sweeps) { riders.push(flow.read); }
   // Write temporary styles on elements, measure, and put each \`style\` attribute back as it was.
   const withStyles = (writes, measure) => {
     const saved = [...new Set(writes.map(([element]) => element))].map((element) => [element, element.getAttribute("style")]);
@@ -975,5 +988,8 @@ const MEASURE_IN_PAGE = `async function (role, cornered) {
     });
     if (widths.every(Number.isFinite) && agree(widths)) { put("", "spansHost", Math.round(widths[0] * 64) / 64); }
   }
+  // \`otherFlow\`, read on a sweep of its own where no fact above swept the modes.
+  if (riders.length > 0) { await inEveryMode(() => {}); }
+  for (const { path, edges } of flow.turned()) { put(path, "otherFlow", edges); }
   return out;
 }`;
