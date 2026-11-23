@@ -6,7 +6,8 @@
  * Linux agree, and the repository keeps it as a reviewed input under `captures/`.
  */
 
-import { Result, Schema } from "effect";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 
 /** The format name a capture file carries. */
 export const CAPTURE_FORMAT = "fuse-kit-capture";
@@ -73,9 +74,9 @@ export type CapturedDeclaration = typeof CapturedDeclarationSchema.Type;
  * ancestor some elements up, by the theme the page loads, or nowhere.
  */
 const VariableSourceSchema = Schema.Union([
-  Schema.Struct({ _tag: Schema.Literal("element"), up: Schema.Finite }),
-  Schema.Struct({ _tag: Schema.Literal("theme") }),
-  Schema.Struct({ _tag: Schema.Literal("unset") }),
+  Schema.TaggedStruct("element", { up: Schema.Finite }),
+  Schema.TaggedStruct("theme", {}),
+  Schema.TaggedStruct("unset", {}),
 ]);
 
 /** Where a custom property's value is set, as {@link VariableSourceSchema} lists. */

@@ -1,12 +1,18 @@
 import { NodeServices } from "@effect/platform-node";
 import { assert, describe, it } from "@effect/vitest";
-import { Deferred, Duration, Effect, Fiber } from "effect";
+import * as Deferred from "effect/Deferred";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
+import * as Schema from "effect/Schema";
 import { spawnSync } from "node:child_process";
 import { mkdtemp, open, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { holdLock } from "../src/file-lock.ts";
+
+const encodeJson = Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown));
 
 /** How many times the same-instant race runs, since one lucky interleaving proves nothing. */
 const ROUNDS = 200;
@@ -35,26 +41,24 @@ const deadPid = spawnSync(process.execPath, ["-e", ""]).pid;
  * finished, for at most two seconds, so two winners mean two runs held the lock at once. Each
  * winner reads the lock file while it holds it.
  */
-function race(file: string) {
-  return Effect.gen(function* () {
-    const finished = [yield* Deferred.make<void>(), yield* Deferred.make<void>()] as const;
-    const run = (self: Deferred.Deferred<void>, other: Deferred.Deferred<void>) =>
-      Effect.scoped(
-        Effect.gen(function* () {
-          yield* holdLock(file, "the test resource");
-          const record = yield* Effect.promise(() => readFile(file, "utf8"));
-          yield* Deferred.await(other).pipe(Effect.timeout(Duration.seconds(2)), Effect.ignore);
-          return { _tag: "won" as const, record };
-        })
-      ).pipe(
-        Effect.catchTag("LockHeld", () => Effect.succeed({ _tag: "held" as const })),
-        Effect.ensuring(Deferred.succeed(self, undefined))
-      );
-    return yield* Effect.all([run(finished[0], finished[1]), run(finished[1], finished[0])], {
-      concurrency: 2,
-    });
+const race = Effect.fnUntraced(function* (file: string) {
+  const finished = [yield* Deferred.make<void>(), yield* Deferred.make<void>()] as const;
+  const run = (self: Deferred.Deferred<void>, other: Deferred.Deferred<void>) =>
+    Effect.scoped(
+      Effect.gen(function* () {
+        yield* holdLock(file, "the test resource");
+        const record = yield* Effect.promise(() => readFile(file, "utf8"));
+        yield* Deferred.await(other).pipe(Effect.timeout(Duration.seconds(2)), Effect.ignore);
+        return { _tag: "won" as const, record };
+      })
+    ).pipe(
+      Effect.catchTag("LockHeld", () => Effect.succeed({ _tag: "held" as const })),
+      Effect.ensuring(Deferred.succeed(self, undefined))
+    );
+  return yield* Effect.all([run(finished[0], finished[1]), run(finished[1], finished[0])], {
+    concurrency: 2,
   });
-}
+});
 
 /** One run's try for a lock nobody else is racing for. */
 function attempt(file: string) {
@@ -89,7 +93,7 @@ describe("holdLock", () => {
         const dir = yield* tempDir;
         for (let round = 0; round < RECLAIM_ROUNDS; round += 1) {
           const file = path.join(dir, `round-${String(round)}.lock`);
-          const stale = JSON.stringify({ pid: deadPid, token: "stale" });
+          const stale = yield* encodeJson({ pid: deadPid, token: "stale" });
           yield* Effect.promise(() => writeFile(file, stale));
           const results = yield* race(file);
           assert.deepStrictEqual(
@@ -113,15 +117,16 @@ describe("holdLock", () => {
     Effect.gen(function* () {
       const dir = yield* tempDir;
       const file = path.join(dir, "run.lock");
-      const fresh = JSON.stringify({ pid: process.pid, token: "fresh" });
+      const fresh = yield* encodeJson({ pid: process.pid, token: "fresh" });
       const freshFile = path.join(dir, "fresh.tmp");
       yield* Effect.promise(() => writeFile(freshFile, fresh));
+      const stale = yield* encodeJson({ pid: deadPid, token: "stale" });
       assert.strictEqual(spawnSync("mkfifo", [file]).status, 0);
 
       const reclaimer = yield* Effect.forkChild(attempt(file));
       // Opening the pipe for writing returns once the run has opened it for reading.
       const writer = yield* Effect.promise(() => open(file, "w"));
-      yield* Effect.promise(() => writer.write(JSON.stringify({ pid: deadPid, token: "stale" })));
+      yield* Effect.promise(() => writer.write(stale));
       yield* Effect.promise(() => rename(freshFile, file));
       yield* Effect.promise(() => writer.close());
 
@@ -138,7 +143,7 @@ describe("holdLock", () => {
     Effect.gen(function* () {
       const dir = yield* tempDir;
       const file = path.join(dir, "run.lock");
-      const stale = JSON.stringify({ pid: deadPid, token: "stale" });
+      const stale = yield* encodeJson({ pid: deadPid, token: "stale" });
       yield* Effect.promise(() => writeFile(file, stale));
       const parked = yield* Deferred.make<void>();
       const release = yield* Deferred.make<void>();

@@ -13,7 +13,8 @@
  * keys (`docs/…`) and preview keys draw nothing a designer instances, so they are not frozen either.
  */
 
-import { Data, Result, Schema } from "effect";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 
 import type { KitSpec } from "./kit-spec";
 
@@ -121,9 +122,9 @@ export const NO_KEYS: FrozenKeys = {
 };
 
 /** `oracles/keys.json` does not parse as the frozen keys. */
-export class FrozenKeysUnreadable extends Data.TaggedError("FrozenKeysUnreadable")<{
-  readonly message: string;
-}> {}
+export class FrozenKeysUnreadable extends Schema.TaggedError<FrozenKeysUnreadable>()("FrozenKeysUnreadable", {
+  message: Schema.String,
+}) {}
 
 /**
  * Parse the text of `oracles/keys.json`.
@@ -133,7 +134,7 @@ export class FrozenKeysUnreadable extends Data.TaggedError("FrozenKeysUnreadable
  */
 export function parseFrozenKeys(text: string): Result.Result<FrozenKeys, FrozenKeysUnreadable> {
   return Result.mapError(
-    Schema.decodeUnknownResult(Schema.fromJsonString(FrozenKeysSchema))(text),
+    Schema.decodeResult(Schema.fromJsonString(FrozenKeysSchema))(text),
     (error) =>
       new FrozenKeysUnreadable({ message: `oracles/keys.json is no frozen keys file: ${error.message}` })
   );

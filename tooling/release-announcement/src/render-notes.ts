@@ -9,14 +9,18 @@
  */
 
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Console, Effect, Schema, Stdio, Stream } from "effect";
+import * as Console from "effect/Console";
+import * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
+import * as Stdio from "effect/Stdio";
+import * as Stream from "effect/Stream";
 
 import { versionNotes } from "./release-notes.ts";
 import { RenderedNotes, RenderRequest } from "./render-protocol.ts";
 
 const main = Effect.gen(function* () {
   const input = yield* (yield* Stdio.Stdio).stdin.pipe(Stream.decodeText(), Stream.mkString);
-  const request = yield* Schema.decodeUnknownEffect(RenderRequest)(input);
+  const request = yield* Schema.decodeEffect(RenderRequest)(input);
   const notes = versionNotes(request.changelog, request.version);
   yield* Console.log(yield* Schema.encodeEffect(RenderedNotes)(notes));
 });

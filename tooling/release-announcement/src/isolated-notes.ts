@@ -12,9 +12,17 @@
  * most `ANSWER_LIMIT` bytes of what it writes are read.
  */
 
-import { Config, Duration, Effect, Layer, Option, Path, Schema, Stream } from "effect";
-import type { PlatformError } from "effect/PlatformError";
-import { ChildProcess, ChildProcessSpawner } from "effect/process";
+import * as Config from "effect/Config";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as Path from "effect/Path";
+import type * as PlatformError from "effect/PlatformError";
+import * as ChildProcess from "effect/process/ChildProcess";
+import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
+import * as Schema from "effect/Schema";
+import * as Stream from "effect/Stream";
 
 import { NotesRenderer } from "./release-announcement.ts";
 import type { StableVersion } from "./release-record.ts";
@@ -75,7 +83,7 @@ export const layer = Layer.effect(
           return yield* handle.stdout.pipe(
             // The chunk that would take the answer past the limit is not read, and the read fails;
             // leaving the scope then kills the child.
-            Stream.limitBytes<PlatformError | typeof OVERSIZED, never>(ANSWER_LIMIT, () =>
+            Stream.limitBytes<PlatformError.PlatformError | typeof OVERSIZED, never>(ANSWER_LIMIT, () =>
               Stream.fail(OVERSIZED)
             ),
             Stream.decodeText(),
@@ -98,9 +106,9 @@ export const layer = Layer.effect(
         if (finished.value._tag === "Oversized") return unreadable("answer-too-large");
         if (finished.value.exitCode !== 0) return unreadable("renderer-failed");
         // The schema bounds the notes too: at most four sections, each 1 to 3000 characters.
-        return yield* Schema.decodeUnknownEffect(RenderedNotes)(finished.value.stdout.trim());
+        return yield* Schema.decodeEffect(RenderedNotes)(finished.value.stdout.trim());
       },
-      Effect.catch(() => Effect.succeed<VersionNotes>({ _tag: "Unreadable", cause: "renderer-failed" }))
+      Effect.orElseSucceed((): VersionNotes => ({ _tag: "Unreadable", cause: "renderer-failed" }))
     );
 
     return NotesRenderer.of({ render });

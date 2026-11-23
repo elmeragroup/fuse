@@ -3,7 +3,7 @@
  * for the text style samples, parsed once when the build first reads them.
  */
 
-import type { Result } from "effect";
+import type * as Result from "effect/Result";
 
 import accordionItem from "../../captures/accordion-item.json" with { type: "json" };
 import actionBar from "../../captures/action-bar.json" with { type: "json" };

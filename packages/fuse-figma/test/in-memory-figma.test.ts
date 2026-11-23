@@ -1,6 +1,7 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Effect } from "effect";
-import { HttpClient, HttpClientRequest } from "effect/http";
+import * as Effect from "effect/Effect";
+import * as HttpClient from "effect/http/HttpClient";
+import * as HttpClientRequest from "effect/http/HttpClientRequest";
 
 import { InMemoryFigma } from "./in-memory-figma.ts";
 

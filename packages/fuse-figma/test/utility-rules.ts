@@ -4,7 +4,7 @@
  * declarations and for the tint a synced variable must reproduce.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { buildConsumerCss, declarationsOf, readCompiledUtilities } from "../src/components/consumer-build.ts";
 import type { AstNode, CompiledUtilities, Declaration } from "../src/components/consumer-build.ts";

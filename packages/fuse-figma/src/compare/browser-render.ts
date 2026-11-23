@@ -22,8 +22,9 @@
  * forcing.
  */
 
-import { Effect, Result } from "effect";
-import type { Scope } from "effect";
+import * as Effect from "effect/Effect";
+import * as Result from "effect/Result";
+import type * as Scope from "effect/Scope";
 import { join } from "node:path";
 import { chromium } from "playwright";
 import type { Browser, CDPSession, Page, Route } from "playwright";

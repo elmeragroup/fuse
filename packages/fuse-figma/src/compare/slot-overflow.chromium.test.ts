@@ -7,7 +7,7 @@
  * element 8px in from the corner, and its crop keeps 8px around the measured box.
  */
 import { NodeServices } from "@effect/platform-node";
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { describe, expect, it } from "vitest";
 
 import { variantKey } from "../components/component-spec.ts";

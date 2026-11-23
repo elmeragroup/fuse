@@ -11,7 +11,7 @@
  * Figma cannot start.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { Script } from "node:vm";
 import { getQuickJS } from "quickjs-emscripten";
 import { beforeAll, describe, expect, it } from "vitest";

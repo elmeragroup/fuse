@@ -4,7 +4,8 @@
  * work for any set and tests can use a small one.
  */
 
-import { Effect, Schema } from "effect";
+import * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
 
 import { FigmaApi } from "./figma-api.ts";
 import type { FigmaRequestFailed, FileKey } from "./figma-api.ts";
@@ -19,7 +20,7 @@ import type { VariableSet } from "./variable-set.ts";
  */
 export class SyncDidNotConverge extends Schema.TaggedError<SyncDidNotConverge>()("SyncDidNotConverge", {
   message: Schema.String,
-  remainingChanges: Schema.Number,
+  remainingChanges: Schema.Finite,
 }) {}
 
 /**

@@ -6,7 +6,7 @@
  * style a TEXT write resets the label to, so a value of glyphs alone would let a later TEXT write show
  * letters in the glyph font, unbound. A refusal names the layer and says the value shows only glyphs.
  */
-import { Result } from "effect";
+import * as Result from "effect/Result";
 import { describe, expect, it } from "vitest";
 
 import { checkKitSpec } from "../../src/components/kit-check.ts";

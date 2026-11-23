@@ -1,12 +1,19 @@
 import { NodeServices } from "@effect/platform-node";
 import { assert, describe, it } from "@effect/vitest";
-import { Deferred, Duration, Effect, Fiber, Layer } from "effect";
+import * as Deferred from "effect/Deferred";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
+import * as Layer from "effect/Layer";
+import * as Schema from "effect/Schema";
 import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { DocsServer } from "../src/docs-server.ts";
 import type { DocsServerConfig } from "../src/docs-server.ts";
+
+const decodeJson = Schema.decodeEffect(Schema.fromJsonString(Schema.Unknown));
 
 const ORIGINAL = '/// <reference types="next" />\n// the checked-in original\n';
 const REWRITTEN = "// rewritten by the fake server\n";
@@ -74,14 +81,12 @@ function isAlive(pid: number): boolean {
 }
 
 /** Waits up to three seconds for every pid to be gone, then reports which are left. */
-function survivors(pids: readonly number[]) {
-  return Effect.gen(function* () {
-    for (let attempt = 0; attempt < 30 && pids.some(isAlive); attempt += 1) {
-      yield* Effect.sleep(Duration.millis(100));
-    }
-    return pids.filter(isAlive);
-  });
-}
+const survivors = Effect.fnUntraced(function* (pids: readonly number[]) {
+  for (let attempt = 0; attempt < 30 && pids.some(isAlive); attempt += 1) {
+    yield* Effect.sleep(Duration.millis(100));
+  }
+  return pids.filter(isAlive);
+});
 
 /** Whether a file exists. */
 function exists(file: string) {
@@ -96,6 +101,7 @@ function exists(file: string) {
 /** Whether anything still answers on the origin. */
 function answers(origin: URL) {
   return Effect.promise(() =>
+    // @effect-diagnostics-next-line globalFetchInEffect:off -- pr-shots wires no HttpClient, and this check needs only whether a request lands
     fetch(origin).then(
       () => true,
       () => false
@@ -104,21 +110,19 @@ function answers(origin: URL) {
 }
 
 /** Starts the server in a fiber that keeps it until interrupted, like a run taking shots. */
-function startAndHold(layer: ReturnType<typeof fakeServer>) {
-  return Effect.gen(function* () {
-    const serving = yield* Deferred.make<URL>();
-    const fiber = yield* Effect.forkChild(
-      Effect.scoped(
-        Effect.gen(function* () {
-          const docs = yield* DocsServer;
-          yield* Deferred.succeed(serving, yield* (yield* docs.reserve).start(ROUTE));
-          return yield* Effect.never;
-        })
-      ).pipe(Effect.provide(layer))
-    );
-    return { fiber, origin: yield* Deferred.await(serving) };
-  });
-}
+const startAndHold = Effect.fnUntraced(function* (layer: ReturnType<typeof fakeServer>) {
+  const serving = yield* Deferred.make<URL>();
+  const fiber = yield* Effect.forkChild(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const docs = yield* DocsServer;
+        yield* Deferred.succeed(serving, yield* (yield* docs.reserve).start(ROUTE));
+        return yield* Effect.never;
+      })
+    ).pipe(Effect.provide(layer))
+  );
+  return { fiber, origin: yield* Deferred.await(serving) };
+});
 
 /** Runs one start to completion inside its own scope. */
 function startOnce(layer: ReturnType<typeof fakeServer>) {
@@ -145,7 +149,7 @@ describe("DocsServer", () => {
           pids.map(({ role }) => role),
           ["launcher", "worker"]
         );
-        assert.deepStrictEqual(JSON.parse(yield* readText(recordFile)), {
+        assert.deepStrictEqual(yield* decodeJson(yield* readText(recordFile)), {
           group: pids[0]?.pid,
           file: path.join(cwd, "next-env.d.ts"),
           snapshot: { _tag: "content", content: ORIGINAL },
@@ -267,7 +271,7 @@ describe("DocsServer", () => {
       yield* Effect.promise(() => chmod(nextEnv, 0o644));
       assert.strictEqual(yield* readText(nextEnv), REWRITTEN);
       assert.isTrue(yield* exists(recordFile));
-      const record: unknown = JSON.parse(yield* readText(recordFile));
+      const record: unknown = yield* decodeJson(yield* readText(recordFile));
       assert.deepInclude(record, { snapshot: { _tag: "content", content: ORIGINAL } });
 
       // The lock was freed. A start that still cannot write the file reports it and keeps the

@@ -4,8 +4,9 @@
  * path, then gives the system's own words, as Node's file calls state them.
  */
 
-import { Effect, FileSystem } from "effect";
-import type { PlatformError } from "effect";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import type * as PlatformError from "effect/PlatformError";
 
 /** A file the comparison reads or writes could not be read or written. */
 export class CompareFileFailed extends Error {

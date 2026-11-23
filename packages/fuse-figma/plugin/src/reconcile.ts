@@ -11,7 +11,7 @@
  * as a promise for callers outside Effect.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { glyphFonts } from "../../src/components/kit-spec.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";

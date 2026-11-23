@@ -36,7 +36,7 @@
  * External modes to Neutral and Branded, so the frames pinned to them keep their pins.
  */
 
-import type { Result } from "effect";
+import type * as Result from "effect/Result";
 
 import {
   BRAND_CODES,

@@ -2,8 +2,14 @@
  * Reads and edits a pull request through the GitHub CLI.
  */
 
-import { Context, Duration, Effect, Layer, Schema, Stream } from "effect";
-import { ChildProcess, ChildProcessSpawner } from "effect/process";
+import * as Context from "effect/Context";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as ChildProcess from "effect/process/ChildProcess";
+import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
+import * as Schema from "effect/Schema";
+import * as Stream from "effect/Stream";
 
 /** What a `gh` call was for. */
 export type GhOperation = "read the PR body" | "edit the PR";

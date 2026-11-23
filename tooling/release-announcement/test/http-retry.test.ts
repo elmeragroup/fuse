@@ -1,7 +1,12 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Clock, DateTime, Duration, Effect, Fiber, Option } from "effect";
-import { Headers } from "effect/http";
-import { TestClock } from "effect/testing";
+import * as Clock from "effect/Clock";
+import * as DateTime from "effect/DateTime";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
+import * as Headers from "effect/http/Headers";
+import * as Option from "effect/Option";
+import * as TestClock from "effect/testing/TestClock";
 
 import { requestedWait, retryReads } from "../src/http-retry.ts";
 import type { AttemptFailure } from "../src/http-retry.ts";
@@ -14,11 +19,10 @@ import type { AttemptFailure } from "../src/http-retry.ts";
 /** 2026-11-05T12:00:00Z, a whole second, so an HTTP date names it exactly. */
 const NOW = Date.UTC(2026, 10, 5, 12, 0, 0);
 
-const waitFor = (headers: Readonly<Record<string, string>>) =>
-  Effect.gen(function* () {
-    yield* TestClock.setTime(NOW);
-    return Option.map(yield* requestedWait(Headers.fromInput(headers)), Duration.toMillis);
-  });
+const waitFor = Effect.fnUntraced(function* (headers: Readonly<Record<string, string>>) {
+  yield* TestClock.setTime(NOW);
+  return Option.map(yield* requestedWait(Headers.fromInput(headers)), Duration.toMillis);
+});
 
 const httpDate = (offsetMillis: number) => Headers.formatHttpDate(DateTime.makeUnsafe(NOW + offsetMillis));
 
@@ -85,19 +89,18 @@ describe("the wait a response asks for", () => {
  * Runs a read whose every attempt takes `latency` and then fails with `failure`, on the test
  * clock, and returns when each attempt began and how the read ended.
  */
-const retried = (latency: Duration.Input, failure: AttemptFailure) =>
-  Effect.gen(function* () {
-    const started: number[] = [];
-    const attempt = Effect.gen(function* () {
-      started.push(yield* Clock.currentTimeMillis);
-      yield* Effect.sleep(latency);
-      return yield* Effect.fail(failure);
-    });
-    const fiber = yield* attempt.pipe(retryReads("the read"), Effect.flip, Effect.forkChild);
-    yield* TestClock.adjust("10 minutes");
-    const ended = yield* Fiber.join(fiber);
-    return { started, ended };
+const retried = Effect.fnUntraced(function* (latency: Duration.Input, failure: AttemptFailure) {
+  const started: number[] = [];
+  const attempt = Effect.gen(function* () {
+    started.push(yield* Clock.currentTimeMillis);
+    yield* Effect.sleep(latency);
+    return yield* Effect.fail(failure);
   });
+  const fiber = yield* attempt.pipe(retryReads("the read"), Effect.flip, Effect.forkChild);
+  yield* TestClock.adjust("10 minutes");
+  const ended = yield* Fiber.join(fiber);
+  return { started, ended };
+});
 
 describe("the read's budget", () => {
   it.effect("does not begin a wait that would end past two minutes", () =>

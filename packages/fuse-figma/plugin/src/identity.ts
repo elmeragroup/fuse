@@ -6,7 +6,7 @@
  * rules hold for a local text style, which carries its key the same way.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { PLUGIN_DATA_KEY, PLUGIN_DATA_NAMESPACE } from "../../src/components/kit-spec.ts";
 import { LayerConflict } from "./errors.ts";

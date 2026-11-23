@@ -27,9 +27,20 @@
  * to a loopback stand-in), so the token goes nowhere else.
  */
 
-import { Clock, Config, Duration, Effect, Layer, Option, Result, Schedule, Schema } from "effect";
-import { Headers, HttpClient, HttpClientRequest, Url } from "effect/http";
-import type { HttpClientResponse } from "effect/http";
+import * as Clock from "effect/Clock";
+import * as Config from "effect/Config";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Headers from "effect/http/Headers";
+import * as HttpClient from "effect/http/HttpClient";
+import * as HttpClientRequest from "effect/http/HttpClientRequest";
+import type * as HttpClientResponse from "effect/http/HttpClientResponse";
+import * as Url from "effect/http/Url";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as Result from "effect/Result";
+import * as Schedule from "effect/Schedule";
+import * as Schema from "effect/Schema";
 
 import { AssociatedPulls, PullsUnavailable } from "./canary-decision.ts";
 import type { CommitSha } from "./canary-decision.ts";
@@ -69,7 +80,7 @@ const ATTEMPT_TIMEOUT = Duration.seconds(30);
 const GitHubPulls = Schema.fromJsonString(
   Schema.Array(
     Schema.Struct({
-      number: Schema.Number,
+      number: Schema.Finite,
       merge_commit_sha: Schema.NullOr(Schema.String),
       head: Schema.Struct({ ref: Schema.String }),
       labels: Schema.Array(Schema.Struct({ name: Schema.String })),
@@ -108,7 +119,7 @@ function throttleKind(
 /** GitHub's `x-ratelimit-reset`: epoch seconds, written as whole digits. */
 const ResetSeconds = Schema.String.pipe(
   Schema.check(Schema.isPattern(/^\d+$/u)),
-  Schema.decodeTo(Schema.NumberFromString)
+  Schema.decodeTo(Schema.FiniteFromString)
 );
 
 /**
@@ -273,7 +284,7 @@ export const layer = Layer.effect(
         Effect.mapError((failure) => unavailable(describe(failure)))
       );
       // A whole body that is not a PR list would read the same again, so it fails at once.
-      const pulls = yield* Schema.decodeUnknownEffect(GitHubPulls)(body).pipe(
+      const pulls = yield* Schema.decodeEffect(GitHubPulls)(body).pipe(
         Effect.mapError(() => unavailable("the response is not a PR list"))
       );
       return pulls.map((pull) => ({

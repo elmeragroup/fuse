@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import * as Schema from "effect/Schema";
 import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
@@ -34,7 +34,7 @@ function summarizedHashes(runsDir: string): Set<string> {
   for (const file of readdirSync(runsDir).filter((name) => name.endsWith(".json"))) {
     let summary: typeof RunSummary.Type;
     try {
-      summary = Schema.decodeUnknownSync(Schema.fromJsonString(RunSummary))(
+      summary = Schema.decodeSync(Schema.fromJsonString(RunSummary))(
         readFileSync(join(runsDir, file), "utf8")
       );
     } catch (error) {

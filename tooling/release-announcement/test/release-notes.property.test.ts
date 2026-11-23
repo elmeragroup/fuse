@@ -1,5 +1,6 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Arbitrary, Schema } from "effect";
+import * as Arbitrary from "effect/Arbitrary";
+import * as Schema from "effect/Schema";
 
 import * as Announcement from "../src/announcement.ts";
 import { versionNotes } from "../src/release-notes.ts";

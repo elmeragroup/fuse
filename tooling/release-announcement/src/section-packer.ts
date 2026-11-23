@@ -4,7 +4,7 @@
  * cluster (`text-cut.ts`), and closing and reopening a code block that crosses sections.
  */
 
-import { Option } from "effect";
+import * as Option from "effect/Option";
 
 import { codeText, link, linkTarget, render, renderUnit } from "./mrkdwn.ts";
 import type { Inline, MrkdwnLine } from "./mrkdwn.ts";

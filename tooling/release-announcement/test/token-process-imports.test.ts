@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import * as Schema from "effect/Schema";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -56,7 +56,7 @@ function resolvedBy(entry: string) {
   const records = readFileSync(log, "utf8")
     .trim()
     .split("\n")
-    .map((line) => Schema.decodeUnknownSync(Resolution)(line));
+    .map((line) => Schema.decodeSync(Resolution)(line));
   return { specifiers: records.map((record) => record.specifier), urls: records.map((record) => record.url) };
 }
 

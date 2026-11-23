@@ -9,7 +9,9 @@
  * it is drawn for a colored background or reads as a blot at 16px.
  */
 
-import { Effect, FileSystem, Result } from "effect";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as Result from "effect/Result";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "rolldown";

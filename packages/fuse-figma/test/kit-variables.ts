@@ -2,7 +2,7 @@
  * The values the synced variables give the kit's bound lengths, in the Figma modes a kit frame pins
  * for a page mode, for the suites that lay the built frames out as Figma does.
  */
-import { Result } from "effect";
+import * as Result from "effect/Result";
 
 import { BRANDS } from "@elmeragroup/fuse/theme-catalog";
 

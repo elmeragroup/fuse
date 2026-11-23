@@ -6,7 +6,7 @@
  * changes.
  */
 
-import { Brand } from "effect";
+import * as Brand from "effect/Brand";
 
 import type { LiteralValue, VariableScope, VariableType } from "./variable-set.ts";
 

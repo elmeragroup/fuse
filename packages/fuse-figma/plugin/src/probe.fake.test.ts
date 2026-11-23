@@ -6,8 +6,10 @@
  * a probe never deletes a set of the whole kit's file. `buildKit` already runs the kit check.
  */
 import { describe, expect, it } from "@effect/vitest";
-import { Effect, Exit } from "effect";
-import type { FileSystem, Layer } from "effect";
+import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
+import type * as FileSystem from "effect/FileSystem";
+import type * as Layer from "effect/Layer";
 
 import type { KitBuildError, ProbeSetUnknown } from "../../src/components/build-errors.ts";
 import type { KitSpec } from "../../src/components/kit-spec.ts";

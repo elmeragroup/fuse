@@ -1,5 +1,9 @@
 import { assert, describe, it } from "@effect/vitest";
-import { DateTime, Effect, Layer, Option, Schema } from "effect";
+import * as DateTime from "effect/DateTime";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
 
 import * as Announcement from "../src/announcement.ts";
 import type { ChatPostMessage, SlackChannelId } from "../src/announcement.ts";
@@ -87,7 +91,7 @@ function changelogLayer(commits: ReadonlyMap<string, CommitFixture>) {
         ),
       subject: (asked) => find(asked).pipe(Effect.map(({ subject }) => subject)),
       packageVersion: (asked) =>
-        find(asked).pipe(Effect.map(({ version }) => Schema.decodeUnknownSync(StableVersion)(version))),
+        find(asked).pipe(Effect.map(({ version }) => Schema.decodeSync(StableVersion)(version))),
     })
   );
 }
@@ -162,9 +166,7 @@ describe("finding the release a run published", () => {
   const ownStable = stableRelease("0.2.0", commit);
   const olderStable = stableRelease("0.2.0", olderCommit);
   const find = (trigger: Trigger, published: readonly Release[]) =>
-    findPublished(trigger).pipe(
-      Effect.provide(Layer.mergeAll(recordsLayer(published), changelogLayer(history)))
-    );
+    findPublished(trigger).pipe(Effect.provide([recordsLayer(published), changelogLayer(history)]));
   const publish = Trigger.Publish({ commit: sha(commit) });
 
   it.effect("keeps the canary when its version's stable release is an older commit's", () =>
@@ -190,9 +192,7 @@ describe("finding the release a run published", () => {
 describe("announcing a release", () => {
   const release = stableRelease("0.2.0", commit);
   const run = (slack: FakeSlack, notes = inProcessNotes) =>
-    announce(release, settings).pipe(
-      Effect.provide(Layer.mergeAll(slack.layer, changelogLayer(history), notes))
-    );
+    announce(release, settings).pipe(Effect.provide([slack.layer, changelogLayer(history), notes]));
 
   it.effect("posts the release with its notes linked when the renderer could not show them", () =>
     Effect.gen(function* () {

@@ -13,7 +13,7 @@
  * A cell of a set with no `state` axis, such as Badge, gets nothing forced.
  */
 
-import { Result } from "effect";
+import * as Result from "effect/Result";
 
 import type { Cell, ComponentDefinition } from "../components/component-spec.ts";
 

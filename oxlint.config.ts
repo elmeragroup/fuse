@@ -12,7 +12,7 @@ import type {
  * drifting apart.
  *
  * This file depends on oxlint's TypeScript config format (`oxlint.config.ts` with `defineConfig`),
- * which oxlint 1.89 marks experimental and loads only under the Node runtime (the JS plugins below
+ * which oxlint 1.93 marks experimental and loads only under the Node runtime (the JS plugins below
  * need Node too). Composition needs it: JSON cannot share one definition between overrides, so a
  * `.oxlintrc.json` would have to copy each restriction into every override that keeps it.
  *
@@ -20,7 +20,9 @@ import type {
  * - `oxlint --print-config` still resolves this file, with every override's rules and options;
  * - the `defineConfig` types still accept the shapes below (`pnpm type-check:scripts`);
  * - `pnpm lint` still rejects a deep `packages/fuse/src` import from an app and a
- *   `writeSourceExports` access in `packages/fuse/scripts/build.ts`, static and dynamic.
+ *   `writeSourceExports` access in `packages/fuse/scripts/build.ts`, static and dynamic;
+ * - the catalog's `@effect/tsgo` supports the new oxlint, since `pnpm lint:effect` runs its
+ *   patched build of the installed one.
  */
 
 /** One `no-restricted-imports` path entry. */
@@ -126,6 +128,18 @@ const COLOR_PACKAGE: RestrictedModule = {
   pattern: "^@elmeragroup/color(?:/|$)",
   message:
     "the Temporal core's declarations stay self-contained; @elmeragroup/color is a dev dependency published files may not import.",
+};
+
+/**
+ * Published source imports no Effect, type imports included: `@elmeragroup/fuse` does not depend on
+ * `effect`, so a declaration that names it would not resolve for a consumer. Fuse's Effect code lives
+ * in private workspace packages, which `apiStabilityLeak` (tooling/typescript/effect.json) leaves
+ * unchecked for that reason.
+ */
+const EFFECT_IN_PUBLISHED: RestrictedModule = {
+  pattern: "^(?:effect|@effect/[^/]+)(?:/|$)",
+  message:
+    "@elmeragroup/fuse does not depend on effect, so its published code and declarations may not name it.",
 };
 
 /** The curated icons import Phosphor's per-icon SSR modules only. */
@@ -450,7 +464,7 @@ export default defineConfig({
             ],
           },
         ],
-        "fuse/restricted-imports": restrictModules([TEMPORAL_POLYFILL]),
+        "fuse/restricted-imports": restrictModules([TEMPORAL_POLYFILL, EFFECT_IN_PUBLISHED]),
         "fuse/state-face": "error",
         "fuse/surface-muted-foreground": "error",
       },
@@ -627,15 +641,23 @@ export default defineConfig({
       },
     },
     {
-      files: ["packages/fuse/src/temporal/**/*.ts"],
+      // The package build also takes `.js` and `.jsx` sources (`SOURCE_EXTENSIONS` in
+      // packages/fuse/scripts/entries.ts). The overrides below restate their lists for them too.
+      files: ["packages/fuse/src/**/*.{js,jsx}"],
       rules: {
-        "fuse/restricted-imports": restrictModules([TEMPORAL_POLYFILL, COLOR_PACKAGE]),
+        "fuse/restricted-imports": restrictModules([TEMPORAL_POLYFILL, EFFECT_IN_PUBLISHED]),
+      },
+    },
+    {
+      files: ["packages/fuse/src/temporal/**/*.{ts,tsx,js,jsx}"],
+      rules: {
+        "fuse/restricted-imports": restrictModules([TEMPORAL_POLYFILL, COLOR_PACKAGE, EFFECT_IN_PUBLISHED]),
       },
     },
     {
       files: ["packages/fuse/src/temporal-polyfill.ts"],
       rules: {
-        "fuse/restricted-imports": "off",
+        "fuse/restricted-imports": restrictModules([EFFECT_IN_PUBLISHED]),
       },
     },
     {
@@ -713,11 +735,22 @@ export default defineConfig({
       files: [
         "packages/fuse/src/icons.ts",
         "packages/fuse/src/icons/create-elmera-icon.ts",
-        "packages/fuse/src/icons/generated/**/*.ts",
+        "packages/fuse/src/icons/generated/**/*.{ts,tsx,js,jsx}",
       ],
       rules: {
         "fuse/no-use-client": "error",
-        "fuse/restricted-imports": restrictModules([TEMPORAL_POLYFILL, ...PHOSPHOR_SSR_ONLY]),
+        "fuse/restricted-imports": restrictModules([
+          TEMPORAL_POLYFILL,
+          ...PHOSPHOR_SSR_ONLY,
+          EFFECT_IN_PUBLISHED,
+        ]),
+      },
+    },
+    {
+      // @elmeragroup/fuse bundles the color package's source into its dist.
+      files: ["packages/color/src/**/*.{ts,tsx,js,jsx}"],
+      rules: {
+        "fuse/restricted-imports": restrictModules([EFFECT_IN_PUBLISHED]),
       },
     },
     {

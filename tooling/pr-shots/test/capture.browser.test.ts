@@ -1,7 +1,7 @@
 import { Activity, createElement } from "react";
 
 import { afterAll, assert, beforeAll, describe, expect, it } from "@effect/vitest";
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { createServer } from "node:http";
 import type { Server } from "node:http";
@@ -160,37 +160,36 @@ function hasPixel(png: Buffer, [red, green, blue]: readonly [number, number, num
  * Resolves the run's frame on the fixture server, as a run does on its after source, and takes
  * the after shot of its first row. Returns the frame and the PNG.
  */
-function shoot(argv: readonly string[]) {
-  return Effect.gen(function* () {
-    const options = shotOptions(argv);
-    const capture = yield* Capture;
-    const frame = yield* capture.resolveFrame({ origin, sourceLabel: "fixture", options });
-    const [row] = planShots(options, frame);
-    if (row === undefined) {
-      return yield* Effect.die("The run planned no shots");
-    }
-    const outDir = yield* Effect.promise(() => mkdtemp(path.join(outRoot, "shot-")));
-    yield* capture.capture({ origin, sourceLabel: "fixture", options, shots: [row.after], outDir });
-    const png = yield* Effect.promise(() => readFile(path.join(outDir, row.after.file)));
-    return { frame, file: row.after.file, png };
-  });
-}
+const shoot = Effect.fnUntraced(function* (argv: readonly string[]) {
+  const options = shotOptions(argv);
+  const capture = yield* Capture;
+  const frame = yield* capture.resolveFrame({ origin, sourceLabel: "fixture", options });
+  const [row] = planShots(options, frame);
+  if (row === undefined) {
+    return yield* Effect.die("The run planned no shots");
+  }
+  const outDir = yield* Effect.promise(() => mkdtemp(path.join(outRoot, "shot-")));
+  yield* capture.capture({ origin, sourceLabel: "fixture", options, shots: [row.after], outDir });
+  const png = yield* Effect.promise(() => readFile(path.join(outDir, row.after.file)));
+  return { frame, file: row.after.file, png };
+});
 
 /** The failure of an after shot on the fixture server, with the frame given on the command line. */
-function failedShot(argv: readonly string[], frame: "stage" | "target" | "viewport") {
-  return Effect.gen(function* () {
-    const options = shotOptions(argv);
-    const capture = yield* Capture;
-    const [row] = planShots(options, frame);
-    if (row === undefined) {
-      return yield* Effect.die("The run planned no shots");
-    }
-    const outDir = yield* Effect.promise(() => mkdtemp(path.join(outRoot, "shot-")));
-    return yield* Effect.flip(
-      capture.capture({ origin, sourceLabel: "fixture", options, shots: [row.after], outDir })
-    );
-  });
-}
+const failedShot = Effect.fnUntraced(function* (
+  argv: readonly string[],
+  frame: "stage" | "target" | "viewport"
+) {
+  const options = shotOptions(argv);
+  const capture = yield* Capture;
+  const [row] = planShots(options, frame);
+  if (row === undefined) {
+    return yield* Effect.die("The run planned no shots");
+  }
+  const outDir = yield* Effect.promise(() => mkdtemp(path.join(outRoot, "shot-")));
+  return yield* Effect.flip(
+    capture.capture({ origin, sourceLabel: "fixture", options, shots: [row.after], outDir })
+  );
+});
 
 describe.concurrent("Capture", () => {
   // These two wait out a 15 s timeout, the click step's and the settle's, so they start first and

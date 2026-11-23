@@ -6,7 +6,8 @@
  * so the probe has no assembly of its own.
  */
 
-import { Effect, Result } from "effect";
+import * as Effect from "effect/Effect";
+import * as Result from "effect/Result";
 
 import { manifestDefinition } from "../capture/manifest";
 import { ProbeSetUnknown } from "./build-errors";

@@ -26,7 +26,10 @@
  * between the instance and the variant at its defaults.
  */
 
-import { Effect, Result } from "effect";
+import * as DateTime from "effect/DateTime";
+import * as Effect from "effect/Effect";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 import { join } from "node:path";
 
 import * as Srgb from "@elmeragroup/color/srgb";
@@ -468,13 +471,13 @@ export const runSelfCheck = Effect.fn("runSelfCheck")(function* (options: Compar
       const snapshot: KitSnapshot = {
         format: SNAPSHOT_FORMAT,
         version: SNAPSHOT_VERSION,
-        exportedAt: new Date().toISOString(),
+        exportedAt: DateTime.formatIso(yield* DateTime.now),
         file: "figma:compare self-check",
         scale: DEVICE_SCALE,
         previews,
       };
       yield* makeDirectory(options.outDir);
-      const text = JSON.stringify(snapshot);
+      const text = yield* Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown))(snapshot);
       yield* writeText(join(options.outDir, "self-check-snapshot.json"), text);
       const reread = parseSnapshot(text);
       if (Result.isFailure(reread)) {

@@ -4,7 +4,8 @@
  * sets, such as a composite's parts, land in different slices.
  */
 
-import { Result, Schema } from "effect";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 
 /** The k-th of n slices, 1-based. Only `parseCaptureShard` makes one. */
 export type CaptureShard = {

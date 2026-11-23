@@ -15,6 +15,9 @@ import { createServer } from "node:http";
 
 const REWRITTEN = "// rewritten by the fake server\n";
 const [role, port, mode] = process.argv.slice(2);
+if (role === undefined || port === undefined || mode === undefined) {
+  throw new Error("Usage: fake-docs-server.mjs <role> <port> <mode>");
+}
 const outlivesLauncher = mode === "exit-code" || mode === "exit-signal";
 appendFileSync("fake-server.log", `${role} ${process.pid}\n`);
 

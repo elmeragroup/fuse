@@ -26,7 +26,7 @@ An electrical fuse connects the name to Elmera's energy business. To fuse means 
 
 - **Node**: `>=26.13 <27`, pinned to `26.13.0` by `devEngines.runtime` in the root [`package.json`](package.json). The build, codegen and docs scripts run their TypeScript files directly with Node, which strips the types. `pnpm install` downloads the pinned release into `node_modules`, and every `pnpm` script and `pnpm exec` runs on it, whatever Node is on your `PATH`. A bare `node` outside pnpm still uses your shell's Node. A bump also updates the root `engines.node` range and the docs `Dockerfile`, which `pnpm test:repo-policy` checks.
 - **pnpm 11**: `packageManager` pins the exact version. Node 26 ships without Corepack, so install any pnpm 11 globally, for example with `npm install --global pnpm@11`. It switches to the pinned version on its own.
-- **macOS or Linux, on x64 or arm64.** The docs build generates its API tables with `@elmeragroup/internal`, which does not support Windows yet, so `pnpm build` fails there.
+- **macOS, or glibc Linux, on x64 or arm64.** The docs build generates its API tables with `@elmeragroup/internal`, which does not support Windows yet, so `pnpm build` fails there. `@effect/tsgo`, which runs `pnpm lint:effect`, ships no musl build, so `pnpm lint` fails on Alpine and other musl Linux.
 - `.ref/` reference checkouts are needed only to lift new reference implementations or artwork. They are not needed to build, test, or run the repo.
 
 ```sh
@@ -44,8 +44,8 @@ Root scripts fan out through turbo unless noted.
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `pnpm build`              | Builds every package (`@elmeragroup/fuse` via tsdown, the Next apps, static-theme)                                    |
 | `pnpm dev`                | Runs the dev servers                                                                                                  |
-| `pnpm lint`               | Builds the Fuse dist and docs sources it reads, then `oxlint . --deny-warnings` (`elmera`, `anti-slop`, `fuse`, tsrs) |
-| `pnpm lint:fix`           | The same with `--fix`, uncached                                                                                       |
+| `pnpm lint`               | Builds the Fuse dist and docs sources it reads, then the `oxlint` pass and `lint:effect`, the `@effect/tsgo` rules    |
+| `pnpm lint:fix`           | The `oxlint` pass with `--fix`, uncached                                                                              |
 | `pnpm format`             | `oxfmt` write; `pnpm format:check` is the CI form                                                                     |
 | `pnpm test`               | Unit tests (vitest) in every package                                                                                  |
 | `pnpm test:browser`       | Browser-mode suites in the local gate (Fuse's `browser`, `browser-engines` and `browser-clipboard`, static-theme)     |

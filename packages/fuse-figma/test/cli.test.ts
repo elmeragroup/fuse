@@ -1,6 +1,8 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Effect, Fiber, Runtime } from "effect";
-import { TestClock } from "effect/testing";
+import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
+import * as Runtime from "effect/Runtime";
+import * as TestClock from "effect/testing/TestClock";
 
 import { errors, FILE_KEY, hex, light, output, reads, run, TOKEN, writes } from "./cli-fixture.ts";
 import { InMemoryFigma } from "./in-memory-figma.ts";

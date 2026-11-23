@@ -1,5 +1,8 @@
 import { assert, describe, expect, it } from "@effect/vitest";
-import { Arbitrary, DateTime, Result, Schema } from "effect";
+import * as Arbitrary from "effect/Arbitrary";
+import * as DateTime from "effect/DateTime";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 
 import * as ReleaseRecord from "../src/release-record.ts";
 import { commit, olderCommit } from "./fixtures.ts";
@@ -8,7 +11,7 @@ import { commit, olderCommit } from "./fixtures.ts";
 // (`v<version>`, `canary-<commit>`) and bodies (`{schema: 1, owner: "elmera-release", channel,
 // version, commit}`), as the published canary-699f103f… record holds them.
 
-const canaryTag = Schema.decodeUnknownSync(ReleaseRecord.RecordTag)(`canary-${commit}`);
+const canaryTag = Schema.decodeSync(ReleaseRecord.RecordTag)(`canary-${commit}`);
 
 /** The published canary record as GitHub answers for it, trimmed to the fields read. */
 const canaryRecord = {
@@ -40,7 +43,7 @@ describe("a published record", () => {
   it("reads as the stable release its tag names", () => {
     const release = Result.getOrThrow(
       ReleaseRecord.parse({
-        tag: Schema.decodeUnknownSync(ReleaseRecord.RecordTag)("v0.2.0"),
+        tag: Schema.decodeSync(ReleaseRecord.RecordTag)("v0.2.0"),
         url: "https://github.com/elmeragroup/fuse/releases/tag/v0.2.0",
         publishedAt: "2026-11-06T12:00:00Z",
         body: JSON.stringify({
@@ -136,7 +139,7 @@ describe("a release handed between jobs", () => {
     ({ written }) => {
       const json = Schema.encodeSync(ReleaseRecord.ReleaseJson)(written);
       assert.notMatch(json, /[\r\n]/u);
-      const read = Schema.decodeUnknownSync(ReleaseRecord.ReleaseJson)(json);
+      const read = Schema.decodeSync(ReleaseRecord.ReleaseJson)(json);
       assert.deepStrictEqual(read, written);
       assert.strictEqual(ReleaseRecord.tagOf(read), ReleaseRecord.tagOf(written));
     },

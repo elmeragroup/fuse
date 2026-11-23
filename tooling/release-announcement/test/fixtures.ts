@@ -3,7 +3,8 @@
  * and readers of a message's blocks. Expected texts are written out by hand in the suites.
  */
 
-import { Option, Schema } from "effect";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
 
 import { SlackChannelId } from "../src/announcement.ts";
 import type { Message, MrkdwnText, SlackBlock } from "../src/announcement.ts";
@@ -29,7 +30,7 @@ export const olderCommit = "1e4f692496093af05992b7c989d853907c6ec95e";
  * @returns The release, parsed as the notify job parses one.
  */
 export function stableRelease(version: string, sha: string = commit): Stable {
-  const release = Schema.decodeUnknownSync(Release)({
+  const release = Schema.decodeSync(Release)({
     _tag: "Stable",
     version,
     commit: sha,
@@ -48,7 +49,7 @@ export function stableRelease(version: string, sha: string = commit): Stable {
  * @returns The release, parsed as the notify job parses one.
  */
 export function canaryRelease(version: string, sha: string = commit): Canary {
-  const release = Schema.decodeUnknownSync(Release)({
+  const release = Schema.decodeSync(Release)({
     _tag: "Canary",
     version,
     commit: sha,

@@ -14,7 +14,12 @@
  */
 
 import { NodeHttpClient, NodeServices } from "@effect/platform-node";
-import { Config, Console, Effect, FileSystem, Layer, Schema } from "effect";
+import * as Config from "effect/Config";
+import * as Console from "effect/Console";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as Layer from "effect/Layer";
+import * as Schema from "effect/Schema";
 
 import { CommitSha, decide } from "./canary-decision.ts";
 import { runStep, setSkipOutput } from "./github-actions.ts";
@@ -45,7 +50,7 @@ const pushedCommits = Effect.gen(function* () {
         (error) => new PushPayloadUnreadable({ message: `Could not read ${path}: ${error.message}` })
       )
     );
-  const payload = yield* Schema.decodeUnknownEffect(PushPayload)(text).pipe(
+  const payload = yield* Schema.decodeEffect(PushPayload)(text).pipe(
     Effect.mapError(
       () => new InvalidPushPayload({ message: "The push payload does not list its commits by SHA." })
     )
@@ -55,7 +60,7 @@ const pushedCommits = Effect.gen(function* () {
 
 const main = Effect.gen(function* () {
   const { skip, diagnostics } = yield* decide(yield* pushedCommits);
-  yield* Effect.forEach(diagnostics, (line) => Console.error(line));
+  yield* Effect.forEach(diagnostics, (line) => Console.error(line), { concurrency: 1 });
   yield* setSkipOutput(skip);
 });
 

@@ -4,7 +4,9 @@
  * and its own kit, so no program reads a module global.
  */
 
-import { Context, Effect, Scheduler } from "effect";
+import * as Context from "effect/Context";
+import * as Effect from "effect/Effect";
+import * as Scheduler from "effect/Scheduler";
 
 import type { GlyphFontSpec, KitSpec } from "../../src/components/kit-spec.ts";
 import type { PluginError } from "./errors.ts";

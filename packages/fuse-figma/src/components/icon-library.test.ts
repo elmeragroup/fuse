@@ -6,7 +6,7 @@
  */
 import { NodeServices } from "@effect/platform-node";
 import { describe, expect, it } from "@effect/vitest";
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { fuseIcons } from "./icon-library";
 

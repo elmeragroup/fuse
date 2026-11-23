@@ -9,8 +9,11 @@
  * writes as `<url|label>` still work, and text from the release is escaped by Slack's rule.
  */
 
-import { Match, Option, Result, Schema } from "effect";
-import { Url } from "effect/http";
+import * as Url from "effect/http/Url";
+import * as Match from "effect/Match";
+import * as Option from "effect/Option";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 
 import { PathSegment, under } from "./addresses.ts";
 import { escapeText, link } from "./mrkdwn.ts";
@@ -69,7 +72,7 @@ export function parseChannelSetting(
 ): Result.Result<Option.Option<SlackChannelId>, InvalidSetting> {
   const trimmed = setting.trim();
   if (trimmed === "") return Result.succeed(Option.none());
-  return Schema.decodeUnknownResult(SlackChannelId)(trimmed).pipe(
+  return Schema.decodeResult(SlackChannelId)(trimmed).pipe(
     Result.map(Option.some),
     Result.mapError(
       () =>

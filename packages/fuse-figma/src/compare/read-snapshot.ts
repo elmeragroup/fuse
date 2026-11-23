@@ -2,7 +2,8 @@
  * Parse the JSON the plugin's "Export snapshots" button downloads into a {@link KitSnapshot}.
  */
 
-import { Result, Schema } from "effect";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 
 import { SNAPSHOT_FORMAT, SNAPSHOT_VERSION } from "./snapshot.ts";
 import type { KitSnapshot } from "./snapshot.ts";

@@ -3,9 +3,17 @@
  * what the parser produced, so tests see the `ShotOptions` a run would get without running it.
  */
 
-import { Effect, FileSystem, Layer, Option, Path, Ref, Stdio, Terminal } from "effect";
-import { CliOutput, Command } from "effect/cli";
-import { ChildProcessSpawner } from "effect/process";
+import * as CliOutput from "effect/cli/CliOutput";
+import * as Command from "effect/cli/Command";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as Path from "effect/Path";
+import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
+import * as Ref from "effect/Ref";
+import * as Stdio from "effect/Stdio";
+import * as Terminal from "effect/Terminal";
 
 import { shots } from "../src/cli.ts";
 import type { ShotOptions } from "../src/options.ts";
@@ -39,14 +47,12 @@ export const cliEnvironment = Layer.mergeAll(
  * @param argv - The arguments after `pnpm shots`.
  * @returns The parsed run, or the parser's `CliError`.
  */
-export function parseArgv(argv: readonly string[]) {
-  return Effect.gen(function* () {
-    const parsed = yield* Ref.make(Option.none<ShotOptions>());
-    const command = shots.pipe(Command.withHandler((options) => Ref.set(parsed, Option.some(options))));
-    yield* Command.runWith(command, { version: "test", renderErrors: false })(argv);
-    return Option.getOrThrowWith(yield* Ref.get(parsed), () => new Error(`${argv.join(" ")} ran no command`));
-  }).pipe(Effect.provide(cliEnvironment));
-}
+export const parseArgv = Effect.fnUntraced(function* (argv: readonly string[]) {
+  const parsed = yield* Ref.make(Option.none<ShotOptions>());
+  const command = shots.pipe(Command.withHandler((options) => Ref.set(parsed, Option.some(options))));
+  yield* Command.runWith(command, { version: "test", renderErrors: false })(argv);
+  return Option.getOrThrowWith(yield* Ref.get(parsed), () => new Error(`${argv.join(" ")} ran no command`));
+}, Effect.provide(cliEnvironment));
 
 /**
  * Parse argv that the test expects to parse, for tests of what comes after parsing.

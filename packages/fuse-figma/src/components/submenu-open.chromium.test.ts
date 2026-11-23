@@ -11,7 +11,8 @@
  * stand-ins or Base UI's offsets change so that the two place the sub content apart.
  */
 import { NodeServices } from "@effect/platform-node";
-import { Effect, Result } from "effect";
+import * as Effect from "effect/Effect";
+import * as Result from "effect/Result";
 import type { Page } from "playwright";
 import { describe, expect, it } from "vitest";
 

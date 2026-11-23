@@ -15,8 +15,12 @@
  * once whether a lock is stale.
  */
 
-import { Clock, Duration, Effect, Option, Schema } from "effect";
-import type { Scope } from "effect";
+import * as Clock from "effect/Clock";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
+import type * as Scope from "effect/Scope";
 import { randomUUID } from "node:crypto";
 import { link, mkdir, readFile, rm, rmdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -83,6 +87,7 @@ const OwnerRecord = Schema.Struct({
 type OwnerRecord = typeof OwnerRecord.Type;
 
 const decodeOwner = Schema.decodeUnknownOption(Schema.fromJsonString(OwnerRecord));
+const encodeOwner = Schema.encodeEffect(Schema.fromJsonString(OwnerRecord));
 
 /** A lock this run holds. */
 type Held = { readonly file: string; readonly token: string };
@@ -96,9 +101,9 @@ const RECLAIM_WAIT = Duration.seconds(2);
 function lock<E>(file: string, resource: string, beforeReclaim: Effect.Effect<void, E>) {
   return Effect.gen(function* () {
     const owner: OwnerRecord = { pid: process.pid, token: randomUUID() };
-    const record = JSON.stringify(owner);
     const failed = (cause: unknown) =>
       new LockFailed({ message: `Could not lock ${file}: ${messageOf(cause)}`, file });
+    const record = yield* encodeOwner(owner).pipe(Effect.mapError(failed));
 
     yield* attempt(() => mkdir(path.dirname(file), { recursive: true }), failed);
     for (let round = 0; round < ATTEMPTS; round += 1) {

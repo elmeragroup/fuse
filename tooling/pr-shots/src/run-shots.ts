@@ -4,8 +4,14 @@
  * for it.
  */
 
-import { Clock, Console, Duration, Effect, FileSystem, Option, Schema } from "effect";
-import type { PlatformError } from "effect";
+import * as Clock from "effect/Clock";
+import * as Console from "effect/Console";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as Option from "effect/Option";
+import type * as PlatformError from "effect/PlatformError";
+import * as Schema from "effect/Schema";
 import path from "node:path";
 
 import { Capture } from "./capture.ts";
@@ -33,7 +39,7 @@ import type { BeforeOutcome, ComparedRow, DiffCell, TableRows } from "./shot-tab
 export class RouteRefused extends Schema.TaggedError<RouteRefused>()("RouteRefused", {
   message: Schema.String,
   route: Schema.String,
-  status: Schema.Number,
+  status: Schema.Finite,
 }) {}
 
 /** The run could not create, read or write a file in its output directory. */
@@ -45,7 +51,7 @@ export class OutputFailed extends Schema.TaggedError<OutputFailed>()("OutputFail
 /** A run with `--pr` would upload more images than one `gh pr edit` attaches. */
 export class TooManyAttachments extends Schema.TaggedError<TooManyAttachments>()("TooManyAttachments", {
   message: Schema.String,
-  count: Schema.Number,
+  count: Schema.Finite,
 }) {}
 
 /** How often a run tries again for the lock of a pull request another run is uploading to. */
@@ -61,9 +67,9 @@ const OUTPUT_LOCK = ".pr-shots.lock";
 export class UploadWaitTimedOut extends Schema.TaggedError<UploadWaitTimedOut>()("UploadWaitTimedOut", {
   message: Schema.String,
   /** The pull request. */
-  pr: Schema.Number,
+  pr: Schema.Finite,
   /** How long the run waited before it gave up, by its clock. */
-  waitedMillis: Schema.Number,
+  waitedMillis: Schema.Finite,
 }) {}
 
 /**
@@ -83,7 +89,7 @@ const waitForPullRequestLock = Effect.fn("runShots.waitForPullRequestLock")(func
       return;
     }
     if (taken.failure._tag !== "LockHeld") {
-      return yield* Effect.fail(taken.failure);
+      return yield* taken.failure;
     }
     const now = yield* Clock.currentTimeMillis;
     if (now >= deadline) {
@@ -159,7 +165,7 @@ export const runShots = Effect.fn("runShots")(function* (options: ShotOptions, r
   const rows = planShots(options, frame);
 
   const beforeLabel = sourceLabel(options.before);
-  const before = yield* Effect.gen(function* () {
+  const shootBefore = Effect.fnUntraced(function* () {
     if (options.before._tag === "none") {
       yield* Console.log("--before none: the change adds what the shots show; skipping the before shots.");
       return { _tag: "added" } satisfies BeforeOutcome;
@@ -187,6 +193,7 @@ export const runShots = Effect.fn("runShots")(function* (options: ShotOptions, r
     });
     return { _tag: "captured" } satisfies BeforeOutcome;
   });
+  const before = yield* shootBefore();
 
   yield* Console.log(`Capturing after shots from ${afterLabel}…`);
   yield* capture.capture({
@@ -230,23 +237,28 @@ const diffPairs = Effect.fn("runShots.diffPairs")(function* (
   const read = (shot: Shot) => {
     const file = path.join(outDir, shot.file);
     return fs.readFile(file).pipe(
-      Effect.map((bytes): PngFile => ({ file: shot.file, bytes })),
-      Effect.mapError(outputFailed("read", file))
+      Effect.mapBoth({
+        onSuccess: (bytes): PngFile => ({ file: shot.file, bytes }),
+        onFailure: outputFailed("read", file),
+      })
     );
   };
-  const compared = yield* Effect.forEach(rows, (row) =>
-    Effect.gen(function* () {
-      const diff = yield* Effect.fromResult(
-        diffPngs(yield* read(row.before), yield* read(row.after), options.threshold)
-      );
-      if (diff._tag === "size-changed") {
-        return { row, diff } satisfies ComparedRow;
-      }
-      const diffPath = path.join(outDir, row.diffFile);
-      yield* fs.writeFile(diffPath, diff.png).pipe(Effect.mapError(outputFailed("write", diffPath)));
-      const cell: DiffCell = { _tag: "compared", changed: diff.changed, total: diff.total };
-      return { row, diff: cell } satisfies ComparedRow;
-    })
+  const compared = yield* Effect.forEach(
+    rows,
+    (row) =>
+      Effect.gen(function* () {
+        const diff = yield* Effect.fromResult(
+          diffPngs(yield* read(row.before), yield* read(row.after), options.threshold)
+        );
+        if (diff._tag === "size-changed") {
+          return { row, diff } satisfies ComparedRow;
+        }
+        const diffPath = path.join(outDir, row.diffFile);
+        yield* fs.writeFile(diffPath, diff.png).pipe(Effect.mapError(outputFailed("write", diffPath)));
+        const cell: DiffCell = { _tag: "compared", changed: diff.changed, total: diff.total };
+        return { row, diff: cell } satisfies ComparedRow;
+      }),
+    { concurrency: 1 }
   );
   return { _tag: "with-diff", rows: compared } satisfies TableRows;
 });
@@ -268,10 +280,14 @@ const prepareOutDir = Effect.fn("runShots.prepareOutDir")(function* (outDir: str
   yield* fs.makeDirectory(outDir, { recursive: true }).pipe(Effect.mapError(outputFailed("create", outDir)));
   const files = yield* fs.readDirectory(outDir).pipe(Effect.mapError(outputFailed("read", outDir)));
   const stale = files.filter((file) => file.endsWith(".png") || file === "table.md" || file === BODY_FILE);
-  yield* Effect.forEach(stale, (file) => {
-    const stalePath = path.join(outDir, file);
-    return fs.remove(stalePath).pipe(Effect.mapError(outputFailed("remove", stalePath)));
-  });
+  yield* Effect.forEach(
+    stale,
+    (file) => {
+      const stalePath = path.join(outDir, file);
+      return fs.remove(stalePath).pipe(Effect.mapError(outputFailed("remove", stalePath)));
+    },
+    { concurrency: 1 }
+  );
 });
 
 function writeOutput(file: string, content: string) {

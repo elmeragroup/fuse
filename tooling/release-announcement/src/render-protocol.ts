@@ -8,7 +8,7 @@
  * here, and this module imports nothing that reads Markdown.
  */
 
-import { Schema } from "effect";
+import * as Schema from "effect/Schema";
 
 import { StableVersion } from "./release-record.ts";
 

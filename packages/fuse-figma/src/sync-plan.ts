@@ -13,7 +13,8 @@
  * batch, so what `check` prints and what `sync` sends cannot disagree.
  */
 
-import { Result, Schema } from "effect";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 
 import { CollectionId, fileTypeName, ModeId, VariableId } from "./file-variables.ts";
 import type {
@@ -130,7 +131,7 @@ export class AmbiguousRenameSource extends Schema.TaggedError<AmbiguousRenameSou
     message: Schema.String,
     from: Schema.String,
     to: Schema.String,
-    count: Schema.Number,
+    count: Schema.Finite,
   }
 ) {}
 

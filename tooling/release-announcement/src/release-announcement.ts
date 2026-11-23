@@ -11,7 +11,13 @@
  * a second post.
  */
 
-import { Context, Data, DateTime, Effect, Match, Option, Schema } from "effect";
+import * as Context from "effect/Context";
+import * as Data from "effect/Data";
+import * as DateTime from "effect/DateTime";
+import * as Effect from "effect/Effect";
+import * as Match from "effect/Match";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
 
 import * as Announcement from "./announcement.ts";
 import type { ChatPostMessage, SlackChannelId } from "./announcement.ts";
@@ -231,19 +237,18 @@ export const announce = Effect.fn("ReleaseAnnouncement.announce")(function* (
 const messageFor = Effect.fn("ReleaseAnnouncement.messageFor")(function* (release: Release, repository: URL) {
   const source = yield* ChangelogSource;
   return yield* Match.valueTags(release, {
-    Stable: (stable) =>
-      Effect.gen(function* () {
-        const changelog = yield* source.changelog(stable.commit, READ_LIMIT);
-        const notes: VersionNotes = Option.isNone(changelog)
-          ? { _tag: "Missing" }
-          : yield* (yield* NotesRenderer).render(changelog.value, stable.version);
-        if (notes._tag === "Notes" && notes.extent._tag === "Shortened") {
-          yield* Effect.annotateCurrentSpan({ shortenedBy: notes.extent.by });
-        }
-        if (notes._tag === "Unreadable")
-          yield* Effect.logWarning(`The notes of ${stable.version} could not be shown: ${notes.cause}`);
-        return Announcement.stable(stable, notes, repository);
-      }),
+    Stable: Effect.fnUntraced(function* (stable) {
+      const changelog = yield* source.changelog(stable.commit, READ_LIMIT);
+      const notes: VersionNotes = Option.isNone(changelog)
+        ? { _tag: "Missing" }
+        : yield* (yield* NotesRenderer).render(changelog.value, stable.version);
+      if (notes._tag === "Notes" && notes.extent._tag === "Shortened") {
+        yield* Effect.annotateCurrentSpan({ shortenedBy: notes.extent.by });
+      }
+      if (notes._tag === "Unreadable")
+        yield* Effect.logWarning(`The notes of ${stable.version} could not be shown: ${notes.cause}`);
+      return Announcement.stable(stable, notes, repository);
+    }),
     Canary: (canary) =>
       source
         .subject(canary.commit)

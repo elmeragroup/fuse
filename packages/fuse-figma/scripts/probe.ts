@@ -12,7 +12,10 @@
  */
 
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Console, Data, Effect, Runtime } from "effect";
+import * as Console from "effect/Console";
+import * as Effect from "effect/Effect";
+import * as Runtime from "effect/Runtime";
+import * as Schema from "effect/Schema";
 import { parseArgs } from "node:util";
 
 import { setTargets } from "../src/capture/capture-targets.ts";
@@ -28,7 +31,7 @@ import { buildComponentSets, densityLengths } from "../src/components/build-kit.
 import { possibleCells, variantKey } from "../src/components/component-spec.ts";
 
 /** The run stopped, and what it printed says why. */
-class ProbeStopped extends Data.TaggedError("ProbeStopped") {
+class ProbeStopped extends Schema.TaggedError<ProbeStopped>()("ProbeStopped", {}) {
   override readonly [Runtime.errorReported] = false;
   override readonly [Runtime.errorExitCode] = 1;
 }

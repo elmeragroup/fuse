@@ -8,7 +8,7 @@
  * and curved edges drawn by two renderers mostly differ.
  */
 
-import { Result } from "effect";
+import * as Result from "effect/Result";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
 

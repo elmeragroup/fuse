@@ -11,7 +11,8 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "gen": "plop --plopfile plopfile.mjs",
-    "lint": "turbo run //#lint:oxlint",
+    "lint": "turbo run //#lint:oxlint //#lint:effect",
+    "lint:effect": "effect-tsgo --tsrs-lint=0.25.0-ts7.1.0-beta oxlint -c .oxlintrc.effect.json . --deny-warnings",
     "lint:fix": "turbo run //#lint:prerequisites && pnpm run lint:oxlint --fix",
     "lint:oxlint": "OXLINT_TSGOLINT_PATH=node_modules/.bin/tsrs-lint oxlint . --deny-warnings --report-unused-disable-directives-severity=error",
     "release": "node --import ./packages/fuse/scripts/ts-resolve.mjs scripts/release.ts",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",
+    "@effect/tsgo": "catalog:",
     "@elmeragroup/internal": "catalog:",
     "@elmeragroup/typescript-config": "workspace:*",
     "@shadcn/lint": "catalog:",

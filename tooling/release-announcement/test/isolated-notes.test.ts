@@ -1,11 +1,21 @@
 import { NodeServices } from "@effect/platform-node";
 import { assert, layer } from "@effect/vitest";
-import { Clock, ConfigProvider, Effect, FileSystem, Layer, Path } from "effect";
-import { ChildProcess, ChildProcessSpawner } from "effect/process";
+import * as Clock from "effect/Clock";
+import * as ConfigProvider from "effect/ConfigProvider";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as Layer from "effect/Layer";
+import * as Path from "effect/Path";
+import * as ChildProcess from "effect/process/ChildProcess";
+import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
+import * as Schema from "effect/Schema";
 
 import * as IsolatedNotes from "../src/isolated-notes.ts";
 import { NotesRenderer } from "../src/release-announcement.ts";
 import { StableVersion } from "../src/release-record.ts";
+
+const encodeJson = Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown));
+const decodeJson = Schema.decodeEffect(Schema.fromJsonString(Schema.Unknown));
 
 // Unit under test: the notes renderer adapter, with the process it starts swapped for a stand-in
 // script run by the real process spawner, with the options the adapter chose. Oracles: what a
@@ -67,7 +77,7 @@ layer(NodeServices.layer, { excludeTestServices: true })("the notes renderer's p
         `process.stdin.resume(); process.stdin.on("end", () => process.stdout.write(JSON.stringify({ _tag: "Notes", sections: [JSON.stringify(Object.keys(process.env)) || "[]"], extent: { _tag: "Whole" } })));`
       );
       assert.strictEqual(read._tag, "Notes");
-      const keys: unknown = JSON.parse(read._tag === "Notes" ? (read.sections[0] ?? "") : "");
+      const keys: unknown = yield* decodeJson(read._tag === "Notes" ? (read.sections[0] ?? "") : "");
       // macOS adds its text encoding to every process it starts; nothing else may be there.
       assert.deepStrictEqual(
         Array.isArray(keys) ? keys.filter((key) => key !== "__CF_USER_TEXT_ENCODING") : keys,
@@ -108,12 +118,12 @@ layer(NodeServices.layer, { excludeTestServices: true })("the notes renderer's p
     },
   ])("reads an answer of $case as $read._tag", ({ bytes, read }) =>
     Effect.gen(function* () {
-      const answer = JSON.stringify(notes(["a"]));
+      const answer = yield* encodeJson(notes(["a"]));
       const padded = `${answer}${" ".repeat(bytes - answer.length)}`;
       assert.strictEqual(Buffer.byteLength(padded), bytes);
       assert.deepStrictEqual(
         yield* render(
-          `process.stdin.resume(); process.stdin.on("end", () => process.stdout.write(${JSON.stringify(padded)}));`
+          `process.stdin.resume(); process.stdin.on("end", () => process.stdout.write(${yield* encodeJson(padded)}));`
         ),
         read
       );
@@ -128,7 +138,7 @@ layer(NodeServices.layer, { excludeTestServices: true })("the notes renderer's p
       const pidFile = path.join(dir, "pid");
       // 32 MiB, written as fast as the pipe takes it, then the process waits to be stopped.
       const read = yield* render(
-        `import { writeFileSync } from "node:fs"; writeFileSync(${JSON.stringify(pidFile)}, String(process.pid)); const chunk = "x".repeat(1 << 20); let left = 32; const write = () => { while (left > 0) { left -= 1; if (!process.stdout.write(chunk)) { process.stdout.once("drain", write); return; } } setInterval(() => {}, 1000); }; write();`
+        `import { writeFileSync } from "node:fs"; writeFileSync(${yield* encodeJson(pidFile)}, String(process.pid)); const chunk = "x".repeat(1 << 20); let left = 32; const write = () => { while (left > 0) { left -= 1; if (!process.stdout.write(chunk)) { process.stdout.once("drain", write); return; } } setInterval(() => {}, 1000); }; write();`
       );
       assert.deepStrictEqual(read, { _tag: "Unreadable", cause: "answer-too-large" });
       assert.isFalse(isAlive(Number(yield* fs.readFileString(pidFile))));
@@ -144,7 +154,7 @@ layer(NodeServices.layer, { excludeTestServices: true })("the notes renderer's p
       // A synchronous loop, as a parse is, which no signal but SIGKILL ends.
       const started = yield* Clock.currentTimeMillis;
       const read = yield* render(
-        `import { writeFileSync } from "node:fs"; writeFileSync(${JSON.stringify(pidFile)}, String(process.pid)); for (;;) {}`
+        `import { writeFileSync } from "node:fs"; writeFileSync(${yield* encodeJson(pidFile)}, String(process.pid)); for (;;) {}`
       );
       assert.deepStrictEqual(read, { _tag: "Unreadable", cause: "over-budget" });
       // The default limit is ten seconds (RELEASE.md), and a timer never fires before its time;

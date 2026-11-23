@@ -8,7 +8,9 @@
  */
 
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Console, Effect, FileSystem } from "effect";
+import * as Console from "effect/Console";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
 import { fileURLToPath } from "node:url";
 
 import { buildKit } from "../src/components/build-kit.ts";

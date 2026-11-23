@@ -14,7 +14,7 @@
  * left or right, with the popup first where it sits above or left, and its `content` instance shows
  * the popup variant of the side Chromium opened it on.
  */
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";

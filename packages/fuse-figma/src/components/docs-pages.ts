@@ -5,7 +5,7 @@
  * the kit holds no second copy of it.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { readFileSync } from "node:fs";
 
 import { parsePageLede } from "../../../../apps/docs/scripts/lib/page-frontmatter.ts";

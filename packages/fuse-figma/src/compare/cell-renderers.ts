@@ -28,7 +28,7 @@
 import { createElement } from "react";
 import type { ComponentType, ReactElement } from "react";
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import type { ElmeraIconProps } from "../../../fuse/dist/icons.js";

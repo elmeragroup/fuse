@@ -12,9 +12,15 @@
  * `Retry-After` or a spent `x-ratelimit-remaining`.
  */
 
-import { Config, Effect, Layer, Option, Result, Schema } from "effect";
-import { HttpClient, HttpClientRequest } from "effect/http";
-import type { HttpClientResponse } from "effect/http";
+import * as Config from "effect/Config";
+import * as Effect from "effect/Effect";
+import * as HttpClient from "effect/http/HttpClient";
+import * as HttpClientRequest from "effect/http/HttpClientRequest";
+import type * as HttpClientResponse from "effect/http/HttpClientResponse";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 
 import { baseUrlSetting, PathSegment, repositorySetting, under } from "./addresses.ts";
 import { attemptTimeout, describe, readJson } from "./http-retry.ts";
@@ -74,7 +80,7 @@ export const layer = Layer.effect(
     /** The JSON at `url`, or none for 404, which is not retried. */
     const read = (url: URL, what: string) =>
       readJson(client.get(url), { read: what, timeout: settings.timeout, throttled: isThrottled }).pipe(
-        Effect.map(Option.some),
+        Effect.asSome,
         Effect.catchIf(
           (failure) => failure._tag === "Rejected" && failure.status === 404,
           () => Effect.succeedNone
@@ -95,6 +101,7 @@ export const layer = Layer.effect(
         Effect.mapError(() => unavailable("answered with a body that is not a release"))
       );
       if (release.tag_name !== tag)
+        // @effect-diagnostics-next-line globalJsonInEffect:off -- it quotes a decoded string, which JSON.stringify cannot fail on
         return yield* unavailable(`answered with ${JSON.stringify(release.tag_name)}`);
       const parsed = ReleaseRecord.parse({
         tag,

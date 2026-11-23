@@ -5,7 +5,7 @@
  * ids and component keys, and instances in other files keep following them.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { columnAxisOf, gridCell, variantName } from "../../src/components/kit-check.ts";
 import { walkLayers } from "../../src/components/kit-spec.ts";

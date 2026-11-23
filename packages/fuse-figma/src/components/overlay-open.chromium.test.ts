@@ -34,7 +34,7 @@
  * where Chromium does not, such as a close packed beside the title or bound to another length.
  */
 import { NodeServices } from "@effect/platform-node";
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import type { Page } from "playwright";
 import { describe, expect, it } from "vitest";
 

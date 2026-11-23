@@ -3,7 +3,8 @@
  * PNG bytes in, a changed-pixel count and a diff PNG out, or the two sizes when they differ.
  */
 
-import { Result, Schema } from "effect";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
 

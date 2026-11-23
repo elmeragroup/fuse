@@ -1,7 +1,11 @@
 import { NodeServices } from "@effect/platform-node";
 import { assert, describe, it } from "@effect/vitest";
-import { Deferred, Effect, Fiber, Layer } from "effect";
-import { TestConsole } from "effect/testing";
+import * as Deferred from "effect/Deferred";
+import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
+import * as Layer from "effect/Layer";
+import * as Schema from "effect/Schema";
+import * as TestConsole from "effect/testing/TestConsole";
 import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -13,6 +17,8 @@ import { DocsServer, DocsServerFailed } from "../src/docs-server.ts";
 import { Gh } from "../src/gh.ts";
 import { runShots } from "../src/run-shots.ts";
 import { shotOptions } from "./parse-argv.ts";
+
+const encodeJson = Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown));
 
 /** What a stub run did. */
 type Record = {
@@ -45,16 +51,15 @@ function stubs(record: Record, label: string, { beforeCapture, reserve, pr }: St
       Capture.of({
         probe: () => Effect.succeed(200),
         resolveFrame: () => Effect.succeed("stage"),
-        capture: (request) =>
-          Effect.gen(function* () {
-            record.captures.push([request.sourceLabel, ...request.shots.map((shot) => shot.file)]);
-            if (beforeCapture !== undefined) {
-              yield* beforeCapture(request);
-            }
-            yield* Effect.promise(() =>
-              Promise.all(request.shots.map((shot) => writeFile(path.join(request.outDir, shot.file), label)))
-            );
-          }),
+        capture: Effect.fnUntraced(function* (request) {
+          record.captures.push([request.sourceLabel, ...request.shots.map((shot) => shot.file)]);
+          if (beforeCapture !== undefined) {
+            yield* beforeCapture(request);
+          }
+          yield* Effect.promise(() =>
+            Promise.all(request.shots.map((shot) => writeFile(path.join(request.outDir, shot.file), label)))
+          );
+        }),
       })
     ),
     Layer.succeed(
@@ -71,14 +76,13 @@ function stubs(record: Record, label: string, { beforeCapture, reserve, pr }: St
             record.ghReads.push(number);
             return pr?.read ?? Effect.succeed("## Verification\n\n- Checks pass.\n");
           }),
-        edit: (args, cwd) =>
-          Effect.gen(function* () {
-            record.ghEdits.push(args);
-            if (pr !== undefined) {
-              yield* pr.write(yield* Effect.promise(() => readFile(path.join(cwd, "pr-body.md"), "utf8")));
-            }
-            return "https://github.com/elmeragroup/ui/pull/182";
-          }),
+        edit: Effect.fnUntraced(function* (args, cwd) {
+          record.ghEdits.push(args);
+          if (pr !== undefined) {
+            yield* pr.write(yield* Effect.promise(() => readFile(path.join(cwd, "pr-body.md"), "utf8")));
+          }
+          return "https://github.com/elmeragroup/ui/pull/182";
+        }),
       })
     ),
     NodeServices.layer
@@ -104,28 +108,26 @@ type SharedPullRequest = {
  * most a second. Without a lock both runs read the old body; with one, the second cannot ask
  * until the first has written, so the first read waits out the second.
  */
-function sharedPullRequest(initial: string, readers: number) {
-  return Effect.gen(function* () {
-    let body = initial;
-    let asked = 0;
-    const allAsked = yield* Deferred.make<void>();
-    return {
-      read: Effect.gen(function* () {
-        asked += 1;
-        if (asked >= readers) {
-          yield* Deferred.succeed(allAsked, undefined);
-        }
-        yield* Deferred.await(allAsked).pipe(Effect.timeout("1 second"), Effect.ignore);
-        return body;
+const sharedPullRequest = Effect.fnUntraced(function* (initial: string, readers: number) {
+  let body = initial;
+  let asked = 0;
+  const allAsked = yield* Deferred.make<void>();
+  return {
+    read: Effect.gen(function* () {
+      asked += 1;
+      if (asked >= readers) {
+        yield* Deferred.succeed(allAsked, undefined);
+      }
+      yield* Deferred.await(allAsked).pipe(Effect.timeout("1 second"), Effect.ignore);
+      return body;
+    }),
+    write: (next: string) =>
+      Effect.sync(() => {
+        body = next;
       }),
-      write: (next: string) =>
-        Effect.sync(() => {
-          body = next;
-        }),
-      body: () => body,
-    } satisfies SharedPullRequest;
-  });
-}
+    body: () => body,
+  } satisfies SharedPullRequest;
+});
 
 /** A temporary checkout root, removed with the scope. */
 const checkout = Effect.acquireRelease(
@@ -274,9 +276,10 @@ describe("runShots", () => {
         const root = yield* checkout;
         // A run that died while reclaiming a stale lock leaves both behind.
         const lockFile = path.join(root, ".scratch/shots/.pr-182.lock");
+        const crashed = yield* encodeJson({ pid: deadPid(), token: "crashed-upload" });
         yield* Effect.promise(async () => {
           await mkdir(`${lockFile}.reclaim`, { recursive: true });
-          await writeFile(lockFile, JSON.stringify({ pid: deadPid(), token: "crashed-upload" }));
+          await writeFile(lockFile, crashed);
         });
         const failure = yield* Effect.flip(
           runShots(

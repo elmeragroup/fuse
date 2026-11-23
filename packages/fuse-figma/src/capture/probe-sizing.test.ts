@@ -9,7 +9,7 @@
  * it infers, so a rule that stops inferring would pass it silently; these cases hold what each rule
  * infers.
  */
-import { Result } from "effect";
+import * as Result from "effect/Result";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { builtKit } from "../../test/built-kit";

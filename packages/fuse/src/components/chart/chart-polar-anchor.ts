@@ -46,6 +46,25 @@ import type { LaneBox, LaneDial, LaneSide } from "./layout/polar-lane";
 const STRAIGHT: GlideRoute = { kind: "straight" };
 
 /**
+ * Base UI's virtual anchor for a measure. `placed` returns the measure Base UI read last, or a fresh
+ * one before Base UI has read any. It lives outside the component because it keeps that measure
+ * between calls, which runs after render.
+ */
+function measuredAnchor(measure: () => AnchorMeasure, contextElement: () => HTMLElement | null) {
+  let latest: AnchorMeasure | null = null;
+  return {
+    getBoundingClientRect: () => {
+      latest = measure();
+      return latest.box;
+    },
+    get contextElement() {
+      return contextElement() ?? undefined;
+    },
+    placed: () => latest ?? measure(),
+  };
+}
+
+/**
  * The labels a lane stays outside of, past the rim: angle, outside pie, Now, reference, value and
  * ring-value labels, such as a radar's "200" hanging below the rim at 6 o'clock.
  */
@@ -551,17 +570,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
         route: STRAIGHT,
       };
     };
-    let latest: AnchorMeasure | null = null;
-    return {
-      getBoundingClientRect: () => {
-        latest = measure();
-        return latest.box;
-      },
-      get contextElement() {
-        return surfaceOf() ?? undefined;
-      },
-      placed: () => latest ?? measure(),
-    };
+    return measuredAnchor(measure, surfaceOf);
   }, [anchorX, anchorY, dialOf, surfaceOf]);
   // The follower's angle, shown as the popup's vertical offset from the target ray's height.
   const lane = useRef<LaneNow | null>(null);

@@ -11,7 +11,12 @@
  */
 
 import { NodeHttpClient, NodeServices } from "@effect/platform-node";
-import { Config, Effect, Layer, Match, Option, Schema } from "effect";
+import * as Config from "effect/Config";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Match from "effect/Match";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
 
 import { baseUrlSetting, repositorySetting, under } from "./addresses.ts";
 import { parseChannelSetting } from "./announcement.ts";
@@ -26,11 +31,10 @@ import * as SlackWebApi from "./slack-web-api.ts";
 const CHANNEL_VARIABLES = { Stable: "SLACK_RELEASES_CHANNEL", Canary: "SLACK_CANARY_CHANNEL" } as const;
 
 /** A channel variable, parsed: a channel, or none while it is unset or empty. */
-const channelSetting = (name: string) =>
-  Effect.gen(function* () {
-    const setting = yield* Config.String(name).pipe(Config.withDefault(""));
-    return yield* Effect.fromResult(parseChannelSetting(name, setting));
-  });
+const channelSetting = Effect.fnUntraced(function* (name: string) {
+  const setting = yield* Config.String(name).pipe(Config.withDefault(""));
+  return yield* Effect.fromResult(parseChannelSetting(name, setting));
+});
 
 /** The job's settings, from its environment and the Actions defaults. */
 const settings = Effect.gen(function* () {

@@ -12,7 +12,7 @@
  * changed or whose glyph a designer moved, scaled or unpinned from its component.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { ICON_GLYPH, PLUGIN_DATA_NAMESPACE } from "../../src/components/kit-spec.ts";
 import type { IconLibrarySpec, IconSpec } from "../../src/components/kit-spec.ts";

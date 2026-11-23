@@ -7,7 +7,8 @@
  * stroke's color or `inLayout`.
  */
 
-import { Schema } from "effect";
+import * as Predicate from "effect/Predicate";
+import * as Schema from "effect/Schema";
 
 import { STROKE_SIDES } from "./kit-spec.ts";
 import type { InstanceOverride, StrokeSpec } from "./kit-spec.ts";
@@ -22,7 +23,7 @@ type KitJson = string | number | boolean | null | undefined | readonly KitJson[]
 type KitFields = { readonly [field: string]: KitJson };
 
 const isText = Schema.is(Schema.String);
-const isNumber = Schema.is(Schema.Number);
+const isNumber = Predicate.isNumber;
 const isFlag = Schema.is(Schema.Boolean);
 const isList = Schema.is(Schema.Array(Schema.Unknown));
 const isFinite = Schema.is(Schema.Finite);

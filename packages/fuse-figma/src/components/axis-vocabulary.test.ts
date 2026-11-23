@@ -12,7 +12,7 @@
  *   it lists for that name.
  */
 import { describe, expect, it } from "@effect/vitest";
-import { Schema } from "effect";
+import * as Schema from "effect/Schema";
 import { readFileSync } from "node:fs";
 
 import { BOOLEAN_VALUES, FIGMA_AXES } from "./axis-vocabulary.ts";

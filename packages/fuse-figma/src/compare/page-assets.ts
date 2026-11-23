@@ -11,7 +11,9 @@
  * back to a system font.
  */
 
-import { Effect, FileSystem, Option } from "effect";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as Option from "effect/Option";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -100,8 +102,10 @@ const newestModification = Effect.fnUntraced(function* (directory: string) {
     (entry) => {
       const path = join(directory, entry);
       return fs.stat(path).pipe(
-        Effect.map((info) => (info.type === "File" ? modified(info) : 0)),
-        Effect.mapError(fileFailure("read", path))
+        Effect.mapBoth({
+          onSuccess: (info) => (info.type === "File" ? modified(info) : 0),
+          onFailure: fileFailure("read", path),
+        })
       );
     },
     { concurrency: 16 }
@@ -157,14 +161,18 @@ export const readPageAssets = Effect.fnUntraced(function* (
     ...font,
     directory: dirname(fileURLToPath(import.meta.resolve(`@fontsource/${font.name}/400.css`))),
   }));
-  const fonts = yield* Effect.forEach(packages, (font) =>
-    Effect.forEach(
-      font.weights.flatMap((weight) => [`${String(weight)}.css`, `${String(weight)}-italic.css`]),
-      (file) =>
-        Effect.map(readText(join(font.directory, file)), (css) =>
-          css.replaceAll("url(./files/", `url(${ASSET_PATHS.fontFiles}${font.name}/`)
-        )
-    )
+  const fonts = yield* Effect.forEach(
+    packages,
+    (font) =>
+      Effect.forEach(
+        font.weights.flatMap((weight) => [`${String(weight)}.css`, `${String(weight)}-italic.css`]),
+        (file) =>
+          Effect.map(readText(join(font.directory, file)), (css) =>
+            css.replaceAll("url(./files/", `url(${ASSET_PATHS.fontFiles}${font.name}/`)
+          ),
+        { concurrency: 1 }
+      ),
+    { concurrency: 1 }
   );
   const fontCss = fonts.flat().join("\n");
   const hostCss = yield* compileHostUtilities(
@@ -174,7 +182,7 @@ export const readPageAssets = Effect.fnUntraced(function* (
   const assets: PageAssets = {
     styles: yield* readText(join(build.root, "dist/styles.css")),
     themes: yield* readText(join(build.root, "dist/themes.css")),
-    preflight: yield* compilePreflight(),
+    preflight: yield* compilePreflight,
     fontCss,
     fontDirectories: new Map(packages.map((font) => [font.name, join(font.directory, "files")])),
     fontPackages: packages.map((font) => font.directory),

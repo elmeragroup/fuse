@@ -8,7 +8,7 @@
  * longer lists goes once the kit's nodes have left it.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { topLevelSpecs } from "../../src/components/kit-spec.ts";
 import type { KitSpec, PageSpec } from "../../src/components/kit-spec.ts";

@@ -4,7 +4,7 @@
  * `instance-layers.ts`, and an icon or a frame here. `fonts.ts` requires the fonts a new layer needs.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { shownLabels, walkLayers } from "../../src/components/kit-spec.ts";
 import type {

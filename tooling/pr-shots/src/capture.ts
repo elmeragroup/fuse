@@ -5,7 +5,10 @@
  * its demo stage, widened to any popup a control in it holds open, the window, or the whole page.
  */
 
-import { Context, Effect, Layer, Schema } from "effect";
+import * as Context from "effect/Context";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Schema from "effect/Schema";
 import path from "node:path";
 import { chromium, webkit } from "playwright";
 import type { Browser, BrowserType, Locator, Page, PageScreenshotOptions } from "playwright";
@@ -141,6 +144,7 @@ const probeRoute = Effect.fn("Capture.probe")(function* (origin: URL, route: str
   const url = new URL(route, origin);
   return yield* Effect.tryPromise({
     try: async (signal) => {
+      // @effect-diagnostics-next-line globalFetchInEffect:off -- pr-shots wires no HttpClient, and this probe of a route needs only its status
       const response = await fetch(url, { signal });
       await response.arrayBuffer();
       return response.status;

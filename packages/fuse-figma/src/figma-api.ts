@@ -4,9 +4,22 @@
  * `FileVariables` and `ChangeBatch`.
  */
 
-import { Config, Context, Duration, Effect, Layer, Option, Redacted, Result, Schedule, Schema } from "effect";
-import { Headers, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
-import type { HttpClientError } from "effect/http";
+import * as Config from "effect/Config";
+import * as Context from "effect/Context";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Headers from "effect/http/Headers";
+import * as HttpClient from "effect/http/HttpClient";
+import type * as HttpClientError from "effect/http/HttpClientError";
+import * as HttpClientRequest from "effect/http/HttpClientRequest";
+import * as HttpClientResponse from "effect/http/HttpClientResponse";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as Predicate from "effect/Predicate";
+import * as Redacted from "effect/Redacted";
+import * as Result from "effect/Result";
+import * as Schedule from "effect/Schedule";
+import * as Schema from "effect/Schema";
 
 import { CollectionId, ModeId, VariableId } from "./file-variables.ts";
 import type {
@@ -53,7 +66,7 @@ const TransportFailure = Schema.Struct({
 export class FigmaRequestFailed extends Schema.TaggedError<FigmaRequestFailed>()("FigmaRequestFailed", {
   message: Schema.String,
   operation: Schema.Literals(["read variables", "write variables"]),
-  status: Schema.optionalKey(Schema.Number),
+  status: Schema.optionalKey(Schema.Finite),
   cause: Schema.optionalKey(TransportFailure),
 }) {}
 
@@ -784,24 +797,24 @@ const PostVariablesResponse = Schema.Struct({
   ),
 });
 
-const Rgba = Schema.Struct({ r: Schema.Number, g: Schema.Number, b: Schema.Number, a: Schema.Number });
-const Rgb = Schema.Struct({ r: Schema.Number, g: Schema.Number, b: Schema.Number });
+const Rgba = Schema.Struct({ r: Schema.Finite, g: Schema.Finite, b: Schema.Finite, a: Schema.Finite });
+const Rgb = Schema.Struct({ r: Schema.Finite, g: Schema.Finite, b: Schema.Finite });
 const Alias = Schema.Struct({ type: Schema.Literal("VARIABLE_ALIAS"), id: Schema.String });
 const ComposedColor = Schema.Struct({
   color: Schema.Union([Rgba, Rgb, Alias]),
-  opacity: Schema.Union([Schema.Number, Alias]),
+  opacity: Schema.Union([Schema.Finite, Alias]),
 });
 /** Stands in for a value shape newer than the sync; `Value` decodes any such value to it. */
 const UnknownValue = Schema.Struct({ unknownValue: Schema.Literal(true) });
 const Value = Schema.Union([
   Schema.Boolean,
-  Schema.Number,
+  Schema.Finite,
   Schema.String,
   Alias,
   Rgba,
   ComposedColor,
   UnknownValue,
-]).pipe(Schema.catchDecoding(() => Effect.succeed(Option.some({ unknownValue: true } as const))));
+]).pipe(Schema.catchDecoding(() => Effect.succeedSome({ unknownValue: true } as const)));
 const KnownType = Schema.Literals(["BOOLEAN", "COLOR", "FLOAT", "STRING"]);
 
 /**
@@ -884,7 +897,7 @@ function fileVariable(variable: LocalVariable): FileVariable {
 }
 
 const isBoolean = Schema.is(Schema.Boolean);
-const isNumber = Schema.is(Schema.Number);
+const isNumber = Predicate.isNumber;
 const isString = Schema.is(Schema.String);
 const isAlias = Schema.is(Alias);
 const isRgba = Schema.is(Rgba);

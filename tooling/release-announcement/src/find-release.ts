@@ -11,7 +11,11 @@
  */
 
 import { NodeCrypto, NodeHttpClient, NodeServices } from "@effect/platform-node";
-import { Config, Effect, Layer, Option, Schema } from "effect";
+import * as Config from "effect/Config";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
 
 import * as GitChangelog from "./git-changelog.ts";
 import { annotate, runStep, setOutputs } from "./github-actions.ts";

@@ -5,7 +5,7 @@
  * mounts the page's client cells as soon as it runs.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { fileURLToPath } from "node:url";
 import { build } from "rolldown";
 

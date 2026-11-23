@@ -4,7 +4,7 @@
  * other rejection becomes `KitToolFailed` with the tool's message.
  */
 import { assert, describe, it } from "@effect/vitest";
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { KitSourceInvalid, runTool } from "./build-errors.ts";
 

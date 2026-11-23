@@ -30,7 +30,7 @@
  *   `writing-mode: vertical-rl` the list sets an Item's cells one under the other, each 800px across.
  * - The coverage contract: an Item the build does not draw keeps its `display` unmapped.
  */
-import { Result } from "effect";
+import * as Result from "effect/Result";
 import { describe, expect, it } from "vitest";
 
 import { buildCaptured, chip, FILL, HUG, literal, notesOf, part } from "../../test/capture-fixtures";

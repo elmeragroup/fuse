@@ -4,7 +4,9 @@
  * synced or was synced from an older Fuse.
  */
 
-import { Effect, Layer, Result } from "effect";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Result from "effect/Result";
 
 import { checkKitSpec } from "../../src/components/kit-check.ts";
 import type { ModeRef, VariableRef } from "../../src/components/kit-spec.ts";

@@ -31,7 +31,7 @@
  * draws, its override's or its Button variant's, with the real bar's segments in Chromium.
  */
 import { NodeServices } from "@effect/platform-node";
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";

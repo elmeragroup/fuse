@@ -5,7 +5,7 @@
  * each PR that adds to it.
  */
 import { describe, expect, it } from "@effect/vitest";
-import { Result } from "effect";
+import * as Result from "effect/Result";
 import { readFileSync } from "node:fs";
 
 import { fullKit } from "../plugin/test-support/kit-cache.ts";

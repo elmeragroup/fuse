@@ -5,7 +5,11 @@
  * aligned, and diffs them. It writes three pictures per cell, `report.json` and `report.html`.
  */
 
-import { Effect, FileSystem, Result } from "effect";
+import * as DateTime from "effect/DateTime";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 import { join } from "node:path";
 
 import { manifestDefinition } from "../capture/manifest.ts";
@@ -405,7 +409,7 @@ export const compareSnapshot = Effect.fn("compareSnapshot")(function* (
     : compare(session);
   const report: CompareReport = {
     snapshot: { file: snapshot.file, exportedAt: snapshot.exportedAt, scale: snapshot.scale },
-    generatedAt: new Date().toISOString(),
+    generatedAt: DateTime.formatIso(yield* DateTime.now),
     threshold: options.threshold,
     fuseBuildStale: compared.fuseBuildStale,
     fontPackages: compared.fontPackages,
@@ -413,7 +417,10 @@ export const compareSnapshot = Effect.fn("compareSnapshot")(function* (
     rows: worstFirst(compared.rows),
     skipped: compared.skipped,
   };
-  yield* writeText(join(options.outDir, "report.json"), `${JSON.stringify(report, null, 2)}\n`);
+  yield* writeText(
+    join(options.outDir, "report.json"),
+    `${yield* Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown, { space: 2 }))(report)}\n`
+  );
   yield* writeText(join(options.outDir, "report.html"), renderReportHtml(report));
   return report;
 });

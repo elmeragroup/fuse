@@ -7,7 +7,7 @@
  * here for Item's `Media`, which starts true; and the rule that every page that holds a set has a
  * title and an example, and every set a labels frame, written out here for the Badge page.
  */
-import { Result } from "effect";
+import * as Result from "effect/Result";
 import { describe, expect, it } from "vitest";
 
 import { checkKitSpec } from "../../src/components/kit-check.ts";

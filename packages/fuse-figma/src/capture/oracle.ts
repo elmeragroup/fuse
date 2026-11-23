@@ -8,7 +8,8 @@
  * none, which a fixed row leaves behind.
  */
 
-import { Result, Schema } from "effect";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 import { isDeepStrictEqual } from "node:util";
 
 import ledger from "../../oracles/coverage.json" with { type: "json" };
