@@ -18,7 +18,9 @@
     "fuse-deck": "node src/bin.ts",
     "test": "vitest run --project unit",
     "type-check": "tsrs --noEmit && tsrs --noEmit -p tsconfig.runtime.json && tsrs --noEmit -p tsconfig.test.json",
-    "test:browser": "vitest run --project browser"
+    "test:browser": "vitest run --project browser",
+    "pack": "rm -rf .artifacts && pnpm pack --pack-destination .artifacts",
+    "test:packed-consumer": "node scripts/packed-smoke.ts"
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",

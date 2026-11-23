@@ -11,7 +11,7 @@
     "noImplicitOverride": true,
     "resolveJsonModule": true
   },
-  "include": ["src", "tsdown.config.ts", "vitest.config.ts"],
+  "include": ["src", "scripts", "tsdown.config.ts", "vitest.config.ts"],
   // The browser runtime has tsconfig.runtime.json, and the tests tsconfig.test.json.
   "exclude": ["src/runtime"]
 }

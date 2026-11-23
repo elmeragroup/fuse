@@ -5,6 +5,10 @@
     // against this package's build rather than Fuse's.
     "test": {
       "dependsOn": ["build"]
+    },
+    // The packed smoke test installs this package's tarball beside Fuse's, outside the workspace.
+    "test:packed-consumer": {
+      "dependsOn": ["pack", "@elmeragroup/fuse#pack"]
     }
   }
 }
