@@ -106,6 +106,7 @@ export const scaffoldDeck = Effect.fn("scaffoldDeck")(function* (input: Scaffold
     ],
     [slidePath(COVER_ID), coverSlide(title, input.brief)],
     ["AGENTS.md", agentsFile(title)],
+    [".gitignore", ".fuse-deck/\ndist/\n"],
     ...Option.match(input.brief, {
       onNone: () => [],
       onSome: (brief): Array<[string, string]> => [["BRIEF.md", brief]],
@@ -240,5 +241,6 @@ absolute path of the skill that ships with fuse-deck; open that file for the wor
 - Add, move and remove slides with \`fuse-deck slides\`, so \`deck.json\` and the files stay in step.
 - Run \`fuse-deck check --json\` after each change. It exits 1 and lists each problem when the deck is
   broken.
+- \`fuse-deck dev\` serves the deck with live reload; \`fuse-deck build\` writes it to \`dist/\`.
 `;
 }

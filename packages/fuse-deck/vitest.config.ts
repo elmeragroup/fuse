@@ -13,6 +13,16 @@ export default defineConfig({
           testTimeout: 60_000,
         },
       },
+      {
+        // A deck built by the built bin, served statically and driven in Playwright's Chromium.
+        test: {
+          name: "browser",
+          include: ["test/**/*.browser.test.ts"],
+          environment: "node",
+          testTimeout: 60_000,
+          hookTimeout: 120_000,
+        },
+      },
     ],
   },
 });

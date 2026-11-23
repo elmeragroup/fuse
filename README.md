@@ -40,26 +40,26 @@ Docs: `pnpm --filter docs dev` → http://localhost:3000.
 
 Root scripts fan out through turbo unless noted.
 
-| Script                    | Does                                                                                                                  |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `pnpm build`              | Builds every package (`@elmeragroup/fuse` via tsdown, the Next apps, static-theme)                                    |
-| `pnpm dev`                | Runs the dev servers                                                                                                  |
-| `pnpm lint`               | Builds the Fuse dist and docs sources it reads, then the `oxlint` pass and `lint:effect`, the `@effect/tsgo` rules    |
-| `pnpm lint:fix`           | The `oxlint` pass with `--fix`, uncached                                                                              |
-| `pnpm format`             | `oxfmt` write; `pnpm format:check` is the CI form                                                                     |
-| `pnpm test`               | Unit tests (vitest) in every package                                                                                  |
-| `pnpm test:browser`       | Browser-mode suites in the local gate (Fuse's `browser`, `browser-engines` and `browser-clipboard`, static-theme)     |
-| `pnpm test:e2e`           | End-to-end suites against a built docs app (`next start`) and the `pnpm shots` tool                                   |
-| `pnpm test:types`         | Type-level tests (`*.test-d.tsx`)                                                                                     |
-| `pnpm test:repo-policy`   | Root-only vitest project in [`test/`](test): the merge task graph and the component generator                         |
-| `pnpm type-check`         | `tsrs --noEmit` per package                                                                                           |
-| `pnpm gen`                | plop scaffolder — new component (source, entry facade, tests, demos)                                                  |
-| `pnpm changeset`          | Adds a changeset; see [Contribution flow](#contribution-flow)                                                         |
-| `pnpm release:version`    | `changeset version` + lockfile refresh; the Version Packages PR script                                                |
-| `pnpm release`            | Release-engine CLI: `check-pr` validates a Version Packages PR; `publish <commit>` and `retry <record-tag>` run in CI |
-| `pnpm type-check:scripts` | `tsrs --noEmit` for the root release scripts                                                                          |
-| `pnpm check`              | The local gate: `oxfmt --check` then `turbo run check`, `ci:checks` minus the e2e and packed-artifact tier            |
-| `pnpm ci:checks`          | The full merge gate locally: `oxfmt --check` then `turbo run ci:checks`                                               |
+| Script                    | Does                                                                                                                         |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm build`              | Builds every package (`@elmeragroup/fuse` via tsdown, the Next apps, static-theme)                                           |
+| `pnpm dev`                | Runs the dev servers                                                                                                         |
+| `pnpm lint`               | Builds the Fuse dist and docs sources it reads, then the `oxlint` pass and `lint:effect`, the `@effect/tsgo` rules           |
+| `pnpm lint:fix`           | The `oxlint` pass with `--fix`, uncached                                                                                     |
+| `pnpm format`             | `oxfmt` write; `pnpm format:check` is the CI form                                                                            |
+| `pnpm test`               | Unit tests (vitest) in every package                                                                                         |
+| `pnpm test:browser`       | Browser-mode suites in the local gate (Fuse's `browser`, `browser-engines` and `browser-clipboard`, static-theme, fuse-deck) |
+| `pnpm test:e2e`           | End-to-end suites against a built docs app (`next start`) and the `pnpm shots` tool                                          |
+| `pnpm test:types`         | Type-level tests (`*.test-d.tsx`)                                                                                            |
+| `pnpm test:repo-policy`   | Root-only vitest project in [`test/`](test): the merge task graph and the component generator                                |
+| `pnpm type-check`         | `tsrs --noEmit` per package                                                                                                  |
+| `pnpm gen`                | plop scaffolder — new component (source, entry facade, tests, demos)                                                         |
+| `pnpm changeset`          | Adds a changeset; see [Contribution flow](#contribution-flow)                                                                |
+| `pnpm release:version`    | `changeset version` + lockfile refresh; the Version Packages PR script                                                       |
+| `pnpm release`            | Release-engine CLI: `check-pr` validates a Version Packages PR; `publish <commit>` and `retry <record-tag>` run in CI        |
+| `pnpm type-check:scripts` | `tsrs --noEmit` for the root release scripts                                                                                 |
+| `pnpm check`              | The local gate: `oxfmt --check` then `turbo run check`, `ci:checks` minus the e2e and packed-artifact tier                   |
+| `pnpm ci:checks`          | The full merge gate locally: `oxfmt --check` then `turbo run ci:checks`                                                      |
 
 The type-aware lint rules run on the linter built into tsrs, the compiler behind every type-check, so
 the workspace does not install `oxlint-tsgolint`. The lint scripts set
@@ -87,6 +87,7 @@ Package-scoped scripts worth knowing:
 | `apps/docs`                    | `docs`                              | Next docs site, generated API reference, demo corpus, llms.txt                           |
 | `apps/static-theme`            | `static-theme`                      | Vite host proving standalone-CSS mode and first-paint theme attributes                   |
 | `packages/fuse-figma`          | `@elmeragroup/fuse-figma`           | Private CLI that syncs the design tokens into a Figma file's variables                   |
+| `packages/fuse-deck`           | `@elmeragroup/fuse-deck`            | Private, packable CLI that builds Fuse-themed slide decks from MDX, written for agents   |
 | `packages/color`               | `@elmeragroup/color`                | Private color parsing, conversion, mixing and WCAG contrast, shared by every workspace   |
 | `tooling/typescript`           | `@elmeragroup/typescript-config`    | Shared tsconfig bases                                                                    |
 | `tooling/pr-shots`             | `@elmeragroup/pr-shots`             | Private CLI behind `pnpm shots`: before and after docs screenshots for PRs               |

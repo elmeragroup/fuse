@@ -20,13 +20,15 @@ import * as Runtime from "effect/Runtime";
 import * as Schema from "effect/Schema";
 
 import packageJson from "../../package.json" with { type: "json" };
+import { DEFAULT_OUT } from "../bundler/build-output.ts";
+import { Bundler } from "../bundler/bundler.ts";
+import { compileSlide } from "../bundler/mdx.ts";
 import { checkDeck } from "../deck/check.ts";
 import { DeckFiles } from "../deck/deck-files.ts";
 import type { DeckManifest, OrderPosition } from "../deck/deck-manifest.ts";
 import { mdxText } from "../deck/mdx-text.ts";
 import { DEFAULT_THEME, scaffoldDeck } from "../deck/scaffold.ts";
 import { SlideId, slidePath } from "../deck/slide-id.ts";
-import { parseSlideSource } from "../deck/slide-source.ts";
 import * as Vocabulary from "../deck/vocabulary.ts";
 import type { LayoutName } from "../deck/vocabulary.ts";
 import { shippedSkillPath } from "../package-root.ts";
@@ -46,6 +48,9 @@ const Json = GlobalFlag.Setting("json")({
 
 /** The deck in the working directory or the nearest one above it. */
 const deckLayer = Layer.suspend(() => DeckFiles.layerFrom(process.cwd()));
+
+/** The deck and the bundler over it. */
+const bundlerLayer = Bundler.layer.pipe(Layer.provideMerge(deckLayer));
 
 const create = Command.make(
   "create",
@@ -73,6 +78,7 @@ const create = Command.make(
       "fuse-deck describe --json",
       "fuse-deck slides add <id> --title <text>",
       "fuse-deck check --json",
+      "fuse-deck dev",
     ];
     yield* reply({
       document: { _tag: "DeckCreated", root: created.root, files: created.files, next },
@@ -123,10 +129,15 @@ const list = Command.make(
     const deck = yield* DeckFiles;
     const loaded = yield* deck.load;
     const slides: Array<{ id: SlideId; path: string; title: string | null; layout: LayoutName | null }> = [];
-    for (const { id } of loaded.slides) {
+    for (const { id, file } of loaded.slides) {
       const source = loaded.dangling.includes(id)
         ? Option.none()
-        : Result.getSuccess(parseSlideSource(id, yield* deck.readSlide(id)));
+        : Option.map(
+            Result.getSuccess(
+              yield* Effect.result(compileSlide(id, file, yield* deck.readSlide(id), "production"))
+            ),
+            (slide) => slide.metadata
+          );
       slides.push({
         id,
         path: slidePath(id),
@@ -253,23 +264,66 @@ const check = Command.make(
   Effect.fn("cli.check")(function* () {
     const report = yield* checkDeck();
     yield* reply({
-      document: { _tag: "DeckChecked", slides: report.slides, theme: report.theme },
-      text: `The deck's ${String(report.slides)} slides are consistent. Theme: ${report.theme}.`,
+      document: { _tag: "DeckChecked", slides: report.slides, steps: report.steps, theme: report.theme },
+      text: `The deck's ${String(report.slides)} slides compile, with ${String(report.steps)} steps in all. Theme: ${report.theme}.`,
     });
   })
 ).pipe(
   Command.withDescription(
-    "Report dangling ids, orphan files and invalid frontmatter; exit 1 when there are any"
+    "Report dangling ids, orphan files, invalid frontmatter, slides that do not compile and an invalid theme; exit 1 when there are any"
   ),
-  Command.provide(deckLayer)
+  Command.provide(bundlerLayer)
 );
+
+const dev = Command.make(
+  "dev",
+  {
+    port: Flag.Int("port").pipe(
+      Flag.withDescription("The port to serve on. Default: Vite's, 5173, or the next free one."),
+      Flag.optional
+    ),
+  },
+  Effect.fn("cli.dev")(function* ({ port }) {
+    const bundler = yield* Bundler;
+    const server = yield* bundler.dev(port);
+    yield* reply({
+      document: { _tag: "DevServerReady", url: server.url },
+      text: `Serving the deck at ${server.url}. Press Ctrl-C to stop.`,
+    });
+    return yield* Effect.never;
+  }, Effect.scoped)
+).pipe(
+  Command.withDescription("Serve the deck with live reload until interrupted"),
+  Command.provide(bundlerLayer)
+);
+
+const build = Command.make(
+  "build",
+  {
+    out: Flag.String("out").pipe(
+      Flag.withDescription(
+        `The output directory, relative to the deck. It must not hold the deck or sit in slides/, and an existing one must be empty or an earlier build's. Default: ${DEFAULT_OUT}.`
+      ),
+      Flag.withMetavar("dir"),
+      Flag.withDefault(DEFAULT_OUT)
+    ),
+  },
+  Effect.fn("cli.build")(function* ({ out }) {
+    const bundler = yield* Bundler;
+    const built = yield* bundler.build(out);
+    yield* reply({
+      document: { _tag: "DeckBuilt", out: built.out },
+      text: `Built the deck into ${built.out}.`,
+    });
+  })
+).pipe(Command.withDescription("Build the deck into static files"), Command.provide(bundlerLayer));
 
 const cli = Command.make("fuse-deck").pipe(
   Command.withDescription(
     "Build Fuse-themed slide decks from MDX. Agents start with `fuse-deck describe --json`."
   ),
   Command.withGlobalFlags([Json]),
-  Command.withSubcommands([create, describe, slides, check])
+  Command.withSubcommands([create, describe, slides, check, dev, build])
 );
 
 /** A slide's starting text. */

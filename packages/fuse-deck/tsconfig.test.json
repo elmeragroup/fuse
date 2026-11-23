@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // DOM types the callbacks Playwright runs inside the page.
+    "lib": ["ESNext", "DOM"]
+  },
+  "include": ["test", "src/runtime/position.ts"],
+  "exclude": []
+}

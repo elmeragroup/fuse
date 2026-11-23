@@ -7,9 +7,9 @@ import * as Effect from "effect/Effect";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 
+import { Bundler } from "../bundler/bundler.ts";
 import { DeckFiles } from "./deck-files.ts";
 import { slidePath } from "./slide-id.ts";
-import { parseSlideSource } from "./slide-source.ts";
 
 /** One thing wrong with a deck. */
 export const CheckProblem = Schema.Union([
@@ -28,20 +28,31 @@ export const CheckProblem = Schema.Union([
     hint: Schema.String,
     id: Schema.String,
   }),
+  Schema.TaggedStruct("SlideCompileFailed", {
+    message: Schema.String,
+    hint: Schema.String,
+    id: Schema.String,
+    line: Schema.optional(Schema.Finite),
+    column: Schema.optional(Schema.Finite),
+  }),
+  Schema.TaggedStruct("InvalidTheme", {
+    message: Schema.String,
+    hint: Schema.String,
+    theme: Schema.String,
+  }),
 ]);
 
 /** One thing wrong with a deck. */
 export type CheckProblem = typeof CheckProblem.Type;
 
-/** How far `check` could check the deck's theme. */
-export type ThemeStatus = "unvalidated";
-
 /** A deck `check` found nothing wrong with. */
 export type CheckReport = {
   /** How many slides the order holds. */
   readonly slides: number;
-  /** How far the theme was checked. */
-  readonly theme: ThemeStatus;
+  /** How many steps the slides hold in all. */
+  readonly steps: number;
+  /** The deck's theme, which Fuse accepted. */
+  readonly theme: string;
 };
 
 /** `check` found problems. */
@@ -52,14 +63,30 @@ export class DeckCheckFailed extends Schema.TaggedError<DeckCheckFailed>()("Deck
 }) {}
 
 /**
- * Check the deck: dangling ids, orphan files and each slide's frontmatter.
+ * Check the deck: dangling ids, orphan files, each slide's frontmatter, each slide's compile
+ * through the deck's MDX pipeline, and the theme against Fuse.
  *
  * @returns The report, or `DeckCheckFailed` listing every problem.
  */
 export const checkDeck = Effect.fn("checkDeck")(function* () {
   const deck = yield* DeckFiles;
+  const bundler = yield* Bundler;
   const loaded = yield* deck.load;
   const problems: CheckProblem[] = [];
+  let steps = 0;
+
+  const theme = yield* Effect.result(bundler.firstPaint(loaded.manifest));
+  if (Result.isFailure(theme)) {
+    if (theme.failure._tag !== "InvalidTheme") {
+      return yield* theme.failure;
+    }
+    problems.push({
+      _tag: "InvalidTheme",
+      message: theme.failure.message,
+      hint: theme.failure.hint,
+      theme: theme.failure.theme,
+    });
+  }
 
   for (const id of loaded.dangling) {
     problems.push({
@@ -81,14 +108,15 @@ export const checkDeck = Effect.fn("checkDeck")(function* () {
     if (loaded.dangling.includes(id)) {
       continue;
     }
-    const source = parseSlideSource(id, yield* deck.readSlide(id));
-    if (Result.isFailure(source)) {
-      problems.push({
-        _tag: "InvalidFrontmatter",
-        message: source.failure.message,
-        hint: source.failure.hint,
-        id,
-      });
+    const compiled = yield* Effect.result(bundler.compile(id, yield* deck.readSlide(id)));
+    if (Result.isSuccess(compiled)) {
+      steps += compiled.success.metadata.steps;
+    } else if (compiled.failure._tag === "SlideFrontmatterInvalid") {
+      const { message, hint } = compiled.failure;
+      problems.push({ _tag: "InvalidFrontmatter", message, hint, id });
+    } else {
+      const { message, hint, line, column } = compiled.failure;
+      problems.push({ _tag: "SlideCompileFailed", message, hint, id, line, column });
     }
   }
 
@@ -99,5 +127,5 @@ export const checkDeck = Effect.fn("checkDeck")(function* () {
       problems,
     });
   }
-  return { slides: loaded.slides.length, theme: "unvalidated" } satisfies CheckReport;
+  return { slides: loaded.slides.length, steps, theme: loaded.manifest.theme } satisfies CheckReport;
 });

@@ -1,0 +1,15 @@
+{
+  "extends": "@elmeragroup/typescript-config/base.json",
+  "compilerOptions": {
+    // The runtime runs in the browser: DOM and React types, no Node and no Effect.
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["@elmeragroup/typescript-config/css-custom-properties"],
+    "jsx": "react-jsx",
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    // The runtime declares `virtual:fuse-deck` in its own `.d.ts`, which `skipLibCheck` would skip.
+    "skipLibCheck": false
+  },
+  "include": ["src/runtime", "src/deck/vocabulary.ts"]
+}

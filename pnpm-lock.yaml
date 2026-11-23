@@ -57,6 +57,9 @@ catalogs:
     '@mdx-js/loader':
       specifier: 3.1.1
       version: 3.1.1
+    '@mdx-js/mdx':
+      specifier: 3.1.1
+      version: 3.1.1
     '@microsoft/api-extractor':
       specifier: 7.59.4
       version: 7.59.4
@@ -123,6 +126,9 @@ catalogs:
     '@types/semver':
       specifier: 7.8.0
       version: 7.8.0
+    '@vitejs/plugin-react':
+      specifier: 6.3.0
+      version: 6.3.0
     '@vitest/browser-playwright':
       specifier: 5.0.0
       version: 5.0.0
@@ -165,6 +171,9 @@ catalogs:
     mdast-util-gfm-strikethrough:
       specifier: 2.0.0
       version: 2.0.0
+    mdast-util-mdx-jsx:
+      specifier: 3.2.0
+      version: 3.2.0
     mdn-data:
       specifier: 2.27.1
       version: 2.27.1
@@ -660,9 +669,24 @@ importers:
       '@effect/platform-node':
         specifier: 'catalog:'
         version: 4.1.4(effect@4.1.4)(redis@6.2.1)
+      '@mdx-js/mdx':
+        specifier: 'catalog:'
+        version: 3.1.1(supports-color@8.1.1)
+      '@vitejs/plugin-react':
+        specifier: 'catalog:'
+        version: 6.3.0(vite@8.3.0(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
       effect:
         specifier: 'catalog:'
         version: 4.1.4
+      mdast-util-mdx-jsx:
+        specifier: 'catalog:'
+        version: 3.2.0(supports-color@8.1.1)
+      remark-frontmatter:
+        specifier: 'catalog:'
+        version: 5.0.0(supports-color@8.1.1)
+      vite:
+        specifier: 'catalog:'
+        version: 8.3.0(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)
       yaml:
         specifier: 'catalog:'
         version: 2.9.1
@@ -670,15 +694,36 @@ importers:
       '@effect/vitest':
         specifier: 'catalog:'
         version: 4.1.4(effect@4.1.4)(vitest@5.0.0)
+      '@elmeragroup/fuse':
+        specifier: workspace:*
+        version: link:../fuse
       '@elmeragroup/typescript-config':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@types/mdast':
+        specifier: 'catalog:'
+        version: 4.0.4
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.3.0(@types/react@19.3.0)
       fast-check:
         specifier: 'catalog:'
         version: 4.10.2
+      playwright:
+        specifier: 'catalog:'
+        version: 1.63.0
+      react:
+        specifier: 'catalog:'
+        version: 19.3.0
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.0(react@19.3.0)
       tsdown:
         specifier: 'catalog:'
         version: 0.23.2(@arethetypeswrong/core@0.18.5)(publint@0.3.24)(typescript@7.1.0-beta)
@@ -2895,6 +2940,22 @@ packages:
 
   '@ungap/structured-clone@1.4.0':
     resolution: {integrity: sha512-1mEZtMKPM09vDmQt5y7YvmN2+DFTP7Tg0EWXdic8/C6VRnpb33e4ghisCIE3WZjsE2N8mf+QV1Zqh7ZFYLWInQ==}
+
+  '@vitejs/plugin-react@6.3.0':
+    resolution: {integrity: sha512-H9E955aVvD2F4zNHCw4eIZbIfF6xKldlh7MNu+hSU7xwQzh65lI/N+CJWqmfhi0PEjDXIt/H7T7J/4wU63KJiw==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    peerDependencies:
+      '@rolldown/plugin-babel': ^0.1.7 || ^0.2.0 || ^0.3.0
+      babel-plugin-react-compiler: ^1.0.0
+      oxc-transform-react: '>=0.152.0 <0.157.0'
+      vite: ^8.0.0
+    peerDependenciesMeta:
+      '@rolldown/plugin-babel':
+        optional: true
+      babel-plugin-react-compiler:
+        optional: true
+      oxc-transform-react:
+        optional: true
 
   '@vitest/browser-playwright@5.0.0':
     resolution: {integrity: sha512-N+gED9y4/8pypaHjz/x0ah3CjoBr+N0hWWT+Gq4VXtMzyB+rUIdHni0ulzpD1j4H77iWy5Jg8PRMlVn6kjxo6g==}
@@ -6825,6 +6886,11 @@ snapshots:
     optional: true
 
   '@ungap/structured-clone@1.4.0': {}
+
+  '@vitejs/plugin-react@6.3.0(vite@8.3.0(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))':
+    dependencies:
+      '@rolldown/pluginutils': 1.0.1
+      vite: 8.3.0(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1)
 
   '@vitest/browser-playwright@5.0.0(playwright@1.63.0)(vite@8.3.0(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))(vitest@5.0.0)':
     dependencies:

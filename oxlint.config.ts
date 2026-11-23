@@ -379,7 +379,11 @@ export default defineConfig({
   },
   overrides: [
     {
-      files: ["apps/**/*.{ts,tsx}", "packages/fuse/**/*.{ts,tsx}"],
+      files: [
+        "apps/**/*.{ts,tsx}",
+        "packages/fuse/**/*.{ts,tsx}",
+        "packages/fuse-deck/src/runtime/**/*.{ts,tsx}",
+      ],
       globals: {
         React: "writable",
       },

@@ -1,0 +1,214 @@
+/*
+ * The deck's stylesheet, linked in the page's <head> before Fuse's color-scheme bootstrap runs.
+ * Fuse's standalone CSS brings the tokens; the rules below lay out the 1920x1080 canvas and the
+ * motion. Slide motion values come from the reviewed prototype: a blur crossfade on a strong
+ * ease-out, and a 240ms step reveal.
+ */
+@import "@elmeragroup/fuse/styles.css";
+@import "@elmeragroup/fuse/themes.css";
+
+:root {
+  --deck-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --deck-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --deck-exit: 180ms;
+  --deck-enter: 320ms;
+  --deck-enter-delay: 60ms;
+  --deck-step: 240ms;
+  /* Only the slide's own view transition animates; the page around it stays put. */
+  view-transition-name: none;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.deck-viewport {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.deck-canvas {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  font-family: var(--font-sans);
+}
+
+.deck-slide {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  padding: 120px 144px;
+}
+
+.deck-layout {
+  display: flex;
+  flex-direction: column;
+  /* Each block keeps its own width, so an element that travels between slides keeps its shape. */
+  align-items: flex-start;
+  gap: 32px;
+  height: 100%;
+  font-size: 40px;
+  line-height: 1.4;
+}
+
+.deck-layout :where(h1, h2, h3) {
+  margin: 0;
+  font-family: var(--font-heading, var(--font-sans));
+  font-weight: var(--font-weight-semibold, 600);
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.deck-layout :where(h1) {
+  font-size: 88px;
+}
+
+.deck-layout :where(h2) {
+  font-size: 64px;
+}
+
+.deck-layout :where(h3) {
+  font-size: 48px;
+}
+
+.deck-layout :where(p, ul, ol, blockquote, pre) {
+  margin: 0;
+}
+
+.deck-layout :where(ul, ol) {
+  display: grid;
+  gap: 16px;
+  padding-left: 1.2em;
+}
+
+.deck-layout :where(code) {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.deck-layout :where(a) {
+  color: var(--primary);
+}
+
+.deck-layout-cover,
+.deck-layout-center {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.deck-layout-cover :where(h1) {
+  font-size: 128px;
+}
+
+.deck-layout-cover :where(p) {
+  max-width: 28ch;
+  color: var(--muted-foreground);
+  font-size: 48px;
+}
+
+.deck-layout-section {
+  justify-content: flex-end;
+  padding-bottom: 120px;
+}
+
+.deck-layout-section :where(h1) {
+  font-size: 120px;
+}
+
+.deck-step {
+  transition:
+    opacity var(--deck-step) var(--deck-ease-out),
+    translate var(--deck-step) var(--deck-ease-out),
+    filter var(--deck-step) var(--deck-ease-out);
+}
+
+span.deck-step {
+  display: inline-block;
+}
+
+.deck-step:not([data-revealed]) {
+  opacity: 0;
+  translate: 0 10px;
+  filter: blur(4px);
+}
+
+.deck-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The slide change: the old slide blurs out, the new one blurs in just after. */
+::view-transition-old(.deck-slide) {
+  animation: var(--deck-exit) var(--deck-ease-out) both deck-blur-out;
+}
+
+::view-transition-new(.deck-slide) {
+  animation: var(--deck-enter) var(--deck-ease-out) var(--deck-enter-delay) both deck-blur-in;
+}
+
+@keyframes deck-blur-out {
+  to {
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+@keyframes deck-blur-in {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+/*
+ * Fuse's reduced-motion rule does not reach view-transition pseudo-elements, so the deck states its
+ * own: a 150ms fade with no blur and no travel.
+ */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*) {
+    animation-duration: 0s;
+  }
+
+  ::view-transition-old(.deck-slide) {
+    animation: 150ms var(--deck-ease-out) both deck-fade-out;
+  }
+
+  ::view-transition-new(.deck-slide) {
+    animation: 150ms var(--deck-ease-out) both deck-fade-in;
+  }
+
+  .deck-step {
+    transition: opacity 150ms var(--deck-ease-out);
+  }
+
+  .deck-step:not([data-revealed]) {
+    translate: none;
+    filter: none;
+  }
+}
+
+@keyframes deck-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes deck-fade-in {
+  from {
+    opacity: 0;
+  }
+}

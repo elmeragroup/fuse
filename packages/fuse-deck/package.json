@@ -17,18 +17,36 @@
     "build": "tsdown",
     "fuse-deck": "node src/bin.ts",
     "test": "vitest run --project unit",
-    "type-check": "tsrs --noEmit"
+    "type-check": "tsrs --noEmit && tsrs --noEmit -p tsconfig.runtime.json && tsrs --noEmit -p tsconfig.test.json",
+    "test:browser": "vitest run --project browser"
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",
+    "@mdx-js/mdx": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
     "effect": "catalog:",
+    "mdast-util-mdx-jsx": "catalog:",
+    "remark-frontmatter": "catalog:",
+    "vite": "catalog:",
     "yaml": "catalog:"
+  },
+  "peerDependencies": {
+    "@elmeragroup/fuse": "workspace:^",
+    "react": "^19.3",
+    "react-dom": "^19.3"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
+    "@elmeragroup/fuse": "workspace:*",
     "@elmeragroup/typescript-config": "workspace:*",
+    "@types/mdast": "catalog:",
     "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "fast-check": "catalog:",
+    "playwright": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "tsdown": "catalog:",
     "tsrs": "catalog:",
     "typescript": "catalog:",

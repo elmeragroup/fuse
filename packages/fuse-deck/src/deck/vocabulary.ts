@@ -51,7 +51,14 @@ export type DeckComponent = {
 };
 
 /** The components every slide can use without importing them. */
-export const COMPONENTS: readonly DeckComponent[] = [];
+export const COMPONENTS: readonly DeckComponent[] = [
+  {
+    name: "Step",
+    usage: "<Step>Shown on the next key press</Step>",
+    summary:
+      "Content revealed one key press at a time, in document order. The deck counts the steps when it compiles the slide, so deep links and keyboard navigation agree on the last one. An unrevealed step keeps its space, is hidden and is inert.",
+  },
+];
 
 /** The settings `deck.json` holds besides the slide order. */
 export const DECK_FIELDS = [
@@ -59,7 +66,8 @@ export const DECK_FIELDS = [
   {
     name: "theme",
     type: "string",
-    summary: "A Fuse theme slug, <identity>-<brand>-<segment>, such as neutral-elma-private.",
+    summary:
+      "A Fuse theme slug, <identity>-<brand>-<segment>, such as neutral-elma-private. `check` validates it against Fuse.",
   },
   { name: "density", type: "string", summary: "dense or comfortable, Fuse's document density." },
   { name: "aspect", type: "string", summary: "The slide canvas, 16:9 (1920×1080) or 4:3 (1440×1080)." },
@@ -85,8 +93,19 @@ export const VERBS = [
   },
   { usage: "fuse-deck slides remove <id>", summary: "Take a slide out of the order and delete its file." },
   {
+    usage: "fuse-deck dev [--port <n>]",
+    summary:
+      "Serve the deck with live reload. With --json it prints one { url } document once the server listens.",
+  },
+  {
+    usage: "fuse-deck build [--out <dir>]",
+    summary:
+      "Build the deck into static files, dist/ by default. The build empties --out first, so it refuses a directory that holds the deck or sits in slides/, and an existing one that is not empty unless an earlier build wrote it.",
+  },
+  {
     usage: "fuse-deck check",
-    summary: "Report dangling ids, orphan files and invalid frontmatter.",
+    summary:
+      "Report dangling ids, orphan files, invalid frontmatter, slides that do not compile and an invalid theme.",
   },
 ] as const;
 
@@ -100,4 +119,5 @@ export const FILES = [
   },
   { path: "BRIEF.md", summary: "The brief the deck was created from, verbatim." },
   { path: "AGENTS.md", summary: "Where an agent starts." },
+  { path: ".fuse-deck/", summary: "Vite's cache. Ignored by the .gitignore `create` writes." },
 ] as const;
