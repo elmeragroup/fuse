@@ -124,7 +124,7 @@ export type FlexDirection = Exclude<DirectionSpec, "GRID">;
  *   fill or overflow the box, the margin takes none, and the box keeps them packed at its start with
  *   the gap, where `space-between` would not. A row whose first layer is its own label, which a TEXT
  *   property sets, draws the label filling the room the last layer leaves, whatever the sample's
- *   word count, as `spacedFirst` in `label-layout.ts` says, so a longer label wraps between words
+ *   word count, as `spacedFirst` in `label-sizing.ts` says, so a longer label wraps between words
  *   there as CSS wraps it. The capture measures the room on the sample text. One word wider than the
  *   room is a known limit, as for `label-fills` below.
  * - `label-fills` needs only the row to fit its layers (`fitsAlongMain`). The margin takes whatever

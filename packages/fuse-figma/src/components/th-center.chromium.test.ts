@@ -1,5 +1,5 @@
 /**
- * The Chromium behavior `linesOf` in `label-layout.ts` rests on, which the label mapping's own cases
+ * The Chromium behavior `linesOf` in `label-alignment.ts` rests on, which the label mapping's own cases
  * write by hand: the default style sheet gives a `<th>` `text-align: -internal-center`, and under a
  * row at the initial `start` the cell computes `center` and its text sits in the middle of its
  * content box, while under a row that sets any other `text-align` the cell computes the row's

@@ -1,6 +1,6 @@
 /**
  * Unit under test: the browser behavior `widthHeldBy` in `flex-item-width.ts` assumes, which decides
- * whether a spaced row's label fills the room before its last layer in `label-layout.ts` and whether
+ * whether a spaced row's label fills the room before its last layer in `label-sizing.ts` and whether
  * a part fits the room beside it in `fitting-part.ts`.
  * Oracle: Chromium's layout of the Dropdown menu sub trigger's row, as `capture-flex-mapping.test.ts`
  * builds it: a 120px flex row with 8px padding and gap, its text an anonymous item before a 16px
