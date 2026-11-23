@@ -53,10 +53,10 @@ export function PolarTooltip({
  * when the lane's room holds its content; otherwise it rests below the dial and its labels, or
  * above the chart where below would leave the viewport. Like `Chart.Tooltip`'s, it may reach past
  * the chart's box, below or above it, and stays inside the viewport, but it never covers its dial,
- * its labels or its title. A change of lane fades it in. A pointer that moves toward it past the
- * rim keeps the slice. Escape closes it and keeps the reader's place. It is hidden from screen
- * readers, which read the same values from the option. `anchor` does nothing here, since the lane
- * decides where the popup rests.
+ * its labels or its title. A pointer step that changes lane fades it in, and a key step changes
+ * lane at once. A pointer that moves toward it past the rim keeps the slice. Escape closes it and
+ * keeps the reader's place. It is hidden from screen readers, which read the same values from the
+ * option. `anchor` does nothing here, since the lane decides where the popup rests.
  *
  * @beta
  */
@@ -81,13 +81,13 @@ export function RadialChartTooltip(props: ChartTooltipProps): ReactElement {
 
 /**
  * The popup over the active spoke, with one row per series, in a side lane beside the dial at the
- * height where the hand meets the outer ring, moving with the hand. A step that leaps across the
- * dial fades it in where the step lands, as a change of lane does. A side lane takes it only when
- * the lane's room holds its content; otherwise it rests below the dial and its labels, or above the
- * chart where below would leave the viewport. Like `Chart.Tooltip`'s, it may reach past the chart's
- * box, below or above it, and stays inside the viewport, but it never covers its dial, its labels
- * or its title. Escape closes it and keeps the reader's place. `anchor` does nothing here, since
- * the lane decides where the popup rests.
+ * height where the hand meets the outer ring, moving with the hand. A pointer step that leaps
+ * across the dial fades it in where the step lands, as a change of lane does. A key step moves it
+ * at once. A side lane takes it only when the lane's room holds its content; otherwise it rests
+ * below the dial and its labels, or above the chart where below would leave the viewport. Like
+ * `Chart.Tooltip`'s, it may reach past the chart's box, below or above it, and stays inside the
+ * viewport, but it never covers its dial, its labels or its title. Escape closes it and keeps the
+ * reader's place. `anchor` does nothing here, since the lane decides where the popup rests.
  *
  * @beta
  */

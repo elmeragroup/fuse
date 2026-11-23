@@ -28,6 +28,7 @@ import {
   tooltipInput,
   tooltipPopupClass,
   watchOverflow,
+  useTooltipOpenedBy,
 } from "./chart-tooltip-popup";
 import type { ChartLayerProps } from "./chart-types";
 
@@ -60,13 +61,13 @@ function laneProps(figure: HTMLElement | null) {
 }
 
 /**
- * The popup over the active datum. A pointer, key or touch step to another datum glides it there
- * over `--chart-glide` on a spring that never overshoots, unless the reader prefers reduced motion,
- * and opening, scrolling, resizing, a data update, a change of side and a route with no way move it
- * at once. Touch passes through the popup to the plot, except on a popup that scrolls, where a drag
- * scrolls it and a tap dismisses it. The popup stays while the pointer is on the plot or inside the
- * popup and while the option has focus. It is hidden from screen readers, which read the same values
- * from the plot's option.
+ * The popup over the active datum. A pointer or touch step to another datum glides it there over
+ * `--chart-glide` on a spring that never overshoots, unless the reader prefers reduced motion, and
+ * a key step, opening, scrolling, resizing, a data update, a change of side and a route with no way
+ * move it at once. Touch passes through the popup to the plot, except on a popup that scrolls,
+ * where a drag scrolls it and a tap dismisses it. The popup stays while the pointer is on the plot
+ * or inside the popup and while the option has focus. It is hidden from screen readers, which read
+ * the same values from the plot's option.
  *
  * @param props - The family's anchor, the Tooltip's props and the popup's content.
  * @returns The tooltip.
@@ -100,11 +101,18 @@ export function ChartTooltipBody({
   // A count that asks Base UI to place the popup again, after the marks draw something new or a
   // data update's tween lands, so the anchor measures afresh.
   const [measures, setMeasures] = useState(0);
-  // The index a reader's pointer, key or touch step moved to last. Root carries the active index
-  // over a data update as a commit, which never lands here, so that move shows at once.
+  // The index a reader's pointer or touch step moved to last. Root carries the active index over a
+  // data update as a commit, which never lands here, so that move shows at once, as a key step does.
   const stepped = useRef<number | null>(null);
+  const glider = useRef<TooltipGlider | null>(null);
   useChartFollower("Chart.Tooltip", (current, cause) => {
-    if (cause === "step") stepped.current = current?.slot ?? null;
+    if (cause === "glide-step") stepped.current = current?.slot ?? null;
+    // A key step lands the popup at once, the key that takes over the pointer's slot included,
+    // which moves nothing the placement effect sees.
+    if (cause === "snap-step") {
+      stepped.current = null;
+      glider.current?.stop();
+    }
   });
   const { virtual, side, bridge, revision, forget, watch, freezes, sideOffset, alignOffset } =
     placer.useAnchor({
@@ -129,7 +137,6 @@ export function ChartTooltipBody({
       shareCorridor(store, null);
     };
   }, [open, store]);
-  const glider = useRef<TooltipGlider | null>(null);
   const watchPositioner = useCallback(
     (node: HTMLDivElement | null) => {
       positioner.current = node;
@@ -182,6 +189,9 @@ export function ChartTooltipBody({
   const frozen = useRef(false);
   // The popup's input mark, which follows the reader's pointer whether or not it moves the slot.
   const input = useChartStore(store, (snapshot) => tooltipInput(snapshot.input));
+  // A key opens the popup at once, with no entrance, and a pointer opens it with the overlay's fade.
+  const source = useChartStore(store, (snapshot) => snapshot.source);
+  const openedBy = useTooltipOpenedBy(open, source);
   return (
     <TooltipPrimitive.Root
       open={open}
@@ -212,7 +222,7 @@ export function ChartTooltipBody({
             data-input={input}
             aria-hidden="true"
             ref={watchOverflow}
-            className={tooltipPopupClass(variant, "overlay", className)}
+            className={tooltipPopupClass(variant, openedBy === "keyboard" ? "none" : "overlay", className)}
             style={style}
             onClick={(event) => {
               // A popup that scrolls takes touch events, so a tap on it that did not scroll

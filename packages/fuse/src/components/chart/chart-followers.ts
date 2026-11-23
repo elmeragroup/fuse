@@ -4,25 +4,39 @@
  * The marks that follow the active slot: the crosshair, the active bar overlays, ActiveValue and
  * ActiveValueLine. Each one registers a paint function with Root, and Root calls them with the
  * active slot on every pointer or key step, so a step writes attributes and renders nothing in
- * React. Every commit calls them once more after Root has carried the active slot over to new data,
- * and each follower asks the shared commit classifier how to get there, so it moves with the bars
- * on a data update and snaps on a range step or an orientation change.
+ * React. A follower may glide on a pointer step, and lands at once on a key step. Every commit
+ * calls them once more after Root has carried the active slot over to new data, and each follower
+ * asks the shared commit classifier how to get there, so it moves with the bars on a data update
+ * and snaps on a range step or an orientation change.
  */
 import { useLayoutEffect, useRef } from "react";
 
 import { useChartReadout } from "./chart-readout";
+import type { ChartSnapshot } from "./chart-store";
 
 /** The active slot inside the effective window and the nearest series, or null when none shows. */
 export type ActiveSlot = { readonly slot: number; readonly near: number | null } | null;
 
 /**
- * Draws one follower at the active slot. A `"step"` is a pointer or key step, which draws at once,
- * and a `"commit"` asks the follower's own commit classifier.
+ * Draws one follower at the active slot. A `"glide-step"` is a pointer step, which a follower may
+ * glide to, a `"snap-step"` is a key step, which every follower draws at once, and a `"commit"` asks
+ * the follower's own commit classifier.
  */
 export type FollowerPaint = (active: ActiveSlot, cause: FollowerCause) => void;
 
-/** Why a follower draws. */
-export type FollowerCause = "step" | "commit";
+/** Why a follower draws: a reader's step that glides, one that snaps, or a commit. */
+export type FollowerCause = "glide-step" | "snap-step" | "commit";
+
+/**
+ * The cause of a reader's step, by what moved the active slot. A key step lands every follower at
+ * once, and every other step may glide them.
+ *
+ * @param source - The store's `source` for the step.
+ * @returns The step's cause.
+ */
+export function stepCause(source: ChartSnapshot["source"]): FollowerCause {
+  return source === "keyboard" ? "snap-step" : "glide-step";
+}
 
 type Follower = { paint: FollowerPaint; stale: boolean };
 

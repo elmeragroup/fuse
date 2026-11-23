@@ -14,6 +14,7 @@ import {
   tooltipInput,
   tooltipPopupClass,
   watchOverflow,
+  useTooltipOpenedBy,
 } from "./chart-tooltip-popup";
 import type { ChartDomProps, ChartLayerProps, ValueFormat } from "./chart-types";
 import { seriesLabel } from "./format/series-label";
@@ -172,6 +173,9 @@ export function ScatterChartTooltip({
   const frozen = useRef(false);
   // The popup's input mark, which follows the reader's pointer from the first touch.
   const input = useScatterStore(store, (snapshot) => tooltipInput(snapshot.input));
+  // A key opens the popup at once, with no entrance, and a pointer opens it with the overlay's fade.
+  const source = useScatterStore(store, (snapshot) => snapshot.source);
+  const openedBy = useTooltipOpenedBy(open, source);
   // Where a touch the popup took went down, so its lift tells a tap from a scroll.
   const pressed = useRef<{ readonly x: number; readonly y: number } | null>(null);
   return (
@@ -189,7 +193,7 @@ export function ScatterChartTooltip({
             data-input={input}
             aria-hidden="true"
             ref={watchOverflow}
-            className={tooltipPopupClass(variant, "overlay", className)}
+            className={tooltipPopupClass(variant, openedBy === "keyboard" ? "none" : "overlay", className)}
             style={style}
             onPointerDown={(event) => {
               if (event.pointerType === "mouse") return;

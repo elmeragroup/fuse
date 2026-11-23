@@ -60,9 +60,10 @@ function masked(element: Element): SVGElement[] {
  * Wraps lines, areas and dots and shows them at full strength up to the active slot, as a hover
  * trace. Past the active slot they draw at `--chart-hover-dim`, in their own color, so forced
  * colors and color-vision deficiency keep each series apart. With no slot active they draw
- * whole. Root writes the active slot's place on each series it masks, and a step glides the edge
- * there on the crosshair's spring, so it moves with the crosshair and the active dot. Showing, a
- * commit and reduced motion place it at once, and a pointer move renders nothing in React.
+ * whole. Root writes the active slot's place on each series it masks, and a pointer step glides the
+ * edge there on the crosshair's spring, so it moves with the crosshair and the active dot. A key
+ * step, showing, a commit and reduced motion place it at once, and a pointer move renders nothing
+ * in React.
  *
  * @beta
  */
@@ -82,9 +83,9 @@ export function ChartReveal({ className, style, children }: ChartRevealProps): R
         : pointAlong(drawn.frame, slotCenterAt(drawn.frame, active.slot - window.first));
     const from = shown.current;
     shown.current = at;
-    // A step glides the edge from where it rested. Showing, hiding, a commit and reduced motion,
-    // which Root repaints as a commit, place it at once.
-    const glides = at !== null && from !== null && cause === "step" && !context.motion.snaps();
+    // A pointer step glides the edge from where it rested. Showing, hiding, a key step, a commit and
+    // reduced motion, which Root repaints as a commit, place it at once.
+    const glides = at !== null && from !== null && cause === "glide-step" && !context.motion.snaps();
     const spring = glides ? stepSpring(context.store) : null;
     for (const series of masked(element)) {
       // The property does not inherit, so it goes on each series the mask dims and no deeper.

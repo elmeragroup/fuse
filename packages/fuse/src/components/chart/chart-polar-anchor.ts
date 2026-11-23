@@ -2,23 +2,25 @@
 
 /**
  * Where a polar tooltip rests. The popup sits in a side lane beside the dial, outside the labels
- * past the rim and inside the Root's figure, centered on the active ray's height at the rim, or below
- * or above the dial, and every lane stays inside the viewport where any lane can hold it
- * (`laneRest`). The scene is measured again on a resize of the figure, the popup or the viewport and
- * on any scroll, once per frame, so a scroll or a resize moves the popup to a lane that fits. A step
- * moves it with the Root's angle follower: the popup rests at the target ray's height and shows the
- * follower's height through a vertical `translate`, so the popup, the hand and the dots move as one.
- * A change of lane fades the popup in over 120 ms instead of traveling, and so does a step that
- * leaps across the dial faster than the pointer's pace. A side lane takes the popup only when its
- * room holds the popup's content, so no value is cut; the positioner takes the lane's width, and
- * the popup fills it, so new text never makes Base UI place it again. A popup stays transparent
- * until Base UI has placed it in its lane and its item has been active at two frame checks, so its
- * first frame never paints elsewhere. A pointer that moves toward the popup past the rim, inside the
+ * past the rim and inside the Root's figure, centered on the active ray's height at the rim, or
+ * below or above the dial, and every lane stays inside the viewport where any lane can hold it
+ * (`laneRest`). The scene is measured again on a resize of the figure, the popup or the viewport
+ * and on any scroll, once per frame, so a scroll or a resize moves the popup to a lane that fits. A
+ * step moves it with the Root's angle follower: the popup rests at the target ray's height and
+ * shows the follower's height through a vertical `translate`, so the popup, the hand and the dots
+ * move as one. A pointer step that changes lane fades the popup in over 120 ms instead of
+ * traveling, and so does one that leaps across the dial faster than the pointer's pace. A key step
+ * changes lane at once. A side lane takes the popup only when its room holds the popup's content,
+ * so no value is cut; the positioner takes the lane's width, and the popup fills it, so new text
+ * never makes Base UI place it again. A popup stays transparent until Base UI has placed it in its
+ * lane and its item has been active at two frame checks, or one after a key opened it, so its first
+ * frame never paints elsewhere. A pointer that moves toward the popup past the rim, inside the
  * triangle from where it left the plot to the popup's near edge, keeps the active part.
  */
 import { use, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { writeStyle } from "./chart-dom";
+import { useChartFollower } from "./chart-followers";
 import { PolarContext } from "./chart-polar-context";
 import { useChartReadout } from "./chart-readout";
 import type {
@@ -94,6 +96,9 @@ const PLACE_FRAMES = 6;
 function popupOf(positioner: HTMLElement | null): HTMLElement | null {
   return positioner?.querySelector<HTMLElement>('[data-slot="chart-tooltip"]') ?? null;
 }
+
+/** The item a key step moved the popup to: its slot and its focused series. */
+type KeyItem = { readonly slot: number; readonly near: number | null };
 
 /**
  * Applies a write to the popup's inline opacity at once. The helper reads the computed `opacity` to
@@ -394,8 +399,14 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   // to a lane a longer one left, and the lane never flips from step to step or between opens. It
   // resets when the model changes.
   const widest = useRef(0);
+  // The item a key step moved the popup to, while its placement is pending. The new content may
+  // need another lane, which a measure finds a frame or more later, and that lane change lands at
+  // once. A settled measure ends it. So do a pointer step, a data update, a scroll, a resize and a
+  // change of the visual viewport, whose lane changes fade.
+  const keyPlacement = useRef<KeyItem | null>(null);
   useLayoutEffect(() => {
     widest.current = 0;
+    keyPlacement.current = null;
   }, [model]);
   const open = angle !== null;
   // The scene is measured when the popup opens, on every measure tick and whenever the figure or
@@ -452,8 +463,16 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       });
     };
     measure();
-    const sizes = new ResizeObserver(measure);
     const figure = kernel.root();
+    // The observer reports each target once as it starts; the figure's later reports are resizes.
+    let figureSized = false;
+    const sizes = new ResizeObserver((entries) => {
+      if (entries.some((entry) => entry.target === figure)) {
+        if (figureSized) keyPlacement.current = null;
+        figureSized = true;
+      }
+      measure();
+    });
     if (figure !== null) sizes.observe(figure);
     if (positioner.current !== null) sizes.observe(positioner.current);
     // A scroll of any ancestor and a resize of the viewport move the chart against the viewport
@@ -464,6 +483,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     let pending: number | null = null;
     const soon = (event: Event): void => {
       if (figure !== null && event.target instanceof Node && !event.target.contains(figure)) return;
+      keyPlacement.current = null;
       pending ??= requestAnimationFrame(() => {
         pending = null;
         measure();
@@ -578,10 +598,26 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const sizing = useRef<number | null>(null);
   const placing = useRef<number | null>(null);
   /**
-   * The lane fade that runs, which a close, a new open or the next fade cancels: a script animation
-   * composites above the popup's CSS exit and its hold, so it would run out its 120 ms over either.
+   * The lane fade that runs, which a close, a new open, the next fade or a key step cancels: a script
+   * animation composites above the popup's CSS exit and its hold, so it would run out its 120 ms over
+   * either.
    */
   const fade = useRef<Animation | null>(null);
+  // The item the follower painted last, so a key step that stays on it moves nothing.
+  const painted = useRef<KeyItem | null>(null);
+  useChartFollower("Chart.Tooltip", (active, cause) => {
+    const item = active === null ? null : { slot: active.slot, near: active.near };
+    const last = painted.current;
+    if (cause === "glide-step") keyPlacement.current = null;
+    if (cause === "snap-step" && item !== null && (item.slot !== last?.slot || item.near !== last.near))
+      keyPlacement.current = item;
+    painted.current = item;
+    // A key step lands at once, so it ends a lane fade a pointer step started, even on the item the
+    // pointer already made active, which no layout effect below sees.
+    if (cause !== "snap-step") return;
+    fade.current?.cancel();
+    fade.current = null;
+  });
   useLayoutEffect(
     () => () => {
       if (sizing.current !== null) cancelAnimationFrame(sizing.current);
@@ -589,6 +625,16 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     },
     []
   );
+  /**
+   * Whether the scene already holds the popup's content as it is now, so the lane it sits in is the
+   * one that content needs. Content that a measure has not caught up with may still send it on.
+   */
+  const caughtUp = useCallback((): boolean => {
+    const now = lane.current;
+    const popup = popupOf(positioner.current);
+    if (now === null || popup === null || popup.textContent === "") return false;
+    return widestContent(popup, readout, spread) <= now.scene.content;
+  }, [positioner, readout]);
   /**
    * Whether Base UI has put the positioner's near edge on the lane's corner: a side lane's inner edge,
    * the bottom lane's top or the top lane's bottom, within a pixel.
@@ -609,12 +655,82 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
             : rect.bottom - (dial.center.y + want.y);
     return Math.abs(at) <= 1;
   }, [positioner, dialOf]);
+  // The watch for a popup that an open is waiting on. Base UI mounts the popup in a commit of its
+  // own, and the watch's callback runs in the microtask after it, so the hold starts before the
+  // popup first paints.
+  const mounting = useRef<MutationObserver | null>(null);
+  // A popup that opens stays transparent, and lets the pointer through, until Base UI has placed
+  // it in its lane, so its first frame never paints or takes the pointer elsewhere. It shows only
+  // once an item has been active in the Root's store at two frame checks in a row: the store is the
+  // live state the pick writes, but the first check can run in the open's own frame, before a
+  // flick's close, or before a close that lands after it in the next frame, so one check is not
+  // enough. A popup shows once its item has survived a full frame, at most a frame later than it
+  // would have; a popup that follows the pointer on to another item is still open, and shows.
+  // Every open starts a fresh hold, so a close and a reopen between two checks count again. A key
+  // opens no flick, so a popup a key opened shows after one check. Either way the popup shows only
+  // once the scene holds the content it shows and Base UI has placed it in the lane that content
+  // needs, or after `PLACE_FRAMES`.
+  const hold = useCallback(
+    (popup: HTMLElement, needed: number): void => {
+      if (placing.current !== null) cancelAnimationFrame(placing.current);
+      fade.current?.cancel();
+      fade.current = null;
+      // The hold writes 0 at once, so a reopen during the exit never carries a visible popup to its
+      // new lane. The release then fades it in through the overlay's opacity transition, except
+      // after a key, which shows it at once.
+      atOnce(popup, () => writeStyle(popup, "opacity", "0"));
+      writeStyle(popup, "pointer-events", "none");
+      let frames = 0;
+      let survived = 0;
+      const check = (): void => {
+        frames += 1;
+        // A popup whose item closed during the hold was never shown, so it stays transparent and
+        // only lets the pointer through again; the next open's hold writes both.
+        if (kernel.store.get().active === null) {
+          placing.current = null;
+          writeStyle(popup, "pointer-events", null);
+          return;
+        }
+        survived += 1;
+        if (survived >= needed && ((caughtUp() && onLane()) || frames >= PLACE_FRAMES)) {
+          placing.current = null;
+          // A key that took over during a pointer's hold shows the popup at once, with no fade.
+          if (kernel.store.get().source === "keyboard")
+            atOnce(popup, () => writeStyle(popup, "opacity", null));
+          else writeStyle(popup, "opacity", null);
+          writeStyle(popup, "pointer-events", null);
+          return;
+        }
+        placing.current = requestAnimationFrame(check);
+      };
+      placing.current = requestAnimationFrame(check);
+    },
+    [kernel, caughtUp, onLane]
+  );
+  const holdOnMount = useCallback(
+    (needed: number): void => {
+      mounting.current?.disconnect();
+      const watch = new MutationObserver(() => {
+        const popup = popupOf(positioner.current);
+        if (popup === null) return;
+        watch.disconnect();
+        mounting.current = null;
+        hold(popup, needed);
+      });
+      watch.observe(document.body, { childList: true, subtree: true });
+      mounting.current = watch;
+    },
+    [positioner, hold]
+  );
+  useLayoutEffect(() => () => mounting.current?.disconnect(), []);
   useLayoutEffect(() => {
     // A closing popup keeps its place, its width and its lane while it fades out, from the opacity it
     // reached. The overlay's opacity transition retargets from wherever an entrance has got to, so a
     // close mid-entrance fades out from there on its own.
     if (angle === null) {
       before.current = null;
+      mounting.current?.disconnect();
+      mounting.current = null;
       const running = fade.current;
       fade.current = null;
       if (running !== null) handOver(running, popupOf(positioner.current));
@@ -673,6 +789,10 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
         writeStyle(node, "width", `${laneWidth(room, content, across ? room : LANE_WIDEST).toFixed(2)}px`);
       if (outgrows || (width !== null && content > width))
         setScene((last) => (last === null || last.content >= content ? last : { ...last, content }));
+      // A measure that could move the popup, with its content, its lane's room and its width all
+      // known, and keeps the scene settles a key step's placement.
+      else if (room !== null && width !== null && popup !== null && popup.textContent !== "")
+        keyPlacement.current = null;
     });
     const node = positioner.current;
     const popup = popupOf(node);
@@ -681,47 +801,16 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     // to step, and Base UI never moves it a frame later; a label longer than the lane wraps. A
     // closing popup keeps the width it showed.
     if (node !== null && width !== null) writeStyle(node, "width", `${width.toFixed(2)}px`);
-    if ((switched || leaped) && popup !== null && !motion.reduced()) {
+    // A key step's lane change lands at once, with no fade.
+    if ((switched || leaped) && popup !== null && !motion.reduced() && keyPlacement.current === null) {
       fade.current?.cancel();
       fade.current = popup.animate([{ opacity: LANE_FADE_FROM }, { opacity: 1 }], LANE_FADE);
     }
-    // A popup that opens stays transparent, and lets the pointer through, until Base UI has placed
-    // it in its lane, so its first frame never paints or takes the pointer elsewhere. It shows only
-    // once an item has been active in the Root's store at two frame checks in a row: the store is the
-    // live state the pick writes, but the first check can run in the open's own frame, before a
-    // flick's close, or before a close that lands after it in the next frame, so one check is not
-    // enough. A popup shows once its item has survived a full frame, at most a frame later than it
-    // would have; a popup that follows the pointer on to another item is still open, and shows.
-    // Every open starts a fresh hold, so a close and a reopen between two checks count again.
-    if (opening && popup !== null) {
-      if (placing.current !== null) cancelAnimationFrame(placing.current);
-      fade.current?.cancel();
-      fade.current = null;
-      // The hold writes 0 at once, so a reopen during the exit never carries a visible popup to its
-      // new lane. The release then fades it in through the overlay's opacity transition.
-      atOnce(popup, () => writeStyle(popup, "opacity", "0"));
-      writeStyle(popup, "pointer-events", "none");
-      let frames = 0;
-      let survived = 0;
-      const check = (): void => {
-        frames += 1;
-        // A popup whose item closed during the hold was never shown, so it stays transparent and
-        // only lets the pointer through again; the next open's hold writes both.
-        if (kernel.store.get().active === null) {
-          placing.current = null;
-          writeStyle(popup, "pointer-events", null);
-          return;
-        }
-        survived += 1;
-        if (survived >= 2 && (onLane() || frames >= PLACE_FRAMES)) {
-          placing.current = null;
-          writeStyle(popup, "opacity", null);
-          writeStyle(popup, "pointer-events", null);
-          return;
-        }
-        placing.current = requestAnimationFrame(check);
-      };
-      placing.current = requestAnimationFrame(check);
+    if (opening) {
+      // A key's open needs no second check: no flick can close it within the frame.
+      const needed = kernel.store.get().source === "keyboard" ? 1 : 2;
+      if (popup === null) holdOnMount(needed);
+      else hold(popup, needed);
     }
   }, [
     angle,
@@ -734,11 +823,11 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     rightEdge,
     scene,
     turns,
-    kernel.follow,
-    kernel.store,
+    kernel,
     positioner,
     motion,
-    onLane,
+    hold,
+    holdOnMount,
     readout,
   ]);
   useLayoutEffect(

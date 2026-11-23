@@ -2,8 +2,9 @@
 
 /**
  * A polar Root's one angle follower, which turns the clock's Scrubber, the radar's hand, every
- * ActiveDot and the tooltip's lane offset together. A pointer or key step retargets it, and it
- * keeps its angle and velocity across steps, so a step mid-glide never jumps or stalls. A frame turns
+ * ActiveDot and the tooltip's lane offset together. A pointer step retargets it, and it keeps its
+ * angle and velocity across steps, so a step mid-glide never jumps or stalls. A key step lands it at
+ * once. A frame turns
  * no faster than the pointer's speed carries a mark, the hand at the rim and each active dot along
  * the curve it moves along, which a steep flank stretches, so a ring or spoke step glides with the
  * pointer. It never turns so slowly that a step takes more than 12 frames at that pace, or 10 for a
@@ -65,7 +66,7 @@ export type FollowListener = (angle: number) => void;
 /** A Root's angle follower. */
 export type PolarFollow = {
   /**
-   * Moves the target. A pointer or key step glides there, keeping the speed the follower has. A
+   * Moves the target. A pointer step glides there, keeping the speed the follower has. A key step, a
    * commit, reduced motion, an engine without `linear()` and the first angle after none snap there.
    * Null means nothing is active, so the next angle snaps.
    */
@@ -98,8 +99,8 @@ export type FollowHost = {
   /** The spring this step glides on. */
   readonly spring: () => Spring;
   /**
-   * The spring a step that leaps glides on: the fastest follow spring, as a keyboard step's, since
-   * the pointer is already where the step lands and only the follower is behind it.
+   * The spring a step that leaps glides on: the fastest follow spring, since the pointer is already
+   * where the step lands and only the follower is behind it.
    */
   readonly leapSpring: () => Spring;
   /**
@@ -203,7 +204,7 @@ export function createPolarFollow(host: FollowHost): PolarFollow {
       const shown = state?.angle ?? angle;
       const stepSpring = host.spring();
       const glides =
-        cause === "step" &&
+        cause === "glide-step" &&
         state !== null &&
         target !== null &&
         !host.reduced() &&

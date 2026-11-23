@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 // The chart's key maps, the Escape rule and the modifier rule, in Chromium.
 // Every expected option name, position and set size is written by hand from the committed
 // Elhub rows and the hand-written month-switch fixture, never read from Fuse.
@@ -6,7 +8,20 @@ import { afterEach, describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
+import { nextFrames, pollFrames } from "../../../test/animation-frames";
 import { S06Chart } from "../../../test/chart/bar-charts";
+import {
+  animatedWhile,
+  animating,
+  keyOpen,
+  label,
+  pointerAt,
+  popup,
+  popupFade,
+  popupOpen,
+  surfaceBox,
+} from "../../../test/chart/marks";
 import { OCTOBER_FIRST_LOAD, OCTOBER_RELOAD, october, september } from "../../../test/chart/month-switch";
 import type { DayRow } from "../../../test/chart/month-switch";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -250,5 +265,209 @@ describe("keys per task", () => {
     expect(focused()[0]).toBe(
       "kl.\u00a019\u00a0til\u00a020: Husholdning 1,8\u00a0kilowattimer, Hytte 0,93\u00a0kilowattimer"
     );
+  });
+});
+
+describe("a key step lands at once", () => {
+  /** S06's household line with every part that follows the active slot, the crosshair a line. */
+  function Followers(): ReactNode {
+    return (
+      <S06Chart>
+        <Chart.Line dataKey="household" />
+        <Chart.ActiveDot dataKey="household" />
+        <Chart.Crosshair variant="line">
+          <Chart.SlotLabel />
+        </Chart.Crosshair>
+        <Chart.Tooltip />
+      </S06Chart>
+    );
+  }
+
+  /** The parts that follow the active slot, by name. */
+  function followers(host: HTMLElement): string[] {
+    // Each follower is aria-hidden plot output, and the popup portals out of the host, so their
+    // slots are the only locators. The tooltip glides on Base UI's positioner, the popup's parent.
+    return animating({
+      crosshair: host.querySelector('[data-slot="chart-crosshair"]'),
+      "active dot": host.querySelector('[data-slot="chart-active-dot"]'),
+      "slot label": host.querySelector('[data-slot="chart-slot-label"]'),
+      tooltip: document.querySelector('[data-slot="chart-tooltip"]')?.parentElement,
+    });
+  }
+
+  /** Waits until nothing in the chart or its popup animates, so a step starts from rest. */
+  async function rest(host: HTMLElement): Promise<void> {
+    await nextFrames(2);
+    const popupNode = document.querySelector('[data-slot="chart-tooltip"]');
+    const running = [
+      ...host.getAnimations({ subtree: true }),
+      ...(popupNode?.getAnimations({ subtree: true }) ?? []),
+    ];
+    await Promise.all(running.map((animation) => animation.finished));
+  }
+
+  /** The x of the crosshair line's middle in client pixels, or NaN with no line. */
+  function crosshairX(host: HTMLElement): number {
+    // The line is aria-hidden plot output, so its slot locates it.
+    const box = host.querySelector('[data-slot="chart-crosshair-mark"]')?.getBoundingClientRect();
+    return box === undefined ? Number.NaN : box.left + box.width / 2;
+  }
+
+  /** The x of the active dot's middle in client pixels while it shows, or NaN when it does not. */
+  function activeDotX(host: HTMLElement): number {
+    // The dot is aria-hidden plot output, so its slot locates it.
+    const dot = host.querySelector('[data-slot="chart-active-dot"] [data-slot="chart-dot"]');
+    if (dot === null || !dot.checkVisibility({ opacityProperty: true, visibilityProperty: true }))
+      return Number.NaN;
+    const box = dot.getBoundingClientRect();
+    return box.left + box.width / 2;
+  }
+
+  /**
+   * The middles of S06's 24 hours in client pixels. The hours are equal slots, so the middles lie
+   * evenly between the first and the last, where Home and End put the crosshair at rest. It leaves
+   * the chart on the first hour.
+   */
+  async function slotMiddles(host: HTMLElement): Promise<number[]> {
+    await userEvent.keyboard("{End}");
+    await rest(host);
+    const last = crosshairX(host);
+    await userEvent.keyboard("{Home}");
+    await rest(host);
+    const first = crosshairX(host);
+    return Array.from({ length: 24 }, (_, slot) => first + ((last - first) * slot) / 23);
+  }
+
+  /** Whether the tooltip's positioner runs its own glide, a script animation of its place. */
+  function tooltipGlides(): boolean {
+    // The popup portals out of the host, so its slot locates it, and Base UI's positioner is its
+    // parent. The popup's own fade is a CSS transition on the popup, not on the positioner.
+    const positioner = document.querySelector('[data-slot="chart-tooltip"]')?.parentElement;
+    return (
+      positioner
+        ?.getAnimations()
+        .some(
+          (animation) =>
+            !(animation instanceof CSSTransition) &&
+            !(animation instanceof CSSAnimation) &&
+            animation.playState === "running"
+        ) ?? false
+    );
+  }
+
+  it("moves the crosshair, active dot, slot label and tooltip with no glide on Arrow, Home and End", async () => {
+    const { host } = renderThemed(<Followers />);
+    await enterChart(host);
+    await rest(host);
+    const middles = await slotMiddles(host);
+    for (const [key, shows, slot] of [
+      ["{ArrowRight}", "01–02", 1],
+      ["{End}", "23–24", 23],
+      ["{Home}", "00–01", 0],
+    ] as const) {
+      const seen = await animatedWhile(
+        () => followers(host),
+        () => userEvent.keyboard(key),
+        () => label() === shows
+      );
+      expect(seen, key).toEqual([]);
+      // The active dot shows on the line at the hour's middle.
+      expect(Math.abs(activeDotX(host) - (middles[slot] ?? Number.NaN)), key).toBeLessThan(0.5);
+    }
+  });
+
+  it("glides every follower on a pointer step, the control", async () => {
+    const { host } = renderThemed(<Followers />);
+    const plot = surfaceBox(host);
+    const hour = plot.width / 24;
+    await pointerAt(plot.left + hour * 3.5, plot.top + plot.height / 2);
+    await rest(host);
+    const seen = await animatedWhile(
+      () => followers(host),
+      () => pointerAt(plot.left + hour * 8.5, plot.top + plot.height / 2),
+      () => label() === "08–09"
+    );
+    expect(seen).toEqual(["active dot", "crosshair", "slot label", "tooltip"]);
+  });
+
+  it("cancels the pointer's glides when a key takes over the slot they glide to", async () => {
+    const { host } = renderThemed(<Followers />);
+    await enterChart(host);
+    await rest(host);
+    const middles = await slotMiddles(host);
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}{ArrowRight}");
+    await rest(host);
+    const surface = host.querySelector('[role="listbox"]');
+    const option = document.activeElement;
+    if (surface === null || option === null) throw new Error("no focused option");
+    const plot = surfaceBox(host);
+    const crosshair = host.querySelector('[data-slot="chart-crosshair"]');
+    // The popup portals out of the host, and Base UI's positioner is its parent.
+    const positioner = document.querySelector('[data-slot="chart-tooltip"]')?.parentElement;
+    if (positioner === undefined || positioner === null) throw new Error("no tooltip positioner");
+    // Where the popup rests over 03:00, the focused option's slot, which the takeover lands it on.
+    const resting = positioner.getBoundingClientRect();
+    const moveTo = (slot: number): void => {
+      surface.dispatchEvent(
+        new PointerEvent("pointermove", {
+          bubbles: true,
+          clientX: middles[slot],
+          clientY: plot.top + plot.height / 2,
+          pointerType: "mouse",
+        })
+      );
+    };
+    // The pointer leaves for 08:00, and the glides there finish, so only the glides back run next.
+    moveTo(8);
+    await pollFrames(label, "08–09");
+    await rest(host);
+    expect(tooltipGlides()).toBe(false);
+    // The pointer comes back to 03:00, and the crosshair and the popup glide back toward it.
+    moveTo(3);
+    await pollFrames(tooltipGlides, true, 10);
+    expect(animating({ crosshair })).toEqual(["crosshair"]);
+    // Enter pins the focused option's slot, the one the pointer already made active. The key and
+    // the reads run in one task, so nothing else ends the glides.
+    option.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Enter" }));
+    expect(tooltipGlides()).toBe(false);
+    const landed = positioner.getBoundingClientRect();
+    expect(Math.abs(landed.left - resting.left)).toBeLessThan(0.5);
+    expect(Math.abs(landed.top - resting.top)).toBeLessThan(0.5);
+    expect(animating({ crosshair })).toEqual([]);
+    expect(Math.abs(crosshairX(host) - (middles[3] ?? Number.NaN))).toBeLessThan(0.5);
+  });
+});
+
+describe("the tooltip's entrance", () => {
+  /** The open popup's own animations and transitions, by name. */
+  function entering(): string[] {
+    return popupFade(popup());
+  }
+
+  it("opens at once on focus, fades in on a pointer, and fades out after a key opened it", async () => {
+    const { host } = renderThemed(
+      <S06Chart>
+        <Chart.Bar dataKey="household" />
+        <Chart.Tooltip />
+      </S06Chart>
+    );
+    expect(await keyOpen(() => enterChart(host))).toEqual({ motion: [], firstOpacity: 1 });
+    // The exit fades whatever opened the popup.
+    expect(
+      await animatedWhile(
+        () => popupFade(document.querySelector('[data-slot="chart-tooltip"]')),
+        () => userEvent.keyboard("{Escape}"),
+        () => !popupOpen()
+      )
+    ).toEqual(["fade"]);
+    await userEvent.keyboard("{Tab}");
+    const plot = surfaceBox(host);
+    expect(
+      await animatedWhile(
+        entering,
+        () => pointerAt(plot.left + plot.width / 2, plot.top + plot.height / 2),
+        popupOpen
+      )
+    ).toEqual(["fade"]);
   });
 });

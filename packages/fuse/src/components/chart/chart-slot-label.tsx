@@ -83,10 +83,11 @@ type Measured = {
  * along the axis to the active slot and prints the slot in the axis's format, and the tick labels
  * under it fade out until it moves on. Each part of the label, such as a day or a month, rolls to
  * its new value on a stack of its values, so a part that keeps its value stays still, and the pill
- * glides and resizes on a spring. Above 60 labels it prints one label, written at once. Root moves
- * it by writing styles, so a pointer move renders nothing in React. It is plot output that screen
- * readers skip, and they hear the slot from the focused option. The server renders none of it, and
- * neither does a horizontal chart, whose axis prints every category.
+ * glides and resizes on a spring. A key step moves and resizes the pill and swaps its parts at
+ * once. Above 60 labels it prints one label, written at once. Root moves it by writing styles, so a
+ * pointer move renders nothing in React. It is plot output that screen readers skip, and they hear
+ * the slot from the focused option. The server renders none of it, and neither does a horizontal
+ * chart, whose axis prints every category.
  *
  * @beta
  */
@@ -172,8 +173,8 @@ export function ChartSlotLabel({ format, className, style }: ChartSlotLabelProps
       return;
     }
     const position = active.slot - window.first;
-    // A pill that shows, a commit and reduced motion place everything at once.
-    writeAttribute(node, "data-snap", placedAt.current !== null && cause === "step" ? null : "");
+    // A pill that shows, a key step, a commit and reduced motion place everything at once.
+    writeAttribute(node, "data-snap", placedAt.current !== null && cause === "glide-step" ? null : "");
     writeAttribute(node, "data-shown", "");
     placedAt.current = position;
     if (compact) {

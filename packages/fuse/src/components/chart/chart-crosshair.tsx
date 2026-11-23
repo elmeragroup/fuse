@@ -26,8 +26,8 @@ export type ChartCrosshairProps = ChartLayerProps & {
    * A band over the active slot or a line through it. The default follows `xScale`. A band spans
    * the active slot of the coarsest series in its layout, so an hourly bar's band covers its hour.
    * `--chart-crosshair-width` sets the line's width, 1 px by default. The line glides from slot to
-   * slot on a spring that quickens with the pointer, so a key step or a slow scrub settles in about
-   * half a second and a fast sweep in about 120 ms. It moves at once under reduced motion.
+   * slot on a spring that quickens with the pointer, so a slow scrub settles in about half a second
+   * and a fast sweep in about 120 ms. It moves at once on a key step and under reduced motion.
    */
   variant?: "line" | "band";
   /**
@@ -46,7 +46,8 @@ export type ChartCrosshairProps = ChartLayerProps & {
  * so a pointer move renders nothing in React. The band covers the same pixel columns as the
  * focused option and the tooltip's anchor. The line glides from slot to slot on a spring that
  * quickens with the pointer, so it keeps up with a fast sweep and eases after a slow one, unless the
- * user prefers reduced motion, and fades at both ends by default. Active dots glide with it.
+ * user prefers reduced motion, and fades at both ends by default. A key step moves it at once.
+ * Active dots glide with it.
  *
  * @beta
  */
@@ -110,9 +111,10 @@ export function ChartCrosshair({
     shown.current = start;
     const svg = layer.current;
     if (svg === null) return;
-    // Only a step glides, and only the line. Root repaints with a commit on a resize, a change of
-    // look and a change of the user's motion preference, which all place the line at once.
-    if (look !== "line" || cause !== "step" || from === null || motion.snaps()) {
+    // Only a pointer step glides, and only the line. A key step lands at once, and Root repaints with
+    // a commit on a resize, a change of look and a change of the user's motion preference, which all
+    // place the line at once.
+    if (look !== "line" || cause !== "glide-step" || from === null || motion.snaps()) {
       snapGlide(svg);
       return;
     }

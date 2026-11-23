@@ -147,13 +147,13 @@ function fits(values: readonly number[], from: number, to: number): boolean {
 }
 
 /**
- * The spring the crosshair and the active dots follow a step on. A keyboard step, which has no
- * speed, and a pointer at `FOLLOW_SPEEDS.slow` or slower take `CHART_SPRINGS.follow`; a pointer at
+ * The spring the crosshair and the active dots follow a pointer step on. A pointer with no speed yet
+ * and a pointer at `FOLLOW_SPEEDS.slow` or slower take `CHART_SPRINGS.follow`; a pointer at
  * `FOLLOW_SPEEDS.fast` or faster takes `FOLLOW_FASTEST`. Between them the natural frequency grows
  * with the speed and lands on the nearest of `FOLLOW_LEVELS` even steps. The damping keeps
  * `follow`'s damping ratio, so every level overshoots alike.
  *
- * @param speed - The pointer's speed in CSS pixels per millisecond, or null for a keyboard step.
+ * @param speed - The pointer's speed in CSS pixels per millisecond, or null before it has one.
  * @returns The spring, one of `FOLLOW_LEVELS` fixed objects.
  */
 export function followSpring(speed: number | null): Spring {
