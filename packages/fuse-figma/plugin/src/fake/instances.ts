@@ -117,7 +117,7 @@
  */
 
 import { ownSize, settled } from "./layout.ts";
-import { propertyOwner, propertyValue, rootMain } from "./overrides.ts";
+import { cornerKey, propertyOwner, propertyValue, rootMain } from "./overrides.ts";
 import { componentKey, f32, isText, numberOwner, sourceOf, write } from "./state.ts";
 import type { FileState, NodeState, PropertyState } from "./state.ts";
 import { requireHeldFonts, resetStyles } from "./text.ts";
@@ -382,8 +382,9 @@ export function editProperty(
 
 /**
  * The fields `overrides` lists for each override the fake notes (rule 37): N1 listed an instance's
- * `name`, `width` and `height`, and N3 its `fills`, `effects` and "the corner fields", which the fake
- * takes as the four corners the typings name and `cornerRadius`, and a sublayer's `fills`. G19 listed
+ * `name`, `width` and `height`, and N3 its `fills`, `effects` and "the corner fields", which CR1 and
+ * CR4 read as `cornerRadius` after a whole write and each corner a literal write or an unbind set,
+ * and a sublayer's `fills`. G19 listed
  * `boundVariables` after an instance's own unbind of its width (rule 56). An auto layout frame's own
  * padding and alignment (rule 64) list under the names the typings' `NodeChangeProperty` gives them
  * (`@figma/plugin-typings` 1.141.0); no probe has read `overrides` after such a write.
@@ -398,7 +399,10 @@ export const OVERRIDE_FIELDS: ReadonlyMap<string, readonly NodeChangeProperty[]>
   ["fills", ["fills"]],
   ["strokes", ["strokes"]],
   ["effects", ["effects"]],
-  ["radii", ["cornerRadius", "topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius"]],
+  ["cornerRadius", ["cornerRadius"]],
+  ...(["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"] as const).map(
+    (corner): [string, readonly NodeChangeProperty[]] => [cornerKey(corner), [corner]]
+  ),
   // SAFETY: G19 read `boundVariables` among an instance's overridden fields, which the typings'
   // NodeChangeProperty does not name.
   ["boundVariables", ["boundVariables" as NodeChangeProperty]],

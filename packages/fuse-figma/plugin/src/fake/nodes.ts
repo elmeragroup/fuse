@@ -289,7 +289,7 @@ function writeNumbers(state: NodeState, fields: () => readonly StoredNumberField
       state.bindings.delete(field);
       ownNumber(state, field);
     }
-    listNumbers(state, written);
+    listNumbers(state, written, true);
   });
 }
 
@@ -324,8 +324,9 @@ const STROKE_SIDES = {
 
 /**
  * Write corners as literals (rules 8, 37): drop the bindings the write replaces and make each
- * written corner the layer's own, then settle them against the source, so a literal equal to a
- * bound corner its source shows still lists `cornerRadius` and stops following the source.
+ * written corner the layer's own and list it. On 2026-11-21 a literal equal to the number a bound
+ * corner showed listed nothing and kept the binding (CR4), which the fake does not model: the plugin
+ * drops a binding before it writes a literal.
  */
 function writeCorners(
   state: NodeState,
@@ -838,6 +839,7 @@ class FakeFrameLikeNode extends FakeSceneNode {
     }
     write(state, "cornerRadius");
     writeCorners(state, CORNER_FIELDS, f32(value));
+    markOverride(state, "cornerRadius");
   }
 
   get topLeftRadius(): number {

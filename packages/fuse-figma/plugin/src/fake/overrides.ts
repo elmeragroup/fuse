@@ -9,10 +9,12 @@
  *    reads its new main component's instead (rule 48).
  * 37. `overrides` lists each layer of an instance that holds an override, from the instance down, with
  *    its fields: the instance's own `name`, `width` and `height` (N1), its `fills`, `effects` and "the
- *    corner fields", and a sublayer's `fills` (N3). N3 did not name the corner fields, so the fake
- *    lists `cornerRadius` and the four corners the typings name. No probe listed a frame's own
- *    padding or alignment, so the fake lists them under their names in the typings (rule 64). A
- *    property value is no override (N1). A fill written equal to the main's left no `fills`
+ *    corner fields", and a sublayer's `fills` (N3). On 2026-11-21 a whole `cornerRadius` write
+ *    listed `cornerRadius` and the four corners, a literal write or an unbind of one corner that
+ *    corner, and a binding of one corner none, each beside `boundVariables` where a binding was
+ *    involved (CR1, CR4). A padding's binding listed `boundVariables` alone (CR6). No probe listed a
+ *    frame's own alignment, so the fake lists it, and a padding's literal write or unbind, under
+ *    their names in the typings (rule 64). A property value is no override (N1). A fill written equal to the main's left no `fills`
  *    override, and `overrides` listed only the instance's `name` (NS), so a fill, stroke or effects
  *    the fake stores equal to what the layer's source shows clears that override, and the field
  *    follows the source again. A number does not: a corner, gap, stroke weight or padding written or
@@ -114,25 +116,43 @@ export function noteOverride(state: NodeState, field: ShownField): void {
 
 /**
  * List the numbers a write, a binding or an unbind made an instance's or a sublayer's own (rules 8,
- * 37): `overrides` lists each from then on, the corners together, and `boundVariables` where the
- * layer binds the field or its source showed it bound. On 2026-11-20 an instance that wrote 7 over
- * its main's bound `itemSpacing`, `topLeftRadius`, `strokeWeight` or `paddingLeft`, then bound the
- * main's own variable, listed the field and `boundVariables`, and still did once the main took a
- * literal (FM3). So a number the layer holds equal to its source's stays its own.
+ * 37): `overrides` lists `boundVariables` where the layer binds the field or its source showed it
+ * bound, and a corner a literal write or an unbind set under its own name from then on. On 2026-11-20
+ * an instance that wrote 7 over its main's bound `itemSpacing`, `topLeftRadius`, `strokeWeight` or
+ * `paddingLeft`, then bound the main's own variable, listed the field and `boundVariables`, and still
+ * did once the main took a literal (FM3). So a number the layer holds equal to its source's stays its
+ * own. On 2026-11-21 a literal `topLeftRadius` listed `topLeftRadius` and `boundVariables` alone, an
+ * unbind of `topRightRadius` the same of that corner, and a binding of `topLeftRadius` to another
+ * variable `boundVariables` alone (CR1, CR4).
+ *
+ * @param state - The layer.
+ * @param fields - The numbers the write, binding or unbind set.
+ * @param named - True for a literal write or an unbind, which lists a corner by its name.
  */
-export function listNumbers(state: NodeState, fields: readonly StoredNumberField[]): void {
+export function listNumbers(state: NodeState, fields: readonly StoredNumberField[], named: boolean): void {
   const source = sourceOf(state);
   if (source === undefined) {
     return;
   }
   for (const field of fields) {
-    if (CORNER_FIELDS.some((corner) => corner === field)) {
-      state.overridden.add("radii");
+    const corner = CORNER_FIELDS.find((each) => each === field);
+    if (corner !== undefined && named) {
+      state.overridden.add(cornerKey(corner));
     }
     if (state.bindings.has(field) || shownBinding(source, field) !== undefined) {
       state.overridden.add("boundVariables");
     }
   }
+}
+
+/**
+ * The key in `overridden` that lists a corner under its own name (rule 37).
+ *
+ * @param corner - The corner's field.
+ * @returns The key.
+ */
+export function cornerKey(corner: (typeof CORNER_FIELDS)[number]): string {
+  return `corner:${corner}`;
 }
 
 /** The four corner fields. */
