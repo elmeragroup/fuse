@@ -1,0 +1,37 @@
+{
+  "name": "@elmeragroup/fuse-deck",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Builds Fuse-themed slide decks from MDX, with a command line written for agents.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {},
+  "bin": {
+    "fuse-deck": "./dist/bin.mjs"
+  },
+  "files": [
+    "dist",
+    "skill"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "fuse-deck": "node src/bin.ts",
+    "test": "vitest run --project unit",
+    "type-check": "tsrs --noEmit"
+  },
+  "dependencies": {
+    "@effect/platform-node": "catalog:",
+    "effect": "catalog:",
+    "yaml": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "@elmeragroup/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "fast-check": "catalog:",
+    "tsdown": "catalog:",
+    "tsrs": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

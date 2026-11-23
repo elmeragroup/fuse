@@ -1,0 +1,10 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    // The process tests spawn the built bin, the file the packed tarball ships, so the suite runs
+    // against this package's build rather than Fuse's.
+    "test": {
+      "dependsOn": ["build"]
+    }
+  }
+}
