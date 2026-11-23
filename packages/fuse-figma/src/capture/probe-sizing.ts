@@ -5,7 +5,6 @@
  * module reads them with no browser, so each rule holds against widths written by hand.
  */
 
-import { widthAround } from "../components/box-sizing.ts";
 import type { DrawnPart } from "../components/drawn-parts.ts";
 import { AXIS_CONSTRAINT, layerAt, outOfLayout } from "../components/kit-spec.ts";
 import type {
@@ -18,6 +17,7 @@ import type {
   RotationSpec,
   SizeSpec,
 } from "../components/kit-spec.ts";
+import { widthAround } from "../components/layer-bounds.ts";
 import type { ProbedBox, ProbedCell } from "./perturbation.ts";
 
 /**

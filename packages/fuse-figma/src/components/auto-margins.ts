@@ -6,7 +6,7 @@
  * names it. Any other auto margin stays unread, so it lands unmapped.
  */
 import type { FlowLayers } from "./box-flow";
-import { setsMinimumWidth } from "./box-sizing";
+import { setsMinimumWidth } from "./box-room";
 import { evaluateNumber, normalizeCss } from "./css-values";
 import type { DirectionSpec } from "./kit-spec";
 import type { CoverageNote, Feed, LayerStyle } from "./layer-style";
@@ -386,14 +386,14 @@ const CENTRED_DETAILS = {
  * keeps its fit-content width and the margins share the room left beside it (§9.4 step 11, §9.6
  * step 13). The layer sits in the middle on both axes, which a Figma column centred on both axes
  * draws, with the layer at its own width up to the column's content width, as `roomInside` in
- * `box-sizing.ts` gives it.
+ * `box-room.ts` gives it.
  *
  * The capture must measure the column leaving room along it in every mode (`freeAlongMain`). A layer
  * that overflows the column takes zero margins and sits at its start, where Figma's centre would
  * overflow both ends. Across, the margins take zero for the same reason (CSS Flexbox 1 §8.1), so the
  * layer must not grow past the column's content width there either. A layer that shows only its own
  * text, which wraps, with no `width` and no `min-width` above zero, is no wider than its text up to
- * the column's content width, and the width cap `roomInside` in `box-sizing.ts` gives it wraps the
+ * the column's content width, and the width cap `roomInside` in `box-room.ts` gives it wraps the
  * text at that width as CSS does. One word wider than the column is a known limit: CSS keeps the word
  * whole and starts the layer at the column's left, while Figma breaks the word inside the cap. A layer
  * that sets its width or minimum width, holds an icon or a layer, or keeps its text on one line can

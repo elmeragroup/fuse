@@ -43,7 +43,7 @@
  * gives a `stretch` axis the length the parent leaves it and a refused place leaves it none, and
  * `placement.ts` reads it once the part maps.
  */
-import type { Room } from "./box-sizing";
+import type { Room } from "./box-room";
 import {
   affineLength,
   constantOf,
@@ -500,7 +500,7 @@ export const STRETCHED_LENGTH =
  * padding box, which the sizing then draws as a literal, and a length the placement leaves where it
  * does not. A length of the part's own that the room resolves reads as the sizing reads any other.
  *
- * @param room - The room an absolute part has, as `absoluteRoom` in `box-sizing.ts` reads it.
+ * @param room - The room an absolute part has, as `absoluteRoom` in `box-room.ts` reads it.
  * @param style - The part's style.
  * @param plan - The part's place, or undefined for a part placed some other way.
  * @returns The room.

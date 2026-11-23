@@ -10,7 +10,7 @@ import type { VariableIndex } from "./css-values";
  */
 import type { NumberSpec } from "./kit-spec";
 
-/** A limit beside the length, as `resolveLimits` in `box-sizing.ts` holds it. */
+/** A limit beside the length, as `resolveLimits` in `box-limits.ts` holds it. */
 type LiteralBound = { readonly side: "min" | "max"; readonly value: NumberSpec | undefined };
 
 /**

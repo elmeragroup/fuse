@@ -6,7 +6,7 @@
 import { readAutoMargins } from "./auto-margins";
 import type { FlexDirection } from "./auto-margins";
 import type { ChildSpacing } from "./box-cascade";
-import { BLOCK_LEVEL, heightBounds, listNames } from "./box-sizing";
+import { listNames } from "./coverage";
 import { describeNumber, evaluateLength, normalizeCss, readNumber } from "./css-values";
 import type { VariableIndex } from "./css-values";
 import { planGrid } from "./grid-layout";
@@ -21,8 +21,10 @@ import type {
   SizeSpec,
   SizingSpec,
 } from "./kit-spec";
+import { heightBounds } from "./layer-bounds";
 import type { CoverageNote, Feed, LayerStyle } from "./layer-style";
 import type { Layout } from "./placement";
+import { BLOCK_LEVEL } from "./root-room";
 import { readSubgridFlow } from "./subgrid-row";
 import { readTableFlow } from "./table-layout";
 
@@ -700,7 +702,7 @@ function stretchesAlike(style: LayerStyle, own: CounterAlignSpec): boolean {
  */
 function readSelfAlignment(reader: LayerStyle, { parts, others }: FlowLayers): SelfAlignment | undefined {
   const selfOf = (style: LayerStyle) => normalizeCss(style.resolved("align-self") ?? "auto");
-  // A stretch sizes the part across the row, which `selfStretchedRoom` in `box-sizing.ts` reads.
+  // A stretch sizes the part across the row, which `selfStretchedRoom` in `box-room.ts` reads.
   const setters = parts.filter((part) => !["auto", "stretch"].includes(selfOf(part.style)));
   const values = new Set(setters.map((part) => selfOf(part.style)));
   const [value] = values;

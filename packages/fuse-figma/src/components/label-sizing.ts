@@ -7,10 +7,10 @@
  * `label-layout.ts` reads the label's layout here.
  */
 
-import { hugsUncapped, listNames, widthCapInside } from "./box-sizing";
-import type { Holder, RowLayer, WidthCap } from "./box-sizing";
+import type { Holder, RowLayer } from "./box-room";
 import { KitUnmappable } from "./build-errors";
 import type { LabelDefinition } from "./component-spec";
+import { listNames } from "./coverage";
 import { evaluateLength, normalizeCss } from "./css-values";
 import { DECLARED_WIDTH, keepsOwnSize, widthHeldBy } from "./flex-item-width";
 import type { DrawnWidth, HoldingDeclaration } from "./flex-item-width";
@@ -20,6 +20,8 @@ import { LINES_WHERE, linesAcross } from "./label-alignment";
 import type { Across, PlacedLabel, TextPlacement } from "./label-alignment";
 import { inertClamp, neverWraps, wraps } from "./label-wrap";
 import type { CoverageNote, LayerStyle } from "./layer-style";
+import { hugsUncapped, widthCapInside } from "./width-cap";
+import type { WidthCap } from "./width-cap";
 
 /** Where a flex box's alignment puts a layer across, named as text alignment names the place. */
 const PLACE_OF = { MIN: "LEFT", CENTER: "CENTER", MAX: "RIGHT" } as const;

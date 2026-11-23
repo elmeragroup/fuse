@@ -18,7 +18,6 @@ import { kitFamily } from "../kit-fonts";
 import { mapBox, NO_VALUES } from "./box-mapping";
 import type { MapScope } from "./box-mapping";
 import { readBackdrop } from "./box-paint";
-import { rootRoom } from "./box-sizing";
 import { KitUnmappable } from "./build-errors";
 import { clippedShadows } from "./clipped-shadows";
 import type { ClippedShadow } from "./clipped-shadows";
@@ -50,6 +49,7 @@ import { booleanPropertiesOf, optionalParts } from "./optional-parts";
 import { partName, prepareParts } from "./part-preparation";
 import { placeRoot } from "./placement";
 import { clipsInCss, rootClips, wrapHanging } from "./root-clip";
+import { rootRoom } from "./root-room";
 import { PaintedInstances } from "./stacking";
 
 /** What a set builds from: the definition the mapping walks, and the capture its cascade reads. */

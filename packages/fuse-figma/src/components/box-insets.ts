@@ -1,9 +1,11 @@
 /**
  * The padding and border lengths of a box along each axis, in pixels, as the box sizing and a flex
- * item's width proof read them.
+ * item's width proof read them, and two lengths across a box that hold one value in every mode, as
+ * its margins do in `root-room.ts` and `placement.ts` and its padding in `hugging-rows.ts`.
  */
-import type { Extent } from "./box-sizing";
-import { evaluateLength, normalizeCss } from "./css-values";
+import type { Extent } from "./box-room";
+import { affineLength, evaluateLength, normalizeCss } from "./css-values";
+import type { VariableIndex } from "./css-values";
 import type { LayerStyle } from "./layer-style";
 import { horizontal } from "./subgrid-row";
 
@@ -20,6 +22,54 @@ export const SIDES = {
 export function literalPixels(style: LayerStyle, property: string): number | undefined {
   const value = style.resolved(property);
   return value === undefined ? 0 : evaluateLength(value);
+}
+
+/**
+ * A box's left and right margins together, in pixels, where each is the same length in every mode,
+ * as {@link pixelsAcross} reads them.
+ *
+ * @param style - The box's style.
+ * @param variables - The synced variables, with the values they hold in each mode.
+ * @returns The margins in pixels, or undefined.
+ */
+export function marginsAcross(style: LayerStyle, variables: VariableIndex): number | undefined {
+  return pixelsAcross(style, ["margin-left", "margin-right"], variables);
+}
+
+/**
+ * Two lengths of a box together, in pixels, such as its left and right padding, where each is the
+ * same length in every mode: a literal, or a sum of synced variables that each hold one value in
+ * every mode, as `surface-pad-sm` holds 4px at both densities. Undefined where one is no such length.
+ *
+ * @param style - The box's style.
+ * @param properties - The two properties, such as `padding-left` and `padding-right`.
+ * @param variables - The synced variables, with the values they hold in each mode.
+ * @returns The lengths in pixels, or undefined.
+ */
+export function pixelsAcross(
+  style: LayerStyle,
+  properties: readonly [string, string],
+  variables: VariableIndex
+): number | undefined {
+  const sides = properties.map((property) => {
+    const length = affineLength(style.resolved(property) ?? "0px");
+    if (length === undefined) {
+      return undefined;
+    }
+    let pixels = length.constant;
+    for (const [name, coefficient] of length.coefficients) {
+      const ref = variables.lookup(`var(${name})`);
+      const least = ref === undefined ? undefined : variables.minimum(ref);
+      if (ref === undefined || least === undefined || variables.maximum(ref) !== least) {
+        return undefined;
+      }
+      pixels += coefficient * least;
+    }
+    return pixels;
+  });
+  return sides.every((side) => side !== undefined)
+    ? sides.reduce<number>((sum, side) => sum + side, 0)
+    : undefined;
 }
 
 /** The border sides of each axis, which `border-l` and its siblings set alone. */

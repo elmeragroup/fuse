@@ -13,7 +13,7 @@
  * `max-width` let the layers take other widths once the text changes, so their `flex` stays unmapped,
  * and so does every case equal shares draw, which a row of a width of its own takes.
  */
-import type { Holder } from "./box-sizing";
+import type { Holder } from "./box-room";
 import { normalizeCss } from "./css-values";
 import type { LayerStyle } from "./layer-style";
 

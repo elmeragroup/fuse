@@ -4,7 +4,7 @@
  * the line clamp here, and `label-sizing.ts` and `instance-parts.ts` read the wrap rules.
  */
 
-import type { Holder } from "./box-sizing";
+import type { Holder } from "./box-room";
 import type { LabelDefinition } from "./component-spec";
 import { evaluateNumber, normalizeCss } from "./css-values";
 import type { LayerStyle } from "./layer-style";
