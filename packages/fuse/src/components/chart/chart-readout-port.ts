@@ -32,7 +32,7 @@ import type {
   XFormat,
 } from "./chart-types";
 import type { FormattedText } from "./format/formatted-text";
-import type { ChartDataRule, ChartHintRule } from "./layout/errors";
+import type { WarnOnce } from "./layout/errors";
 import type { SlotWindow } from "./layout/slot-window";
 
 /** One legend entry or tooltip row's subject: a series on a cartesian Root, a category on a polar one. */
@@ -245,7 +245,7 @@ export type ChartReadout = {
   /** Highlights a key through Root's attributes with no React render, or clears it with null. */
   readonly highlight: (key: string | null) => void;
   /** Warns once per Root for each rule and subject. */
-  readonly warnOnce: (rule: ChartDataRule | ChartHintRule, subject: string, message: string) => void;
+  readonly warnOnce: WarnOnce;
   /**
    * The pick a pointer over the plot or the tooltip makes. It is a hook with the same calls for the
    * Root's whole life.

@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { useLocale } from "../../intl/locale-context";
-import type { PolarIssue } from "./chart-polar-context";
 import { PolarRoot } from "./chart-polar-root";
 import { radarModel, RADAR_SERIES_CAP } from "./chart-polar-series";
 import { sameConfig, useSteady } from "./chart-steady";
@@ -22,7 +21,14 @@ import type {
 } from "./chart-types";
 import { seriesLabel } from "./format/series-label";
 import { buildCartesianModel } from "./layout/cartesian-model";
-import { ChartDataError, DATA_MESSAGES, dataMessage, isChartDevelopment, issueGroups } from "./layout/errors";
+import {
+  ChartDataError,
+  DATA_MESSAGES,
+  dataMessage,
+  isChartDevelopment,
+  issueRecords,
+} from "./layout/errors";
+import type { IssueRecord } from "./layout/errors";
 import { sweepOf } from "./layout/polar-angle";
 
 /**
@@ -115,7 +121,7 @@ export function RadarChartRoot<
   const steadyConfig = useSteady<ChartConfig>(config, sameConfig);
   const name = "aria-label" in figure ? figure["aria-label"] : undefined;
   const model = useMemo(() => {
-    const issues: PolarIssue[] = [];
+    const issues: IssueRecord[] = [];
     const keys = Object.keys(steadyConfig);
     let drawn = steadyConfig;
     if (keys.length > RADAR_SERIES_CAP) {
@@ -132,13 +138,11 @@ export function RadarChartRoot<
       baseline: "zero",
       include: [],
     });
-    const [first] = spokes.issues;
-    if (first !== undefined && isChartDevelopment()) {
-      throw new ChartDataError("RadarChart.Root", first.rule, dataMessage(first, spokes.rowAt));
-    }
-    for (const { rule, subject, first: issue, count } of issueGroups(spokes.issues)) {
-      issues.push({ rule, subject, message: `RadarChart.Root ${dataMessage(issue, spokes.rowAt, count)}` });
-    }
+    const records = issueRecords("RadarChart.Root", spokes.issues, (issue, count) =>
+      dataMessage(issue, spokes.rowAt, count)
+    );
+    // A loop appends, since a spread of many records overflows the stack.
+    for (const record of records) issues.push(record);
     return radarModel({
       model: spokes,
       config: drawn,

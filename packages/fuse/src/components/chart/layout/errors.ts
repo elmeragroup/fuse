@@ -8,6 +8,7 @@
  * range sets the time axis's span. It still throws in every build, because no fallback can draw
  * an axis of more slots than the limit, and building them freezes the tab.
  */
+import { isThemeDevelopment } from "../../../theme/validate-theme";
 import type { ChartConfig } from "../chart-types";
 import type { ModelIssue } from "./cartesian-model";
 import type { LiveDataRule, LivePropIssue } from "./live-window";
@@ -205,7 +206,7 @@ export function issueKey(rule: ChartDataRule | ChartHintRule, subject: string): 
 }
 
 /** The data issues of one rule and subject: the first of them and how many there are. */
-export type IssueGroup<TIssue extends DataIssue = ModelIssue> = {
+type IssueGroup<TIssue extends DataIssue> = {
   readonly rule: ChartDataRule;
   readonly subject: string;
   readonly first: TIssue;
@@ -219,7 +220,7 @@ export type IssueGroup<TIssue extends DataIssue = ModelIssue> = {
  * @param issues - The model's issues, in data order.
  * @returns Each group's first issue and count.
  */
-export function issueGroups<TIssue extends DataIssue>(issues: readonly TIssue[]): IssueGroup<TIssue>[] {
+function issueGroups<TIssue extends DataIssue>(issues: readonly TIssue[]): IssueGroup<TIssue>[] {
   const groups = new Map<string, { -readonly [K in keyof IssueGroup<TIssue>]: IssueGroup<TIssue>[K] }>();
   for (const issue of issues) {
     const subject = dataSubject(issue);
@@ -229,6 +230,47 @@ export function issueGroups<TIssue extends DataIssue>(issues: readonly TIssue[])
     else group.count += 1;
   }
   return [...groups.values()];
+}
+
+/** One warning a Root gives in production: a data rule, what it is about and the full message. */
+export type IssueRecord = {
+  readonly rule: ChartDataRule;
+  readonly subject: string;
+  readonly message: string;
+};
+
+/**
+ * Warns once per Root for each rule and subject, such as a column, a stack or a pair of Bars: a
+ * data rule's production fallback, or a development hint.
+ */
+export type WarnOnce = (rule: ChartDataRule | ChartHintRule, subject: string, message: string) => void;
+
+/**
+ * The production warnings a part gives for its data issues, one per rule and subject, in the order
+ * the groups first appear. Each message starts with the part and counts the group's issues when
+ * there are more than one.
+ *
+ * @param owner - The part that read the data, such as `Chart.Root`.
+ * @param issues - The issues, in data order.
+ * @param describe - What an issue says after the part, given the first issue of its group and the
+ *   group's count.
+ * @returns The records, which the part warns through `useIssueWarnings`.
+ * @throws {ChartDataError} In development, for the first issue, since a data error throws there.
+ */
+export function issueRecords<TIssue extends DataIssue>(
+  owner: string,
+  issues: readonly TIssue[],
+  describe: (issue: TIssue, count?: number) => string
+): IssueRecord[] {
+  const [first] = issues;
+  if (first !== undefined && isThemeDevelopment()) {
+    throw new ChartDataError(owner, first.rule, describe(first));
+  }
+  return issueGroups(issues).map(({ rule, subject, first: issue, count }) => ({
+    rule,
+    subject,
+    message: `${owner} ${describe(issue, count)}`,
+  }));
 }
 
 /**

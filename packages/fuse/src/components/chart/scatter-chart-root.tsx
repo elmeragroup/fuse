@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
@@ -10,6 +10,7 @@ import { useLocale } from "../../intl/locale-context";
 import { writeAttribute } from "./chart-dom";
 import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
 import { useEntrance } from "./chart-entrance";
+import { useIssueWarnings } from "./chart-issue-warnings";
 import { BROWSER_FRAMES, createChartMotion } from "./chart-motion";
 import { ChartOwnScope, useChartDepth } from "./chart-own-scope";
 import { useMeasuredPlot } from "./chart-plot-measure";
@@ -29,7 +30,7 @@ import type {
 import { CHART_STRINGS } from "./format/chart-strings";
 import { createDomainGlide } from "./layout/domain-glide";
 import type { ScatterDomains } from "./layout/domain-glide";
-import { ChartDataError, isChartDevelopment, issueGroups, issueKey, issueMessage } from "./layout/errors";
+import { issueMessage, issueRecords } from "./layout/errors";
 import { sameItems } from "./layout/same-items";
 import { SCATTER_DATA_MESSAGES, buildScatterModel } from "./layout/scatter-model";
 import type { ScatterIssue, ScatterModel } from "./layout/scatter-model";
@@ -206,19 +207,11 @@ export function ScatterChartRoot<
       }),
     [data, xKey, yKey, seriesKey, keys, steadyX, steadyY]
   );
-  const firstIssue = model.issues[0];
-  if (firstIssue !== undefined && isChartDevelopment()) {
-    throw new ChartDataError("ScatterChart.Root", firstIssue.rule, scatterMessage(firstIssue));
-  }
-  const warned = useRef(new Set<string>());
-  useEffect(() => {
-    for (const { rule, subject, first, count } of issueGroups(model.issues)) {
-      const key = issueKey(rule, subject);
-      if (warned.current.has(key)) continue;
-      warned.current.add(key);
-      console.warn(`ScatterChart.Root ${scatterMessage(first, count)}`);
-    }
-  }, [model.issues]);
+  const issues = useMemo(
+    () => issueRecords("ScatterChart.Root", model.issues, scatterMessage),
+    [model.issues]
+  );
+  useIssueWarnings(issues);
 
   const id = useId();
   const [store] = useState(() => createScatterStore(model));

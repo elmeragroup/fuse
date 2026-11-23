@@ -9,7 +9,7 @@ import { countOf } from "../../intl/count-of";
  * one, in the cartesian grammar. It reads no plot geometry.
  */
 import type { SupportedLocale } from "../../intl/locale-context";
-import type { PolarIssue, PolarKernel, PolarModel } from "./chart-polar-context";
+import type { PolarKernel, PolarModel } from "./chart-polar-context";
 import type { ChartReadout } from "./chart-readout-port";
 import { seriesReadoutOf } from "./chart-series-readout";
 import { extremesSentence, optionName, slotLabel } from "./chart-text";
@@ -19,6 +19,7 @@ import { CHART_STRINGS } from "./format/chart-strings";
 import { POLAR_STRINGS } from "./format/polar-strings";
 import type { CartesianModel } from "./layout/cartesian-model";
 import { isRoleList, seriesPaint, singleRole } from "./layout/color-key";
+import type { IssueRecord } from "./layout/errors";
 import { nearestHeld } from "./layout/near-series";
 import { pointerAngle } from "./layout/polar-angle";
 import type { Sweep } from "./layout/polar-angle";
@@ -39,7 +40,7 @@ export type RadarInput = {
   /** Root's `aria-label`, which the table's caption reads. */
   readonly name: string | undefined;
   /** The data rules the Root's rows broke, which production warns once each. */
-  readonly issues: readonly PolarIssue[];
+  readonly issues: readonly IssueRecord[];
   /**
    * The Root's whole config, which a part's dataKey must name. `config` holds the series it draws,
    * the first `RADAR_SERIES_CAP` keys past the cap.

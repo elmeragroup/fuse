@@ -10,7 +10,7 @@ import { countOf } from "../../intl/count-of";
  */
 import type { SupportedLocale } from "../../intl/locale-context";
 import { seriesPaintOf } from "./chart-paint";
-import type { ClockDrawing, ClockSeries, PolarIssue, PolarModel } from "./chart-polar-context";
+import type { ClockDrawing, ClockSeries, PolarModel } from "./chart-polar-context";
 import { seriesReadout } from "./chart-polar-series";
 import { chartDescription, optionName } from "./chart-text";
 import type { TextContext } from "./chart-text";
@@ -23,6 +23,7 @@ import type { ClockCycle, RadiusScale } from "./layout/clock";
 import { clockLabelSlots, clockTier, fitClockLabels, pageSlot } from "./layout/clock-labels";
 import { ownerSlot, slotAt } from "./layout/clock-path";
 import { isRoleList } from "./layout/color-key";
+import type { IssueRecord } from "./layout/errors";
 import { labelWidth } from "./layout/label-width";
 import { nearestHeld } from "./layout/near-series";
 import { pointerAngle, sweepOf } from "./layout/polar-angle";
@@ -46,7 +47,7 @@ export type ClockInput = {
   readonly xFormat: XFormat | undefined;
   /** Root's `aria-label`, which the table's caption reads. */
   readonly name: string | undefined;
-  readonly issues: readonly PolarIssue[];
+  readonly issues: readonly IssueRecord[];
   /** How stacks combine, which decides whether a path may paint by value. */
   readonly stackOffset: "diverging" | "expand";
   /** Root's `yBaseline`: "zero" keeps 0 in the domain, which a Column and an Area need. */

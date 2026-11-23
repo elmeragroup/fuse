@@ -12,7 +12,7 @@
  * until the chart comes into view and its entrance starts, which writes `data-drawn` on the
  * figure. With JavaScript off, and in print, the stylesheet shows the full chart.
  */
-import { use, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { use, useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode, Ref, RefObject } from "react";
 
 import { definedProps } from "../../internal/defined-props";
@@ -21,6 +21,7 @@ import { writeAttribute, writeStyle } from "./chart-dom";
 import { openDrawingSoon } from "./chart-draw-gate";
 import { createChartFollowers } from "./chart-followers";
 import type { ActiveSlot } from "./chart-followers";
+import { useIssueWarnings } from "./chart-issue-warnings";
 import { StatusRegion } from "./chart-listbox";
 import { BROWSER_FRAMES } from "./chart-motion";
 import type { ChartMotion } from "./chart-motion";
@@ -39,8 +40,6 @@ import type { ChartSnapshot, ChartStore } from "./chart-store";
 import type { ChartChangeEventDetails, ChartFigureProps, ChartSelectionChangeReason } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import { POLAR_STRINGS } from "./format/polar-strings";
-import { issueKey } from "./layout/errors";
-import type { ChartDataRule, ChartHintRule } from "./layout/errors";
 import { CHART_SPRINGS } from "./layout/motion";
 import { sweepBox } from "./layout/polar-angle";
 import { entranceSpan, TRACK_GROW } from "./layout/polar-motion";
@@ -339,20 +338,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
     if (before && !model.empty && store.get().phase === "started") grow();
   }, [model.empty, store, grow]);
 
-  const warned = useRef(new Set<string>());
-  const warnOnce = useCallback(
-    (rule: ChartDataRule | ChartHintRule, subject: string, message: string): void => {
-      const key = issueKey(rule, subject);
-      if (warned.current.has(key)) return;
-      warned.current.add(key);
-      console.warn(message);
-    },
-    []
-  );
-
-  useEffect(() => {
-    for (const { rule, subject, message } of model.issues) warnOnce(rule, subject, message);
-  }, [model.issues, warnOnce]);
+  const warnOnce = useIssueWarnings(model.issues);
 
   const [ownSelected, setOwnSelected] = useState<string | null>(props.defaultSelectedKey ?? null);
   const requested = props.selectedKey === undefined ? ownSelected : props.selectedKey;
