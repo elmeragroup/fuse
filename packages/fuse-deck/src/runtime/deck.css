@@ -160,6 +160,12 @@ span.deck-step {
   animation: var(--deck-enter) var(--deck-ease-out) var(--deck-enter-delay) both deck-blur-in;
 }
 
+/* A <Morph> pair travels on screen, so it takes the in-out curve and spans the crossfade. */
+::view-transition-group(.morph) {
+  animation-duration: calc(var(--deck-enter-delay) + var(--deck-enter));
+  animation-timing-function: var(--deck-ease-in-out);
+}
+
 @keyframes deck-blur-out {
   to {
     opacity: 0;
@@ -179,7 +185,9 @@ span.deck-step {
  * own: a 150ms fade with no blur and no travel.
  */
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*) {
+  /* A class selector outranks *, so a morph's travel needs its own rule. */
+  ::view-transition-group(*),
+  ::view-transition-group(.morph) {
     animation-duration: 0s;
   }
 

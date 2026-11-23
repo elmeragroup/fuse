@@ -21,7 +21,7 @@ fuse-deck build             # writes the static deck to dist/
 ```
 
 A slide change is a React view transition: the old slide blurs out and the new one blurs in.
-`<Step>` reveals content one key press at a time. Arrow keys, Space, Page Up/Down, Home and End
+`<Step>` reveals content one key press at a time, and `<Morph name>` moves one element to its partner on the next slide. Arrow keys, Space, Page Up/Down, Home and End
 navigate; the URL hash names the slide and step, so links and Back work.
 
 From this checkout, `pnpm exec node packages/fuse-deck/src/bin.ts <command>` runs the CLI from

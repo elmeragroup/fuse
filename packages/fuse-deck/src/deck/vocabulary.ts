@@ -58,7 +58,19 @@ export const COMPONENTS: readonly DeckComponent[] = [
     summary:
       "Content revealed one key press at a time, in document order. The deck counts the steps when it compiles the slide, so deep links and keyboard navigation agree on the last one. An unrevealed step keeps its space, is hidden and is inert.",
   },
+  {
+    name: "Morph",
+    usage: '<Morph name="logo"><img src={logo} alt="Fuse" /></Morph>',
+    summary:
+      "Wraps exactly one HTML element, such as <img> or <span>. When the next slide has a Morph with the same name, the element travels from its old place to its new one during the slide change. A Morph without a partner fades with the slide. Names use lowercase letters, digits and dashes, once per slide. Import an image before using it (import logo from '../logo.svg'), so the build bundles it.",
+  },
 ];
+
+/**
+ * What a `<Morph>` name may be. It becomes part of a CSS `view-transition-name`, so it must be an
+ * identifier: lowercase letters, digits and dashes, starting with a letter.
+ */
+export const MORPH_NAME = /^[a-z][a-z0-9-]*$/;
 
 /** The settings `deck.json` holds besides the slide order. */
 export const DECK_FIELDS = [

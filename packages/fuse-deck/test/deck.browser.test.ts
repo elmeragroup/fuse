@@ -16,14 +16,17 @@ declare global {
   interface Window {
     /** The view transitions the page started, recorded by the init script in `deckPage`. */
     viewTransitions?: ViewTransition[];
+    /** For each view transition, the pseudo-elements it animates once it is ready. */
+    viewTransitionPseudos?: Promise<string[]>[];
   }
 }
 
 const BIN = fileURLToPath(new URL("../dist/bin.mjs", import.meta.url));
 
 const SLIDES = {
+  cover: '---\nlayout: cover\n---\n\n<Morph name="logo"> <span>Fuse</span> </Morph>\n\n# Talk\n',
   intro:
-    "# Why Fuse\n\n<Step>One library</Step>\n\n<Step>[Every brand](#brands)</Step>\n\n<Step>Both densities</Step>\n",
+    '# Why Fuse\n\n<Morph name="logo"><span>Fuse</span></Morph>\n\n<Step>One library</Step>\n\n<Step>[Every brand](#brands)</Step>\n\n<Step>Both densities</Step>\n',
   outro:
     '---\nlayout: section\n---\n\nimport { Button } from "@elmeragroup/fuse/button";\n\n# Thanks\n\n<Button>Ask a question</Button>\n\n<div role="slider" tabIndex={0} aria-label="Volume" aria-valuenow={5} onKeyDown={(event) => event.preventDefault()} />\n',
 };
@@ -106,17 +109,34 @@ async function deckPage(hash = "", colorScheme: "light" | "dark" = "light"): Pro
   const page = await browser.newPage({ colorScheme });
   await page.addInitScript(() => {
     const started: ViewTransition[] = [];
+    const pseudos: Promise<string[]>[] = [];
     window.viewTransitions = started;
+    window.viewTransitionPseudos = pseudos;
     const start = document.startViewTransition.bind(document);
     document.startViewTransition = (...args: Parameters<typeof start>) => {
       const transition = start(...args);
       started.push(transition);
+      pseudos.push(
+        transition.ready.then(() =>
+          document
+            .getAnimations()
+            .map((animation) =>
+              animation.effect instanceof KeyframeEffect ? animation.effect.pseudoElement : null
+            )
+            .filter((pseudo): pseudo is string => pseudo !== null)
+        )
+      );
       return transition;
     };
   });
   await page.goto(`${site}${hash}`);
   await page.locator("[aria-roledescription=slide]").waitFor();
   return page;
+}
+
+/** The pseudo-elements each view transition animated, in order. */
+function viewTransitionPseudos(page: Page): Promise<string[][]> {
+  return page.evaluate(() => Promise.all(window.viewTransitionPseudos ?? []));
 }
 
 /** How many view transitions the page has started, once every one has finished. */
@@ -156,6 +176,18 @@ describe("a built deck", () => {
     await at(page, "#/outro");
     expect(await viewTransitionCount(page)).toBe(2);
     await expect.poll(() => page.locator("[aria-live]").textContent()).toBe("Slide 3 of 3");
+    await page.close();
+  });
+
+  it("moves a Morph to its partner on the next slide, and lets an unpaired one fade", async () => {
+    const page = await deckPage();
+    await page.keyboard.press("ArrowRight");
+    await at(page, "#/intro");
+    await page.keyboard.press("End");
+    await at(page, "#/outro");
+    const morph = "::view-transition-group(deck-morph-logo)";
+    const [toIntro, toOutro] = await viewTransitionPseudos(page);
+    expect([toIntro?.includes(morph), toOutro?.includes(morph)]).toEqual([true, false]);
     await page.close();
   });
 

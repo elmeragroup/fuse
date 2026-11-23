@@ -12,12 +12,13 @@ import type { ComponentType } from "react";
 import type { LayoutName } from "../deck/vocabulary.ts";
 import { LAYOUTS } from "./layouts.tsx";
 import type { MdxComponents } from "./manifest.ts";
+import { Morph } from "./morph.tsx";
 import { fromHash, moveForKey, moveTo, toHash } from "./position.ts";
 import type { Position } from "./position.ts";
 import { RevealedSteps, Step } from "./step.tsx";
 
 /** The components every slide gets without an import. */
-const MDX_COMPONENTS = { Step } satisfies MdxComponents;
+const MDX_COMPONENTS = { Step, Morph } satisfies MdxComponents;
 
 /** A slide, loaded. */
 export type LoadedSlide = {

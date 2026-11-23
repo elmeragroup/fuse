@@ -16,10 +16,12 @@ import * as Option from "effect/Option";
 import type * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 import type { Node, Root, RootContent } from "mdast";
+import type { MdxJsxFlowElementHast, MdxJsxTextElementHast } from "mdast-util-mdx-jsx";
 import remarkFrontmatter from "remark-frontmatter";
 
 import { readSlideSource } from "../deck/slide-source.ts";
 import type { SlideFrontmatterInvalid, SlideSource } from "../deck/slide-source.ts";
+import { MORPH_NAME } from "../deck/vocabulary.ts";
 
 /** What the deck derives from a slide when it compiles it. */
 export type SlideMetadata = SlideSource & {
@@ -29,6 +31,9 @@ export type SlideMetadata = SlideSource & {
 
 /** The JSX name of the step component. */
 const STEP = "Step";
+
+/** The JSX name of the morph component. */
+const MORPH = "Morph";
 
 /** What the slide pass hands back from inside the compile. */
 type Derived = {
@@ -75,6 +80,99 @@ function slidePass(id: string, derived: Derived) {
   };
 }
 
+/** A node of the HTML tree MDX builds from a slide's Markdown. */
+type HastContent = MdxJsxFlowElementHast["children"][number];
+
+/** A `<Morph>` or another JSX element in the HTML tree. */
+type HastJsxElement = MdxJsxFlowElementHast | MdxJsxTextElementHast;
+
+/**
+ * The morph pass. It runs on the HTML tree, where Markdown that renders nothing, such as a link
+ * definition, is gone, and fails on a `<Morph>` whose literal name or child breaks its rules.
+ */
+function morphPass() {
+  return (tree: { readonly children: readonly HastContent[] }, file: CompileFile) => {
+    const seen = new Set<string>();
+    const visit = (node: HastContent) => {
+      if ((node.type === "mdxJsxFlowElement" || node.type === "mdxJsxTextElement") && node.name === MORPH) {
+        // MDX keeps the spaces in `<Morph> <span>…</span> </Morph>` as text children, which the
+        // component would count as content. They render nothing, so the pass drops them.
+        dropWhitespaceText(node);
+        const problem = morphProblem(node, seen);
+        if (problem !== undefined) {
+          file.fail(problem, node);
+        }
+      }
+      if ("children" in node) {
+        for (const child of node.children) {
+          visit(child);
+        }
+      }
+    };
+    for (const node of tree.children) {
+      visit(node);
+    }
+  };
+}
+
+/**
+ * What is wrong with a `<Morph>`, as far as its literal props and children show. A name or child an
+ * expression computes is left to the component, which checks it when the slide renders. A comment
+ * in braces renders nothing, so it does not count as a child.
+ *
+ * @param node - The `<Morph>` element, in the HTML tree.
+ * @param seen - The literal names earlier `<Morph>`s on the slide used; this one's is added.
+ * @returns The problem, or `undefined` when the element follows the rules.
+ */
+function morphProblem(node: HastJsxElement, seen: Set<string>): string | undefined {
+  const spread = node.attributes.some((attribute) => attribute.type === "mdxJsxExpressionAttribute");
+  const name = node.attributes.find(
+    (attribute) => attribute.type === "mdxJsxAttribute" && attribute.name === "name"
+  )?.value;
+  if (name === undefined) {
+    if (!spread) {
+      return `<${MORPH}> needs a name, such as <${MORPH} name="logo">.`;
+    }
+  } else if (name === null) {
+    return `<${MORPH}> needs a name of lowercase letters, digits and dashes, starting with a letter.`;
+  } else if (!(name instanceof Object)) {
+    if (!MORPH_NAME.test(name)) {
+      return `<${MORPH} name="${name}">: a name has lowercase letters, digits and dashes, starting with a letter.`;
+    }
+    if (seen.has(name)) {
+      return `<${MORPH} name="${name}"> appears twice on this slide. Each name pairs one element per slide.`;
+    }
+    seen.add(name);
+  }
+  const rendered = node.children.filter((child) => !isEmptyExpression(child));
+  const [only] = rendered;
+  const host =
+    only !== undefined &&
+    rendered.length === 1 &&
+    only.type !== "text" &&
+    (!(only.type === "mdxJsxFlowElement" || only.type === "mdxJsxTextElement") ||
+      /^[a-z]/.test(only.name ?? ""));
+  return host ? undefined : `<${MORPH}> must wrap exactly one HTML element, such as <img> or <span>.`;
+}
+
+/** Whether a node is a `{…}` expression with no statement, such as one that holds only a comment. */
+function isEmptyExpression(node: HastContent): boolean {
+  return (
+    (node.type === "mdxFlowExpression" || node.type === "mdxTextExpression") &&
+    node.data?.estree?.body.length === 0
+  );
+}
+
+/** Remove an element's text children that hold only whitespace. */
+function dropWhitespaceText(node: HastJsxElement): void {
+  for (let index = node.children.length - 1; index >= 0; index -= 1) {
+    const child = node.children[index];
+    if (child?.type === "text" && child.value.trim() === "") {
+      node.children.splice(index, 1);
+    }
+  }
+}
+
 /** Whether an estree value holds a JSX element named `name`. */
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- MDX parser output: one walk over every key reaches a JSX element at any depth of any estree node kind
 function containsJsx(value: unknown, name: string): boolean {
@@ -110,6 +208,7 @@ function containsJsx(value: unknown, name: string): boolean {
 function mdxOptions(id: string, derived: Derived, mode: "development" | "production"): CompileOptions {
   return {
     remarkPlugins: [remarkFrontmatter, slidePass(id, derived)],
+    rehypePlugins: [morphPass],
     development: mode === "development",
     jsxImportSource: "react",
   };

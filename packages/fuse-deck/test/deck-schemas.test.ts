@@ -104,4 +104,54 @@ describe("a slide's compile", () => {
     expect(failure?._tag === "SlideCompileFailed" && failure.line).toBe(line);
     expect(failure?.message).toContain("<Step> must be JSX in the slide body");
   });
+
+  it.each([
+    { name: "a span", text: '<Morph name="logo"><span>Fuse</span></Morph>\n' },
+    {
+      name: "an image on its own line",
+      text: '<Morph name="logo">\n  <img src="logo.svg" alt="Fuse" />\n</Morph>\n',
+    },
+    { name: "a Markdown image", text: '<Morph name="logo">![Fuse](logo.svg)</Morph>\n' },
+    { name: "a computed child or name", text: "<Morph name={brand}>{logo}</Morph>\n" },
+    { name: "a span and a comment", text: '<Morph name="logo"><span />{/* logo */}</Morph>\n' },
+    {
+      name: "a span and a comment on their own lines",
+      text: '<Morph name="logo">\n  <span />\n\n  {/* logo */}\n</Morph>\n',
+    },
+    {
+      name: "two names on one slide",
+      text: '<Morph name="a"><b>A</b></Morph> <Morph name="b"><b>B</b></Morph>\n',
+    },
+  ])("accepts a <Morph> around $name", async ({ text }) => {
+    expect(Result.isSuccess(await compile(text))).toBe(true);
+  });
+
+  it.each([
+    { name: "no name", text: "<Morph><span>Fuse</span></Morph>\n", says: "needs a name" },
+    {
+      name: "a name that is no identifier",
+      text: '<Morph name="Logo"><span>Fuse</span></Morph>\n',
+      says: "lowercase",
+    },
+    {
+      name: "a name used twice on the slide",
+      text: '<Morph name="logo"><b>A</b></Morph>\n\n<Morph name="logo"><b>B</b></Morph>\n',
+      says: "appears twice",
+    },
+    { name: "a Fragment", text: '<Morph name="logo"><><b>A</b></></Morph>\n', says: "one HTML element" },
+    { name: "two elements", text: '<Morph name="logo"><b>A</b><b>B</b></Morph>\n', says: "one HTML element" },
+    { name: "a component", text: '<Morph name="logo"><Logo /></Morph>\n', says: "one HTML element" },
+    { name: "bare text", text: '<Morph name="logo">Fuse</Morph>\n', says: "one HTML element" },
+    {
+      name: "only a link definition",
+      text: '<Morph name="logo">\n  [logo]: https://example.com/logo.svg\n</Morph>\n',
+      says: "one HTML element",
+    },
+  ])("rejects a <Morph> with $name", async ({ text, says }) => {
+    // Oracle: the Morph contract in describe: one HTML element, a CSS-identifier name, once per slide.
+    const compiled = await compile(text);
+    const failure = Result.isFailure(compiled) ? compiled.failure : undefined;
+    expect(failure?._tag).toBe("SlideCompileFailed");
+    expect(failure?.message).toContain(says);
+  });
 });
