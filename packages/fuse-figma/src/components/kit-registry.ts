@@ -24,6 +24,7 @@ import {
   BREADCRUMB_SEPARATOR_MANIFEST,
   BREADCRUMB_TRAIL_MANIFEST,
 } from "./breadcrumb-kit";
+import { BUTTON_GROUP_MANIFEST } from "./button-group-kit";
 import { BUTTON_MANIFEST, ICON_BUTTON_MANIFEST } from "./button-kit";
 import { CALENDAR_DAY_MANIFEST } from "./calendar-day-kit";
 import { CALENDAR_MANIFEST, RANGE_CALENDAR_MANIFEST } from "./calendar-kit";
@@ -481,6 +482,12 @@ export const KIT: readonly KitEntry[] = [
     page: BUTTON_PAGE,
     previewCells: previewCells(CONFIRM_BUTTON_MANIFEST, "default", {}, ["armed"]),
     manifest: CONFIRM_BUTTON_MANIFEST,
+  },
+  // A Button group has no state, so its previews place both of its cells.
+  {
+    page: BUTTON_PAGE,
+    previewCells: possibleCells(BUTTON_GROUP_MANIFEST),
+    manifest: BUTTON_GROUP_MANIFEST,
   },
   {
     page: TOGGLE_PAGE,
