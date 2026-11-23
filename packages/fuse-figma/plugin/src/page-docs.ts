@@ -31,7 +31,7 @@ import { gridLayout } from "./component-set.ts";
 import type { PlannedSet } from "./component-set.ts";
 import { near, planPaints, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
-import { heldFonts, requireFont, unloadableFont } from "./fonts.ts";
+import { heldFonts, holdsMissingFont, requireFont, unloadableFont } from "./fonts.ts";
 import { keyOf, placeOwned, planOwnedChildren } from "./identity.ts";
 import type { OwnedChild } from "./identity.ts";
 import type { PlannedPage } from "./pages.ts";
@@ -834,11 +834,13 @@ export const placePageContents = Effect.fnUntraced(function* (
           continue;
         }
         // Figma moves no layer that holds a font it cannot load, so the set moves above a labels
-        // frame that holds one. Figma counts the index among the children before the move (probe
-        // MV3), so the set lands right above the frame.
-        if (!pinned.has(node)) {
+        // frame that holds one. The fonts are read again here, since a write earlier in the run can
+        // bring such a font into either. Figma counts the index among the children before the move
+        // (probe MV3), so the set lands right above the frame.
+        const fixed = (layer: SceneNode): boolean => pinned.has(layer) || holdsMissingFont(layer);
+        if (!fixed(node)) {
           parent.insertChild(indexOf(over), node);
-        } else if (!pinned.has(over)) {
+        } else if (!fixed(over)) {
           parent.insertChild(indexOf(node) + 1, over);
         }
       }
@@ -882,7 +884,7 @@ const pinnedSections = Effect.fnUntraced(function* (
       warn(
         run.plan,
         label,
-        `keeps ${frame.name} above ${set.name}, since Figma cannot load the fonts of either, ${frameFont.family} ${frameFont.style} and ${setFont.family} ${setFont.style}, and moves no layer that holds one`
+        `keeps ${frame.name} above ${set.name}, since Figma cannot load ${frameFont.family} ${frameFont.style} in ${frame.name} or ${setFont.family} ${setFont.style} in ${set.name}`
       );
     }
   }

@@ -47,11 +47,13 @@ const respond = (request: Request) =>
     if (request === "apply") {
       const applied = yield* reconcile(true);
       const remaining = yield* reconcile(false);
+      // A change can skip its write where Apply finds what Plan could not see, such as a reorder
+      // that a swap left no layer free to move, and only the new plan warns about it.
       yield* post({
         kind: "applied",
         changes: applied.changes,
         remaining: remaining.changes,
-        warnings: applied.warnings,
+        warnings: [...new Set([...applied.warnings, ...remaining.warnings])],
       });
       return;
     }

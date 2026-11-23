@@ -222,7 +222,8 @@ describe("a bound number as its layer's modes change", () => {
     row.setBoundVariable("paddingLeft", space);
     const bound = row.paddingLeft;
     row.paddingLeft = 7;
-    unpinned.insertChild(1, row);
+    unpinned.insertChild(2, row);
+    expect(unpinned.children.indexOf(row)).toBe(1);
     const reordered = row.paddingLeft;
     pinned.appendChild(row);
     expect({ bound, reordered, moved: row.paddingLeft, binding: row.boundVariables?.paddingLeft }).toEqual({

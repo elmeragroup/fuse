@@ -291,15 +291,11 @@ const loadable = new WeakMap<PlanRecorder["requirements"], Map<string, boolean>>
  * undefined where it loads them all. Loading them here also leaves each loadable one loaded for
  * the run.
  *
- * Figma refuses to move a layer that holds a font it has not loaded. On 2026-11-23 Apply on the
- * owner's file stopped with `in insertChild: unloaded font "Neo Sans Medium". Please call
- * figma.loadFontAsync({ family: "Neo Sans", style: "Medium" }) and await the returned promise
- * first.` The org has no Neo Sans (#525), so `loadFontAsync` rejects it, and a branded heading
- * bound to `font-heading` holds it as a missing font. Probes MV1 and MV2 on a private draft file
- * the same day moved frames holding Roboto Medium and Regular, which the run had not loaded, with
- * `insertChild` and `appendChild`, within a frame and on the page, and Figma took each move. The
- * typings document no font rule for either method. So the refusal is for a font Figma cannot load,
- * and the plan moves no layer that holds one (`planOwnedChildren`, `placePageContents`).
+ * Figma refuses to move a layer that holds a font it cannot load, as the fake's rule 69 records
+ * with the probes behind it. On 2026-11-23 Apply on the owner's file stopped with `in insertChild:
+ * unloaded font "Neo Sans Medium"`, where the org has no Neo Sans (#525) and a branded heading
+ * bound to `font-heading` held it as a missing font. The plan moves no layer that holds one
+ * (`planOwnedChildren`, `placePageContents`).
  *
  * @param run - The run.
  * @param node - The layer a change would move.
@@ -336,4 +332,17 @@ function textsIn(node: SceneNode): readonly TextNode[] {
     return [node];
   }
   return "children" in node ? node.children.flatMap(textsIn) : [];
+}
+
+/**
+ * Whether a layer, or a text it holds, uses a font the document cannot find, as `hasMissingFont`
+ * reads when a move runs. A write earlier in the run, such as an instance swap, or a new instance
+ * placed in a frame whose modes name a missing family, can bring such a font into a layer the plan
+ * read without one.
+ *
+ * @param node - The layer a change moves.
+ * @returns True where Figma would refuse the move.
+ */
+export function holdsMissingFont(node: SceneNode): boolean {
+  return textsIn(node).some((text) => text.hasMissingFont);
 }
