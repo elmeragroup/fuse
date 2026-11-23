@@ -11,8 +11,10 @@ import { Effect } from "effect";
 import { PLUGIN_DATA_KEY, PLUGIN_DATA_NAMESPACE } from "../../src/components/kit-spec.ts";
 import { LayerConflict } from "./errors.ts";
 import type { PluginError } from "./errors.ts";
+import { unloadableFont } from "./fonts.ts";
 import { change, create, existing, keepsOrder, Plan, warn } from "./plan.ts";
 import type { Target } from "./plan.ts";
+import { currentRun } from "./services.ts";
 import type { PlanServices } from "./services.ts";
 
 /**
@@ -275,9 +277,69 @@ export const planOwnedChildren = Effect.fnUntraced(function* <
     warn(plan, label, `keeps the layer ${child.name}, which the kit does not own`);
   }
   if (!keepsOrder(parent.children, owned)) {
+    yield* planReorder(parent, label, noun, owned);
+  }
+  return planned;
+});
+
+/**
+ * Plan putting a parent's owned children in spec order. Figma moves no layer that holds a font it
+ * cannot load (`unloadableFont`), so such a child stays where it stands and the others move around
+ * it. Where two such children stand out of spec order, no move can restore it, and the plan warns
+ * and leaves the order.
+ *
+ * @param parent - The parent.
+ * @param label - The parent's label, for change lines.
+ * @param noun - What a child is, such as `variant`, for change lines.
+ * @param owned - The owned children, in spec order.
+ */
+const planReorder = Effect.fnUntraced(function* (
+  parent: ChildrenMixin,
+  label: string,
+  noun: string,
+  owned: readonly Target<SceneNode>[]
+) {
+  const plan = yield* Plan;
+  const run = yield* currentRun;
+  const pinned = new Map<SceneNode, FontName>();
+  for (const target of owned) {
+    const font = target.existing === undefined ? undefined : yield* unloadableFont(run, target.existing);
+    if (target.existing !== undefined && font !== undefined) {
+      pinned.set(target.existing, font);
+    }
+  }
+  if (pinned.size === 0) {
     change(plan, label, `reorder the ${noun}s`, () => {
       owned.forEach((target, index) => parent.insertChild(index, target.get()));
     });
+    return;
   }
-  return planned;
+  const held = [...pinned].map(([node, font]) => `${node.name} (${font.family} ${font.style})`).join(", ");
+  if (
+    !keepsOrder(
+      parent.children,
+      owned.filter((target) => target.existing !== undefined && pinned.has(target.existing))
+    )
+  ) {
+    warn(
+      plan,
+      label,
+      `keeps its ${noun}s out of order, since Figma cannot load the fonts of ${held} and moves no layer that holds one`
+    );
+    return;
+  }
+  change(plan, label, `reorder the ${noun}s around ${held}, whose fonts Figma cannot load`, () => {
+    let previous: SceneNode | undefined;
+    for (const target of owned) {
+      const node = target.get();
+      if (!pinned.has(node)) {
+        // Figma counts the index among the children before the move (probe MV3).
+        const index = previous === undefined ? 0 : parent.children.indexOf(previous) + 1;
+        if (parent.children[index] !== node) {
+          parent.insertChild(index, node);
+        }
+      }
+      previous = node;
+    }
+  });
 });

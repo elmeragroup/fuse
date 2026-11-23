@@ -106,7 +106,7 @@ const planKit = Effect.fnUntraced(function* (kit: KitSpec) {
     // A style the docs link that the plan retypes resizes their texts, so the page lays out again.
     // A set that changes, or whose instance layers show one that does, lays its grid out again.
     const resized = row.some((entry) => entry.set?.changed === true);
-    placePageContents(
+    yield* placePageContents(
       run,
       page,
       row,

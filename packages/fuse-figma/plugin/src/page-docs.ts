@@ -31,11 +31,11 @@ import { gridLayout } from "./component-set.ts";
 import type { PlannedSet } from "./component-set.ts";
 import { near, planPaints, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
-import { heldFonts, requireFont } from "./fonts.ts";
+import { heldFonts, requireFont, unloadableFont } from "./fonts.ts";
 import { keyOf, placeOwned, planOwnedChildren } from "./identity.ts";
 import type { OwnedChild } from "./identity.ts";
 import type { PlannedPage } from "./pages.ts";
-import { change, changeWith, create, existing } from "./plan.ts";
+import { change, changeWith, create, existing, warn } from "./plan.ts";
 import type { Target } from "./plan.ts";
 import { planGroupFields } from "./previews.ts";
 import { currentRun } from "./services.ts";
@@ -736,14 +736,19 @@ function indexOf(node: SceneNode): number {
   return parent === null || !("children" in parent) ? -1 : parent.children.indexOf(node);
 }
 
-/** Whether the nodes stand where the layout puts them, at the sizes it gives them. */
-function holds(layout: PageLayout): boolean {
+/**
+ * Whether the nodes stand where the layout puts them, at the sizes it gives them, with each labels
+ * frame below its set, but for a frame and a set that both hold a font Figma cannot load.
+ */
+function holds(layout: PageLayout, pinned: ReadonlySet<SceneNode>): boolean {
   return (
     layout.placed.every((placed) => near(placed.node.x, placed.x) && near(placed.node.y, placed.y)) &&
     layout.sized.every(
       (sized) => near(sized.node.width, sized.width) && near(sized.node.height, sized.height)
     ) &&
-    layout.below.every(({ node, over }) => indexOf(node) < indexOf(over))
+    layout.below.every(
+      ({ node, over }) => indexOf(node) < indexOf(over) || (pinned.has(node) && pinned.has(over))
+    )
   );
 }
 
@@ -765,14 +770,14 @@ function listed(names: readonly string[]): string {
  * @param changed - Whether the plan changes anything on the page, which may move or resize what the
  *   layout reads.
  */
-export function placePageContents(
+export const placePageContents = Effect.fnUntraced(function* (
   run: Run,
   page: PlannedPage,
   sets: readonly PageSet[],
   docs: PlannedDocs,
   frames: readonly Target<FrameNode>[],
   changed: boolean
-): void {
+) {
   const [first] = sets;
   if (first === undefined) {
     return;
@@ -804,7 +809,8 @@ export function placePageContents(
       docs.example,
       ...frames,
     ].every((target) => target === undefined || target.existing !== undefined);
-  if (settled && holds(pageLayout(sets, docs, frames, anchorOf()))) {
+  const pinned = yield* pinnedSections(run, page.spec.name, sets, docs);
+  if (settled && holds(pageLayout(sets, docs, frames, anchorOf()), pinned)) {
     return;
   }
   const side = frames.length === 0 ? "" : `, and ${String(frames.length)} previews side by side`;
@@ -824,10 +830,61 @@ export function placePageContents(
       }
       for (const { node, over } of layout.below) {
         const parent = over.parent;
-        if (parent !== null && "insertChild" in parent && indexOf(node) > indexOf(over)) {
+        if (parent === null || !("insertChild" in parent) || indexOf(node) < indexOf(over)) {
+          continue;
+        }
+        // Figma moves no layer that holds a font it cannot load, so the set moves above a labels
+        // frame that holds one. Figma counts the index among the children before the move (probe
+        // MV3), so the set lands right above the frame.
+        if (!pinned.has(node)) {
           parent.insertChild(indexOf(over), node);
+        } else if (!pinned.has(over)) {
+          parent.insertChild(indexOf(node) + 1, over);
         }
       }
     }
   );
-}
+});
+
+/**
+ * The labels frames and sets on a page that hold a font Figma cannot load, which no move may carry
+ * (`unloadableFont`). It warns for a labels frame and its set that both hold one, since the plan
+ * cannot put the set above the frame then.
+ *
+ * @param run - The run.
+ * @param label - The page's label, for warnings.
+ * @param sets - The page's sets.
+ * @param docs - The page's doc nodes.
+ * @returns The layers that stay where they stand.
+ */
+const pinnedSections = Effect.fnUntraced(function* (
+  run: Run,
+  label: string,
+  sets: readonly PageSet[],
+  docs: PlannedDocs
+) {
+  const pinned = new Set<SceneNode>();
+  for (const entry of sets) {
+    const set = entry.node.existing;
+    const frame = entry.set === undefined ? undefined : docs.labels.get(entry.set.spec.key)?.existing;
+    if (set === undefined || frame === undefined) {
+      continue;
+    }
+    const frameFont = yield* unloadableFont(run, frame);
+    const setFont = yield* unloadableFont(run, set);
+    if (frameFont !== undefined) {
+      pinned.add(frame);
+    }
+    if (setFont !== undefined) {
+      pinned.add(set);
+    }
+    if (frameFont !== undefined && setFont !== undefined && indexOf(frame) > indexOf(set)) {
+      warn(
+        run.plan,
+        label,
+        `keeps ${frame.name} above ${set.name}, since Figma cannot load the fonts of either, ${frameFont.family} ${frameFont.style} and ${setFont.family} ${setFont.style}, and moves no layer that holds one`
+      );
+    }
+  }
+  return pinned;
+});
