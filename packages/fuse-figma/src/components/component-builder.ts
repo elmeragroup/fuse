@@ -5,14 +5,10 @@
  * table with what became of it. `component-spec.ts` holds the definition types this module reads.
  */
 
-import {
-  anchoredPlacement,
-  anchorSpan,
-  CaptureSetCascade,
-  castsShadowOrClips,
-  partsThatScaleIn,
-} from "../capture/capture-cascade";
-import type { AnchorWidth, OpenPlacement } from "../capture/capture-cascade";
+import { anchoredPlacement, anchorSpan } from "../capture/anchored-placement";
+import type { AnchorWidth } from "../capture/anchored-placement";
+import { CaptureSetCascade, castsShadowOrClips, partsThatScaleIn } from "../capture/capture-cascade";
+import type { OpenPlacement } from "../capture/capture-cell-cascade";
 import type { CapturedRoot, SetCapture } from "../capture/capture-format";
 import { kitFamily } from "../kit-fonts";
 import { mapBox, NO_VALUES } from "./box-mapping";

@@ -1,6 +1,6 @@
 /**
  * The cascade of one box, the root or a part, as the mapping reads it: its own style, and the
- * cascades of the parts and icons below it. `capture/capture-cascade.ts` runs it from a set's capture.
+ * cascades of the parts and icons below it. `capture/capture-box-cascade.ts` runs it from a set's capture.
  */
 import type { FlowRelativeEdges } from "../capture/winners";
 import type { Cell, IconSlot, PreviewLength } from "./component-spec";

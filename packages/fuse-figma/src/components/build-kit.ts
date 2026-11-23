@@ -5,7 +5,7 @@
  */
 import { Effect, Result } from "effect";
 
-import type { OpenPlacement } from "../capture/capture-cascade";
+import type { OpenPlacement } from "../capture/capture-cell-cascade";
 import type { CaptureUnreadable, SetCapture } from "../capture/capture-format";
 import { keptCapture } from "../capture/captures";
 import { manifestDefinition } from "../capture/manifest";

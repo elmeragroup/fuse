@@ -4,7 +4,7 @@ import type { IconSlot } from "../components/component-spec.ts";
  * What a box's `::before` and `::after` paint, read from their cascaded style: the border
  * shorthands split into their longhands, and each declaration's verdict, which says whether the
  * pseudo-element paints, paints nothing, or sets a longhand the build does not read.
- * `capture-cascade.ts` cascades each pseudo-element over its box and asks this module what becomes
+ * `pseudo-cascade.ts` cascades each pseudo-element over its box and asks this module what becomes
  * of its declarations. `border-shorthands.ts` splits the border shorthands.
  */
 import { evaluateLength, normalizeCss, readColor } from "../components/css-values.ts";

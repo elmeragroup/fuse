@@ -5,7 +5,7 @@
  * a definition and its capture into a Figma component set.
  */
 
-import type { CellAccounting } from "../capture/capture-cascade.ts";
+import type { CellAccounting } from "../capture/cell-accounting.ts";
 import { KitUnmappable } from "./build-errors.ts";
 import type { CompiledUtilities } from "./consumer-build";
 import type { CoverageRow } from "./coverage";
