@@ -178,11 +178,20 @@ const PROJECTS_TIMEOUT_MS = 60_000;
 /** A module that takes an Effect export by name from the `effect` barrel, which the preset forbids. */
 const NAMED_EFFECT_IMPORT = 'import { Effect } from "effect";\n\nexport const program = Effect.void;\n';
 
+/** @type {ReturnType<typeof loadLintedProjects> | undefined} */
+let projectsLoaded;
+
 /**
  * Every committed tsconfig's project in one compiler snapshot, with the files it lints: its files
  * outside the gate's ignored paths. A project whose files all lie there lints nothing and is left out.
+ * Two cases read them; the snapshot loads once.
  */
 function lintedProjects() {
+  projectsLoaded ??= loadLintedProjects();
+  return projectsLoaded;
+}
+
+function loadLintedProjects() {
   const listed = spawnSync("git", ["ls-files", "--cached", "*tsconfig*.json"], {
     cwd: repoRoot,
     encoding: "utf8",
@@ -220,43 +229,47 @@ describe("Effect lint config", () => {
     expect(gate.options).toEqual({ typeAware: true });
   });
 
-  it("decides every rule of the installed @effect/tsgo, each off with its reason", () => {
-    // Unit under test: the preset. Oracle: the installed @effect/tsgo's schema. A bump that adds a rule
-    // fails here until the preset decides it; the gate runs only the rules it names, so an undecided
-    // rule would go unchecked. A deprecated rule stays unnamed, since naming it makes the patched
-    // compiler warn.
-    const schema = asRecord(JSON.parse(read("node_modules/@effect/tsgo/schema.json")), "schema");
-    const rules = asRecord(
-      asRecord(
-        asRecord(schema.definitions, "definitions").effectLanguageServicePluginDiagnosticSeverityDefinition,
-        "severity definition"
-      ).properties,
-      "severity properties"
-    );
-    const current = Object.entries(rules)
-      .filter(
-        ([, rule]) => !asString(asRecord(rule, "rule").description, "description").startsWith("Deprecated")
-      )
-      .map(([name]) => name);
-    expect(severities.map(([rule]) => rule).sort()).toEqual(current.sort());
-    expect(severities.filter(([, level]) => level !== "error" && level !== "off")).toEqual([]);
-    const presetFile = join(repoRoot, PRESET_PATH);
-    const owner = lintedProjects().find(({ program }) => program.getConfigFileNames().includes(presetFile));
-    if (owner === undefined) throw new Error(`no linted project reads ${PRESET_PATH}`);
-    expect(unexplainedOffs(owner.program.getConfigSourceFile(presetFile))).toEqual([]);
-    // Each option of the entry changes what the editor and the gate report; `overrides` or
-    // `diagnostics: false` would split them. A new option is a new decision.
-    expect(Object.keys(plugin).sort()).toEqual(
-      [
-        "allowedUnstableApis",
-        "diagnosticSeverity",
-        "effectFn",
-        "includeSuggestionsInTsc",
-        "name",
-        "namespaceImportPackages",
-      ].sort()
-    );
-  });
+  it(
+    "decides every rule of the installed @effect/tsgo, each off with its reason",
+    () => {
+      // Unit under test: the preset. Oracle: the installed @effect/tsgo's schema. A bump that adds a rule
+      // fails here until the preset decides it; the gate runs only the rules it names, so an undecided
+      // rule would go unchecked. A deprecated rule stays unnamed, since naming it makes the patched
+      // compiler warn.
+      const schema = asRecord(JSON.parse(read("node_modules/@effect/tsgo/schema.json")), "schema");
+      const rules = asRecord(
+        asRecord(
+          asRecord(schema.definitions, "definitions").effectLanguageServicePluginDiagnosticSeverityDefinition,
+          "severity definition"
+        ).properties,
+        "severity properties"
+      );
+      const current = Object.entries(rules)
+        .filter(
+          ([, rule]) => !asString(asRecord(rule, "rule").description, "description").startsWith("Deprecated")
+        )
+        .map(([name]) => name);
+      expect(severities.map(([rule]) => rule).sort()).toEqual(current.sort());
+      expect(severities.filter(([, level]) => level !== "error" && level !== "off")).toEqual([]);
+      const presetFile = join(repoRoot, PRESET_PATH);
+      const owner = lintedProjects().find(({ program }) => program.getConfigFileNames().includes(presetFile));
+      if (owner === undefined) throw new Error(`no linted project reads ${PRESET_PATH}`);
+      expect(unexplainedOffs(owner.program.getConfigSourceFile(presetFile))).toEqual([]);
+      // Each option of the entry changes what the editor and the gate report; `overrides` or
+      // `diagnostics: false` would split them. A new option is a new decision.
+      expect(Object.keys(plugin).sort()).toEqual(
+        [
+          "allowedUnstableApis",
+          "diagnosticSeverity",
+          "effectFn",
+          "includeSuggestionsInTsc",
+          "name",
+          "namespaceImportPackages",
+        ].sort()
+      );
+    },
+    PROJECTS_TIMEOUT_MS
+  );
 
   it("lints with the catalog's tsrs", () => {
     // Unit under test: the lint:effect script. Oracle: the catalog's tsrs. effect-tsgo falls back to
