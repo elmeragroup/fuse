@@ -63,8 +63,11 @@
  *    and no weight written, read `[1,1,1,1]`, and top 2 read `[2,0,0,0]` and left 2 read `[0,0,0,2]`,
  *    with `strokeWeight` mixed and no error (FS1). So the first side write, of any non-negative
  *    weight, sets the other sides to 0 and its own side to its weight, and each side after it writes
- *    alone. A side binding neither spills nor counts as a write, and no probe read a binding as the
- *    first write. The typings require a non-negative side weight, so the fake throws for a negative
+ *    alone. A side binding does not spill, and once every side is bound the weight counts as written:
+ *    on 2026-11-21 a component with one SOLID stroke and no weight written, its four sides bound to a
+ *    2px variable, then took left 0 and read `[2,2,2,0]` with the other three still bound, and so did
+ *    an instance made after the binding (CR7). No probe read a binding of fewer sides as the first
+ *    write, so the fake still spills after one. The typings require a non-negative side weight, so the fake throws for a negative
  *    one before it changes any side. A spill is a literal write of every side, so it unbinds each
  *    and, on an instance or a sublayer, makes each its own and lists it, as a literal write to one
  *    side does (rule 8, FM3).

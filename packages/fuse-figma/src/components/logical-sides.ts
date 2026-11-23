@@ -13,8 +13,8 @@ import type { LayerStyle } from "./layer-style";
 import { horizontal } from "./subgrid-row";
 
 /**
- * Where a box's logical corners or sides lie: on the physical ones of a horizontal, left-to-right
- * page, or elsewhere, with why the build leaves them unmapped.
+ * Where a box's logical corners, sides, or side widths or styles lie: on the physical ones of a horizontal,
+ * left-to-right page, or elsewhere, with why the build leaves them unmapped.
  */
 export type LogicalSides =
   | { readonly kind: "left-to-right" }
@@ -31,6 +31,8 @@ export type MeasuredFlow = readonly FlowRelativeEdges[] | "unmeasured";
 const EDGE_NAMES = {
   corners: "corners",
   sides: "sides",
+  widths: "side widths",
+  styles: "side styles",
 } as const satisfies Record<FlowRelativeEdges, string>;
 
 /**
@@ -42,7 +44,7 @@ const EDGE_NAMES = {
  * does not read the box's flow, since a `dir` it cannot see may then turn the box.
  *
  * @param reader - The box's style.
- * @param edges - The box's corners or its border sides.
+ * @param edges - The box's corners, its border sides, or their widths or styles.
  * @param flow - What the capture measured of the box's flow.
  * @returns Where the box's logical edges lie.
  */

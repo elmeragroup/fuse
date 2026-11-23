@@ -56,6 +56,26 @@ describe("background-clip: padding-box", () => {
     expect(variant?.root.fill).toEqual(WHITE);
   });
 
+  // Oracle: Chromium 153 on a right-to-left box with no border in the page's own mode, where a dark
+  // rule's `border-inline-start: 3px solid transparent` computes the right side 3px, so the padding
+  // box starts 3px in there. The capture measured a logical width lying elsewhere (`otherFlow`), so no
+  // side's width is known and the clip stays unmapped. A logical color alone moves no width, so the
+  // box still has no border.
+  it.each([
+    [
+      ["sides", "widths"],
+      "unmapped",
+      "the box lays out other than left to right in horizontal lines, which puts its logical side widths elsewhere than the capture reads them, so the kit cannot tell where its padding box starts",
+    ],
+    [["sides"], "dropped", "the box has no border, so its padding box is its border box"],
+  ] as const)("where the capture measured %j lying elsewhere is %s", async (otherFlow, outcome, detail) => {
+    const { coverage } = await buildCaptured(
+      chip(),
+      rest({ slot: "chip", classes: "bg-clip-padding bg-[#ffffff]", measured: { otherFlow } })
+    );
+    expect(notesOf(coverage, "bg-clip-padding")).toEqual([["background-clip", outcome, detail]]);
+  });
+
   it.each([
     ["border border-[#00000080]", { top: 1, right: 1, bottom: 1, left: 1 }, literal(0)],
     ["border border-dashed border-[#000000]", { top: 1, right: 1, bottom: 1, left: 1 }, literal(0)],

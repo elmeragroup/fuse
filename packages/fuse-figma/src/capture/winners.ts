@@ -132,21 +132,34 @@ export function physicalLonghand(longhand: string): string {
   return longhand;
 }
 
-/** The edges of a box a flow-relative property sets: its corners or its border sides. */
-export type FlowRelativeEdges = "corners" | "sides";
+/**
+ * The edges of a box a flow-relative property sets: its corners, its border sides, the widths of
+ * those sides, which a width or a border shorthand sets, or their styles. A style moves a width only
+ * where the side's width is not 0, as `none` computes one to 0 (CSS Backgrounds 3 §4.3), so the build
+ * reads `styles` beside the box's widths. A side's color sets the sides alone.
+ */
+export type FlowRelativeEdges = "corners" | "sides" | "widths" | "styles";
 
 /**
  * The properties that set each edge by its flow-relative names: `border-start-end-radius` a corner,
- * and `border-inline-start-width` or `border-block` a side. The capture's page reads its sheets with
- * these patterns (`flow-facts.ts`), and the build its declarations, through {@link flowRelativeEdges}.
+ * `border-inline-start-width` or `border-block` a side and its width, `border-inline-style` a side
+ * and its style, and `border-inline-color` a side alone. The capture's page reads its sheets with these patterns
+ * (`flow-facts.ts`), and the build its declarations, through {@link flowRelativeEdges}.
  */
 export const FLOW_RELATIVE_NAMES = {
   corners: /^border-(?:start|end)-(?:start|end)-radius$/,
   sides: /^border-(?:block|inline)(?:-start|-end)?(?:-(?:width|style|color))?$/,
+  widths: /^border-(?:block|inline)(?:-start|-end)?(?:-width)?$/,
+  styles: /^border-(?:block|inline)(?:-start|-end)?-style$/,
 } as const satisfies Record<FlowRelativeEdges, RegExp>;
 
 /** Every edge {@link FLOW_RELATIVE_NAMES} names. */
-export const FLOW_EDGES = ["corners", "sides"] as const satisfies readonly FlowRelativeEdges[];
+export const FLOW_EDGES = [
+  "corners",
+  "sides",
+  "widths",
+  "styles",
+] as const satisfies readonly FlowRelativeEdges[];
 
 /**
  * The edges a property sets by their flow-relative names, which land on other physical sides or

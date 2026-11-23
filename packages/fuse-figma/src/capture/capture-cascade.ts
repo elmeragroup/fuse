@@ -2277,6 +2277,7 @@ function measuredBox(
     tableTiles: facts?.tableTiles === true,
     bordersCollapse: facts?.bordersCollapse === true,
     otherFlow: facts?.otherFlow ?? [],
+    zeroWidths: facts?.zeroWidths === true,
     inlineRow: facts?.inlineRow === true,
     widest: facts?.widest === true,
     holdsWidest: holds(element),

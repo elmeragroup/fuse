@@ -278,10 +278,16 @@ export type MeasuredBox = {
    */
   readonly bordersCollapse: boolean;
   /**
-   * The edges the box sets by their flow-relative names, its corners or its border sides, where it
-   * lays out other than left to right in horizontal lines in some mode, as the capture measured.
+   * The edges the box sets by their flow-relative names, its corners, its border sides or their
+   * widths or styles, where it lays out other than left to right in horizontal lines in some mode, as
+   * the capture measured.
    */
   readonly otherFlow: readonly FlowRelativeEdges[];
+  /**
+   * The box's `otherFlow` names its side styles, and the capture measured every side's used border
+   * width 0 in every mode.
+   */
+  readonly zeroWidths: boolean;
   /** The box is a flex row's `inline` item, which sits on the row's one line in every mode. */
   readonly inlineRow: boolean;
   readonly widest: boolean;

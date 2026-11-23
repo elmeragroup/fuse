@@ -1,8 +1,9 @@
 /**
- * What `overrides` lists after a corner or a padding changes on an instance in the in-memory file,
- * rule 37. Unit under test: the fake in `fake-figma.ts`. Oracle: probes CR1, CR4 and CR6, read
- * through the Plugin API on a scratch file on 2026-11-21, on instances of a hugging auto layout
- * component 36px tall with a 1px solid stroke and every corner bound to a 10px variable. Each case replays one probe's writes and expects what the real file read.
+ * What `overrides` lists after a corner, a padding or a stroke side changes on an instance in the
+ * in-memory file, rules 37 and 49. Unit under test: the fake in `fake-figma.ts`. Oracle: probes CR1,
+ * CR4, CR6 and CR7, read through the Plugin API on a scratch file on 2026-11-21, on instances of a
+ * hugging auto layout component 36px tall with a 1px solid stroke and every corner bound to a 10px
+ * variable. Each case replays one probe's writes and expects what the real file read.
  */
 import { describe, expect, it } from "vitest";
 
@@ -20,14 +21,19 @@ function float(name: string, value: number) {
   } as const;
 }
 
-/** The probe's main and its variables: `radius-button` 10, `radius-md` 6 and `pad` 5. */
+/** The probe's main and its variables: `radius-button` 10, `radius-md` 6, `pad` 5 and `outline-w` 2. */
 async function probeFile() {
   const { figma } = createFakeFigma({
     collections: [
       {
         name: "Probe radii",
         modes: ["Mode 1"],
-        variables: [float("radius-button", 10), float("radius-md", 6), float("pad", 5)],
+        variables: [
+          float("radius-button", 10),
+          float("radius-md", 6),
+          float("pad", 5),
+          float("outline-w", 2),
+        ],
       },
     ],
   });
@@ -103,5 +109,36 @@ describe("what an instance lists after a number changes", () => {
     const instance = main.createInstance();
     instance.setBoundVariable("paddingLeft", variable("pad"));
     expect([listed(instance), instance.paddingLeft]).toEqual([["boundVariables"], 5]);
+  });
+});
+
+describe("a side's first weight on a stroke whose sides were bound", () => {
+  it.each([
+    ["the component", (main: ComponentNode): ComponentNode | InstanceNode => main],
+    ["an instance made after the binding", (main: ComponentNode) => main.createInstance()],
+  ])("leaves the other sides bound on %s (CR7)", async (_, target) => {
+    const { figma, variable } = await probeFile();
+    const main = figma.createComponent();
+    main.resize(60, 36);
+    main.strokes = [{ type: "SOLID", color: { r: 0, g: 0, b: 0 } }];
+    for (const side of [
+      "strokeTopWeight",
+      "strokeRightWeight",
+      "strokeBottomWeight",
+      "strokeLeftWeight",
+    ] as const) {
+      main.setBoundVariable(side, variable("outline-w"));
+    }
+    const node = target(main);
+    node.strokeLeftWeight = 0;
+    expect([
+      [node.strokeTopWeight, node.strokeRightWeight, node.strokeBottomWeight, node.strokeLeftWeight],
+      Object.keys(node.boundVariables ?? {})
+        .filter((field) => field.startsWith("stroke"))
+        .sort(),
+    ]).toEqual([
+      [2, 2, 2, 0],
+      ["strokeBottomWeight", "strokeRightWeight", "strokeTopWeight"],
+    ]);
   });
 });

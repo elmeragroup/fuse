@@ -7,7 +7,15 @@
  */
 
 import type { CornerRadiusSpec, CornersSpec } from "../../src/components/corner-spec.ts";
-import { layerAt, ringFill, rootOnlyOverride, shownLabel } from "../../src/components/kit-spec.ts";
+import {
+  bareSideWeights,
+  layerAt,
+  leavesSidesBare,
+  ringFill,
+  rootOnlyOverride,
+  shownLabel,
+  sideWeights,
+} from "../../src/components/kit-spec.ts";
 import type {
   ComponentRootSpec,
   InnerVariantSpec,
@@ -16,10 +24,11 @@ import type {
   InstanceOverride,
   InstanceOverrideValue,
   InstancePaintOverride,
-  NumberSpec,
   PaddingField,
+  SideWeights,
+  StrokeSide,
 } from "../../src/components/kit-spec.ts";
-import { paddingField, planStrokeSides, strokeWeightField } from "./box.ts";
+import { paddingField, planSideWeights, planStrokeSides } from "./box.ts";
 import { planCorners, planEffects, planNumber, planPaints, planScalar } from "./fields.ts";
 import type { Run } from "./fields.ts";
 import { heldFonts, requireFont, shownFace } from "./fonts.ts";
@@ -48,18 +57,34 @@ export function pathKey(path: readonly string[]): string {
 /**
  * An override the plan writes: the spec's, or the inner variant's own value for one it dropped. A
  * paint takes the spec's color as a fill, and every other field the spec's value as it stands. A
- * stroke whose override the spec drops goes back to the inner variant's weights, which may be one
- * bound or literal weight on every side, as `strokeWeight`.
+ * stroke's sides left bare, and a stroke whose override the spec drops, take a weight on each side,
+ * bound or literal, as `sideWeights`, which the plan compares and writes side by side.
  */
 type OverrideWrite =
   | { readonly field: InstancePaintOverride["field"]; readonly paint: FillSpec | undefined }
-  | InstanceOverrideValue
-  | { readonly field: "strokeWeight"; readonly weight: NumberSpec };
+  | Exclude<InstanceOverrideValue, { readonly bare: readonly StrokeSide[] }>
+  | { readonly field: "sideWeights"; readonly weights: SideWeights };
 
-/** The write an override of the spec asks for. */
-function writeOf(override: InstanceOverride): OverrideWrite {
+/**
+ * The write an override of the spec asks for. Sides left bare keep the inner variant's weight on the
+ * other sides, which the kit check proves one solid bound weight on every side.
+ */
+function writeOf(override: InstanceOverride, root: ComponentRootSpec, label: string): OverrideWrite {
   if ("color" in override) {
     return { field: override.field, paint: override.color };
+  }
+  if (leavesSidesBare(override)) {
+    const layer = layerAt(root, override.path);
+    const weights = bareSideWeights(
+      layer === undefined || ("kind" in layer && layer.kind !== "frame") ? undefined : layer.stroke,
+      override.bare
+    );
+    if (weights === undefined) {
+      throw new Error(
+        `${label} leaves sides of ${override.path.join(" / ") || "its root"} bare, which takes no bare side.`
+      );
+    }
+    return { field: "sideWeights", weights };
   }
   const { path: _path, ...value } = override;
   return value;
@@ -150,11 +175,9 @@ function planOverride(
     case "strokeSides":
       planStrokeSides(run, boxOf(layer, write.field), label, write.sides);
       return;
-    case "strokeWeight": {
-      const box = boxOf(layer, write.field);
-      planNumber(run, box, label, strokeWeightField(box), write.weight);
+    case "sideWeights":
+      planSideWeights(run, boxOf(layer, "stroke weight"), label, write.weights, "instance");
       return;
-    }
     case "cornerRadius": {
       const box = boxOf(layer, write.field);
       planCorners(run, box, label, write.value);
@@ -233,17 +256,13 @@ function innerValue(
         return { field, paint: fill };
       case "strokeColor":
         return { field, paint: layer.stroke?.color };
-      case "strokeSides": {
-        // A stroke of one weight goes back to it whatever its dashes or binding, as the main's own
-        // stroke changes in the same run. A layer with no stroke draws none, whatever its weights.
-        const { stroke } = layer;
-        if (stroke === undefined) {
-          return undefined;
-        }
-        return "sides" in stroke
-          ? { field, sides: stroke.sides }
-          : { field: "strokeWeight", weight: stroke.weight };
-      }
+      case "strokeSides":
+        // Each side goes back to the main's weight on it, whatever the stroke's dashes or binding, as
+        // the main's own stroke changes in the same run, and a side that holds it already keeps
+        // following the main (CR2). A layer with no stroke draws none, whatever its weights.
+        return layer.stroke === undefined
+          ? undefined
+          : { field: "sideWeights", weights: sideWeights(layer.stroke) };
       case "cornerRadius":
         return { field, value: eachCorner(layer.cornerRadius) };
       case "effects":
@@ -443,7 +462,7 @@ export function planOverrides(
       if (layer === undefined) {
         throw new Error(`${label} holds no layer ${override.path.join(" / ")} to override.`);
       }
-      return { layer, write: writeOf(override) };
+      return { layer, write: writeOf(override, root, label) };
     }),
     ...droppedWrites(instance, layers, spec, root),
   ];

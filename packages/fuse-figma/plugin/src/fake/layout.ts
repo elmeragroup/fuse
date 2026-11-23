@@ -1471,6 +1471,14 @@ export function bindNodeField(
   }
 }
 
+/** The fields of a stroke's four side weights. */
+const STROKE_SIDE_FIELDS: ReadonlySet<VariableBindableNodeField> = new Set([
+  "strokeTopWeight",
+  "strokeRightWeight",
+  "strokeBottomWeight",
+  "strokeLeftWeight",
+]);
+
 function bindField(state: NodeState, field: VariableBindableNodeField, variable: Variable | null): void {
   const targets = bindingTargets(field);
   const length = state.type === "INSTANCE" && (field === "width" || field === "height") ? field : undefined;
@@ -1526,6 +1534,10 @@ function bindField(state: NodeState, field: VariableBindableNodeField, variable:
       setNumberField(state, target, value);
     }
     state.bindings.set(target, bound.id);
+  }
+  // Every side bound counts as a write of the stroke's weight (rule 49, CR7).
+  if ([...STROKE_SIDE_FIELDS].every((side) => state.bindings.has(side))) {
+    state.strokeWeightWritten = true;
   }
   ownTargets(state, targets, false);
   listNumbers(state, targets.filter(isStoredNumber), false);

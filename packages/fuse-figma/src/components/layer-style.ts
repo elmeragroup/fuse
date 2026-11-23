@@ -663,8 +663,8 @@ export class LayerStyle {
    * the longhands each declaration wins once Chromium's cascade chose them: `border-inline-color`
    * where it wins `border-left-color`. The longhand's own declaration wins it wherever the layer
    * holds one, since the capture keeps a declaration only where it wins, and a pseudo-element's
-   * cascade splits each border shorthand into per-side declarations that keep the shorthand's
-   * longhands.
+   * cascade splits each physical border shorthand into per-side declarations that keep the
+   * shorthand's longhands.
    *
    * @param longhand - A physical longhand, as `border-left-color`.
    * @returns The property, or undefined where no declaration of the layer's own that the capture

@@ -10,8 +10,9 @@ import { isDeepStrictEqual } from "node:util";
 
 import { HALF_TURN_MIRRORS } from "./glyph-mirrors";
 import type { SettledRoot } from "./hugging-rows";
-import { outOfLayout, ringFill, solidSides } from "./kit-spec";
+import { bareableWeight, outOfLayout, ringFill, solidSides } from "./kit-spec";
 import type {
+  BareSides,
   BoxSpec,
   ChildLayerSpec,
   ComponentRootSpec,
@@ -134,7 +135,8 @@ type Found = {
  *   or the corner stays unmapped (`againstMainLayer` in `padding-box-fill.ts`).
  * - A solid stroke on some sides becomes an override of the four weights where the variant's stroke
  *   is solid with literal weights and both take their room in the layout alike, as a chip segment's
- *   `border-0 border-s` keeps the start edge of Button's 1px border.
+ *   `border-0 border-s` keeps the start edge of Button's 1px border. A stroke on every side that
+ *   leaves some sides bare becomes an override of those sides, as a group member's `border-l-0`.
  * - A side's padding of the root becomes an override where it differs, its value or its variable, as
  *   a chip segment's `[--button-px-floor:0px]` pads its Button by the size's plain inset where the
  *   Button variant binds the inset at least the identity's floor (#858). A frame's padding below the
@@ -412,9 +414,13 @@ function diffFill(
  * Diff a stroke. Its color becomes an override. A solid stroke on some sides in place, over a solid
  * stroke of the variant on its sides or of one literal weight on every side, becomes an override of
  * the four weights, as a chip segment's `border-0 border-s` keeps only its start edge of Button's
- * 1px border. Both strokes must take their room in the layout alike. Any other difference, a dash, a
- * bound weight or a stroke only one of the two draws, stays unmapped, and so do the weights beside a
- * `padding box` layer the two boxes do not share (`layer`), which the weights inset.
+ * 1px border. Both strokes must take their room in the layout alike. A stroke that leaves some sides
+ * bare of the variant's stroke on every side, and differs in nothing else but its color, becomes an
+ * override of those sides, beside one of its color where that differs, as a group member's
+ * `border-l-0` collapses the left side of an outline Button's bound weight. Any other difference, a
+ * dash, a bound weight on some sides, bare sides over another weight or a stroke only one of the two
+ * draws, stays unmapped, and so do the weights or bare sides beside a `padding box` layer the two
+ * boxes do not share (`layer`), which the weights inset.
  */
 function diffStroke(
   found: Found,
@@ -434,6 +440,14 @@ function diffStroke(
     found.overrides.push({ path, field: "strokeColor", color: inPlace.color });
     return;
   }
+  const bare = layer === "compared" ? bareOver(inPlace, variant) : undefined;
+  if (inPlace !== undefined && variant !== undefined && bare !== undefined) {
+    found.overrides.push({ path, field: "strokeSides", bare });
+    if (!isDeepStrictEqual(inPlace.color, variant.color)) {
+      found.overrides.push({ path, field: "strokeColor", color: inPlace.color });
+    }
+    return;
+  }
   const sides = inPlace !== undefined && "sides" in inPlace ? inPlace.sides : undefined;
   const held = variant === undefined ? undefined : solidSides(variant);
   if (
@@ -449,6 +463,22 @@ function diffStroke(
     return;
   }
   noteUnmapped(found, path, "stroke", inPlace, variant);
+}
+
+/**
+ * The sides a bare stroke in place leaves of the variant's solid stroke of the same bound weight on
+ * every side, the one main `bareableWeight` in `kit-spec.ts` takes, where the two differ in nothing
+ * else but the color. Undefined otherwise, as for a stroke on some sides, whose literal weights the
+ * diff overrides one by one.
+ */
+function bareOver(inPlace: BoxSpec["stroke"], variant: BoxSpec["stroke"]): BareSides | undefined {
+  if (inPlace === undefined || "sides" in inPlace || inPlace.bare === undefined || variant === undefined) {
+    return undefined;
+  }
+  const bareable = bareableWeight(variant);
+  const { bare, color: _color, ...rest } = inPlace;
+  const { color: _main, ...main } = variant;
+  return "weight" in bareable && isDeepStrictEqual(rest, main) ? bare : undefined;
 }
 
 /** The kind and key of each layer, which the two boxes must share for the diff to compare their layers. */

@@ -15,9 +15,11 @@ import { Data, Result } from "effect";
 
 import { gridFault } from "./grid-check.ts";
 import {
+  bareableWeight,
   coveredShadow,
   fixedLength,
   glyphRanges,
+  leavesSidesBare,
   layerAt,
   outOfLayout,
   rootOnlyOverride,
@@ -39,6 +41,7 @@ import type {
   VariantSpec,
 } from "./kit-spec.ts";
 import { sha1Hex } from "./sha1.ts";
+import { strokeFault, strokeSidesFault } from "./stroke-check.ts";
 
 /** The kit spec contradicts itself, or asks for something Figma or the plugin cannot draw. */
 export class KitContradiction extends Data.TaggedError("KitContradiction")<{
@@ -174,6 +177,10 @@ function checkBox(set: ComponentSetSpec, variant: VariantSpec, box: BoxSpec, nam
   const grid = gridFault(box);
   if (grid !== undefined) {
     throw contradiction(`${set.name}: ${name} in the variant ${variant.key} ${grid}.`);
+  }
+  const stroke = strokeFault(box.stroke);
+  if (stroke !== undefined) {
+    throw contradiction(`${set.name}: ${name} in the variant ${variant.key} ${stroke}.`);
   }
   for (const { axis, length, limits } of AXES) {
     const absolute = box.children.find(
@@ -533,6 +540,25 @@ function checkInstances(kit: KitSpec): void {
             throw contradiction(
               `${where} overrides the ${override.field} of ${path}, a layer below the root, and the kit overrides that field on the root alone.`
             );
+          }
+          // The plugin reads the kit as JSON, which carries no type: an override of both forms would
+          // write the bare sides where the build reads the weight on each side, and one of neither
+          // would reach the plan with no weight to write.
+          const form = override.field === "strokeSides" ? strokeSidesFault(override, where, path) : undefined;
+          if (form !== undefined) {
+            throw contradiction(form);
+          }
+          // The plugin writes a bare side's 0 over the inner stroke's one bound weight, which the
+          // other sides keep, the one main `diffInstance` writes bare sides over (`bareableWeight`).
+          // `checkSizing` has read the main's stroke as one of the forms `strokeFault` takes.
+          const box = !("kind" in target) || target.kind === "frame" ? target : undefined;
+          if (leavesSidesBare(override) && box !== undefined) {
+            const bareable = bareableWeight(box.stroke);
+            if ("refused" in bareable) {
+              throw contradiction(
+                `${where} leaves sides of ${path} bare, whose stroke in ${inner.name} ${layer.variant} ${bareable.refused}.`
+              );
+            }
           }
         }
       }

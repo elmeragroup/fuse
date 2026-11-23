@@ -15,11 +15,13 @@ import {
   chip,
   fixedSize,
   frameOf,
+  HUG,
   literal,
   notesOf,
   part,
   rest,
 } from "../../test/capture-fixtures";
+import type { CoverageRow } from "./coverage";
 import { makeVariableIndex } from "./css-values";
 
 // Oracle: CSS Color 4 §6.4. `currentcolor` that a custom property passes down resolves where it is
@@ -150,6 +152,58 @@ describe("a hidden part", () => {
     expect(variant?.root.sizing).toEqual(fixedSize(literal(18), literal(18)));
   });
 
+  // Oracle: CSS Writing Modes 3 §3.1 and CSS Logical Properties 1 §4. Under `vertical-rl` the
+  // inline axis runs down, so `border-s-[3px]` widens the top side: the box draws 14px wide and 16px
+  // tall around the 8px part. The left-to-right page the capture reads it on gives the left side the
+  // 3px, which would hold it 16px wide and 14px tall. The box turns by its own `writing-mode`, or in
+  // a mode the capture measured (`otherFlow`), as a dark-only rule's `writing-mode` turns it.
+  it.each([
+    { turns: "by its own writing-mode", classes: "[writing-mode:vertical-rl]", facts: {} },
+    {
+      turns: "in a mode the capture measured",
+      classes: "",
+      facts: { measured: { otherFlow: ["sides", "widths"] } } as const,
+    },
+  ])(
+    "leaves a box that hugs it at a hug where its logical border sides lie elsewhere, $turns",
+    async ({ classes, facts }) => {
+      const { variant, coverage } = await buildCaptured(
+        chip({ parts: [part()] }),
+        rest({
+          slot: "chip",
+          classes: `flex p-[2px] ${classes} border border-s-[3px] border-[#000000]`,
+          children: [{ slot: "chip-dot", classes: "size-[8px] invisible" }],
+          ...facts,
+        })
+      );
+      expect([
+        variant?.root.sizing,
+        variant?.root.stroke,
+        notesOf(coverage, "invisible").map(([, outcome]) => outcome),
+      ]).toEqual([{ horizontal: HUG, vertical: HUG }, undefined, ["unmapped"]]);
+    }
+  );
+
+  // Oracle: Chromium 153 on a right-to-left 12px box around a hidden 8px part, where a dark rule sets
+  // only `border-inline-start-color`: every side computes 0px in every mode, so the box keeps its
+  // 12px. A logical color moves no width, so the capture's `otherFlow` names the sides alone.
+  it("holds a box at its size where only a logical border color lies elsewhere", async () => {
+    const { variant, coverage } = await buildCaptured(
+      chip({ parts: [part()] }),
+      rest({
+        slot: "chip",
+        classes: "flex p-[2px]",
+        children: [{ slot: "chip-dot", classes: "size-[8px] invisible" }],
+        measured: { otherFlow: ["sides"] },
+      })
+    );
+    expect([
+      variant?.root.sizing,
+      frameOf(variant?.root)?.hidden,
+      notesOf(coverage, "invisible").map(([, outcome]) => outcome),
+    ]).toEqual([fixedSize(literal(12), literal(12)), true, ["literal"]]);
+  });
+
   it("hides a part with margins in a fixed box, and leaves it unmapped in a box that hugs it", async () => {
     const hidden = async (classes: string) => {
       const { variant, coverage } = await buildChip(
@@ -188,6 +242,11 @@ describe("a hidden part", () => {
 // border-s-border` draws a hairline. A side at a zero width draws nothing whatever its style.
 describe("a stroke on some sides", () => {
   const RED = { kind: "literal", color: { r: 1, g: 0, b: 0, a: 1 } } as const;
+  /** The border declarations a coverage notes as drawn, which a stroke left out must not hold. */
+  const drawnBorderRows = (coverage: readonly CoverageRow[]) =>
+    coverage.filter(
+      (row) => row.property.startsWith("border") && (row.outcome === "literal" || row.outcome === "bound")
+    );
 
   it("takes the color its drawing side sets of its own", async () => {
     const { variant, coverage } = await buildChip(
@@ -198,6 +257,238 @@ describe("a stroke on some sides", () => {
       ["border-color", "dropped", "it colors only sides the border gives no width, which draw nothing"],
     ]);
   });
+
+  // CSS Backgrounds 3 §3.3: a side at a zero width draws nothing, and a group member's `border-l-0`
+  // or `border-t-0` wins that side of Button's `border`, which the other sides keep. On the kit's
+  // left-to-right page `border-x-0` zeroes the left and the right (CSS Logical Properties 1 §4.4).
+  it.each([
+    ["border-l-0", { top: 1, right: 1, bottom: 1, left: 0 }, "border-left-width", "the left side"],
+    ["border-t-0", { top: 0, right: 1, bottom: 1, left: 1 }, "border-top-width", "the top side"],
+    [
+      "border-x-0",
+      { top: 1, right: 0, bottom: 1, left: 0 },
+      "border-inline-width",
+      "the right and left sides",
+    ],
+  ])("keeps a literal border's weight on the sides %s leaves drawing", async (bare, sides, width, named) => {
+    const { variant, coverage } = await buildChip(`border border-[#ff0000] ${bare}`);
+    expect([
+      variant?.root.stroke,
+      coverage.filter((row) => row.outcome === "unmapped"),
+      notesOf(coverage, bare).filter(([property]) => property === width),
+    ]).toEqual([{ color: RED, sides }, [], [[width, "literal", `no stroke on ${named}`]]]);
+  });
+
+  // A vertical group's member leaves its top side bare, the side the stroke reads first.
+  it.each([
+    ["border-l-0", ["left"], "left"],
+    ["border-t-0", ["top"], "top"],
+  ])("keeps a bound weight on the sides %s leaves drawing", async (zero, bare, side) => {
+    const weight = { collection: "Fuse tokens", name: "border-w" } as const;
+    const { variant, coverage } = await buildCaptured(
+      chip(),
+      rest({ slot: "chip", classes: `border border-(length:--border-w) border-[#ff0000] ${zero}` }),
+      {
+        variables: makeVariableIndex([{ ref: weight, webSyntax: "var(--border-w)", minimum: 1, maximum: 2 }]),
+      }
+    );
+    expect([
+      variant?.root.stroke,
+      coverage.filter((row) => row.outcome === "unmapped"),
+      notesOf(coverage, zero),
+    ]).toEqual([
+      { color: RED, weight: { kind: "variable", variable: weight }, bare },
+      [],
+      [
+        [`border-${side}-style`, "dropped", "it sets only sides the border leaves bare, which draw nothing"],
+        [
+          `border-${side}-width`,
+          "literal",
+          `no stroke on the ${side} side, where the other sides keep the border's weight`,
+        ],
+      ],
+    ]);
+  });
+
+  // Oracle: the Figma paint type, which holds one RGBA color or a variable per stroke, and Chromium
+  // 153, which paints a black border with a red right side, or a right side in the system color
+  // `CanvasText`. Bare left side or not, the sides that draw take two colors, or one the kit cannot
+  // read, so the stroke stays out with the colors' own reasons, and the left side's 0 notes why its
+  // side was bare.
+  it.each([
+    [
+      "border-r-[#ff0000]",
+      "border-right-color",
+      ["unmapped", "Figma strokes every side in one color, and the sides that draw take two"],
+      ["unmapped", "Figma strokes every side in one color, and the sides that draw take two"],
+    ],
+    [
+      "[border-right-color:CanvasText]",
+      "border-right-color",
+      ["unmapped", "no Figma field reads CanvasText"],
+      ["unmapped", "another side's width, style or color does not map, so the stroke is left out"],
+    ],
+  ])(
+    "leaves a bound weight's bare stroke out where %s colors a drawing side apart",
+    async (color, property, own, shared) => {
+      const weight = { collection: "Fuse tokens", name: "border-w" } as const;
+      const { variant, coverage } = await buildCaptured(
+        chip(),
+        rest({
+          slot: "chip",
+          classes: `border border-(length:--border-w) border-[#000000] border-l-0 ${color}`,
+        }),
+        {
+          variables: makeVariableIndex([
+            { ref: weight, webSyntax: "var(--border-w)", minimum: 1, maximum: 2 },
+          ]),
+        }
+      );
+      expect([
+        variant?.root.stroke,
+        notesOf(coverage, color),
+        notesOf(coverage, "border-[#000000]"),
+        notesOf(coverage, "border-l-0").filter(([each]) => each === "border-left-width"),
+      ]).toEqual([
+        undefined,
+        [[property, ...own]],
+        [["border-color", ...shared]],
+        [
+          [
+            "border-left-width",
+            "unmapped",
+            "its width of 0 leaves the left side bare, but the stroke is left out",
+          ],
+        ],
+      ]);
+    }
+  );
+
+  // Oracle: the Figma plugin typings. A Figma paint holds an RGBA color or a variable, and no system
+  // color, so `CanvasText` reaches no stroke, and the stroke stays out with nothing noted as drawn.
+  // At `--border-w: 2px` Chromium 153 computes the border 2px on the top, right and bottom and 0px on
+  // the left, so the zero width is still why the left side was bare.
+  it("leaves a bound weight's stroke out, noting no side as drawn, where its color does not map", async () => {
+    const width = { collection: "Fuse tokens", name: "border-w" } as const;
+    const { variant, coverage } = await buildCaptured(
+      chip(),
+      rest({
+        slot: "chip",
+        classes: "border border-(length:--border-w) border-l-0 [border-color:CanvasText]",
+      }),
+      { variables: makeVariableIndex([{ ref: width, webSyntax: "var(--border-w)", minimum: 1, maximum: 2 }]) }
+    );
+    const left = "another side's width, style or color does not map, so the stroke is left out";
+    expect([
+      variant?.root.stroke,
+      drawnBorderRows(coverage),
+      notesOf(coverage, "border-l-0"),
+      notesOf(coverage, "[border-color:CanvasText]"),
+      notesOf(coverage, "border-(length:--border-w)"),
+    ]).toEqual([
+      undefined,
+      [],
+      [
+        ["border-left-style", "dropped", "it sets only sides the border leaves bare, which draw nothing"],
+        [
+          "border-left-width",
+          "unmapped",
+          "its width of 0 leaves the left side bare, but the stroke is left out",
+        ],
+      ],
+      [["border-color", "unmapped", "no Figma field reads CanvasText"]],
+      ["border-bottom-style", "border-right-style", "border-top-style", "border-width"].map((property) => [
+        property,
+        "unmapped",
+        left,
+      ]),
+    ]);
+  });
+
+  // Oracle: Chromium 153's computed `border-*-width` for a 1px solid border with
+  // `border-left-width: 0` and a later `border-inline-style`: `none` computes the right side to 0px
+  // too (CSS Backgrounds 3 §3.3), and `dashed` keeps it at 1px, dashed, which one Figma stroke style
+  // cannot draw beside solid sides, so the stroke stays out.
+  it.each([
+    [
+      "none",
+      { color: RED, sides: { top: 1, right: 0, bottom: 1, left: 0 } },
+      ["border-inline-style", "dropped", "a none style draws no border on its side"],
+    ],
+    ["dashed", undefined, ["border-inline-style", "unmapped", "no Figma field reads dashed"]],
+  ])("reads a side style that wins a bare side and a drawing one, at %s", async (style, stroke, note) => {
+    const classes = `[border-inline-style:${style}]`;
+    const { variant, coverage } = await buildChip(`border border-[#ff0000] border-l-0 ${classes}`);
+    expect([
+      variant?.root.stroke,
+      notesOf(coverage, classes),
+      stroke === undefined ? drawnBorderRows(coverage) : [],
+    ]).toEqual([stroke, [note], []]);
+  });
+
+  // Oracle: Chromium 153's computed left border of a 1px red border on black text under
+  // `[border-left:solid]!`: 3px, black and solid, since the shorthand resets the side's width to
+  // `medium` and its color to `currentcolor` (CSS Backgrounds 3 §3.4). Figma strokes every side in
+  // one color, so the stroke stays out.
+  it("leaves a border shorthand unmapped where it wins a drawing side's style", async () => {
+    const classes = "[border-left:solid]!";
+    const { variant, coverage } = await buildChip(`border border-[#ff0000] text-[#000000] ${classes}`);
+    expect([variant?.root.stroke, notesOf(coverage, classes), drawnBorderRows(coverage)]).toEqual([
+      undefined,
+      [["border-left", "unmapped", "no Figma field reads solid"]],
+      [],
+    ]);
+  });
+
+  // Oracle: Chromium 153's computed borders of a 1px solid red border on black text, the
+  // declarations applied in the classes' order. `border-inline: none` resets both inline sides to 3px
+  // of `currentcolor`, styled none (CSS Backgrounds 3 §3.4), so a later `border-left-style: solid`
+  // draws the left side 3px and black, the right 0px. Under `border-inline: 0` and a later
+  // `border-left-width: 2px`, the left side draws 2px and black. Figma strokes every side in one
+  // color, so neither stroke maps: the first shorthand's `medium` width reads as no weight, and the
+  // second shorthand colors the left side. A shorthand's `hidden` computes its side to 0px (CSS
+  // Backgrounds 3 §3.3), as `border-left: 2px hidden blue` does, so the other sides draw and the
+  // shorthand draws nothing.
+  const LEFT_OUT = "another side's width, style or color does not map, so the stroke is left out";
+  it.each([
+    {
+      classes: "[border-inline:none] [border-left-style:solid]",
+      stroke: undefined,
+      notes: [
+        ["border-inline", "unmapped", "no Figma field reads none"],
+        ["border-left-style", "unmapped", LEFT_OUT],
+      ],
+    },
+    {
+      classes: "[border-inline:0] [border-left-width:2px] [border-left-style:solid]",
+      stroke: undefined,
+      notes: [
+        [
+          "border-inline",
+          "unmapped",
+          "a border shorthand colors a side that draws, and the build does not read it",
+        ],
+        ["border-left-width", "unmapped", LEFT_OUT],
+        ["border-left-style", "unmapped", LEFT_OUT],
+      ],
+    },
+    {
+      classes: "[border-left:2px_hidden_blue]",
+      stroke: { color: RED, sides: { top: 1, right: 1, bottom: 1, left: 0 } },
+      notes: [["border-left", "dropped", "its side's style draws no border, whatever its width"]],
+    },
+  ])(
+    "reads a border shorthand that sets a side apart by its own reason, under $classes",
+    async ({ classes, stroke, notes }) => {
+      const { variant, coverage } = await buildChip(`border border-[#ff0000] text-[#000000] ${classes}`);
+      expect([
+        variant?.root.stroke,
+        classes.split(" ").flatMap((each) => notesOf(coverage, each)),
+        stroke === undefined ? drawnBorderRows(coverage) : [],
+        stroke === undefined ? notesOf(coverage, "border-[#ff0000]") : [],
+      ]).toEqual([stroke, notes, [], stroke === undefined ? [["border-color", "unmapped", LEFT_OUT]] : []]);
+    }
+  );
 
   it("takes the color of the axis shorthand that wins its drawing side", async () => {
     const { variant, coverage } = await buildChip("border-s border-transparent border-x-[#ff0000]");
@@ -225,6 +516,10 @@ describe("a stroke on some sides", () => {
     expect(notesOf(coverage, color).map(([, outcome, note]) => [outcome, note])).toEqual([
       ["dropped", detail],
     ]);
+    // Nothing draws, so no side is left out for want of another.
+    expect(coverage.filter((row) => row.property.startsWith("border") && row.outcome === "unmapped")).toEqual(
+      []
+    );
   });
 
   it("leaves the stroke unmapped where a border shorthand wins its drawing side's color", async () => {
@@ -573,6 +868,43 @@ describe("a border whose style is none", () => {
 
 // Oracle: CSS Backgrounds 3 §3.7. `background-clip` clips the background, so a box that paints none,
 // as a hovered framed Table cell's `bg-transparent` leaves it, has nothing for the clip to draw.
+// Oracle: CSS Logical Properties 1 §4 and Chromium 153's computed style of an absolute `::before`
+// with `border-inline: 2px solid`: 2px on its left and right in horizontal lines, and on its top and
+// bottom under its box's `writing-mode: vertical-rl`. The capture measures no flow for a
+// pseudo-element, which a `dir` it cannot see may turn too, so the build cannot tell which physical
+// sides the shorthand sets, and draws no layer for it.
+describe("a pseudo-element's border named by flow-relative sides", () => {
+  it.each(["", "[writing-mode:vertical-rl]"])("draws no layer for it in a box of %j", async (flow) => {
+    const { variant, coverage } = await buildCaptured(
+      chip(),
+      rest({
+        slot: "chip",
+        classes: `relative size-[36px] ${flow}`,
+        pseudo: {
+          before: {
+            classes: "absolute top-0 left-0 size-[16px] [border-inline:2px_solid_#ff0000]",
+            written: [{ className: "before:content-['']", property: "content", value: '""' }],
+          },
+        },
+        measured: { pseudoBoxes: ["before"] },
+      })
+    );
+    expect([
+      variant?.root.children.map((layer) => layer.key),
+      notesOf(coverage, "[border-inline:2px_solid_#ff0000]"),
+    ]).toEqual([
+      [],
+      [
+        [
+          "border-inline",
+          "unmapped",
+          "the kit draws no layer for the `::before` pseudo-element, and the build does not tell whether its border-inline paints",
+        ],
+      ],
+    ]);
+  });
+});
+
 describe("background-clip: padding-box on a box with no background", () => {
   it("is dropped beside a translucent border", async () => {
     const { coverage, variant } = await buildChip("size-[20px] bg-clip-padding border border-[#00000080]");

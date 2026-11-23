@@ -24,7 +24,7 @@ import {
   stretchedLayer,
 } from "./box-flow";
 import type { Flow, UnspacedReason } from "./box-flow";
-import { borderWidths, describeColor, paintsAnything, readPaint } from "./box-paint";
+import { describeColor, paintsAnything, readPaint } from "./box-paint";
 import type { BorderWidths } from "./box-paint";
 import type { BoxPaint } from "./box-paint";
 import {
@@ -605,15 +605,17 @@ function mapBoxBeforeClip(
     ]);
   }
 
-  const { paint, paddingBox } = readPaint(
-    reader,
-    box.image,
-    context.variables,
-    variant,
-    cascade.measured?.bordersCollapse === true
-  );
-  // The border widths the stroke draws, which a box that hugs adds to the length it holds.
-  const borders = borderWidths(reader, context.variables);
+  // `widths` are the border widths the stroke draws, which a box that hugs adds to the length it holds.
+  const {
+    paint,
+    widths: borders,
+    paddingBox,
+  } = readPaint(reader, box.image, context.variables, variant, cascade.measured?.bordersCollapse === true, {
+    sides: logicalSidesOf(reader, "sides", cascade.measured?.otherFlow ?? "unmeasured"),
+    widths: logicalSidesOf(reader, "widths", cascade.measured?.otherFlow ?? "unmeasured"),
+    styles: logicalSidesOf(reader, "styles", cascade.measured?.otherFlow ?? "unmeasured"),
+    zeroWidths: cascade.measured?.zeroWidths === true,
+  });
   dropIdleOrigin(reader, cascade.measured);
   const opacity = reader.read(
     "opacity",

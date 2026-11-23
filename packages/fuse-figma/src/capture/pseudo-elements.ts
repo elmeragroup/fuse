@@ -12,6 +12,7 @@ import type { VariableIndex } from "../components/css-values.ts";
 import type { NumberSpec } from "../components/kit-spec.ts";
 import type { Applied, CoverageNote, InPlace, LayerStyle } from "../components/layer-style.ts";
 import { BORDER_STYLES, borderLonghands, WIDTH_KEYWORDS } from "./border-shorthands.ts";
+import { flowRelativeEdges } from "./winners.ts";
 
 /**
  * The longhands a pseudo-element's style can set and still paint nothing a box shows: its place,
@@ -40,7 +41,10 @@ const NO_BORDER = new Set(["none", "hidden"]);
 
 /**
  * Declarations with each border shorthand split into its longhands, as {@link borderLonghands} says,
- * so the cascade decides each side's width, style and color by its usual precedence.
+ * so the cascade decides each side's width, style and color by its usual precedence. A shorthand
+ * named by flow-relative sides, as `border-inline`, stays whole: the capture does not measure where a
+ * pseudo-element lays out, so its physical sides are unknown, and {@link pseudoVerdict} leaves it
+ * unmapped as one whose paint the build cannot tell.
  *
  * @param applied - The declarations.
  * @param resolve - A declaration's value with its `var()`s substituted, by its property and value as
@@ -54,12 +58,14 @@ export function withBorderLonghands(
   return applied.map((each) => ({
     ...each,
     declarations: each.declarations.flatMap(({ property, value }) =>
-      (borderLonghands(property, value, () => resolve(property, value)) ?? [[property, value] as const]).map(
-        ([longhand, part]) => ({
-          property: longhand,
-          value: part,
-        })
-      )
+      (
+        (flowRelativeEdges(property).length > 0
+          ? undefined
+          : borderLonghands(property, value, () => resolve(property, value))) ?? [[property, value] as const]
+      ).map(([longhand, part]) => ({
+        property: longhand,
+        value: part,
+      }))
     ),
   }));
 }
