@@ -19,7 +19,7 @@ export function MachineTheme({
   readonly children?: ReactNode;
 }): ReactElement {
   return (
-    <SceneTheme brand="elma" scheme="dark" variant="internal" className={className}>
+    <SceneTheme brand="elma" scheme="dark" identity="neutral" className={className}>
       {children}
     </SceneTheme>
   );

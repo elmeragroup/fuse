@@ -1,16 +1,13 @@
 import type { ReactElement } from "react";
 
-import { CalendarDate } from "@internationalized/date";
-
 import { Button } from "@elmeragroup/fuse/button";
+import { Calendar } from "@elmeragroup/fuse/calendar";
 import { CheckboxGroup } from "@elmeragroup/fuse/checkbox";
 import { CheckboxCard } from "@elmeragroup/fuse/checkbox-card";
 import { Field } from "@elmeragroup/fuse/field";
 import { Meter } from "@elmeragroup/fuse/meter";
 import { PhoneNumberField } from "@elmeragroup/fuse/phone-number-field";
 import { Radio, RadioGroup } from "@elmeragroup/fuse/radio-group";
-import { Calendar } from "@elmeragroup/fuse/react-aria/calendar";
-import { UiProviders } from "@elmeragroup/fuse/react-aria/ui-providers";
 import { Slider } from "@elmeragroup/fuse/slider";
 import { Switch } from "@elmeragroup/fuse/switch";
 import { TextField } from "@elmeragroup/fuse/text-field";
@@ -67,22 +64,16 @@ export function BudgetTile(): ReactElement {
   );
 }
 
-/** A month of the date picker's calendar with one day selected. */
+/** A month of the date picker's calendar with one day selected, in the scene's locale. */
 export function CalendarTile(): ReactElement {
-  const locale = useVideoLocale();
-  const day = new CalendarDate(CALENDAR_DAY.year, CALENDAR_DAY.month, CALENDAR_DAY.day);
   return (
-    <UiProviders locale={locale} navigate={ignoreNavigation}>
-      {/* Fuse promotes the calendar card to its own layer, whose text Chrome rasterizes at a scale
-          it picks from the collage's push-in history, so a frame would draw it sharper or softer
-          depending on the frames before it. Painted with its plate, it draws the same on every
-          render. */}
-      <Calendar value={day} className="mx-auto will-change-auto" />
-    </UiProviders>
+    <Calendar.Root value={Temporal.PlainDate.from(CALENDAR_DAY)} className="mx-auto">
+      <Calendar.Header>
+        <Calendar.DecrementMonth />
+        <Calendar.VisibleRangeHeading />
+        <Calendar.IncrementMonth />
+      </Calendar.Header>
+      <Calendar.Months />
+    </Calendar.Root>
   );
-}
-
-/** The calendar renders no links, so nothing ever navigates. */
-function ignoreNavigation(): void {
-  // The provider requires a navigate callback; the video never follows a link.
 }

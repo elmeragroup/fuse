@@ -19,7 +19,6 @@
     "@elmeragroup/fuse": "workspace:*",
     "@fontsource/jetbrains-mono": "catalog:",
     "@fontsource/roboto": "catalog:",
-    "@internationalized/date": "catalog:",
     "@paper-design/shaders-react": "catalog:",
     "@remotion/bundler": "catalog:",
     "@remotion/cli": "catalog:",

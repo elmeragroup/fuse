@@ -46,7 +46,7 @@ export function SelectShot(): ReactElement {
       part="Select"
       brand="fkas"
       scheme="light"
-      variant="external"
+      identity="branded"
       target={trigger}
       actions={
         <>

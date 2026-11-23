@@ -32,7 +32,7 @@ export function CommandShot(): ReactElement {
       part="Command"
       brand="elma"
       scheme="dark"
-      variant="internal"
+      identity="neutral"
       target={trigger}
       actions={
         <Button ref={trigger} variant="outline">

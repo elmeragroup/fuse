@@ -498,6 +498,7 @@ describe("readiness", () => {
         <ReadyFrame
           clock={{ frame: ENTERING, fps: FPS }}
           hold={hold}
+          // oxlint-disable-next-line tests/no-fixed-delay -- the delay is the slow load under test, not a wait for a condition; a slow runner only lengthens it
           loadFonts={() => new Promise((resolve) => setTimeout(resolve, SLOW_FONTS_MS))}>
           <NewOrderSheet clock={{ frame: ENTERING, fps: FPS }} />
         </ReadyFrame>

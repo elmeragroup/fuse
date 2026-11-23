@@ -30,6 +30,6 @@ apps/docs/public/components/
 # Licensed music the video plays but must not redistribute; apps/video/AGENTS.md says where to get it
 apps/video/public/music/local/
 # Remotion output carries a copy of that music: renders (`out/`, also Studio's render queue) and
-# bundles (`build/`, the default of `remotion bundle`). Renders also wait on the licence gate in ISSUE_PLACEHOLDER.
+# bundles (`build/`, the default of `remotion bundle`). Renders also wait on the licence gate in #991.
 apps/video/out/
 apps/video/build/

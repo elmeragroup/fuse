@@ -12,9 +12,8 @@ import { render, unmountTree } from "./frame-harness";
 
 afterEach(unmountTree);
 
-// Unit under test: `index.css`'s heading font. Oracle: the family list Fuse's themes set as
-// `--font-sans`, whose first face the video bundles, written out here. Fuse's Fjordkraft themes
-// put Neo Sans ahead of it in `--font-heading`, in rules up to five attributes specific.
+// Unit under test: `index.css`'s heading font. Oracle: the family list the video sets as
+// `--font-sans`, whose first face it bundles, written out here.
 const BUNDLED_SANS = "Roboto, ui-sans-serif, system-ui, sans-serif";
 
 describe("heading font", () => {

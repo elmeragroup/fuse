@@ -108,7 +108,7 @@ function lanes(version: string) {
           "sidebar",
           300,
           "Sidebar",
-          { brand: "elma", scheme: "light", variant: "internal" },
+          { brand: "elma", scheme: "light", identity: "neutral" },
           <SidebarTile />
         ),
         plate("alert", 170, "Alert", { brand: "guen", scheme: "dark" }, <AlertTile />),
@@ -149,14 +149,14 @@ function lanes(version: string) {
           "table",
           340,
           "Table · Pagination",
-          { brand: "guen", scheme: "light", variant: "internal" },
+          { brand: "guen", scheme: "light", identity: "neutral" },
           <TableTile />
         ),
         plate(
           "command",
           320,
           "Command",
-          { brand: "elma", scheme: "dark", variant: "internal" },
+          { brand: "elma", scheme: "dark", identity: "neutral" },
           <CommandTile />
         ),
         plate("dialog", 290, "Dialog", { brand: "tkas", scheme: "dark" }, <DialogTile />),
@@ -187,7 +187,7 @@ function lanes(version: string) {
           "code",
           180,
           "Code · Kbd",
-          { brand: "elma", scheme: "dark", variant: "internal" },
+          { brand: "elma", scheme: "dark", identity: "neutral" },
           <CodeTile />
         ),
       ],

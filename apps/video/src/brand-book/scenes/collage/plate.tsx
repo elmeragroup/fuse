@@ -1,7 +1,7 @@
 import { createContext, use } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import type { BrandCode, ThemeVariant } from "@elmeragroup/fuse/theme";
+import type { BrandCode, ThemeIdentity } from "@elmeragroup/fuse/theme";
 import type { ResolvedColorScheme } from "@elmeragroup/fuse/theme-catalog";
 
 import { BrandMark } from "../../../brand/brand-mark";
@@ -16,7 +16,7 @@ export type PlateTheme = {
   readonly brand: BrandCode;
   readonly scheme: ResolvedColorScheme;
   /** External by default, as a customer page is. */
-  readonly variant?: ThemeVariant;
+  readonly identity?: ThemeIdentity;
 };
 
 /** Props for {@link ComponentPlate}. */
@@ -39,7 +39,7 @@ export function ComponentPlate({ name, theme, children }: ComponentPlateProps): 
     <SceneTheme
       brand={theme.brand}
       scheme={theme.scheme}
-      variant={theme.variant}
+      identity={theme.identity}
       className="relative flex size-full flex-col bg-background font-sans text-foreground">
       <div className="flex min-h-0 flex-1 flex-col justify-center px-5 pt-5">{children}</div>
       <div className="text-xs flex h-10 shrink-0 items-center justify-between px-5 text-muted-foreground">

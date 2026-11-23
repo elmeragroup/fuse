@@ -4,7 +4,7 @@ import { interpolate, useCurrentFrame } from "remotion";
 
 import { Card } from "@elmeragroup/fuse/card";
 import { Table } from "@elmeragroup/fuse/table";
-import type { BrandCode, ThemeVariant } from "@elmeragroup/fuse/theme";
+import type { BrandCode, ThemeIdentity } from "@elmeragroup/fuse/theme";
 import type { ResolvedColorScheme } from "@elmeragroup/fuse/theme-catalog";
 
 import { currencyOf } from "../../../brand/brand-market";
@@ -38,7 +38,7 @@ export type MontageShotProps = {
   readonly part: MontagePart;
   readonly brand: BrandCode;
   readonly scheme: ResolvedColorScheme;
-  readonly variant: ThemeVariant;
+  readonly identity: ThemeIdentity;
   /** The control the cursor clicks; the shot measures it to aim the cursor. */
   readonly target: RefObject<HTMLElement | null>;
   /** Controls in the app's header, such as the trigger. */
@@ -59,7 +59,7 @@ export function MontageShot({
   part,
   brand,
   scheme,
-  variant,
+  identity,
   target,
   actions,
   aside,
@@ -73,7 +73,7 @@ export function MontageShot({
     <SceneTheme
       brand={brand}
       scheme={scheme}
-      variant={variant}
+      identity={identity}
       className="absolute inset-0 bg-background font-sans text-foreground">
       <div
         className="rounded-2xl shadow-xl absolute top-10 left-30 flex h-140 w-255 flex-col overflow-hidden border border-border bg-card text-card-foreground"

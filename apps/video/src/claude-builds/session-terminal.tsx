@@ -42,14 +42,14 @@ const REST_WIDTH = splitWidths(CHAT_REST).chat;
 
 /**
  * The root element's attributes for a look, as the page stamps them: Fuse's theme attributes for
- * the brand's external theme, `data-theme="dark"` in the dark scheme, and Fuse's density
+ * the brand's branded theme, `data-theme="dark"` in the dark scheme, and Fuse's density
  * attribute. The layout file writes one attribute per line, in this order.
  */
 function rootAttributes(look: Look): readonly (readonly [string, string])[] {
   const scheme: readonly (readonly [string, string])[] =
     look.scheme === "dark" ? [["data-theme", "dark"]] : [];
   return [
-    ...Object.entries(themeAttributes(themeFor(look.brand, "external"))),
+    ...Object.entries(themeAttributes(themeFor(look.brand, "branded"))),
     ...scheme,
     ...Object.entries(densityAttributes(look.density)),
   ];

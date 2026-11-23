@@ -62,7 +62,7 @@ export function SheetShot(): ReactElement {
       part="Sheet"
       brand="guen"
       scheme="light"
-      variant="internal"
+      identity="neutral"
       target={trigger}
       actions={<Button ref={trigger}>{montage.sheet.title}</Button>}>
       <NewOrderSheet clock={clock} />

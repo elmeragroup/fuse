@@ -23,7 +23,7 @@ export function DialogShot(): ReactElement {
       part="Dialog"
       brand="tkas"
       scheme="dark"
-      variant="external"
+      identity="branded"
       target={trigger}
       actions={
         <Button ref={trigger} variant="outline">

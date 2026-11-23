@@ -7,8 +7,7 @@ import { Card } from "@elmeragroup/fuse/card";
 import { NumberField } from "@elmeragroup/fuse/number-field";
 import { Table } from "@elmeragroup/fuse/table";
 import { TextField } from "@elmeragroup/fuse/text-field";
-import { defaultDensityForVariant } from "@elmeragroup/fuse/theme";
-import type { ThemeVariant } from "@elmeragroup/fuse/theme";
+import type { ThemeIdentity } from "@elmeragroup/fuse/theme";
 
 import { currencyOf } from "../../brand/brand-market";
 import { mediumControlPx } from "../../brand/fuse-catalog";
@@ -18,20 +17,26 @@ import { CLAMP, ENTER } from "../../motion/easing";
 import { beats } from "../../music/beat-grid";
 import { Rise } from "../../primitives/rise";
 import { SceneFrame } from "../../primitives/scene-frame";
-import { SceneTheme } from "../../primitives/scene-theme";
+import { IDENTITY_DENSITY, SceneTheme } from "../../primitives/scene-theme";
 import { METER_NUMBER, ORDERS, READING_KWH } from "../../sample/customer-data";
 import { OrderRows } from "../../sample/order-rows";
 
 /** The brand both panels show; its market sets the orders' currency. */
 const BRAND = "elma";
 
-/** The panel's caption: the audience, then the `data-density` the variant deploys and its control height. */
-function PanelLabel({ variant }: { readonly variant: ThemeVariant }): ReactElement {
+/** The audience each identity's panel names: a neutral app is an internal tool, a branded one a customer app. */
+const AUDIENCE = { neutral: "internal", branded: "external" } as const satisfies Record<
+  ThemeIdentity,
+  string
+>;
+
+/** The panel's caption: the audience, then the `data-density` the identity ships at and its control height. */
+function PanelLabel({ identity }: { readonly identity: ThemeIdentity }): ReactElement {
   const { density: copy } = useCopy();
-  const density = defaultDensityForVariant(variant);
+  const density = IDENTITY_DENSITY[identity];
   return (
     <div className="flex items-baseline justify-between gap-4">
-      <span className="text-base font-semibold">{copy[variant]}</span>
+      <span className="text-base font-semibold">{copy[AUDIENCE[identity]]}</span>
       <span className="text-sm font-mono text-muted-foreground">
         data-density="{density}" · {copy.controls(mediumControlPx(density))}
       </span>
@@ -116,9 +121,9 @@ function DensitySceneInner(): ReactElement {
             <SceneTheme
               brand={BRAND}
               scheme="light"
-              variant="internal"
+              identity="neutral"
               className="flex flex-col gap-3 bg-transparent">
-              <PanelLabel variant="internal" />
+              <PanelLabel identity="neutral" />
               <OrdersPanel />
             </SceneTheme>
           </div>
@@ -128,7 +133,7 @@ function DensitySceneInner(): ReactElement {
               opacity: external * leave,
               translate: `${String((1 - external) * 80)}px 0`,
             }}>
-            <PanelLabel variant="external" />
+            <PanelLabel identity="branded" />
             <ReadingPanel />
           </div>
         </div>

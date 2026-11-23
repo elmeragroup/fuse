@@ -105,7 +105,7 @@ export type ScopeProps = {
 };
 
 /**
- * A light external stage in a brand, with Fuse's English locale, as a scene renders its content.
+ * A light branded stage in a brand, with Fuse's English locale, as a scene renders its content.
  *
  * @returns The themed stage.
  */

@@ -29,7 +29,7 @@ export function ToastShot(): ReactElement {
       part="Toast"
       brand="ngfi"
       scheme="light"
-      variant="external"
+      identity="branded"
       target={trigger}
       aside={
         <Card.Root>
