@@ -1,6 +1,5 @@
 import { createElement } from "react";
 
-import { NodeServices } from "@effect/platform-node";
 /**
  * Unit under test: the place `accordion-kit.ts` declares for the Accordion item set's `infodropdown`
  * caret, as the kit builds it in the rest state: an icon outside the trigger's auto layout placed by
@@ -27,9 +26,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { Accordion } from "../../../fuse/dist/accordion.js";
-import { openSweep } from "../../test/sweep-page.ts";
+import { openFusePage } from "../../test/fuse-page.ts";
 import { EVERY_MODE } from "../capture/page-modes.ts";
-import { locateFuseBuild, readPageAssets } from "../compare/page-assets.ts";
 import { ACCORDION_TRIGGER_TEXT } from "./accordion-kit.ts";
 import { buildComponentSets } from "./build-kit.ts";
 import type { BoxSpec, IconLayerSpec } from "./kit-spec.ts";
@@ -233,16 +231,9 @@ beforeAll(async () => {
           },
         ];
   });
-  const assets = await Effect.runPromise(
-    Effect.gen(function* () {
-      return yield* readPageAssets(yield* locateFuseBuild(), new Map());
-    }).pipe(Effect.provide(NodeServices.layer))
-  );
   browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 800, height: 600 } });
-  await openSweep(page, assets, sampleSlots());
-  // A mode switch would otherwise animate the caret and the trigger to their new sizes.
-  await page.addStyleTag({ content: "*{transition:none!important}" });
+  await openFusePage(page, { body: sampleSlots().join("\n") });
   measured = await measureEveryMode(page);
 }, 300_000);
 
