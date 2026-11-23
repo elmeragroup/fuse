@@ -229,7 +229,8 @@
  *    held it. Probes MV1 and MV2 on a private draft file the same day moved frames holding Roboto,
  *    which the run had not loaded, within a frame and on the page, and Figma took each move. The
  *    typings document no font rule for either method. So the fake refuses a font the test marks
- *    unavailable, loaded or not, with Figma's message, and moves a layer whose fonts load.
+ *    unavailable, loaded or not, with Figma's message, and moves a layer whose fonts load. A text
+ *    that holds such a font reads `hasMissingFont` true, as the typings describe it.
  */
 
 import { ownNumber, resolveNumber, resolveString } from "./modes.ts";

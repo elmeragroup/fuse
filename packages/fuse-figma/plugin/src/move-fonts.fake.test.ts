@@ -9,7 +9,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ComponentSetSpec, KitSpec, VariantSpec } from "../../src/components/kit-spec.ts";
-import { KIT } from "./button-kit-fixture.ts";
+import { KIT, LABEL, outerKit } from "./button-kit-fixture.ts";
 import { createFakeFigma } from "./fake-figma.ts";
 import type { FakeFigma } from "./fake-figma.ts";
 import { keyOf } from "./identity.ts";
@@ -195,7 +195,7 @@ describe("a move of a layer that holds a font Figma cannot load", () => {
   it("warns and keeps the order where two variants that hold one stand out of order", async () => {
     const file = await arranged(["sm", "lg"], ["lg", "md", "sm"]);
     const warning =
-      "Button: keeps its variants out of order, since Figma cannot load the fonts of size=sm (Neo Sans Medium), size=lg (Neo Sans Medium) and moves no layer that holds one";
+      "Button: keeps its variants out of order, since Figma cannot load the fonts of size=sm (Neo Sans Medium), size=lg (Neo Sans Medium)";
     const report = await reconcileKit(file.figma, kit, true);
     expect({
       order: order(await buttonSet(file)),
@@ -227,10 +227,147 @@ describe("a move of a layer that holds a font Figma cannot load", () => {
     page.appendChild(frame);
     file.reopen({ unavailableFonts: [{ family: "Neo Sans" }] });
     await reconcileKit(file.figma, kit, true);
-    const keys = order(await kitPage(file));
-    expect(keys.indexOf("docs/page/labels/button") < keys.indexOf("button")).toBe(true);
+    const keys = order(await kitPage(file)).filter(
+      (key) => key === "docs/page/labels/button" || key === "button"
+    );
+    expect(keys).toEqual(["docs/page/labels/button", "button"]);
     file.reopen({ unavailableFonts: [{ family: "Neo Sans" }] });
     expect((await reconcileKit(file.figma, kit, false)).changes).toEqual([]);
+  });
+});
+
+/**
+ * The nested kit: a Button set of sizes sm and md, and an Outer set of sizes sm and md, each Outer
+ * variant holding an instance of the md Button.
+ */
+function swappedKit(): KitSpec {
+  const base = outerKit(LABEL);
+  const [inner, outer] = base.componentSets;
+  if (inner === undefined || outer === undefined) {
+    throw new Error("the nested kit holds no Button and Outer sets");
+  }
+  const sizes = ["sm", "md"];
+  const [innerMd] = inner.variants;
+  const [outerMd] = outer.variants;
+  if (innerMd === undefined || outerMd === undefined) {
+    throw new Error("the nested kit's sets hold no variant");
+  }
+  return {
+    ...base,
+    componentSets: [
+      {
+        ...inner,
+        axes: [{ name: "size", values: sizes }],
+        variants: sizes.map((size) => ({ ...innerMd, key: `button/size=${size}`, properties: { size } })),
+      },
+      {
+        ...outer,
+        axes: [{ name: "size", values: sizes }],
+        variants: sizes.map((size) => ({ ...outerMd, key: `outer/size=${size}`, properties: { size } })),
+      },
+    ],
+  };
+}
+
+/**
+ * A file the nested kit was applied to, with the md Button pinned to `fkas`, so it and every Outer
+ * variant, through its instance, hold Neo Sans Medium, and the sm Outers' instances given in `swapped`
+ * pointed at the sm Button, which holds Roboto, as a designer might.
+ */
+async function nestedFile(swapped: readonly string[]) {
+  const nested = swappedKit();
+  const file = brandedFile();
+  await reconcileKit(file.figma, nested, true);
+  await file.figma.loadFontAsync(NEO_SANS);
+  const page = await kitPage(file);
+  const layer = (key: string): SceneNode => {
+    const found = page.children.find((node) => keyOf(node) === key);
+    if (found === undefined) {
+      throw new Error(`the kit page holds no ${key}`);
+    }
+    return found;
+  };
+  const setOf = (key: string): ComponentSetNode => {
+    const found = layer(key);
+    if (found.type !== "COMPONENT_SET") {
+      throw new Error(`${key} is no set`);
+    }
+    return found;
+  };
+  const member = (set: ComponentSetNode, key: string): ComponentNode => {
+    const found = set.children.find((node) => keyOf(node) === key);
+    if (found?.type !== "COMPONENT") {
+      throw new Error(`the set holds no ${key}`);
+    }
+    return found;
+  };
+  await brand(file, member(setOf("button"), "button/size=md"));
+  file.reopen();
+  await reconcileKit(file.figma, nested, true);
+  file.reopen();
+  await reconcileKit(file.figma, nested, true);
+  for (const key of swapped) {
+    const [instance] = member(setOf("outer"), key).children;
+    if (instance?.type !== "INSTANCE") {
+      throw new Error(`${key} holds no instance`);
+    }
+    instance.swapComponent(member(setOf("button"), "button/size=sm"));
+  }
+  return { file, nested, page, layer, setOf, member };
+}
+
+describe("a move of a layer that a write earlier in the run gives such a font", () => {
+  it("leaves the order the plan cannot restore any more, and the next Plan warns", async () => {
+    // Plan reads the sm Outer without Neo Sans, and Apply's swap back to the md Button gives it Neo
+    // Sans before the reorder runs.
+    const { file, nested, setOf, member } = await nestedFile(["outer/size=sm"]);
+    const outer = setOf("outer");
+    outer.insertChild(0, member(outer, "outer/size=md"));
+    file.reopen({ unavailableFonts: [{ family: "Neo Sans" }] });
+    await reconcileKit(file.figma, nested, true);
+    file.reopen({ unavailableFonts: [{ family: "Neo Sans" }] });
+    expect({
+      order: order(setOf("outer")),
+      plan: await reconcileKit(file.figma, nested, false),
+    }).toEqual({
+      order: ["outer/size=md", "outer/size=sm"],
+      plan: {
+        changes: [],
+        warnings: [
+          "Outer: keeps its variants out of order, since Figma cannot load the fonts of size=sm (Neo Sans Medium), size=md (Neo Sans Medium)",
+        ],
+      },
+    });
+  });
+
+  it("leaves a labels frame above its set where the swaps give the set one too", async () => {
+    // Plan reads the Outer set without Neo Sans and plans to move it above its labels frame, which
+    // holds a note in Neo Sans. Apply's swaps give the set Neo Sans before the placement runs.
+    const { file, nested, page, layer } = await nestedFile(["outer/size=sm", "outer/size=md"]);
+    const frame = layer("docs/page/labels/outer");
+    if (frame.type !== "FRAME") {
+      throw new Error("the Outer labels frame is no frame");
+    }
+    const note = file.figma.createText();
+    note.fontName = NEO_SANS;
+    note.characters = "Note";
+    frame.appendChild(note);
+    page.appendChild(frame);
+    file.reopen({ unavailableFonts: [{ family: "Neo Sans" }] });
+    await reconcileKit(file.figma, nested, true);
+    file.reopen({ unavailableFonts: [{ family: "Neo Sans" }] });
+    const plan = await reconcileKit(file.figma, nested, false);
+    expect({
+      order: order(await kitPage(file)).filter((key) => key === "docs/page/labels/outer" || key === "outer"),
+      changes: plan.changes,
+      warnings: plan.warnings.filter((line) => line.startsWith("Fuse components: keeps")),
+    }).toEqual({
+      order: ["outer", "docs/page/labels/outer"],
+      changes: [],
+      warnings: [
+        "Fuse components: keeps Outer labels above Outer, since Figma cannot load Neo Sans Medium in Outer labels or Neo Sans Medium in Outer",
+      ],
+    });
   });
 });
 

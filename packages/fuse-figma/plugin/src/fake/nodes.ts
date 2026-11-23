@@ -122,6 +122,7 @@ import {
   alignmentOf,
   bindTextRange,
   distinctFonts,
+  fontUnavailable,
   heldFonts,
   remeasure,
   requireFont,
@@ -1637,6 +1638,12 @@ function sharedFills(fills: readonly (readonly Paint[])[]): readonly Paint[] | P
 class FakeText extends FakeSceneNode {
   get type(): "TEXT" {
     return "TEXT";
+  }
+
+  /** Whether the text holds a font the machine cannot load (rule 69). */
+  get hasMissingFont(): boolean {
+    const state = live(this);
+    return heldFonts(state).some((font) => fontUnavailable(state.file, font));
   }
 
   /** The fills every character paints with, `figma.mixed` where the characters differ (rule 65). */
