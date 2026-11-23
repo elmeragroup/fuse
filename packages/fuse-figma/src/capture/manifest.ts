@@ -5,7 +5,8 @@
  * component cannot show and the Fuse or Base UI behavior that rules each out. For an open composite
  * it names the elements its cells measure and the placement props its component declares. It holds
  * no CSS knowledge: no classes, no selectors, no layout values, no facts and no omissions, since the
- * capture holds what the browser made of them.
+ * capture holds what the browser made of them. The one exception is the place Accordion item's
+ * `infodropdown` caret takes, which `accordion-kit.ts` declares (`declared-icon-place.ts`).
  *
  * Each manifest type below lists its fields, and {@link MANIFEST_FIELDS} lists the same fields by
  * kind, which the oracle test walks every manifest object against.
@@ -24,6 +25,7 @@ import type {
   PreviewLength,
 } from "../components/component-spec.ts";
 import type { Viewport } from "../components/css-values.ts";
+import type { DeclaredIconPlace } from "../components/declared-icon-place.ts";
 import type { AxisSpec, BooleanPropertySpec, IconWeight, SwapPropertySpec } from "../components/kit-spec.ts";
 
 /**
@@ -59,6 +61,8 @@ export type IconManifest = {
   readonly weight?: IconWeight;
   readonly swapProperty: string | undefined;
   readonly optional?: BooleanPropertySpec;
+  /** Where the icon sits outside its box's auto layout, as {@link IconSlot.placed} says. */
+  readonly placed?: DeclaredIconPlace;
 };
 
 /** What a box shows: its label, its icons per cell and its parts, in DOM order. */
@@ -237,36 +241,67 @@ export const MANIFEST_FIELDS = {
     "textProperty",
     "charactersFor",
   ],
-  icon: ["key", "name", "side", "direct", "dataIcon", "icon", "weight", "swapProperty", "optional"],
+  icon: ["key", "name", "side", "direct", "dataIcon", "icon", "weight", "swapProperty", "optional", "placed"],
 } as const satisfies Record<string, readonly string[]>;
 
-/** The definition the mapper walks for a manifest box's label and icons. */
-function boxDefinition(box: BoxManifest) {
+/**
+ * The definition the mapper walks for a manifest box's label and icons: the root of the set the key
+ * names where `part` is undefined, else the part of that key.
+ *
+ * @throws When an icon declares a place anywhere but the icon, the part and the variant's cells of
+ *   the set its declaration names, a defect in the kit module (`declared-icon-place.ts`).
+ */
+function boxDefinition(box: BoxManifest, set: string, part: string | undefined) {
   return {
     // A form control's label names no placement: the mapping takes it from the captured element.
     label: box.label,
-    iconsFor: (cell: Cell): readonly IconSlot[] => box.iconsFor(cell),
+    iconsFor: (cell: Cell): readonly IconSlot[] => {
+      const icons = box.iconsFor(cell);
+      for (const { key, icon, placed } of icons) {
+        const owned =
+          placed === undefined ||
+          (placed.set === set &&
+            placed.part === part &&
+            placed.icon === icon &&
+            placed.variant === cell.variant);
+        if (!owned) {
+          throw new Error(
+            `${set}: the ${icon} icon ${key} of ${part ?? "the root"} declares a place at variant ${cell.variant ?? "none"}, which only the ${placed.icon} icon of ${placed.set}'s ${placed.part} takes, in its ${placed.variant} cells`
+          );
+        }
+      }
+      return icons;
+    },
   };
 }
 
-/** The definition the mapper walks for a manifest part. */
-function partDefinition(part: PartManifest | InstanceManifest): PartDefinition | InstanceDefinition {
+/** The definition the mapper walks for a manifest part of the set the key names. */
+function partDefinition(
+  part: PartManifest | InstanceManifest,
+  set: string
+): PartDefinition | InstanceDefinition {
   if ("kind" in part) {
     return { ...part, of: manifestDefinition(part.of) };
   }
   const { parts, label: _label, iconsFor: _iconsFor, ...rest } = part;
-  const definition: PartDefinition = { ...rest, ...boxDefinition(part) };
-  return parts === undefined ? definition : { ...definition, parts: parts.map(partDefinition) };
+  const definition: PartDefinition = { ...rest, ...boxDefinition(part, set, part.key) };
+  return parts === undefined
+    ? definition
+    : { ...definition, parts: parts.map((each) => partDefinition(each, set)) };
 }
 
 /**
  * The definition the mapper walks for a manifest: the manifest's intent, with no classes, facts or
  * states, which the capture-backed cascade does not read. A host width given per cell becomes the
  * definition's `previewWidthFor`. An anchored composite's root clips nothing, since its popup's
- * shadow reaches past it.
+ * shadow reaches past it. Each box's `iconsFor(cell)` rejects an icon that declares its place
+ * (`declared-icon-place.ts`) on another set, in another part, as another icon, or in a cell of
+ * another variant.
  *
  * @param manifest - The manifest.
  * @returns The definition.
+ * @throws From a box's `iconsFor(cell)`, where an icon declares a place its declaration does not
+ *   own, a defect in the kit module.
  */
 export function manifestDefinition(manifest: SetManifest): ComponentDefinition {
   const {
@@ -281,7 +316,7 @@ export function manifestDefinition(manifest: SetManifest): ComponentDefinition {
     previewWidth,
     ...rest
   } = manifest;
-  const own: ComponentDefinition = { ...rest, ...boxDefinition(manifest) };
+  const own: ComponentDefinition = { ...rest, ...boxDefinition(manifest, manifest.key, undefined) };
   const plain: ComponentDefinition =
     previewWidth === undefined
       ? own
@@ -290,5 +325,7 @@ export function manifestDefinition(manifest: SetManifest): ComponentDefinition {
         : { ...own, previewWidthFor: previewWidth };
   const definition: ComponentDefinition =
     sideOffset === undefined ? plain : { ...plain, rootOverflow: "visible" };
-  return parts === undefined ? definition : { ...definition, parts: parts.map(partDefinition) };
+  return parts === undefined
+    ? definition
+    : { ...definition, parts: parts.map((part) => partDefinition(part, manifest.key)) };
 }

@@ -305,8 +305,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   {
     slug: "accordion",
     name: "Accordion",
-    // 2 variants at 3 radii, closed and open, in 4 states.
-    sets: [{ key: "accordion-item", name: "Accordion item", variants: 48, previewed: 48 }],
+    // 3 variants at 3 radii, closed and open, in 4 states.
+    sets: [{ key: "accordion-item", name: "Accordion item", variants: 72, previewed: 72 }],
   },
   {
     slug: "sidebar",

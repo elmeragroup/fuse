@@ -2017,9 +2017,19 @@ class CaptureBoxCascade implements BoxCascade {
     // around it draws no layer, and its box holds the `<svg>`'s margins too.
     const svg = found.at(-1);
     const place = svg === undefined ? undefined : this.#read.places.get(svg);
+    const [held] = found;
+    // The capture records a `::before` or `::after` only where it renders a box (`run-capture.ts`).
+    const beside =
+      at < 0 || box === undefined || held === undefined
+        ? undefined
+        : {
+            later: box.children.slice(box.children.indexOf(held) + 1).map(({ tag }) => tag),
+            generated: (["before", "after"] as const).filter((pseudo) => box.pseudo[pseudo] !== undefined),
+          };
     return {
       style,
       drawnAt: place === undefined ? undefined : { place, slot: svg?.attributes["data-slot"] },
+      beside,
     };
   }
 

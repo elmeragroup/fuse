@@ -10,6 +10,7 @@ import { KitUnmappable } from "./build-errors.ts";
 import type { CompiledUtilities } from "./consumer-build";
 import type { CoverageRow } from "./coverage";
 import type { ModeView, VariableIndex, Viewport } from "./css-values";
+import type { DeclaredIconPlace } from "./declared-icon-place";
 import type {
   AxisSpec,
   BooleanPropertySpec,
@@ -57,6 +58,11 @@ export type IconSlot = {
    * is on.
    */
   readonly optional?: BooleanPropertySpec;
+  /**
+   * Where the icon sits outside its box's auto layout, as its kit module declares it, absent for an
+   * icon the auto layout places. Only Accordion item's `infodropdown` caret has one.
+   */
+  readonly placed?: DeclaredIconPlace;
 };
 
 /**

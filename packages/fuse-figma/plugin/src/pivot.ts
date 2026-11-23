@@ -17,37 +17,11 @@ import { PIVOT_EDGES } from "../../src/components/kit-spec.ts";
 import type { PivotSpec, RotationSpec } from "../../src/components/kit-spec.ts";
 import { near, planScalar } from "./fields.ts";
 import type { Held, Run } from "./fields.ts";
+import { heldCentre, originFor } from "./layer-turn.ts";
+import type { Point } from "./layer-turn.ts";
 import { holderOf, planConstraints } from "./placing.ts";
 import { change } from "./plan.ts";
 import { settleInstances } from "./settle.ts";
-
-/** The cosine and sine of a turn in degrees, counterclockwise as Figma counts it. */
-function turnOf(degrees: number) {
-  const radians = (degrees * Math.PI) / 180;
-  return { cos: Math.cos(radians), sin: Math.sin(radians) };
-}
-
-/**
- * Where the transform's origin sits for a layer whose centre sits at a point: Figma's transform at a
- * turn `r` is `[[cos r, sin r, x], [-sin r, cos r, y]]`, so the centre of a `w` × `h` box is the origin
- * moved by `(cos r · w/2 + sin r · h/2, -sin r · w/2 + cos r · h/2)`.
- */
-function originFor(
-  centre: { readonly x: number; readonly y: number },
-  size: { readonly width: number; readonly height: number },
-  rotation: number
-) {
-  const { cos, sin } = turnOf(rotation);
-  const halfWidth = size.width / 2;
-  const halfHeight = size.height / 2;
-  return {
-    x: centre.x - (cos * halfWidth + sin * halfHeight),
-    y: centre.y - (-sin * halfWidth + cos * halfHeight),
-  };
-}
-
-/** A point in the parent's frame, in pixels from its top left corner. */
-type Point = { readonly x: number; readonly y: number };
 
 /** A parent's size. */
 type Size = { readonly width: number; readonly height: number };
@@ -60,17 +34,6 @@ function centreOf(spec: PivotSpec, size: Size): Point {
   const alongAt = alongLength / 2 + spec.along;
   const acrossAt = from === "start" ? spec.inset : acrossLength - spec.inset;
   return along === "horizontal" ? { x: alongAt, y: acrossAt } : { x: acrossAt, y: alongAt };
-}
-
-/** The layer's centre as it stands, from its origin, turn and size. */
-function heldCentre(frame: FrameNode): Point {
-  const { cos, sin } = turnOf(frame.rotation);
-  const halfWidth = frame.width / 2;
-  const halfHeight = frame.height / 2;
-  return {
-    x: frame.x + cos * halfWidth + sin * halfHeight,
-    y: frame.y - sin * halfWidth + cos * halfHeight,
-  };
 }
 
 /**
