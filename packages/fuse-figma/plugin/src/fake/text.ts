@@ -222,12 +222,21 @@
  *    underline color reads its variable's value in the text's modes and keeps its binding (RD14).
  *    The fake does not model `textDecorationStyle`, which a range holds too (RD1, RD10) and the
  *    plugin neither writes nor reads. The package README records the probes.
+ * 69. `appendChild` and `insertChild` refuse to move a layer whose texts hold a font Figma cannot
+ *    load. On 2026-11-23 Apply on the owner's file stopped with `in insertChild: unloaded font "Neo
+ *    Sans Medium". Please call figma.loadFontAsync({ family: "Neo Sans", style: "Medium" }) and
+ *    await the returned promise first.`, where the org has no Neo Sans (#525) and a branded heading
+ *    held it. Probes MV1 and MV2 on a private draft file the same day moved frames holding Roboto,
+ *    which the run had not loaded, within a frame and on the page, and Figma took each move. The
+ *    typings document no font rule for either method. So the fake refuses a font the test marks
+ *    unavailable, loaded or not, with Figma's message, and moves a layer whose fonts load.
  */
 
 import { ownNumber, resolveNumber, resolveString } from "./modes.ts";
 import { charactersOf, shownStyles } from "./overrides.ts";
 import { baseStyleOf, f32, SHARED_DATA_SEPARATOR, textLayerOf, write } from "./state.ts";
 import type { CharacterDecoration, CharacterStyle, FileState, NodeState } from "./state.ts";
+import { childrenOf } from "./tree.ts";
 import { alias, fileVariable, requireType } from "./variables.ts";
 
 export function fontKey(font: FontNameInput): string {
@@ -650,6 +659,26 @@ export function segmentBindings(style: CharacterStyle): NonNullable<StyledTextSe
     bound[field] = alias(id);
   }
   return bound;
+}
+
+/**
+ * Refuse to move a layer whose texts, its own included, hold a font Figma cannot load (rule 69).
+ *
+ * @param state - The layer a move carries.
+ * @param method - The method that moves it, for the message.
+ */
+export function requireMovableFonts(state: NodeState, method: string): void {
+  if (state.type === "TEXT") {
+    const font = heldFonts(state).find((each) => fontUnavailable(state.file, each));
+    if (font !== undefined) {
+      throw new Error(
+        `in ${method}: unloaded font "${font.family} ${font.style}". Please call figma.loadFontAsync({ family: "${font.family}", style: "${font.style}" }) and await the returned promise first.`
+      );
+    }
+  }
+  for (const child of childrenOf(state)) {
+    requireMovableFonts(child, method);
+  }
 }
 
 export function fontUnavailable(file: FileState, font: FontNameInput): boolean {

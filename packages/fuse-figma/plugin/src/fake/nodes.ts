@@ -125,6 +125,7 @@ import {
   heldFonts,
   remeasure,
   requireFont,
+  requireMovableFonts,
   requireHeldFonts,
   requireRange,
   holdStyles,
@@ -231,10 +232,12 @@ class FakePage extends FakeBaseNode {
   }
 
   appendChild(child: SceneNode): void {
+    requireMovableFonts(live(child), "appendChild");
     insert(live(this), live(child), undefined);
   }
 
   insertChild(index: number, child: SceneNode): void {
+    requireMovableFonts(live(child), "insertChild");
     insert(live(this), live(child), index);
   }
 
@@ -699,10 +702,12 @@ class FakeFrameLikeNode extends FakeSceneNode {
   }
 
   appendChild(child: SceneNode): void {
+    requireMovableFonts(live(child), "appendChild");
     insert(live(this), live(child), undefined);
   }
 
   insertChild(index: number, child: SceneNode): void {
+    requireMovableFonts(live(child), "insertChild");
     insert(live(this), live(child), index);
   }
 

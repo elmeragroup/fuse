@@ -18,6 +18,7 @@ import type {
 import { FileNotSynced, FontUnavailable } from "./errors.ts";
 import type { Run } from "./fields.ts";
 import { requirement } from "./plan.ts";
+import type { PlanRecorder } from "./plan.ts";
 import { currentRun } from "./services.ts";
 
 /** The inner variant an instance layer shows, and the TEXT properties of its set. */
@@ -277,4 +278,62 @@ export function fontLayers(
  */
 export function shownFace(run: Run, instance: InstanceNode, shown: TextLayerSpec): FontName {
   return fontFor(run, instance, shown);
+}
+
+/**
+ * Whether Figma can load each font, once per run. The run's requirements stand for the run, as
+ * every nested plan shares them.
+ */
+const loadable = new WeakMap<PlanRecorder["requirements"], Map<string, boolean>>();
+
+/**
+ * The first font a node's texts hold that Figma cannot load, the node's own text included, or
+ * undefined where it loads them all. Loading them here also leaves each loadable one loaded for
+ * the run.
+ *
+ * Figma refuses to move a layer that holds a font it has not loaded. On 2026-11-23 Apply on the
+ * owner's file stopped with `in insertChild: unloaded font "Neo Sans Medium". Please call
+ * figma.loadFontAsync({ family: "Neo Sans", style: "Medium" }) and await the returned promise
+ * first.` The org has no Neo Sans (#525), so `loadFontAsync` rejects it, and a branded heading
+ * bound to `font-heading` holds it as a missing font. Probes MV1 and MV2 on a private draft file
+ * the same day moved frames holding Roboto Medium and Regular, which the run had not loaded, with
+ * `insertChild` and `appendChild`, within a frame and on the page, and Figma took each move. The
+ * typings document no font rule for either method. So the refusal is for a font Figma cannot load,
+ * and the plan moves no layer that holds one (`planOwnedChildren`, `placePageContents`).
+ *
+ * @param run - The run.
+ * @param node - The layer a change would move.
+ * @returns The font, or undefined.
+ */
+export const unloadableFont = Effect.fnUntraced(function* (run: Run, node: SceneNode) {
+  let known = loadable.get(run.plan.requirements);
+  if (known === undefined) {
+    known = new Map();
+    loadable.set(run.plan.requirements, known);
+  }
+  for (const text of textsIn(node)) {
+    for (const font of heldFonts(run, text)) {
+      const key = `${font.family}\u0000${font.style}`;
+      let loads = known.get(key);
+      if (loads === undefined) {
+        loads = yield* Effect.tryPromise(() => run.figma.loadFontAsync(font)).pipe(
+          Effect.as(true),
+          Effect.orElseSucceed(() => false)
+        );
+        known.set(key, loads);
+      }
+      if (!loads) {
+        return font;
+      }
+    }
+  }
+  return undefined;
+});
+
+/** The text layers a layer holds, the layer itself included where it is one. */
+function textsIn(node: SceneNode): readonly TextNode[] {
+  if (node.type === "TEXT") {
+    return [node];
+  }
+  return "children" in node ? node.children.flatMap(textsIn) : [];
 }

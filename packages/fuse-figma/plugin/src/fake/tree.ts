@@ -179,8 +179,12 @@ export function insert(parent: NodeState, child: NodeState, index: number | unde
   if (index !== undefined && (index < 0 || index > parent.children.length)) {
     throw new Error(`Cannot insert at index ${index}: ${parent.id} holds ${parent.children.length} layers.`);
   }
+  // Figma counts the index among the children before the move, so a child that moves later lands
+  // before the child the index named (probe MV3).
+  const from = child.parent === parent ? parent.children.indexOf(child) : -1;
   detach(child);
-  const at = index === undefined ? parent.children.length : Math.min(index, parent.children.length);
+  const after = index !== undefined && from !== -1 && from < index ? index - 1 : index;
+  const at = after === undefined ? parent.children.length : Math.min(after, parent.children.length);
   parent.children.splice(at, 0, child);
   child.parent = parent;
   write(parent, `insert ${child.id} at ${at}`);
