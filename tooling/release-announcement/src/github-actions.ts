@@ -8,8 +8,13 @@
  */
 
 import { NodeRuntime } from "@effect/platform-node";
-import { Cause, Config, Console, Effect, FileSystem, Schema } from "effect";
-import { SecureRandom } from "effect/crypto";
+import * as Cause from "effect/Cause";
+import * as Config from "effect/Config";
+import * as Console from "effect/Console";
+import * as SecureRandom from "effect/crypto/SecureRandom";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as Schema from "effect/Schema";
 
 /** An annotation's level. */
 type AnnotationLevel = "notice" | "warning" | "error";

@@ -11,9 +11,17 @@
  * would end past it is not begun, and an attempt still running at it is stopped.
  */
 
-import { Clock, Config, Duration, Effect, Option, Result, Schedule, Schema } from "effect";
-import { Headers } from "effect/http";
-import type { HttpClientError, HttpClientResponse } from "effect/http";
+import * as Clock from "effect/Clock";
+import * as Config from "effect/Config";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Headers from "effect/http/Headers";
+import type * as HttpClientError from "effect/http/HttpClientError";
+import type * as HttpClientResponse from "effect/http/HttpClientResponse";
+import * as Option from "effect/Option";
+import * as Result from "effect/Result";
+import * as Schedule from "effect/Schedule";
+import * as Schema from "effect/Schema";
 
 /** Retries after the first attempt. */
 const RETRIES = 3;
@@ -88,7 +96,7 @@ export function describe(failure: ReadFailure): string {
 /** GitHub's `x-ratelimit-reset`: epoch seconds, written as whole digits. */
 const ResetSeconds = Schema.String.pipe(
   Schema.check(Schema.isPattern(/^\d+$/u)),
-  Schema.decodeTo(Schema.NumberFromString)
+  Schema.decodeTo(Schema.FiniteFromString)
 );
 
 /**

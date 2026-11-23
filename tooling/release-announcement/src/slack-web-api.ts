@@ -17,10 +17,16 @@
  * error code, such as `not_in_channel`, `missing_scope` or `invalid_auth`.
  */
 
-import { DateTime, Effect, Layer, Option, Schema, Stream } from "effect";
-import type { Redacted } from "effect";
-import { HttpClient, HttpClientRequest } from "effect/http";
-import type { HttpClientResponse } from "effect/http";
+import * as DateTime from "effect/DateTime";
+import * as Effect from "effect/Effect";
+import * as HttpClient from "effect/http/HttpClient";
+import * as HttpClientRequest from "effect/http/HttpClientRequest";
+import type * as HttpClientResponse from "effect/http/HttpClientResponse";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import type * as Redacted from "effect/Redacted";
+import * as Schema from "effect/Schema";
+import * as Stream from "effect/Stream";
 
 import { baseUrlSetting, PathSegment, under } from "./addresses.ts";
 import * as Announcement from "./announcement.ts";

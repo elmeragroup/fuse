@@ -1,3 +1,11 @@
 {
-  "extends": "@elmeragroup/typescript-config/base.json"
+  "extends": "@elmeragroup/typescript-config/base.json",
+  // The root program holds every file no workspace tsconfig includes. Type-aware lint reads a file with the options of
+  // the program that holds it, so the `.mjs` and `.js` files (the policy tests, `plopfile.mjs`) need `allowJs` to get
+  // the Effect preset's options in `lint:effect`.
+  "compilerOptions": { "allowJs": true },
+  // Build output is not source, and a build beside lint rewrites it mid-read. This `exclude` replaces the base's, which
+  // names only `node_modules`. The default `**/*` include already skips `node_modules` and dot-directories, so only
+  // `dist` needs naming.
+  "exclude": ["**/dist"]
 }

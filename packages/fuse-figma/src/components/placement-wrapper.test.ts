@@ -10,7 +10,7 @@
  * measured no other shape, so an instance a mode resizes at the parent's bottom or on both axes keeps
  * no place.
  */
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { planPlacement, readPlacement } from "./absolute-placement.ts";

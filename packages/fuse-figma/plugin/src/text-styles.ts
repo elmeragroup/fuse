@@ -23,7 +23,7 @@
  * it as missing where the machine lacks it, as it does for a kit label.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { FONT_WEIGHT_STYLES, TEXT_STYLE_KEY_PREFIX } from "../../src/components/kit-spec.ts";
 import type { LineHeightSpec, TextStyleSpec, VariableRef } from "../../src/components/kit-spec.ts";

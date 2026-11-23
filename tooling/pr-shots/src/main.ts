@@ -5,7 +5,7 @@
  */
 
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { runCli } from "./cli.ts";
 

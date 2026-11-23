@@ -1,7 +1,15 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Clock, ConfigProvider, Context, Duration, Effect, Fiber, Layer, Schema } from "effect";
-import { HttpClient, HttpClientResponse } from "effect/http";
-import { TestClock } from "effect/testing";
+import * as Clock from "effect/Clock";
+import * as ConfigProvider from "effect/ConfigProvider";
+import * as Context from "effect/Context";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
+import * as HttpClient from "effect/http/HttpClient";
+import * as HttpClientResponse from "effect/http/HttpClientResponse";
+import * as Layer from "effect/Layer";
+import * as Schema from "effect/Schema";
+import * as TestClock from "effect/testing/TestClock";
 
 import { AssociatedPulls, CommitSha, PullsUnavailable } from "../src/canary-decision.ts";
 import * as GitHubPulls from "../src/github-pulls.ts";
@@ -13,7 +21,7 @@ import * as GitHubPulls from "../src/github-pulls.ts";
 // wait at least a minute before retrying, and exponentially longer while it continues. A server
 // error is no rate limit, so it keeps a short backoff.
 
-const SHA = Schema.decodeUnknownSync(CommitSha)("b".repeat(40));
+const SHA = Schema.decodeSync(CommitSha)("b".repeat(40));
 
 /** GitHub's answer once it recovers: the commit's PR, opted out. */
 const HEALTHY = JSON.stringify([
@@ -25,39 +33,38 @@ const HEALTHY = JSON.stringify([
  * wait) to every request made before `healthyAt` of virtual time, and the healthy list after it.
  * Returns the running lookup and the virtual times of the requests it has made so far.
  */
-const lookupAgainst = (
+const lookupAgainst = Effect.fnUntraced(function* (
   status: number,
   healthyAt: Duration.Input,
   headers: Readonly<Record<string, string>> = {}
-) =>
-  Effect.gen(function* () {
-    const requests: number[] = [];
-    const client = HttpClient.make((request) =>
-      Effect.gen(function* () {
-        const now = yield* Clock.currentTimeMillis;
-        requests.push(now);
-        const healthy = now >= Duration.toMillis(Duration.fromInputUnsafe(healthyAt));
-        return HttpClientResponse.fromWeb(
-          request,
-          healthy ? new Response(HEALTHY, { status: 200 }) : new Response(null, { status, headers })
-        );
-      })
-    );
-    const pulls = yield* Layer.build(
-      GitHubPulls.layer.pipe(
-        Layer.provide(Layer.succeed(HttpClient.HttpClient, client)),
-        Layer.provide(
-          ConfigProvider.layer(
-            ConfigProvider.fromUnknown({ GITHUB_REPOSITORY: "elmeragroup/fuse", GH_TOKEN: "test-token" })
-          )
+) {
+  const requests: number[] = [];
+  const client = HttpClient.make((request) =>
+    Effect.gen(function* () {
+      const now = yield* Clock.currentTimeMillis;
+      requests.push(now);
+      const healthy = now >= Duration.toMillis(Duration.fromInputUnsafe(healthyAt));
+      return HttpClientResponse.fromWeb(
+        request,
+        healthy ? new Response(HEALTHY, { status: 200 }) : new Response(null, { status, headers })
+      );
+    })
+  );
+  const pulls = yield* Layer.build(
+    GitHubPulls.layer.pipe(
+      Layer.provide(Layer.succeed(HttpClient.HttpClient, client)),
+      Layer.provide(
+        ConfigProvider.layer(
+          ConfigProvider.fromUnknown({ GITHUB_REPOSITORY: "elmeragroup/fuse", GH_TOKEN: "test-token" })
         )
       )
-    );
-    const lookup = yield* Effect.forkChild(Context.get(pulls, AssociatedPulls).of(SHA));
-    // Let the first attempt run at the current virtual time.
-    yield* TestClock.adjust(0);
-    return { lookup, requests };
-  });
+    )
+  );
+  const lookup = yield* Effect.forkChild(Context.get(pulls, AssociatedPulls).of(SHA));
+  // Let the first attempt run at the current virtual time.
+  yield* TestClock.adjust(0);
+  return { lookup, requests };
+});
 
 /** The virtual times, in seconds, of the requests made so far. */
 const seconds = (requests: ReadonlyArray<number>) => requests.map((millis) => millis / 1000);

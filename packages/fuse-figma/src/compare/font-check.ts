@@ -2,7 +2,7 @@
  * Whether the cells' text draws in a face the compare page loaded. The page reports each text
  * element's weight and font-family stack, and every face it loaded.
  */
-import { Result } from "effect";
+import * as Result from "effect/Result";
 
 /** The cells' text uses a family the page has no loaded face for. */
 export class FontNotLoaded extends Error {

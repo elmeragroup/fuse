@@ -1,5 +1,6 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Effect, Runtime } from "effect";
+import * as Effect from "effect/Effect";
+import * as Runtime from "effect/Runtime";
 import { isDeepStrictEqual } from "node:util";
 
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";

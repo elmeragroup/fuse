@@ -13,7 +13,8 @@
  * captures the services it reads when the pass records it, and provides its own recorder.
  */
 
-import { Context, Effect } from "effect";
+import * as Context from "effect/Context";
+import * as Effect from "effect/Effect";
 
 import type { PluginError } from "./errors.ts";
 

@@ -1,4 +1,6 @@
-import { Option, Result, Schema } from "effect";
+import * as Option from "effect/Option";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
 
 import { parseBaseUrl, parseRepository, PathSegment, under } from "../src/addresses.ts";
@@ -8,7 +10,7 @@ import { parseBaseUrl, parseRepository, PathSegment, under } from "../src/addres
 // segments it removes), and the policy for a base URL: https, or http to a loopback host, with no
 // credentials, query or fragment and a port from 1 to 65535.
 
-const segment = (text: string) => Schema.decodeUnknownSync(PathSegment)(text);
+const segment = (text: string) => Schema.decodeSync(PathSegment)(text);
 
 describe("a base URL setting", () => {
   it.each([
@@ -83,7 +85,7 @@ describe("a URL under a base", () => {
   it.each(["..", ".", "%2e%2e", "%2E.", "a/b", "a\\b", "a?b", "a#b", "", "a b"])(
     "has no segment %j, which the parser would remove, split or end the path at",
     (text) => {
-      expect(Option.isNone(Schema.decodeUnknownOption(PathSegment)(text))).toBe(true);
+      expect(Option.isNone(Schema.decodeOption(PathSegment)(text))).toBe(true);
     }
   );
 });

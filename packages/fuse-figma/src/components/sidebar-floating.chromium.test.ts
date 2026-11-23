@@ -27,7 +27,7 @@ import { createElement } from "react";
 import type { ReactElement } from "react";
 
 import { NodeServices } from "@effect/platform-node";
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";

@@ -11,7 +11,11 @@
  */
 
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Console, Data, Effect, FileSystem, Runtime, Schema } from "effect";
+import * as Console from "effect/Console";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as Runtime from "effect/Runtime";
+import * as Schema from "effect/Schema";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
@@ -26,13 +30,15 @@ const pluginDir = fileURLToPath(new URL("../plugin/", import.meta.url));
 const USAGE = "Usage: figma:plugin [--sets <set>,<set>…]";
 
 /** The command line asks for something the script does not run, such as an unknown flag. */
-class ArgumentsInvalid extends Data.TaggedError("ArgumentsInvalid")<{ readonly message: string }> {}
+class ArgumentsInvalid extends Schema.TaggedError<ArgumentsInvalid>()("ArgumentsInvalid", {
+  message: Schema.String,
+}) {}
 
 /**
  * The build stopped, and what it printed says why. The runtime exits 1 and prints nothing more, as
  * `compare.ts`'s does.
  */
-class BuildStopped extends Data.TaggedError("BuildStopped") {
+class BuildStopped extends Schema.TaggedError<BuildStopped>()("BuildStopped", {}) {
   override readonly [Runtime.errorReported] = false;
   override readonly [Runtime.errorExitCode] = 1;
 }
@@ -64,6 +70,9 @@ const Manifest = Schema.Struct({
 });
 
 const parseManifest = Schema.decodeUnknownResult(Schema.fromJsonString(Manifest));
+
+/** A value as `JSON.stringify(value, null, 2)` writes it. */
+const encodeJsonFile = Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown, { space: 2 }));
 
 /** The probe's manifest: the plugin's, under a name and id of its own, beside its own bundle and UI. */
 const probeManifest = (manifest: typeof Manifest.Type): typeof Manifest.Type => ({
@@ -106,12 +115,12 @@ const program = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const { spec, coverage } = yield* named === undefined ? buildKit() : buildProbe(new Set(named));
   yield* fs.makeDirectory(output.dir, { recursive: true });
-  yield* fs.writeFileString(`${output.dir}spec.json`, `${JSON.stringify(spec, null, 2)}\n`);
+  yield* fs.writeFileString(`${output.dir}spec.json`, `${yield* encodeJsonFile(spec)}\n`);
   yield* fs.writeFileString(`${output.dir}coverage.md`, renderCoverage(coverage));
   yield* fs.writeFileString(`${output.dir}code.js`, yield* bundlePlugin(spec));
   if (output === PROBE) {
     const manifest = yield* Effect.fromResult(parseManifest(yield* fs.readFileString(WHOLE.manifest)));
-    yield* fs.writeFileString(output.manifest, `${JSON.stringify(probeManifest(manifest), null, 2)}\n`);
+    yield* fs.writeFileString(output.manifest, `${yield* encodeJsonFile(probeManifest(manifest))}\n`);
     yield* fs.copyFile(`${pluginDir}ui.html`, `${output.dir}ui.html`);
   }
   for (const line of summary(output, spec, coverage)) {

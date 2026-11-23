@@ -3,7 +3,7 @@
  * posts a request string, and the main thread answers with a `UiMessage`.
  */
 
-import { Result } from "effect";
+import * as Result from "effect/Result";
 
 import type { KitSnapshot } from "../../src/compare/snapshot.ts";
 import { UnknownRequest } from "./errors.ts";

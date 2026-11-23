@@ -2,6 +2,11 @@
   "$schema": "https://turbo.build/schema.json",
   "ui": "stream",
   "globalEnv": ["NODE_ENV"],
+  // Scripts that start a program read PATH, as test/effect-lint-config.test.mjs does when it puts the
+  // workspace's bin first. Turbo passes PATH to every task anyway; naming it here declares that read
+  // for turbo/no-undeclared-env-vars, which sees only global entries for root tasks, and keeps it out
+  // of every hash.
+  "globalPassThroughEnv": ["PATH"],
   "tasks": {
     // What oxlint's type-aware rules read besides the source tree; without it they resolve imports to
     // error types and report every member access on them. A task with no script, so `pnpm lint` and
@@ -16,6 +21,13 @@
     "//#lint:oxlint": {
       "dependsOn": ["//#lint:prerequisites"],
       "inputs": ["$TURBO_DEFAULT$"]
+    },
+    // The Effect pass (`.oxlintrc.effect.json`, rules from tooling/typescript/effect.json). Uncached: it is
+    // type-aware over the whole workspace and the built declarations it imports, so no input list can name
+    // what it reads, and a cache hit on a stale list would replay a green run.
+    "//#lint:effect": {
+      "dependsOn": ["//#lint:prerequisites"],
+      "cache": false
     },
     // The policy suites read files across the workspace, so a complete input list would have
     // to enumerate every source tree. Caching this task would mean maintaining a fragile,
@@ -117,6 +129,7 @@
     "check": {
       "dependsOn": [
         "//#lint:oxlint",
+        "//#lint:effect",
         "//#test:repo-policy",
         "//#type-check:scripts",
         "type-check",

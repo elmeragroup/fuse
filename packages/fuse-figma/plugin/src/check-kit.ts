@@ -6,7 +6,7 @@
  * node plans the node's contents when it runs, so those plans can then look up nothing that fails.
  */
 
-import { Result } from "effect";
+import * as Result from "effect/Result";
 
 import { cornerLengths } from "../../src/components/corner-spec.ts";
 import { checkKitSpec } from "../../src/components/kit-check.ts";

@@ -19,7 +19,7 @@ import { createElement } from "react";
  * places, sizes or turns the caret apart from Chromium, or leaves it in the trigger's flow, and where
  * Accordion's CSS moves, turns or covers the caret in any mode.
  */
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";

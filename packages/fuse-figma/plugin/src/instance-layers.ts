@@ -23,7 +23,7 @@
  * The plan reads an instance in stages, each against what the stage before leaves (`planInstance`).
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import {
   glyphRanges,

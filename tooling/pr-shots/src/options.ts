@@ -4,7 +4,11 @@
  * without touching the network, the disk or a browser.
  */
 
-import { Effect, Result, Schema, SchemaGetter, SchemaIssue } from "effect";
+import * as Effect from "effect/Effect";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
+import * as SchemaGetter from "effect/SchemaGetter";
+import * as SchemaIssue from "effect/SchemaIssue";
 import type { Page } from "playwright";
 
 import { THEME_IDENTITIES, THEME_SEGMENTS } from "@elmeragroup/fuse/theme-catalog";
@@ -365,12 +369,12 @@ export const ClickStepFromText = fromText(ClickStep, (input) => {
 });
 
 /** A whole number of 0 or more. */
-export const Count = fromText(Schema.Number, (input) =>
+export const Count = fromText(Schema.Finite, (input) =>
   /^\d+$/.test(input) ? Result.succeed(Number(input)) : Result.fail("a whole number of 0 or more")
 );
 
 /** A device scale factor above 0 and at most 4. */
-export const Scale = fromText(Schema.Number, (input) => {
+export const Scale = fromText(Schema.Finite, (input) => {
   const scale = Number(input);
   return input.trim() === "" || !Number.isFinite(scale) || scale <= 0 || scale > 4
     ? Result.fail("a number above 0 and at most 4")
@@ -378,7 +382,7 @@ export const Scale = fromText(Schema.Number, (input) => {
 });
 
 /** pixelmatch's matching threshold, from 0 to 1. */
-export const Threshold = fromText(Schema.Number, (input) => {
+export const Threshold = fromText(Schema.Finite, (input) => {
   const threshold = Number(input);
   return input.trim() === "" || !Number.isFinite(threshold) || threshold < 0 || threshold > 1
     ? Result.fail("a number from 0 to 1")
@@ -386,7 +390,7 @@ export const Threshold = fromText(Schema.Number, (input) => {
 });
 
 /** A pull request number. */
-export const PullRequest = fromText(Schema.Number, (input) =>
+export const PullRequest = fromText(Schema.Finite, (input) =>
   /^[1-9]\d*$/.test(input) ? Result.succeed(Number(input)) : Result.fail("a pull request number, such as 182")
 );
 

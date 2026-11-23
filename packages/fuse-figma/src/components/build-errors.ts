@@ -8,7 +8,8 @@
  * and returns it as a `Result`.
  */
 
-import { Data, Effect } from "effect";
+import * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
 
 import type { KitContradiction } from "./kit-check.ts";
 
@@ -18,36 +19,36 @@ import type { KitContradiction } from "./kit-check.ts";
  * inside the CSS cascade and the part mappers, class constructors and per-cell callbacks among
  * them, and `caughtUnmappable` in `build-kit.ts` returns it as a `Result`, so `buildKit` fails with it.
  */
-export class KitUnmappable extends Data.TaggedError("KitUnmappable")<{
-  readonly message: string;
-}> {}
+export class KitUnmappable extends Schema.TaggedError<KitUnmappable>()("KitUnmappable", {
+  message: Schema.String,
+}) {}
 
 /**
  * A Fuse source the build reads lacks what the kit needs: the variable set, the theme catalog,
  * `fuse.css`, the icon roster or a component's docs page.
  */
-export class KitSourceInvalid extends Data.TaggedError("KitSourceInvalid")<{
-  readonly message: string;
-}> {}
+export class KitSourceInvalid extends Schema.TaggedError<KitSourceInvalid>()("KitSourceInvalid", {
+  message: Schema.String,
+}) {}
 
 /**
  * A tool the build runs, Tailwind or rolldown, failed for a reason the build does not classify, or
  * the file system refused the build's temporary directory.
  */
-export class KitToolFailed extends Data.TaggedError("KitToolFailed")<{
-  readonly message: string;
-  readonly tool: "tailwindcss" | "rolldown" | "file system";
-  readonly cause: unknown;
-}> {}
+export class KitToolFailed extends Schema.TaggedError<KitToolFailed>()("KitToolFailed", {
+  message: Schema.String,
+  tool: Schema.Literals(["tailwindcss", "rolldown", "file system"]),
+  cause: Schema.Unknown,
+}) {}
 
 /** A failure `buildKit` reports. */
 export type KitBuildError = KitContradiction | KitUnmappable | KitSourceInvalid | KitToolFailed;
 
 /** A probe, `figma:plugin --sets`, names a set the registry does not hold. */
-export class ProbeSetUnknown extends Data.TaggedError("ProbeSetUnknown")<{
-  readonly message: string;
-  readonly set: string;
-}> {}
+export class ProbeSetUnknown extends Schema.TaggedError<ProbeSetUnknown>()("ProbeSetUnknown", {
+  message: Schema.String,
+  set: Schema.String,
+}) {}
 
 /**
  * Run a tool's promise as an Effect. A `KitSourceInvalid` the tool's callbacks threw keeps its
@@ -65,7 +66,7 @@ export function runTool<A>(
   return Effect.tryPromise({
     try: run,
     catch: (cause) =>
-      cause instanceof KitSourceInvalid
+      Schema.is(KitSourceInvalid)(cause)
         ? cause
         : new KitToolFailed({ message: cause instanceof Error ? cause.message : String(cause), tool, cause }),
   });

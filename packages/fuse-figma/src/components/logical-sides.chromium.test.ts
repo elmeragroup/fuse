@@ -18,7 +18,7 @@
 import { createElement as h } from "react";
 import type { CSSProperties, ReactElement } from "react";
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { chip, part } from "../../test/capture-fixtures.ts";
@@ -455,11 +455,7 @@ type Reading = {
 };
 
 /** Capture and build a row's box on a browser, and read the edges Chromium computes for it in every mode. */
-function read(
-  browser: CompareBrowser,
-  row: Row,
-  compiled: FixtureCompile["compiled"]
-): Effect.Effect<Reading, unknown> {
+function read(browser: CompareBrowser, row: Row, compiled: FixtureCompile["compiled"]) {
   const renderer = rendererOf(row);
   const target = chip();
   return Effect.gen(function* () {
@@ -499,7 +495,7 @@ function read(
       variables: makeVariableIndex([]),
     });
     const root = built?.componentSet.variants[0]?.root;
-    return {
+    const reading: Reading = {
       drawn: root === undefined ? undefined : row.edges.drawn(root),
       notes: (built?.coverage ?? [])
         .filter((each) => row.edges.declares(each.property))
@@ -509,6 +505,7 @@ function read(
       chromium: chromium.readings.map((each) => JSON.parse(each) as readonly number[]),
       flows: chromium.flows,
     };
+    return reading;
   });
 }
 
@@ -525,8 +522,10 @@ async function readAll(rows: readonly Row[]): Promise<ReadonlyMap<Row, Reading>>
       Effect.scoped(
         Effect.gen(function* () {
           const browser = yield* CompareBrowser.launch({ ...ASSETS, hostCss });
-          return yield* Effect.forEach(owned, (row) =>
-            read(browser, row, compiled).pipe(Effect.map((reading) => [row, reading] as const))
+          return yield* Effect.forEach(
+            owned,
+            (row) => read(browser, row, compiled).pipe(Effect.map((reading) => [row, reading] as const)),
+            { concurrency: 1 }
           );
         })
       ),

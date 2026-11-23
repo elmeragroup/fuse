@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Effect",
+  // The Effect language service (@effect/tsgo). base.json extends this file, so every workspace tsconfig carries the
+  // same options. `pnpm lint:effect` runs these rules through the Effect-patched oxlint, which reads the options below
+  // from each linted file's tsconfig. .oxlintrc.effect.json lists every rule this file sets to error, and
+  // test/effect-lint-config.test.mjs holds the two lists equal. An editor started on `effect-tsgo tsrs --lsp` reads the
+  // same file (CONTRIBUTING.md). The type-check stays on stock tsrs, which ignores the plugin. Every rule is error or
+  // off. `preferSchemaOverJson` stays unnamed: 0.70.0 deprecates it, and naming it, even off, raises a warning.
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        // Leaves suggestion-level Effect diagnostics out of the `tsc` CLI output. Every rule here is error or off.
+        "includeSuggestionsInTsc": false,
+        // `import * as Effect from "effect/Effect"`, one module per namespace, the form preferNamespaceImport holds.
+        "namespaceImportPackages": ["effect"],
+        // The editor's effectFnOpportunity fixes. Scripts name their operations with Effect.fn("name"), and the Figma
+        // plugin's per-node helpers use Effect.fnUntraced, which opens no span.
+        "effectFn": ["span", "untraced"],
+        // The unstable modules Fuse's scripts and tooling build on: the CLI, HTTP, child-process, file-system and
+        // terminal services, the platform layers that provide them, the test kit, and Stream's byte limit.
+        "allowedUnstableApis": [
+          "effect/cli",
+          "effect/http",
+          "effect/process",
+          "effect/testing",
+          "effect/crypto",
+          "effect/FileSystem",
+          "effect/Path",
+          "effect/PlatformError",
+          "effect/Terminal",
+          "effect/Stdio",
+          "effect/Arbitrary",
+          "effect/Stream#limitBytes",
+          "@effect/platform-node",
+          "@effect/platform-node-shared",
+          "@effect/vitest"
+        ],
+        "diagnosticSeverity": {
+          // Correctness.
+
+          "anyUnknownInErrorContext": "error",
+          "classSelfMismatch": "error",
+          "duplicatePackage": "error",
+          "effectFnImplicitAny": "error",
+          "errorPayloadShadowsName": "error",
+          "experimentalApiUsage": "error",
+          "floatingEffect": "error",
+          "floatingEffectInVitest": "error",
+          "genericEffectServices": "error",
+          "missingEffectContext": "error",
+          "missingEffectError": "error",
+          "missingEffectServiceDependency": "error",
+          "missingLayerContext": "error",
+          "missingReturnYieldStar": "error",
+          "missingStarInYieldEffectGen": "error",
+          "nonObjectEffectServiceType": "error",
+          "obsoleteMatchImport": "error",
+          "obsoleteSchemaImport": "error",
+          "outdatedApi": "error",
+          "overriddenSchemaConstructor": "error",
+          "promiseInEffectSuccess": "error",
+          "schemaClassObjectLiteral": "error",
+          "schemaLiteralNonFinite": "error",
+          "schemaOpaqueInstanceMember": "error",
+          "unsafeEffectTypeAssertion": "error",
+          "unstableApiUsage": "error",
+
+          // Fuse's errors are told apart by `_tag`, which every catchTag and Match reads, so a nominal brand on each
+          // Schema class adds a type argument and catches no mix-up the tag does not.
+          "schemaClassMissingBrand": "off",
+
+          // Anti-patterns.
+
+          "catchUnfailableEffect": "error",
+          "effectFnIife": "error",
+          "effectGenUsesAdapter": "error",
+          "effectInFailure": "error",
+          "effectInVoidSuccess": "error",
+          "effectTryWithoutCatch": "error",
+          "globalErrorInEffectCatch": "error",
+          "globalErrorInEffectFailure": "error",
+          "instanceOfSchema": "error",
+          "layerMergeAllWithDependencies": "error",
+          "lazyEffect": "error",
+          "lazyPromiseInEffectSync": "error",
+          "leakingRequirements": "error",
+          "multipleEffectProvide": "error",
+          "preferUnsafeConstructor": "error",
+          "returnEffectInGen": "error",
+          "runEffectInsideEffect": "error",
+          "schemaSyncInEffect": "error",
+          "scopeInLayerEffect": "error",
+          "tryCatchInEffectGen": "error",
+          "unknownInEffectCatch": "error",
+
+          // Each script's main provides the platform layers, each test provides its fakes, and the plugin's
+          // `reconcile` provides the file's variables for one run. The rule takes every such site for a library call.
+          "strictEffectProvide": "off",
+
+          // Effect-native APIs inside Effect code. Each *InEffect rule reports only inside an Effect generator or
+          // Effect.fn.
+
+          "abortControllerInEffect": "error",
+          "cryptoRandomUUIDInEffect": "error",
+          "globalConsoleInEffect": "error",
+          "globalDateInEffect": "error",
+          "globalFetchInEffect": "error",
+          "globalJsonInEffect": "error",
+          "globalRandomInEffect": "error",
+          "globalTimersInEffect": "error",
+          "processEnvInEffect": "error",
+
+          // These report outside Effect code too. Most of the workspace is plain TypeScript (the component library,
+          // the docs app, the oxlint plugin) with its own conventions in oxlint.config.ts. Each *InEffect rule above
+          // still holds the Effect code.
+          "asyncFunction": "off",
+          "cryptoRandomUUID": "off",
+          "extendsNativeError": "off",
+          "globalConsole": "off",
+          "globalDate": "off",
+          "globalFetch": "off",
+          "globalJson": "off",
+          "globalRandom": "off",
+          "globalTimers": "off",
+          "newPromise": "off",
+          "nodeBuiltinImport": "off",
+          "processEnv": "off",
+          "schemaSync": "off",
+          "strictBooleanExpressions": "off",
+          "preferEffectArray": "off",
+          "preferEffectRecord": "off",
+          "preferEffectString": "off",
+
+          // It reports every exported fixed-arity function, the component library's included. Fuse's Effect
+          // operations take their arguments first and are not piped.
+          "missingPipeableSignature": "off",
+
+          // Style.
+
+          "acquireReleaseDisposable": "error",
+          "allOfMapToForEach": "error",
+          "catchAllTagDispatchToCatchTag": "error",
+          "catchAllToMapError": "error",
+          "catchChainToFirstSuccessOf": "error",
+          "catchConditionalRefailToCatchIf": "error",
+          "catchDieToOrDie": "error",
+          "catchIfTagToCatchTag": "error",
+          "catchRefailToTapError": "error",
+          "catchTagToCatchReason": "error",
+          "catchToIgnore": "error",
+          "catchToOrElseSucceed": "error",
+          "effectDoNotation": "error",
+          "effectFnOpportunity": "error",
+          "effectMapFlatten": "error",
+          "effectMapVoid": "error",
+          "effectSleepZeroToYieldNow": "error",
+          "effectSucceedWithUndefined": "error",
+          "effectSucceedWithVoid": "error",
+          "failCauseToConstructor": "error",
+          "flatMapConditionalToFilterOrFail": "error",
+          "flatMapIdentityToFlatten": "error",
+          "flatMapIgnoredParamToAndThen": "error",
+          "flatMapProvideServiceToProvideServiceEffect": "error",
+          "flatMapToMap": "error",
+          "flatMapToTap": "error",
+          "forLoopPushToForEach": "error",
+          "manualMetricTapToTrack": "error",
+          "mapConstToAs": "error",
+          "mapMapErrorToMapBoth": "error",
+          "mapSomeCatchNoSuchElement": "error",
+          "mapSomeToAsSome": "error",
+          "matchBooleanToIsSuccess": "error",
+          "matchEffectToMapBoth": "error",
+          "matchEffectToMatch": "error",
+          "matchToResultOrOption": "error",
+          "missingConcurrencyOption": "error",
+          "multipleCatchTag": "error",
+          "nestedEffectGenYield": "error",
+          "onExitFailureToOnError": "error",
+          "optionMatchToFromOption": "error",
+          "preferBarrelImport": "error",
+          "preferNamespaceImport": "error",
+          "preferSchemaTaggedError": "error",
+          "preferSchemaTypeProperty": "error",
+          "preferSucceedSomeOrNone": "error",
+          "preferTypedSchemaDecoder": "error",
+          "provideLayerSucceedToProvideService": "error",
+          "provideMergeAllToArray": "error",
+          "raceFirstWithSleepToTimeout": "error",
+          "redundantMapError": "error",
+          "redundantOrDie": "error",
+          "redundantSchemaTagIdentifier": "error",
+          "resultMatchToFromResult": "error",
+          "runOfExitToRunExit": "error",
+          "schemaNumber": "error",
+          "schemaStructWithTag": "error",
+          "schemaUnionOfLiterals": "error",
+          "serviceNotAsClass": "error",
+          "suspendFailToFailSync": "error",
+          "syncToSucceed": "error",
+          "timeoutCatchTagToTimeoutOrElse": "error",
+          "typeUnionToSchemaUnion": "error",
+          "unnecessaryEffectGen": "error",
+          "unnecessaryFailYieldableError": "error",
+          "unnecessaryPipe": "error",
+          "unnecessaryPipeChain": "error",
+          "unnecessaryTypeofType": "error",
+
+          // Fuse's errors are built with `new`, as `yield* new NotFound({ ... })`, the form effect's own docs use.
+          // `make` constructs the same instance.
+          "newSchemaClass": "off",
+
+          // Fuse keys a service `<package>/<Service>`, as `@elmeragroup/fuse-figma/FigmaApi`. Every keyPatterns formula
+          // of 0.70.0 puts the file's path between the two, and a key is the service's runtime identity.
+          "deterministicKeys": "off",
+
+          // It reports plain arrows too. Fuse keeps a block body where it holds the SAFETY comment of the cast it
+          // returns, as the component library's combobox and toast adapters do.
+          "unnecessaryArrowBlock": "off",
+
+          // Fuse's schemas nest their constructors, as `Schema.optionalKey(Schema.Array(Schema.String))`, which reads
+          // in the order of the type it declares. The pipe form the rule suggests reverses that order.
+          "missedPipeableOpportunity": "off",
+
+          // A yielded value passed straight into a call (`decide(yield* pushedCommits)`) is how Fuse's generators
+          // read. A const for each one names a value used once and catches no defect.
+          "yieldInCallArgument": "off",
+
+          // Maintainers. It checks a package's exported types for less stable Effect APIs. Fuse's Effect code lives in
+          // private workspace packages (fuse-figma, tooling/*, scripts) that nothing outside the repo imports. The
+          // `EFFECT_IN_PUBLISHED` import restriction in oxlint.config.ts keeps Effect out of the published source.
+          "apiStabilityLeak": "off"
+        }
+      }
+    ]
+  }
+}

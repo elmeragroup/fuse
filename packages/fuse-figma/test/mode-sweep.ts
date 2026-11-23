@@ -19,8 +19,11 @@
  * element at a time.
  */
 import { NodeServices } from "@effect/platform-node";
-import { Effect, Result, Schema } from "effect";
-import { TestConsole } from "effect/testing";
+import * as Effect from "effect/Effect";
+import * as Predicate from "effect/Predicate";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
+import * as TestConsole from "effect/testing/TestConsole";
 import type { Page } from "playwright";
 
 import * as CssColor from "@elmeragroup/color/css-color";
@@ -161,7 +164,7 @@ export function resolvedIn(
   return "value" in field ? field.value : field.color;
 }
 
-const isNumber = Schema.is(Schema.Number);
+const isNumber = Predicate.isNumber;
 
 /**
  * A built length under a pin: a literal's value, or the number its variable resolves to in the file.
@@ -180,7 +183,7 @@ export function pixelsIn(figma: InMemoryFigma, length: NumberSpec, mode: SweptMo
 }
 
 const isRgba = Schema.is(
-  Schema.Struct({ r: Schema.Number, g: Schema.Number, b: Schema.Number, a: Schema.Number })
+  Schema.Struct({ r: Schema.Finite, g: Schema.Finite, b: Schema.Finite, a: Schema.Finite })
 );
 
 /**

@@ -40,7 +40,7 @@
  * No fill of the 384px column draws any of them, so the popup's width stays unmapped. The page facts'
  * Chromium test holds the `spansHost` each of those triggers records.
  */
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { instanceOf } from "../../test/capture-fixtures.ts";

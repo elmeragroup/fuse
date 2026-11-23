@@ -5,7 +5,12 @@
  */
 
 import { NodeRuntime } from "@effect/platform-node";
-import { Cause, Config, Console, Effect, FileSystem, Schema } from "effect";
+import * as Cause from "effect/Cause";
+import * as Config from "effect/Config";
+import * as Console from "effect/Console";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as Schema from "effect/Schema";
 
 /** Writing the step's output failed. */
 class OutputFailed extends Schema.TaggedError<OutputFailed>()("OutputFailed", {

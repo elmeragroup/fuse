@@ -7,33 +7,37 @@
 
 import { NodeHttpServer, NodeServices } from "@effect/platform-node";
 import { layer } from "@effect/vitest";
-import {
-  Clock,
-  Config,
-  Context,
-  DateTime,
-  Effect,
-  FileSystem,
-  Layer,
-  Option,
-  Path,
-  Schema,
-  Stream,
-} from "effect";
-import { Headers, HttpRouter, HttpServer, HttpServerResponse, UrlParams } from "effect/http";
-import type { HttpServerRequest } from "effect/http";
-import { ChildProcess, ChildProcessSpawner } from "effect/process";
+import * as Clock from "effect/Clock";
+import * as Config from "effect/Config";
+import * as Context from "effect/Context";
+import * as DateTime from "effect/DateTime";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as Headers from "effect/http/Headers";
+import * as HttpRouter from "effect/http/HttpRouter";
+import * as HttpServer from "effect/http/HttpServer";
+import type * as HttpServerRequest from "effect/http/HttpServerRequest";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
+import * as UrlParams from "effect/http/UrlParams";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as Path from "effect/Path";
+import * as ChildProcess from "effect/process/ChildProcess";
+import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
+import * as Schema from "effect/Schema";
+import * as Stream from "effect/Stream";
 import { createServer } from "node:http";
+
+const encodeJson = Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown));
 
 /** A step entrypoint. */
 type Entrypoint = "find-release" | "announce-release";
 
 /** The path of an entrypoint's source. */
-const entrypointPath = (entrypoint: Entrypoint) =>
-  Effect.gen(function* () {
-    const path = yield* Path.Path;
-    return yield* path.fromFileUrl(new URL(`../src/${entrypoint}.ts`, import.meta.url));
-  });
+const entrypointPath = Effect.fnUntraced(function* (entrypoint: Entrypoint) {
+  const path = yield* Path.Path;
+  return yield* path.fromFileUrl(new URL(`../src/${entrypoint}.ts`, import.meta.url));
+});
 
 /** A finished command: its exit code and what it wrote. */
 type CommandRun = { readonly exitCode: number; readonly stdout: string; readonly stderr: string };
@@ -59,6 +63,11 @@ const run = (command: string, args: readonly string[], options: ChildProcess.Com
       return { exitCode, stdout, stderr } satisfies CommandRun;
     })
   );
+
+/** A git command the scratch repository ran exited with a failure. */
+class GitFailed extends Schema.TaggedError<GitFailed>()("GitFailed", {
+  message: Schema.String,
+}) {}
 
 /** A scratch git repository the cases commit a package's changelog and manifest into. */
 export class ScratchRepository extends Context.Service<
@@ -89,28 +98,31 @@ export class ScratchRepository extends Context.Service<
           Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, spawner)
         );
         if (result.exitCode !== 0)
-          return yield* Effect.fail(new Error(`git ${args.join(" ")} failed: ${result.stderr}`));
+          return yield* new GitFailed({ message: `git ${args.join(" ")} failed: ${result.stderr}` });
         return result.stdout.trim();
       });
       yield* git("init", "--quiet");
       yield* git("config", "user.email", "ci@example.com");
       yield* git("config", "user.name", "CI");
       yield* fs.makeDirectory(path.join(dir, "packages/fuse"), { recursive: true });
-      const commit = (subject: string, changelog: Option.Option<string>, version = "0.2.0") =>
-        Effect.gen(function* () {
-          const changelogPath = path.join(dir, "packages/fuse/CHANGELOG.md");
-          yield* Option.match(changelog, {
-            onNone: () => fs.remove(changelogPath, { force: true }),
-            onSome: (text) => fs.writeFileString(changelogPath, text),
-          });
-          yield* fs.writeFileString(
-            path.join(dir, "packages/fuse/package.json"),
-            JSON.stringify({ name: "@elmeragroup/fuse", version })
-          );
-          yield* git("add", "--all");
-          yield* git("commit", "--quiet", "--allow-empty", "-m", subject);
-          return yield* git("rev-parse", "HEAD");
+      const commit = Effect.fnUntraced(function* (
+        subject: string,
+        changelog: Option.Option<string>,
+        version: string = "0.2.0"
+      ) {
+        const changelogPath = path.join(dir, "packages/fuse/CHANGELOG.md");
+        yield* Option.match(changelog, {
+          onNone: () => fs.remove(changelogPath, { force: true }),
+          onSome: (text) => fs.writeFileString(changelogPath, text),
         });
+        yield* fs.writeFileString(
+          path.join(dir, "packages/fuse/package.json"),
+          yield* encodeJson({ name: "@elmeragroup/fuse", version })
+        );
+        yield* git("add", "--all");
+        yield* git("commit", "--quiet", "--allow-empty", "-m", subject);
+        return yield* git("rev-parse", "HEAD");
+      });
       return ScratchRepository.of({ dir, commit });
     })
   );
@@ -161,25 +173,24 @@ const NOTES_TIME_LIMIT = "45 seconds";
  * @param overrides - Settings to change or add.
  * @returns How the step ended.
  */
-export const announceStep = (
+export const announceStep = Effect.fnUntraced(function* (
   url: string,
   release: string,
   overrides: Readonly<Record<string, string>> = {}
-) =>
-  Effect.gen(function* () {
-    const repo = yield* ScratchRepository;
-    return yield* runStep("announce-release", repo.dir, {
-      GITHUB_SERVER_URL: "https://github.com",
-      GITHUB_REPOSITORY: "elmeragroup/fuse",
-      SLACK_API_URL: url,
-      SLACK_RELEASES_CHANNEL: "C0RELEASES",
-      SLACK_CANARY_CHANNEL: "C0CANARY",
-      SLACK_BOT_TOKEN: SLACK_TOKEN,
-      RELEASE: release,
-      NOTES_TIME_LIMIT,
-      ...overrides,
-    });
+) {
+  const repo = yield* ScratchRepository;
+  return yield* runStep("announce-release", repo.dir, {
+    GITHUB_SERVER_URL: "https://github.com",
+    GITHUB_REPOSITORY: "elmeragroup/fuse",
+    SLACK_API_URL: url,
+    SLACK_RELEASES_CHANNEL: "C0RELEASES",
+    SLACK_CANARY_CHANNEL: "C0CANARY",
+    SLACK_BOT_TOKEN: SLACK_TOKEN,
+    RELEASE: release,
+    NOTES_TIME_LIMIT,
+    ...overrides,
   });
+});
 
 /** A finished step run. */
 type StepRun = CommandRun & {
@@ -272,7 +283,7 @@ export const endlessChangelogGit = Effect.gen(function* () {
       "  };",
       "  write();",
       "} else {",
-      `  const result = spawnSync(${JSON.stringify(realGit)}, process.argv.slice(2), { stdio: "inherit" });`,
+      `  const result = spawnSync(${yield* encodeJson(realGit)}, process.argv.slice(2), { stdio: "inherit" });`,
       "  process.exit(result.status ?? 1);",
       "}",
       "",
@@ -288,15 +299,14 @@ export const endlessChangelogGit = Effect.gen(function* () {
  * @param routes - The routes.
  * @returns The server's base URL.
  */
-const serve = <E, R>(routes: Layer.Layer<never, E, R>) =>
-  Effect.gen(function* () {
-    const context = yield* Layer.build(
-      HttpRouter.serve(routes, { disableLogger: true, disableListenLog: true }).pipe(
-        Layer.provideMerge(NodeHttpServer.layer(() => createServer(), { port: 0, host: "127.0.0.1" }))
-      )
-    );
-    return HttpServer.formatAddress(Context.get(context, HttpServer.HttpServer).address);
-  });
+const serve = Effect.fnUntraced(function* <E, R>(routes: Layer.Layer<never, E, R>) {
+  const context = yield* Layer.build(
+    HttpRouter.serve(routes, { disableLogger: true, disableListenLog: true }).pipe(
+      Layer.provideMerge(NodeHttpServer.layer(() => createServer(), { port: 0, host: "127.0.0.1" }))
+    )
+  );
+  return HttpServer.formatAddress(Context.get(context, HttpServer.HttpServer).address);
+});
 
 /** Headers, then a body that never ends: an answer that stalls after it began. */
 function stalled(): HttpServerResponse.HttpServerResponse {

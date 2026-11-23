@@ -5,7 +5,7 @@
  * every link on the old domain.
  */
 
-import { Schema } from "effect";
+import * as Schema from "effect/Schema";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";

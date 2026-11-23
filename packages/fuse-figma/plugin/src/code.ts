@@ -10,7 +10,8 @@
  * `figma:plugin` replaces `__FUSE_KIT__` with the spec it builds from the Fuse recipes.
  */
 
-import { Cause, Effect } from "effect";
+import * as Cause from "effect/Cause";
+import * as Effect from "effect/Effect";
 
 import type { KitSpec } from "../../src/components/kit-spec.ts";
 import { parseRequest } from "./protocol.ts";
@@ -37,33 +38,32 @@ function messageOf(cause: Cause.Cause<unknown>): string {
 }
 
 /** Answer one request, and post the answer to the UI. */
-const respond = (request: Request) =>
-  Effect.gen(function* () {
-    if (request === "plan") {
-      const plan = yield* reconcile(false);
-      yield* post({ kind: "plan", changes: plan.changes, warnings: plan.warnings });
-      return;
-    }
-    if (request === "apply") {
-      const applied = yield* reconcile(true);
-      const remaining = yield* reconcile(false);
-      // A change can skip its write where Apply finds what Plan could not see, such as a reorder
-      // that a swap left no layer free to move, and only the new plan warns about it.
-      yield* post({
-        kind: "applied",
-        changes: applied.changes,
-        remaining: remaining.changes,
-        warnings: [...new Set([...applied.warnings, ...remaining.warnings])],
-      });
-      return;
-    }
-    const { pages } = yield* Kit;
-    const snapshot = yield* exportSnapshots(
-      pages.map((page) => page.key),
-      (done, total) => post({ kind: "progress", done, total })
-    );
-    yield* post({ kind: "snapshots", snapshot });
-  });
+const respond = Effect.fnUntraced(function* (request: Request) {
+  if (request === "plan") {
+    const plan = yield* reconcile(false);
+    yield* post({ kind: "plan", changes: plan.changes, warnings: plan.warnings });
+    return;
+  }
+  if (request === "apply") {
+    const applied = yield* reconcile(true);
+    const remaining = yield* reconcile(false);
+    // A change can skip its write where Apply finds what Plan could not see, such as a reorder
+    // that a swap left no layer free to move, and only the new plan warns about it.
+    yield* post({
+      kind: "applied",
+      changes: applied.changes,
+      remaining: remaining.changes,
+      warnings: [...new Set([...applied.warnings, ...remaining.warnings])],
+    });
+    return;
+  }
+  const { pages } = yield* Kit;
+  const snapshot = yield* exportSnapshots(
+    pages.map((page) => page.key),
+    (done, total) => post({ kind: "progress", done, total })
+  );
+  yield* post({ kind: "snapshots", snapshot });
+});
 
 figma.showUI(__html__, { width: 560, height: 640, themeColors: true });
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- UI message boundary: Figma's handler receives whatever the UI posted, and `parseRequest` parses it

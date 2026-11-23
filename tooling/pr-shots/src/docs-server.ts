@@ -17,9 +17,18 @@
  * is not a build output, and neither suite reads it.
  */
 
-import { Console, Context, Duration, Effect, Layer, Option, Schema, Stream } from "effect";
-import type { Scope } from "effect";
-import { ChildProcess, ChildProcessSpawner } from "effect/process";
+import * as Clock from "effect/Clock";
+import * as Console from "effect/Console";
+import * as Context from "effect/Context";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as ChildProcess from "effect/process/ChildProcess";
+import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
+import * as Schema from "effect/Schema";
+import type * as Scope from "effect/Scope";
+import * as Stream from "effect/Stream";
 import { readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import path from "node:path";
@@ -236,6 +245,7 @@ const pollRoute = Effect.fn("DocsServer.pollRoute")(function* (url: URL, progres
   for (;;) {
     const status = yield* Effect.tryPromise({
       try: async (signal) => {
+        // @effect-diagnostics-next-line globalFetchInEffect:off -- pr-shots wires no HttpClient, and this readiness poll needs only a status
         const response = await fetch(url, { redirect: "manual", signal });
         await response.arrayBuffer();
         return response.status;
@@ -275,6 +285,7 @@ const CrashRecord = Schema.Struct({
 type CrashRecord = typeof CrashRecord.Type;
 
 const decodeCrashRecord = Schema.decodeUnknownOption(Schema.fromJsonString(CrashRecord));
+const encodeCrashRecord = Schema.encodeEffect(Schema.fromJsonString(CrashRecord));
 
 /** The crash record sits beside the checkout lock. */
 function crashRecordFile(config: DocsServerConfig): string {
@@ -290,10 +301,12 @@ function writeCrashRecord(
     file,
     snapshot: content === null ? { _tag: "absent" } : { _tag: "content", content },
   };
-  return Effect.tryPromise({
-    try: () => writeFile(recordFile, JSON.stringify(record)),
-    catch: (cause) => new DocsServerFailed({ message: `Could not write ${recordFile}: ${messageOf(cause)}` }),
-  });
+  const failed = (cause: unknown) =>
+    new DocsServerFailed({ message: `Could not write ${recordFile}: ${messageOf(cause)}` });
+  return encodeCrashRecord(record).pipe(
+    Effect.mapError(failed),
+    Effect.flatMap((text) => Effect.tryPromise({ try: () => writeFile(recordFile, text), catch: failed }))
+  );
 }
 
 /**
@@ -329,18 +342,13 @@ function putBack({ file, content }: Snapshot, recordFile: string): Effect.Effect
 function recover(recordFile: string): Effect.Effect<void, DocsServerFailed | ServerStillRunning> {
   return Effect.gen(function* () {
     const text = yield* Effect.tryPromise({
-      try: () => readFile(recordFile, "utf8"),
-      catch: (cause) => cause,
-    }).pipe(
-      Effect.map(Option.some),
-      Effect.catch((cause) =>
-        errorCode(cause) === "ENOENT"
-          ? Effect.succeed(Option.none<string>())
-          : Effect.fail(
-              new DocsServerFailed({ message: `Could not read ${recordFile}: ${messageOf(cause)}` })
-            )
-      )
-    );
+      try: () =>
+        readFile(recordFile, "utf8").then(Option.some, (cause: unknown) =>
+          absentOn(cause, Option.none<string>())
+        ),
+      catch: (cause) =>
+        new DocsServerFailed({ message: `Could not read ${recordFile}: ${messageOf(cause)}` }),
+    });
     if (Option.isNone(text)) {
       return;
     }
@@ -361,22 +369,28 @@ function recover(recordFile: string): Effect.Effect<void, DocsServerFailed | Ser
   });
 }
 
+/**
+ * The value a read takes when its file does not exist. Any other failure rejects again, so the
+ * read's `catch` reports it.
+ */
+function absentOn<A>(cause: unknown, absent: A): A {
+  if (errorCode(cause) === "ENOENT") return absent;
+  throw cause;
+}
+
 /** A file's content before the server touched it, or `null` when it did not exist. */
 type Snapshot = { readonly file: string; readonly content: string | null };
 
 /** Reads the file. Only `ENOENT` means absent; any other error stops the start. */
 function snapshot(file: string): Effect.Effect<Snapshot, DocsServerFailed> {
   return Effect.tryPromise({
-    try: () => readFile(file, "utf8"),
-    catch: (cause) => cause,
-  }).pipe(
-    Effect.map((content): Snapshot => ({ file, content })),
-    Effect.catch((cause) =>
-      errorCode(cause) === "ENOENT"
-        ? Effect.succeed<Snapshot>({ file, content: null })
-        : Effect.fail(new DocsServerFailed({ message: `Could not read ${file}: ${messageOf(cause)}` }))
-    )
-  );
+    try: () =>
+      readFile(file, "utf8").then(
+        (content): Snapshot => ({ file, content }),
+        (cause: unknown) => absentOn(cause, { file, content: null })
+      ),
+    catch: (cause) => new DocsServerFailed({ message: `Could not read ${file}: ${messageOf(cause)}` }),
+  });
 }
 
 /** Asks the OS for a free loopback port. */
@@ -437,9 +451,9 @@ function signalGroup(group: number, signal: "SIGTERM" | "SIGKILL"): void {
 /** Polls until the group has no process left, or the wait runs out. Returns whether it emptied. */
 function groupEmptied(group: number, wait: Duration.Duration) {
   return Effect.gen(function* () {
-    const deadline = Date.now() + Duration.toMillis(wait);
+    const deadline = (yield* Clock.currentTimeMillis) + Duration.toMillis(wait);
     while (groupAlive(group)) {
-      if (Date.now() >= deadline) {
+      if ((yield* Clock.currentTimeMillis) >= deadline) {
         return false;
       }
       yield* Effect.sleep(Duration.millis(20));

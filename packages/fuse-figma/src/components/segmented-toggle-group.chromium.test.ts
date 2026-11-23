@@ -16,7 +16,7 @@ import type { ComponentProps } from "react";
  * where the build draws an item's label, inset, left border or corners other than a segmented group
  * does.
  */
-import { Result } from "effect";
+import * as Result from "effect/Result";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";

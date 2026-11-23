@@ -4,8 +4,15 @@
  * checks out with its full history so a retried record's commit is present.
  */
 
-import { Duration, Effect, Fiber, Layer, Option, Schema, Stream } from "effect";
-import { ChildProcess, ChildProcessSpawner } from "effect/process";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as ChildProcess from "effect/process/ChildProcess";
+import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
+import * as Schema from "effect/Schema";
+import * as Stream from "effect/Stream";
 
 import { CHANGELOG_PATH } from "./announcement.ts";
 import { ChangelogSource, GitReadFailed } from "./release-announcement.ts";
@@ -93,7 +100,7 @@ export const layer = Layer.effect(
     const packageVersion = Effect.fn("GitChangelog.packageVersion")(function* (commit: CommitSha) {
       yield* Effect.annotateCurrentSpan({ commit });
       const manifest = yield* text(["show", `${commit}:${MANIFEST_PATH}`]);
-      const decoded = yield* Schema.decodeUnknownEffect(Manifest)(manifest).pipe(
+      const decoded = yield* Schema.decodeEffect(Manifest)(manifest).pipe(
         Effect.mapError(
           (error) =>
             new GitReadFailed({

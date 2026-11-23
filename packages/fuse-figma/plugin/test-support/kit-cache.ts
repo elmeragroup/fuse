@@ -4,7 +4,8 @@
  * applied fake file in `plugin/src/kit-fixture.ts`.
  */
 import { NodeFileSystem } from "@effect/platform-node";
-import { Effect, Result } from "effect";
+import * as Effect from "effect/Effect";
+import * as Result from "effect/Result";
 import { readFileSync } from "node:fs";
 import { deserialize } from "node:v8";
 import { inject } from "vitest";

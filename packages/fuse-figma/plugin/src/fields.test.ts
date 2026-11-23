@@ -7,7 +7,7 @@
  * which must list nothing.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { describe, expect, it } from "vitest";
 
 import type { ImagePaintSpec } from "../../src/components/kit-spec.ts";

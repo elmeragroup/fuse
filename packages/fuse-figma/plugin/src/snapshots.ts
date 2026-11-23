@@ -8,7 +8,8 @@
  * Figma can redraw. The run turns off Effect's own yields, so these are its only turns.
  */
 
-import { Effect } from "effect";
+import * as DateTime from "effect/DateTime";
+import * as Effect from "effect/Effect";
 
 import { SNAPSHOT_FORMAT, SNAPSHOT_VERSION } from "../../src/compare/snapshot.ts";
 import type {
@@ -41,6 +42,7 @@ function rect({ x, y, width, height }: Rect): CanvasRect {
 
 /** Lets Figma redraw and handle input between frames: one macrotask turn. */
 const yieldToFigma: Effect.Effect<void> = Effect.callback<void>((resume) => {
+  // @effect-diagnostics-next-line globalTimersInEffect:off -- Figma redraws only between macrotasks, and Effect.yieldNow, the zero sleep's form, stays in the task
   setTimeout(() => {
     resume(Effect.void);
   }, 0);
@@ -209,7 +211,7 @@ export const exportSnapshots = Effect.fnUntraced(function* (
   const snapshot: KitSnapshot = {
     format: SNAPSHOT_FORMAT,
     version: SNAPSHOT_VERSION,
-    exportedAt: new Date().toISOString(),
+    exportedAt: DateTime.formatIso(yield* DateTime.now),
     file: figma.root.name,
     scale: SCALE,
     previews,

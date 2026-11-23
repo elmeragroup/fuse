@@ -10,7 +10,8 @@
 import { createElement as h } from "react";
 import type { ReactElement } from "react";
 
-import { Effect, Result } from "effect";
+import * as Effect from "effect/Effect";
+import * as Result from "effect/Result";
 import { describe, expect, it } from "vitest";
 
 import { CompareBrowser } from "../compare/browser-render.ts";

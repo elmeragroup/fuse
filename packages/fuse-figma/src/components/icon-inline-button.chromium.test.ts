@@ -13,7 +13,7 @@ import { createElement } from "react";
  * `icon-inline` variant, where the build hugs either side, and where a mode lays the button out at
  * another size than the one the build fixes.
  */
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";

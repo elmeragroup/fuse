@@ -1,7 +1,16 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Cause, ConfigProvider, Effect, Fiber, Layer, Result, Schema, Tracer } from "effect";
-import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
-import { TestClock } from "effect/testing";
+import * as Cause from "effect/Cause";
+import * as ConfigProvider from "effect/ConfigProvider";
+import * as Effect from "effect/Effect";
+import * as Fiber from "effect/Fiber";
+import * as HttpClient from "effect/http/HttpClient";
+import * as HttpClientError from "effect/http/HttpClientError";
+import * as HttpClientResponse from "effect/http/HttpClientResponse";
+import * as Layer from "effect/Layer";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
+import * as TestClock from "effect/testing/TestClock";
+import * as Tracer from "effect/Tracer";
 
 import { FigmaApi, FileKey } from "../src/figma-api.ts";
 import { syncFile } from "../src/token-sync.ts";
@@ -10,7 +19,9 @@ import type { VariableSet, VariableSpec, VariableValue } from "../src/variable-s
 import { writes } from "./cli-fixture.ts";
 import { InMemoryFigma } from "./in-memory-figma.ts";
 
-const FILE_KEY = Schema.decodeUnknownSync(FileKey)("FuseFile123");
+const encodeJson = Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown));
+
+const FILE_KEY = Schema.decodeSync(FileKey)("FuseFile123");
 const TOKEN = "figd_secret-token-4711";
 
 /** The REST adapter over the fake file, or over `client` when given, authenticated with `TOKEN`. */
@@ -92,7 +103,7 @@ describe("FigmaApi and the token", () => {
         method: "GET",
         url: "https://api.figma.com/v1/files/FuseFile123/variables/local",
       });
-      assert.notInclude(JSON.stringify(failure), TOKEN);
+      assert.notInclude(yield* encodeJson(failure), TOKEN);
       assert.notInclude(String(failure), TOKEN);
       assert.strictEqual(spans.filter((span) => span.attributes.has("http.request.method")).length, 5);
       for (const text of spans.flatMap(exported)) assert.notInclude(text, TOKEN);

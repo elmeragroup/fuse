@@ -5,7 +5,7 @@
  * build and the page runs as a module.
  */
 import { NodeServices } from "@effect/platform-node";
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { fileURLToPath } from "node:url";
 import type { Page } from "playwright";
 import { build } from "rolldown";

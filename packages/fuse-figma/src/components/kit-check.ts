@@ -11,7 +11,8 @@
  * plugin bundles it.
  */
 
-import { Data, Result } from "effect";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 
 import { gridFault } from "./grid-check.ts";
 import {
@@ -44,9 +45,9 @@ import { sha1Hex } from "./sha1.ts";
 import { strokeFault, strokeSidesFault } from "./stroke-check.ts";
 
 /** The kit spec contradicts itself, or asks for something Figma or the plugin cannot draw. */
-export class KitContradiction extends Data.TaggedError("KitContradiction")<{
-  readonly message: string;
-}> {}
+export class KitContradiction extends Schema.TaggedError<KitContradiction>()("KitContradiction", {
+  message: Schema.String,
+}) {}
 
 function contradiction(message: string): KitContradiction {
   return new KitContradiction({ message });
@@ -923,7 +924,7 @@ export function checkKitSpec(
     checkDocs(kit);
     return Result.succeed(undefined);
   } catch (thrown) {
-    if (thrown instanceof KitContradiction) {
+    if (Schema.is(KitContradiction)(thrown)) {
       return Result.fail(thrown);
     }
     throw thrown;

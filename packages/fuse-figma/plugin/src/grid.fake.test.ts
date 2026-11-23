@@ -15,7 +15,7 @@
  * a FLEX track is invalid on an axis the grid hugs, and a grid frame takes only MIN for its alignments
  * (PG10), each of which the check refuses before the run writes.
  */
-import { Result } from "effect";
+import * as Result from "effect/Result";
 import { describe, expect, it } from "vitest";
 
 import { checkKitSpec } from "../../src/components/kit-check.ts";

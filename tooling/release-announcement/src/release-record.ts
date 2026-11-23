@@ -9,8 +9,9 @@
  * name the release its tag does.
  */
 
-import { Result, Schema } from "effect";
-import { Url } from "effect/http";
+import * as Url from "effect/http/Url";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 
 /** The source of a full, lower-case commit SHA's pattern. */
 const SHA = "[0-9a-f]{40}";
@@ -190,7 +191,7 @@ type PublishedRecord = {
 export function parse(record: PublishedRecord): Result.Result<Release, DamagedRecord> {
   const damaged = (reason: string): Result.Result<never, DamagedRecord> =>
     Result.fail(new DamagedRecord({ message: `Release record ${record.tag} ${reason}` }));
-  const body = Schema.decodeUnknownResult(RecordBody)(record.body);
+  const body = Schema.decodeResult(RecordBody)(record.body);
   if (Result.isFailure(body)) return damaged(`has an unreadable body: ${oneLine(body.failure)}`);
   const fields = {
     version: body.success.version,
@@ -198,7 +199,7 @@ export function parse(record: PublishedRecord): Result.Result<Release, DamagedRe
     url: record.url,
     publishedAt: record.publishedAt,
   };
-  const decoded = Schema.decodeUnknownResult(Release)({
+  const decoded = Schema.decodeResult(Release)({
     _tag: body.success.channel === "stable" ? "Stable" : "Canary",
     ...fields,
   });

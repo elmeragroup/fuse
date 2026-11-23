@@ -1,10 +1,22 @@
 import { NodeHttpServer, NodeHttpServerRequest, NodeServices } from "@effect/platform-node";
 import { assert, layer } from "@effect/vitest";
-import { Config, Context, Effect, FileSystem, Layer, Path, Stream } from "effect";
-import { HttpRouter, HttpServer, HttpServerResponse } from "effect/http";
-import type { HttpServerRequest } from "effect/http";
-import { ChildProcess, ChildProcessSpawner } from "effect/process";
+import * as Config from "effect/Config";
+import * as Context from "effect/Context";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as HttpRouter from "effect/http/HttpRouter";
+import * as HttpServer from "effect/http/HttpServer";
+import type * as HttpServerRequest from "effect/http/HttpServerRequest";
+import * as HttpServerResponse from "effect/http/HttpServerResponse";
+import * as Layer from "effect/Layer";
+import * as Path from "effect/Path";
+import * as ChildProcess from "effect/process/ChildProcess";
+import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
+import * as Schema from "effect/Schema";
+import * as Stream from "effect/Stream";
 import { createServer, ServerResponse } from "node:http";
+
+const encodeJson = Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown));
 
 // Unit under test: src/canary-opt-out.ts, run as the merge workflow's `canary-opt-out` job runs it:
 // a Node process with the job's environment, a push payload file, a GITHUB_OUTPUT file and GitHub's
@@ -52,47 +64,45 @@ type Answer = Reply | { readonly inTurn: ReadonlyArray<Reply> };
  * first byte straight to the socket; once that byte is flushed, the socket is closed, so the client
  * holds a whole set of headers and loses the rest of the body.
  */
-const reply = (request: HttpServerRequest.HttpServerRequest, answer: Reply) =>
-  Effect.gen(function* () {
-    if ("status" in answer)
-      return HttpServerResponse.empty({ status: answer.status, headers: answer.headers ?? {} });
-    if (!("cutOff" in answer)) return HttpServerResponse.jsonUnsafe("body" in answer ? answer.body : answer);
-    const response = NodeHttpServerRequest.toServerResponse(request);
-    if (!(response instanceof ServerResponse)) return yield* Effect.die("the stand-in serves HTTP/1.1");
-    response.writeHead(200, { "content-type": "application/json", "content-length": "64" });
-    response.write("[", () => response.destroy());
-    // The raw response is the answer, so the handler never completes; the test's scope ends it.
-    return yield* Effect.never;
-  });
+const reply = Effect.fnUntraced(function* (request: HttpServerRequest.HttpServerRequest, answer: Reply) {
+  if ("status" in answer)
+    return HttpServerResponse.empty({ status: answer.status, headers: answer.headers ?? {} });
+  if (!("cutOff" in answer)) return HttpServerResponse.jsonUnsafe("body" in answer ? answer.body : answer);
+  const response = NodeHttpServerRequest.toServerResponse(request);
+  if (!(response instanceof ServerResponse)) return yield* Effect.die("the stand-in serves HTTP/1.1");
+  response.writeHead(200, { "content-type": "application/json", "content-length": "64" });
+  response.write("[", () => response.destroy());
+  // The raw response is the answer, so the handler never completes; the test's scope ends it.
+  return yield* Effect.never;
+});
 
 /**
  * GitHub's commit-to-PRs endpoint for `elmeragroup/fuse`, answering from `answers` by SHA (`[]`
  * for any other) to a request with the test token, and 401 to any other. It counts the requests
  * for each SHA.
  */
-const fakeGitHub = (answers: Readonly<Record<string, Answer>>) =>
-  Effect.gen(function* () {
-    const requests = new Map<string, number>();
-    const route = HttpRouter.add("GET", "/repos/elmeragroup/fuse/commits/:sha/pulls", (request) =>
-      Effect.gen(function* () {
-        if (request.headers.authorization !== `Bearer ${TOKEN}`)
-          return HttpServerResponse.empty({ status: 401 });
-        const { sha = "" } = yield* HttpRouter.params;
-        const seen = requests.get(sha) ?? 0;
-        requests.set(sha, seen + 1);
-        const answer = answers[sha] ?? [];
-        if ("inTurn" in answer)
-          return yield* reply(request, answer.inTurn[Math.min(seen, answer.inTurn.length - 1)] ?? []);
-        return yield* reply(request, answer);
-      })
-    );
-    const context = yield* Layer.build(
-      HttpRouter.serve(route, { disableLogger: true, disableListenLog: true }).pipe(
-        Layer.provideMerge(NodeHttpServer.layer(() => createServer(), { port: 0, host: "127.0.0.1" }))
-      )
-    );
-    return { url: HttpServer.formatAddress(Context.get(context, HttpServer.HttpServer).address), requests };
-  });
+const fakeGitHub = Effect.fnUntraced(function* (answers: Readonly<Record<string, Answer>>) {
+  const requests = new Map<string, number>();
+  const route = HttpRouter.add("GET", "/repos/elmeragroup/fuse/commits/:sha/pulls", (request) =>
+    Effect.gen(function* () {
+      if (request.headers.authorization !== `Bearer ${TOKEN}`)
+        return HttpServerResponse.empty({ status: 401 });
+      const { sha = "" } = yield* HttpRouter.params;
+      const seen = requests.get(sha) ?? 0;
+      requests.set(sha, seen + 1);
+      const answer = answers[sha] ?? [];
+      if ("inTurn" in answer)
+        return yield* reply(request, answer.inTurn[Math.min(seen, answer.inTurn.length - 1)] ?? []);
+      return yield* reply(request, answer);
+    })
+  );
+  const context = yield* Layer.build(
+    HttpRouter.serve(route, { disableLogger: true, disableListenLog: true }).pipe(
+      Layer.provideMerge(NodeHttpServer.layer(() => createServer(), { port: 0, host: "127.0.0.1" }))
+    )
+  );
+  return { url: HttpServer.formatAddress(Context.get(context, HttpServer.HttpServer).address), requests };
+});
 
 /** A push payload as a test writes it: GitHub's `commits[].id`, well formed or not. */
 type PushPayload = { readonly commits: ReadonlyArray<{ readonly id: string }> };
@@ -119,7 +129,7 @@ const runStep = (payload: PushPayload, answers: Readonly<Record<string, Answer>>
       const dir = yield* fs.makeTempDirectoryScoped({ prefix: "canary-opt-out-" });
       const event = path.join(dir, "event.json");
       const output = path.join(dir, "output");
-      yield* fs.writeFileString(event, JSON.stringify(payload));
+      yield* fs.writeFileString(event, yield* encodeJson(payload));
       yield* fs.writeFileString(output, "");
       const api = yield* fakeGitHub(answers);
       const runner = yield* Config.all({ PATH: Config.String("PATH"), HOME: Config.String("HOME") });

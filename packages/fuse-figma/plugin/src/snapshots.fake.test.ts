@@ -4,7 +4,7 @@
  * previews and the instance count of each from the cells its sets place, in `test/kit-inventory.ts`,
  * and the modes each preview pins.
  */
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import type { KitSpec } from "../../src/components/kit-spec.ts";

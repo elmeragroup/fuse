@@ -7,7 +7,8 @@
  * the browser disagrees with fails the capture.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
+import { isDeepStrictEqual } from "node:util";
 import type { CDPSession } from "playwright";
 
 import type {
@@ -1165,7 +1166,7 @@ export const captureSet = Effect.fn("captureSet")(function* (
   renderer: AnyCellRenderer
 ) {
   const rendered = isClientRenderer(renderer) ? renderer.union : undefined;
-  if (JSON.stringify(rendered) !== JSON.stringify(target.union)) {
+  if (!isDeepStrictEqual(rendered, target.union)) {
     return yield* Effect.fail(
       new CaptureUnsupported(
         `${target.key}: its manifest measures ${target.union?.join(" and ") ?? "its root"}, and its renderer ${rendered?.join(" and ") ?? "its root"}`

@@ -4,7 +4,7 @@
  * renders the theme's value.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { previewInstanceKey } from "../../src/components/kit-spec.ts";
 import type {
@@ -241,24 +241,23 @@ function planInstances(
       accept: isInstance,
       description: `add an instance of ${variant}`,
       make: () => component.get().createInstance(),
-      plan: (instance, origin) =>
-        Effect.gen(function* () {
-          const inner = yield* currentRun;
-          if (origin === "new") {
-            planInstanceSizing(inner, instance, lengthsLabel, root.sizing, "read");
-            planBooleans(inner, instance, key, placed, set, "new");
-            return;
-          }
-          const main = yield* Effect.promise(() => instance.getMainComponentAsync());
-          const swaps = component.existing === undefined || main?.id !== component.existing.id;
-          if (swaps) {
-            change(inner.plan, label, `point the instance ${key} at ${variant}`, () =>
-              instance.swapComponent(component.get())
-            );
-          }
-          planInstanceSizing(inner, instance, lengthsLabel, root.sizing, swaps ? "unknown" : "read");
-          planBooleans(inner, instance, key, placed, set, swaps ? "swapped" : "held");
-        }),
+      plan: Effect.fnUntraced(function* (instance, origin) {
+        const inner = yield* currentRun;
+        if (origin === "new") {
+          planInstanceSizing(inner, instance, lengthsLabel, root.sizing, "read");
+          planBooleans(inner, instance, key, placed, set, "new");
+          return;
+        }
+        const main = yield* Effect.promise(() => instance.getMainComponentAsync());
+        const swaps = component.existing === undefined || main?.id !== component.existing.id;
+        if (swaps) {
+          change(inner.plan, label, `point the instance ${key} at ${variant}`, () =>
+            instance.swapComponent(component.get())
+          );
+        }
+        planInstanceSizing(inner, instance, lengthsLabel, root.sizing, swaps ? "unknown" : "read");
+        planBooleans(inner, instance, key, placed, set, swaps ? "swapped" : "held");
+      }),
     } satisfies OwnedChild<InstanceNode, void>;
   });
 }

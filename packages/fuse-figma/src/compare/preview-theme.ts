@@ -10,7 +10,7 @@
  * under either `Fuse segment` mode.
  */
 
-import { Result } from "effect";
+import * as Result from "effect/Result";
 
 import {
   BRAND_CODES,

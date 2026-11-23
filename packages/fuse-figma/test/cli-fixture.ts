@@ -4,10 +4,16 @@
  * sees them.
  */
 
-import { ConfigProvider, Effect, FileSystem, Layer, Path, Stdio, Terminal } from "effect";
-import { CliOutput } from "effect/cli";
-import { ChildProcessSpawner } from "effect/process";
-import { TestConsole } from "effect/testing";
+import * as CliOutput from "effect/cli/CliOutput";
+import * as ConfigProvider from "effect/ConfigProvider";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as Layer from "effect/Layer";
+import * as Path from "effect/Path";
+import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
+import * as Stdio from "effect/Stdio";
+import * as Terminal from "effect/Terminal";
+import * as TestConsole from "effect/testing/TestConsole";
 
 import * as Hex from "@elmeragroup/color/hex";
 import { getOrThrow } from "@elmeragroup/color/result";

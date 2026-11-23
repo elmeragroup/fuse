@@ -18,7 +18,7 @@
  * negative item spacing draws the later layer on top (probe N7), as the nested popup paints over its
  * parent; no probe has drawn a column's negative item spacing yet.
  */
-import { Result } from "effect";
+import * as Result from "effect/Result";
 
 import { KitUnmappable } from "../components/build-errors.ts";
 import { possibleCells } from "../components/component-spec.ts";

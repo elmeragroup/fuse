@@ -4,7 +4,7 @@
  * names every mdast node type, so a node kind added to mdast cannot drop out of the text unseen.
  */
 
-import { Match } from "effect";
+import * as Match from "effect/Match";
 import type { Nodes } from "mdast";
 
 /** What a node adds to the text: its own text, or its children, separated or run together. */

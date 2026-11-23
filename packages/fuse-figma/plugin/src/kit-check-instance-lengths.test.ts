@@ -6,7 +6,7 @@
  * limit shows no conflict: `row-h` against itself agrees in every mode, and Button's `control-h-md`,
  * 36 dense and 44 comfortable, sits inside a 60px cap.
  */
-import { Result } from "effect";
+import * as Result from "effect/Result";
 import { describe, expect, it } from "vitest";
 
 import { checkKitSpec } from "../../src/components/kit-check.ts";

@@ -1,4 +1,4 @@
-import type { ESTree, Rule, Visitor } from "@oxlint/plugins";
+import type { ESTree, Rule, Scope, Visitor } from "@oxlint/plugins";
 import { dirname, resolve } from "node:path";
 
 import { moduleExportName, propertyKeyName } from "../ast-names.ts";
@@ -23,6 +23,23 @@ export type RestrictedImportsOptions = {
   readonly tests?: "skip" | "check";
 };
 
+/** The export an `import("…")` type's qualifier starts with: `Effect` in `import("effect").Effect.Effect`. */
+function qualifierHead(qualifier: ESTree.TSImportTypeQualifier): string {
+  return qualifier.type === "TSQualifiedName" ? qualifierHead(qualifier.left) : qualifier.name;
+}
+
+/**
+ * Whether a scope, or one around it, declares its own `require`. A `require` nothing declares is the
+ * global one, whether the config lists it as a global or leaves it unbound, as in an ES module.
+ */
+function declaresRequire(scope: Scope | null): boolean {
+  for (let current = scope; current !== null; current = current.upper) {
+    const variable = current.set.get("require");
+    if (variable !== undefined && variable.defs.length > 0) return true;
+  }
+  return false;
+}
+
 /** A configured module with its pattern compiled. */
 type Restriction = {
   readonly pattern: RegExp;
@@ -32,8 +49,10 @@ type Restriction = {
 
 /**
  * Modules import none of the configured modules, type-only imports included, by any static
- * import, re-export (named, `*` or `* as`), `import x = require(…)` or dynamic `import()` whose
- * specifier is a constant. A relative specifier is matched as the path it resolves to from the
+ * import, re-export (named, `*` or `* as`), `import x = require(…)`, `import("…")` type, dynamic
+ * `import()` or call of the global `require(…)` whose specifier is a constant. A `require` the
+ * module declares itself is its own function. An `import("…")` type takes the export its qualifier
+ * starts with. A relative specifier is matched as the path it resolves to from the
  * importing file, so `./generate-exports`, `../scripts/generate-exports.ts` and
  * `./lib/../generate-exports` are one module. A module configured with `names` restricts only
  * those exports, however they are reached: a named import or re-export, `export *`, a member of a
@@ -182,6 +201,20 @@ export const restrictedImports: Rule = {
           check(node.moduleReference.expression, "namespace");
         }
       },
+      CallExpression: (node) => {
+        const [specifier] = node.arguments;
+        if (
+          node.callee.type === "Identifier" &&
+          node.callee.name === "require" &&
+          specifier !== undefined &&
+          specifier.type !== "SpreadElement" &&
+          !declaresRequire(context.sourceCode.getScope(node.callee))
+        ) {
+          check(specifier, "namespace");
+        }
+      },
+      TSImportType: (node) =>
+        check(node.source, node.qualifier === null ? "namespace" : [qualifierHead(node.qualifier)]),
     };
     if (restrictedNames.size === 0) return modules;
     return { ...modules, MemberExpression: checkMember, VariableDeclarator: checkDestructured };

@@ -12,7 +12,7 @@
  * kind, which the oracle test walks every manifest object against.
  */
 
-import { Predicate } from "effect";
+import * as Predicate from "effect/Predicate";
 
 import type {
   Cell,

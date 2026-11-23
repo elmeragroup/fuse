@@ -11,9 +11,13 @@
  * designers see it, by resolving a variable in a mode context.
  */
 
-import { Effect, Layer, Schema } from "effect";
-import { HttpClient, HttpClientError, HttpClientResponse } from "effect/http";
-import type { HttpClientRequest } from "effect/http";
+import * as Effect from "effect/Effect";
+import * as HttpClient from "effect/http/HttpClient";
+import * as HttpClientError from "effect/http/HttpClientError";
+import type * as HttpClientRequest from "effect/http/HttpClientRequest";
+import * as HttpClientResponse from "effect/http/HttpClientResponse";
+import * as Layer from "effect/Layer";
+import * as Schema from "effect/Schema";
 
 type Rgba = { r: number; g: number; b: number; a: number };
 type Alias = { type: "VARIABLE_ALIAS"; id: string };
@@ -171,14 +175,14 @@ const PostBody = Schema.Struct({
         modeId: Schema.String,
         value: Schema.Union([
           Schema.Boolean,
-          Schema.Number,
+          Schema.Finite,
           Schema.String,
           Schema.Struct({ type: Schema.Literal("VARIABLE_ALIAS"), id: Schema.String }),
           Schema.Struct({
-            r: Schema.Number,
-            g: Schema.Number,
-            b: Schema.Number,
-            a: Schema.optionalKey(Schema.Number),
+            r: Schema.Finite,
+            g: Schema.Finite,
+            b: Schema.Finite,
+            a: Schema.optionalKey(Schema.Finite),
           }),
         ]),
       })
@@ -492,7 +496,7 @@ export class InMemoryFigma {
     if (request.body.body.byteLength > MAX_BODY_BYTES) {
       return errorResponse(413, "Request payload too large");
     }
-    const decoded = Schema.decodeUnknownExit(Schema.fromJsonString(PostBody))(
+    const decoded = Schema.decodeExit(Schema.fromJsonString(PostBody))(
       new TextDecoder().decode(request.body.body)
     );
     if (decoded._tag === "Failure") {

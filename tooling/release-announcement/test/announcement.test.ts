@@ -1,4 +1,6 @@
-import { Option, Result, Schema } from "effect";
+import * as Option from "effect/Option";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
 
 import * as Announcement from "../src/announcement.ts";

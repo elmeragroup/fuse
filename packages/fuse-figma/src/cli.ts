@@ -3,8 +3,14 @@
  * and prints what happened.
  */
 
-import { Config, Console, Data, Effect, Runtime, Schema } from "effect";
-import { CliError, Command, Flag } from "effect/cli";
+import * as CliError from "effect/cli/CliError";
+import * as Command from "effect/cli/Command";
+import * as Flag from "effect/cli/Flag";
+import * as Config from "effect/Config";
+import * as Console from "effect/Console";
+import * as Effect from "effect/Effect";
+import * as Runtime from "effect/Runtime";
+import * as Schema from "effect/Schema";
 
 import packageJson from "../package.json" with { type: "json" };
 import { FigmaApi, FileKey } from "./figma-api.ts";
@@ -17,7 +23,7 @@ import { planFileSync, syncFile } from "./token-sync.ts";
 /** `check` found differences between the file and the tokens. */
 export class DriftDetected extends Schema.TaggedError<DriftDetected>()("DriftDetected", {
   message: Schema.String,
-  changes: Schema.Number,
+  changes: Schema.Finite,
 }) {}
 
 const fileKey = Flag.String("file-key").pipe(
@@ -77,13 +83,15 @@ const cli = root.pipe(Command.withSubcommands([sync, check]), Command.provide(Fi
  * The exit status of a failed run. `check` exits 2 when the file drifted, so a CI job can
  * tell drift from a check that could not run, which exits 1.
  */
-type ExitCode = 1 | 2;
+const ExitCode = Schema.Literals([1, 2]);
 
 /**
  * A failure whose message is already on stderr. The runtime exits with its status but does
  * not log it again with a stack trace.
  */
-class ReportedFailure extends Data.TaggedError("ReportedFailure")<{ readonly exitCode: ExitCode }> {
+class ReportedFailure extends Schema.TaggedError<ReportedFailure>()("ReportedFailure", {
+  exitCode: ExitCode,
+}) {
   override readonly [Runtime.errorReported] = false;
   override readonly [Runtime.errorExitCode] = this.exitCode;
 }
@@ -92,7 +100,7 @@ function report(failure: {
   readonly _tag: string;
   readonly message: string;
 }): Effect.Effect<never, ReportedFailure> {
-  const exitCode: ExitCode = failure._tag === "DriftDetected" ? 2 : 1;
+  const exitCode: typeof ExitCode.Type = failure._tag === "DriftDetected" ? 2 : 1;
   return Console.error(failure.message).pipe(Effect.andThen(Effect.fail(new ReportedFailure({ exitCode }))));
 }
 

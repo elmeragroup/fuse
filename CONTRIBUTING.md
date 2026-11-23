@@ -14,6 +14,14 @@ Follow the [README prerequisites](README.md#prerequisites) to set up the repo an
 [contribution flow](README.md#contribution-flow) to implement and verify changes.
 Read [AGENTS.md](AGENTS.md) for the code, styling, documentation and test conventions.
 
+### Effect diagnostics in the editor
+
+`pnpm lint` checks Effect code with the rules of `@effect/tsgo`, which
+`tooling/typescript/effect.json` decides. The committed editor settings start the stock tsrs,
+which reports none of them. To see them as you edit, start your editor's TypeScript 7 language
+server as `node_modules/.bin/effect-tsgo tsrs --lsp --stdio`, the Effect-patched build of the
+installed tsrs. Set it in your user settings and leave the committed ones on the stock server.
+
 <a id="fuse-or-consumer"></a>
 
 ## Ask first: Fuse or the consumer app?

@@ -10,7 +10,7 @@
  */
 import { createElement } from "react";
 
-import { Result } from "effect";
+import * as Result from "effect/Result";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";

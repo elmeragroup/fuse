@@ -1,5 +1,7 @@
 import { assert } from "@effect/vitest";
-import { Effect, Option } from "effect";
+import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
 
 import {
   announceStep as announce,
@@ -11,6 +13,8 @@ import {
   ScratchRepository,
 } from "./cli-harness.ts";
 import { bulk } from "./fixtures.ts";
+
+const encodeJson = Schema.encodeEffect(Schema.fromJsonString(Schema.Unknown));
 
 // Unit under test: src/announce-release.ts, run as the notify job runs it, on stable releases whose
 // changelogs are long, nested or hostile. Oracles: the bounded read (only a prefix of the changelog
@@ -35,8 +39,8 @@ inScratchRepository("announcing a release with a long changelog", (it) => {
       const slack = yield* fakeSlack;
       const run = yield* announce(slack.url, yield* stableRelease(sha, "0.3.0"));
       assert.strictEqual(run.exitCode, 0, run.stdout);
-      const payload = JSON.stringify(slack.held[0]?.payload);
-      assert.include(payload, JSON.stringify("*Patch Changes*\n\n• abc1234: Small fix."));
+      const payload = yield* encodeJson(slack.held[0]?.payload);
+      assert.include(payload, yield* encodeJson("*Patch Changes*\n\n• abc1234: Small fix."));
       assert.notInclude(payload, "These notes are shortened.");
     })
   );
@@ -52,7 +56,7 @@ inScratchRepository("announcing a release with a long changelog", (it) => {
         PATH: yield* pathWith(gitDir),
       });
       assert.strictEqual(run.exitCode, 0, run.stdout);
-      const payload = JSON.stringify(slack.held[0]?.payload);
+      const payload = yield* encodeJson(slack.held[0]?.payload);
       assert.include(payload, "• Endless notes.");
       assert.include(payload, "These notes are shortened.");
     })
@@ -78,7 +82,7 @@ inScratchRepository("announcing a release with a long changelog", (it) => {
       const slack = yield* fakeSlack;
       const run = yield* announce(slack.url, yield* stableRelease(sha, "1.0.0"));
       assert.strictEqual(run.exitCode, 0, run.stdout);
-      const payload = JSON.stringify(slack.held[0]?.payload);
+      const payload = yield* encodeJson(slack.held[0]?.payload);
       assert.include(payload, shown);
       assert.include(payload, "These notes are shortened.");
     })
@@ -136,7 +140,7 @@ inScratchRepository("announcing a release with a long changelog", (it) => {
         // isolated-notes.test.ts's, and the post it then makes is release-announcement.test.ts's.
         const run = yield* announce(slack.url, yield* stableRelease(sha, "1.0.0"), limit);
         assert.strictEqual(run.exitCode, 0, run.stdout);
-        const payload = JSON.stringify(slack.held[0]?.payload);
+        const payload = yield* encodeJson(slack.held[0]?.payload);
         assert.include(payload, '"text":"@elmeragroup/fuse 1.0.0"');
         assert.include(payload, "|GitHub release>");
         const shown =
@@ -161,7 +165,7 @@ inScratchRepository("announcing a release with a long changelog", (it) => {
       const run = yield* announce(slack.url, yield* stableRelease(sha, "1.0.0"));
       assert.strictEqual(run.exitCode, 0, run.stdout);
       assert.include(
-        JSON.stringify(slack.held[0]?.payload),
+        yield* encodeJson(slack.held[0]?.payload),
         "The notes for 1.0.0 are too large to show here."
       );
     })

@@ -3,8 +3,16 @@
  * every expected failure into an exit code.
  */
 
-import { Console, Data, Effect, Layer, Option, Runtime } from "effect";
-import { Argument, CliError, Command, Flag } from "effect/cli";
+import * as Argument from "effect/cli/Argument";
+import * as CliError from "effect/cli/CliError";
+import * as Command from "effect/cli/Command";
+import * as Flag from "effect/cli/Flag";
+import * as Console from "effect/Console";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as Runtime from "effect/Runtime";
+import * as Schema from "effect/Schema";
 import path from "node:path";
 
 import packageJson from "../package.json" with { type: "json" };
@@ -188,13 +196,15 @@ const cli = shots.pipe(
 );
 
 /** The exit status of a failed run: 2 for a command line that does not parse, 1 otherwise. */
-type ExitCode = 1 | 2;
+const ExitCode = Schema.Literals([1, 2]);
 
 /**
  * A failure whose message is already on stderr. The runtime exits with its status but does
  * not log it again with a stack trace.
  */
-class ReportedFailure extends Data.TaggedError("ReportedFailure")<{ readonly exitCode: ExitCode }> {
+class ReportedFailure extends Schema.TaggedError<ReportedFailure>()("ReportedFailure", {
+  exitCode: ExitCode,
+}) {
   override readonly [Runtime.errorReported] = false;
   override readonly [Runtime.errorExitCode] = this.exitCode;
 }

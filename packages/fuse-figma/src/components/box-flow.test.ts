@@ -10,7 +10,7 @@
  * `list-style-position` as well as its `list-style-type` (CSS Cascade 4 §7.3), so the item draws the
  * list's image marker.
  */
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { isPlainBlock, readFlow } from "./box-flow.ts";

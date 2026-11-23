@@ -26,8 +26,9 @@
  *   and a nested one its `alignOffset` too.
  */
 import { describe, expect, it } from "@effect/vitest";
-import { Effect, Result } from "effect";
-import { Schema } from "effect";
+import * as Effect from "effect/Effect";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 import { readFileSync } from "node:fs";
 
 import { buildComponentSets } from "../components/build-kit.ts";

@@ -14,7 +14,11 @@
  */
 
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Console, Data, Effect, FileSystem, Runtime } from "effect";
+import * as Console from "effect/Console";
+import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
+import * as Runtime from "effect/Runtime";
+import * as Schema from "effect/Schema";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -30,7 +34,7 @@ import { locateFuseBuild, readPageAssets } from "../src/compare/page-assets.ts";
 const CAPTURES = fileURLToPath(new URL("../captures/", import.meta.url));
 
 /** The run stopped, and what it printed says why. */
-class CaptureStopped extends Data.TaggedError("CaptureStopped") {
+class CaptureStopped extends Schema.TaggedError<CaptureStopped>()("CaptureStopped", {}) {
   override readonly [Runtime.errorReported] = false;
   override readonly [Runtime.errorExitCode] = 1;
 }

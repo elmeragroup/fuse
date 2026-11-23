@@ -3,7 +3,9 @@
  * component sets of `kit-registry.ts` and four preview frames, and an `Icons` page holding an
  * icon component for every Fuse icon. It also builds the coverage table of every captured declaration.
  */
-import { Effect, Result } from "effect";
+import * as Effect from "effect/Effect";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 
 import type { OpenPlacement } from "../capture/capture-cell-cascade";
 import type { CaptureUnreadable, SetCapture } from "../capture/capture-format";
@@ -412,7 +414,7 @@ function caughtUnmappable<Mapped>(map: () => Mapped): Result.Result<Mapped, KitU
   try {
     return Result.succeed(map());
   } catch (thrown) {
-    if (thrown instanceof KitUnmappable) {
+    if (Schema.is(KitUnmappable)(thrown)) {
       return Result.fail(thrown);
     }
     throw thrown;
@@ -583,10 +585,9 @@ const buildSets = Effect.fnUntraced(function* (
   registry: readonly KitEntry[],
   others: readonly SetCapture[]
 ) {
-  const sources: SetSource[] = [];
-  for (const entry of registry) {
-    sources.push(yield* Effect.fromResult(setSource(entry)));
-  }
+  const sources = yield* Effect.forEach(registry, (entry) => Effect.fromResult(setSource(entry)), {
+    concurrency: 1,
+  });
   const captures = [...sources.map(({ capture }) => capture), ...others];
   const compiled = yield* compileUtilities([...capturedClasses(captures)]);
   const context = { compiled, variables, modes };

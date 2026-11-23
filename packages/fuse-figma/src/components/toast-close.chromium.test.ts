@@ -17,7 +17,8 @@
  * taller root would show a close anchored at the bottom. It goes red where the kit draws no close, or
  * places it apart from CSS.
  */
-import { Effect, Result } from "effect";
+import * as Effect from "effect/Effect";
+import * as Result from "effect/Result";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";

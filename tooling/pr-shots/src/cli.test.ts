@@ -1,6 +1,7 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Effect, Runtime } from "effect";
-import { TestConsole } from "effect/testing";
+import * as Effect from "effect/Effect";
+import * as Runtime from "effect/Runtime";
+import * as TestConsole from "effect/testing/TestConsole";
 
 import { cliEnvironment, parseArgv } from "../test/parse-argv.ts";
 import { runCli } from "./cli.ts";

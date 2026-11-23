@@ -8,7 +8,7 @@
  * heading, so a `## ` line inside a fence, an HTML comment or a list neither starts nor ends one.
  */
 
-import { Option } from "effect";
+import * as Option from "effect/Option";
 import type { Root, RootContent } from "mdast";
 import { fromMarkdown } from "mdast-util-from-markdown";
 import { gfmStrikethroughFromMarkdown } from "mdast-util-gfm-strikethrough";

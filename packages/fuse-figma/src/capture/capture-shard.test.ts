@@ -4,7 +4,7 @@
  * in exactly one slice and the slices together hold the whole list, and the argument forms the
  * README's `--shard <k>/<n>` names.
  */
-import { Result } from "effect";
+import * as Result from "effect/Result";
 import { describe, expect, it } from "vitest";
 
 import { parseCaptureShard, shardItems } from "./capture-shard.ts";

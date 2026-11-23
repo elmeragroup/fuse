@@ -2,7 +2,7 @@
  * The kit's built component sets, shared by the suites that check them against hand-written
  * expectations, and the Figma field values those expectations name.
  */
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { deepFrozen } from "../plugin/test-support/frozen.ts";
 import { injectedKit } from "../plugin/test-support/kit-cache.ts";

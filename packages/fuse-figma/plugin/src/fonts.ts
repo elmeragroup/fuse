@@ -5,7 +5,7 @@
  * will read. `instance-layers.ts` adds the fonts an instance's held labels need, bound to its stages.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { FONT_WEIGHT_STYLES, glyphRanges, shownLabels, walkLayers } from "../../src/components/kit-spec.ts";
 import type {
@@ -312,7 +312,15 @@ export const unloadableFont = Effect.fnUntraced(function* (run: Run, node: Scene
       const key = `${font.family}\u0000${font.style}`;
       let loads = known.get(key);
       if (loads === undefined) {
-        loads = yield* Effect.tryPromise(() => run.figma.loadFontAsync(font)).pipe(
+        loads = yield* Effect.tryPromise({
+          try: () => run.figma.loadFontAsync(font),
+          catch: (cause) =>
+            new FontUnavailable({
+              message: `Figma cannot load the font ${font.family} ${font.style}.`,
+              font,
+              cause,
+            }),
+        }).pipe(
           Effect.as(true),
           Effect.orElseSucceed(() => false)
         );

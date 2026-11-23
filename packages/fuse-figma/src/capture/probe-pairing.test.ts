@@ -4,7 +4,7 @@
  * path, and the build's record of each part's place. Oracle: hand-built chips and the kit's sets,
  * whose markup each case reads by hand, as its comment says.
  */
-import { Result } from "effect";
+import * as Result from "effect/Result";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { builtKit } from "../../test/built-kit";

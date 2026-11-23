@@ -14,7 +14,7 @@
  * wrong index, a missing underline, or a link fill bound to the wrong role in any mode fails it.
  */
 import { NodeServices } from "@effect/platform-node";
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";

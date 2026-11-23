@@ -5,7 +5,7 @@
  * suites also share a typed child lookup.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import type { GlyphFontSpec } from "../../src/components/kit-spec.ts";
 import type {

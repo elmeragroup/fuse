@@ -14,7 +14,7 @@ import type { ReactElement } from "react";
  * and card's widths and where the buttons, the text and the grid sit against Chromium's own boxes. It goes red
  * where the build's numbers or Calendar's CSS change so that the two place a layer apart.
  */
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";

@@ -4,7 +4,9 @@
  * for any file.
  */
 
-import { Brand, Result, Schema } from "effect";
+import * as Brand from "effect/Brand";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 
 /** A gamma-encoded sRGB color with every channel in `0..1`, Figma's `RGBA` value. */
 export type Rgba = {

@@ -4,7 +4,7 @@
  * globals Figma provides.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 import { fileURLToPath } from "node:url";
 import { build } from "rolldown";
 

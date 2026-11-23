@@ -1,4 +1,4 @@
-import { Option } from "effect";
+import * as Option from "effect/Option";
 import type { Nodes, PhrasingContent, Root, RootContent } from "mdast";
 
 import * as ChangelogSection from "./changelog-section.ts";

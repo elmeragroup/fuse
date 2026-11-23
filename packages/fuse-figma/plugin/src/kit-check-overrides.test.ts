@@ -8,7 +8,7 @@
  * back a padding override on the root alone and writes a bare side's 0 beside the inner weight the
  * other sides keep, so a spec outside those names a write no Apply would make.
  */
-import { Result } from "effect";
+import * as Result from "effect/Result";
 import { describe, expect, it } from "vitest";
 
 import { checkKitSpec } from "../../src/components/kit-check.ts";

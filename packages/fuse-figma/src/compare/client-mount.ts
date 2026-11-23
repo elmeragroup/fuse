@@ -21,7 +21,7 @@
  * This module runs only in the browser, inside the bundle `client-bundle.ts` builds.
  */
 
-import { Schema } from "effect";
+import * as Schema from "effect/Schema";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 

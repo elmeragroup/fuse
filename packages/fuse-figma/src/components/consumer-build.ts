@@ -5,7 +5,7 @@
  * test fixtures read the same tree for each utility's declarations.
  */
 
-import type { Effect } from "effect";
+import type * as Effect from "effect/Effect";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";

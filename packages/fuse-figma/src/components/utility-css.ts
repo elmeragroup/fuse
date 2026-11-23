@@ -7,7 +7,7 @@
  * compiles itself, and Tailwind's preflight.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import type { KitSourceInvalid, KitToolFailed } from "./build-errors";
 import { buildConsumerCss, consumerEntry, readCompiledUtilities } from "./consumer-build";
@@ -68,25 +68,27 @@ const PREFLIGHT_LAYER = "fuse-figma-preflight";
  * browser reads an uncompiled `--theme()` as a function no rule defines and drops the declaration,
  * so the capture and comparison pages load this compile, as a host's pages do.
  *
- * @returns Preflight's rules, one per line. The Effect fails as {@link compileUtilities} does.
+ * The Effect succeeds with preflight's rules, one per line, and fails as {@link compileUtilities} does.
  */
-export function compilePreflight(): Effect.Effect<string, KitSourceInvalid | KitToolFailed> {
-  const preflight: AtRule = {
-    kind: "at-rule",
-    name: "@import",
-    params: `"tailwindcss/preflight.css" layer(${PREFLIGHT_LAYER})`,
-    nodes: [],
-  };
-  const [theme, ...rest] = consumerEntry();
-  const entry = theme === undefined ? [preflight, ...rest] : [theme, preflight, ...rest];
-  const layered = (node: AstNode): AstNode[] =>
-    node.kind === "at-rule" && node.name === "@layer" && node.params === PREFLIGHT_LAYER
-      ? node.nodes
-      : node.kind === "context" || node.kind === "at-root"
-        ? node.nodes.flatMap(layered)
-        : [];
-  return Effect.map(buildConsumerCss([], entry), (nodes) => nodes.flatMap(layered).map(toCss).join("\n"));
-}
+export const compilePreflight: Effect.Effect<string, KitSourceInvalid | KitToolFailed> = Effect.suspend(
+  () => {
+    const preflight: AtRule = {
+      kind: "at-rule",
+      name: "@import",
+      params: `"tailwindcss/preflight.css" layer(${PREFLIGHT_LAYER})`,
+      nodes: [],
+    };
+    const [theme, ...rest] = consumerEntry();
+    const entry = theme === undefined ? [preflight, ...rest] : [theme, preflight, ...rest];
+    const layered = (node: AstNode): AstNode[] =>
+      node.kind === "at-rule" && node.name === "@layer" && node.params === PREFLIGHT_LAYER
+        ? node.nodes
+        : node.kind === "context" || node.kind === "at-root"
+          ? node.nodes.flatMap(layered)
+          : [];
+    return Effect.map(buildConsumerCss([], entry), (nodes) => nodes.flatMap(layered).map(toCss).join("\n"));
+  }
+);
 
 /**
  * Serialize a node of Tailwind's syntax tree. Tailwind's own printer is not exported. Comments

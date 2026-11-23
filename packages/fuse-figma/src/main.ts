@@ -4,11 +4,11 @@
  */
 
 import { NodeHttpClient, NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Effect, Layer } from "effect";
+import * as Effect from "effect/Effect";
 
 import { runCli } from "./cli.ts";
 
 runCli(process.argv.slice(2)).pipe(
-  Effect.provide(Layer.mergeAll(NodeServices.layer, NodeHttpClient.layerUndici)),
+  Effect.provide([NodeServices.layer, NodeHttpClient.layerUndici]),
   NodeRuntime.runMain
 );

@@ -42,6 +42,12 @@ ruleTester.run("restricted-imports: named exports", restrictedImports, {
       filename: BUILD,
     },
     { code: 'export { writePublishManifest } from "./generate-exports";', options: writer, filename: BUILD },
+    // An `import("…")` type of another export stays allowed.
+    {
+      code: 'type Write = typeof import("./generate-exports").writePublishManifest;',
+      options: writer,
+      filename: BUILD,
+    },
     // A module of the same name elsewhere is another module.
     {
       code: 'import { writeSourceExports } from "./lib/generate-exports";',
@@ -94,6 +100,13 @@ ruleTester.run("restricted-imports: named exports", restrictedImports, {
       filename: BUILD,
       errors: [{ messageId: "restricted" }],
     },
+    // An `import("…")` type takes the export its qualifier starts with.
+    {
+      code: 'type Write = typeof import("./generate-exports").writeSourceExports;',
+      options: writer,
+      filename: BUILD,
+      errors: [{ messageId: "restricted" }],
+    },
     // Re-exports hand the writer on.
     {
       code: 'export { writeSourceExports } from "./generate-exports";',
@@ -128,11 +141,24 @@ ruleTester.run("restricted-imports", restrictedImports, {
     { code: 'import { today } from "./temporal/today";', options },
     { code: 'import "../../temporal-polyfill";', options, filename: "date-picker.browser.test.tsx" },
     { code: "const module = await import(path);", options },
+    // A `require` the module declares is its own function, and a computed specifier names no module.
+    { code: 'function load(require) {\n  return require("temporal-polyfill");\n}', options },
+    { code: "const module = require(path);", options },
   ],
   invalid: [
     { code: 'import "../../temporal-polyfill";', options, errors: [{ messageId: "restricted" }] },
     { code: 'import "../temporal-polyfill.ts";', options, errors: [{ messageId: "restricted" }] },
     { code: 'import "../temporal-polyfill.js";', options, errors: [{ messageId: "restricted" }] },
+    {
+      code: 'const polyfill = require("temporal-polyfill");',
+      options,
+      errors: [{ messageId: "restricted" }],
+    },
+    {
+      code: 'type Now = import("temporal-polyfill").Temporal.Instant;',
+      options,
+      errors: [{ messageId: "restricted" }],
+    },
     { code: 'import { Temporal } from "temporal-polyfill";', options, errors: [{ messageId: "restricted" }] },
     { code: 'export * from "temporal-polyfill/global";', options, errors: [{ messageId: "restricted" }] },
     {

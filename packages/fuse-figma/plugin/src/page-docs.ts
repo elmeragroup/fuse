@@ -12,7 +12,7 @@
  * the `preview/` key the snapshot export reads.
  */
 
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { columnAxisOf, gridCell } from "../../src/components/kit-check.ts";
 import { axisValues } from "../../src/components/kit-spec.ts";
@@ -281,10 +281,9 @@ function planLinkLook(
 const planRule = Effect.fnUntraced(function* (page: PlannedPage, spec: DocRuleSpec) {
   const run = yield* currentRun;
   const label = `${page.spec.name} / ${spec.name}`;
-  const contents = (frame: FrameNode) =>
-    Effect.gen(function* () {
-      planBareFrame(yield* currentRun, frame, label, spec.name, spec.color);
-    });
+  const contents = Effect.fnUntraced(function* (frame: FrameNode) {
+    planBareFrame(yield* currentRun, frame, label, spec.name, spec.color);
+  });
   const found = yield* page.find(spec.key, spec.name, isFrame);
   if (found !== undefined) {
     yield* contents(found);
@@ -308,29 +307,27 @@ const planLabels = Effect.fnUntraced(function* (
   const run = yield* currentRun;
   const label = `${page.spec.name} / ${spec.name}`;
   const texts = labelTexts(set.spec, spec);
-  const contents = (frame: FrameNode) =>
-    Effect.gen(function* () {
-      const inner = yield* currentRun;
-      planBareFrame(inner, frame, label, spec.name, undefined);
-      yield* planOwnedChildren(frame, label, "header", texts, (text): OwnedChild<TextNode, void> => ({
-        name: text.name,
-        accept: isText,
-        description: `create the header ${text.characters}`,
-        make: () => inner.figma.createText(),
-        requireNew: () => {
-          requireTextFonts(inner, label, styleOf(styles, text.style), undefined);
-        },
-        plan: (node, origin) =>
-          Effect.gen(function* () {
-            const now = yield* currentRun;
-            const style = styleOf(styles, text.style);
-            if (origin === "found") {
-              requireTextFonts(now, label, style, node);
-            }
-            planDocText(now, node, origin, `${label} / ${text.characters}`, text, style);
-          }),
-      }));
-    });
+  const contents = Effect.fnUntraced(function* (frame: FrameNode) {
+    const inner = yield* currentRun;
+    planBareFrame(inner, frame, label, spec.name, undefined);
+    yield* planOwnedChildren(frame, label, "header", texts, (text): OwnedChild<TextNode, void> => ({
+      name: text.name,
+      accept: isText,
+      description: `create the header ${text.characters}`,
+      make: () => inner.figma.createText(),
+      requireNew: () => {
+        requireTextFonts(inner, label, styleOf(styles, text.style), undefined);
+      },
+      plan: Effect.fnUntraced(function* (node, origin) {
+        const now = yield* currentRun;
+        const style = styleOf(styles, text.style);
+        if (origin === "found") {
+          requireTextFonts(now, label, style, node);
+        }
+        planDocText(now, node, origin, `${label} / ${text.characters}`, text, style);
+      }),
+    }));
+  });
   const found = yield* page.find(spec.key, spec.name, isFrame);
   if (found !== undefined) {
     yield* contents(found);

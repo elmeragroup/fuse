@@ -5,8 +5,11 @@
  * and a token sent to a built URL goes only where its base points.
  */
 
-import { Config, Effect, Result, Schema } from "effect";
-import { Url } from "effect/http";
+import * as Config from "effect/Config";
+import * as Effect from "effect/Effect";
+import * as Url from "effect/http/Url";
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 
 /** A base URL, repository or path segment that does not parse, naming the setting it came from. */
 export class InvalidAddress extends Schema.TaggedError<InvalidAddress>()("InvalidAddress", {
@@ -50,12 +53,11 @@ export function parseBaseUrl(name: string, value: string): Result.Result<URL, In
  * @returns The base URL; fails with `InvalidAddress`, or a `ConfigError` when it is unset without
  *   a fallback.
  */
-export const baseUrlSetting = (name: string, fallback?: string) =>
-  Effect.gen(function* () {
-    const setting = Config.String(name);
-    const value = yield* fallback === undefined ? setting : setting.pipe(Config.withDefault(fallback));
-    return yield* Effect.fromResult(parseBaseUrl(name, value));
-  });
+export const baseUrlSetting = Effect.fnUntraced(function* (name: string, fallback?: string) {
+  const setting = Config.String(name);
+  const value = yield* fallback === undefined ? setting : setting.pipe(Config.withDefault(fallback));
+  return yield* Effect.fromResult(parseBaseUrl(name, value));
+});
 
 /** One segment of a URL path that the parser keeps as written. */
 export const PathSegment = Schema.String.pipe(
@@ -110,7 +112,6 @@ export function parseRepository(name: string, value: string): Result.Result<Repo
  * @param name - The setting's name.
  * @returns The repository; fails with `InvalidAddress`, or a `ConfigError` when it is unset.
  */
-export const repositorySetting = (name: string) =>
-  Effect.gen(function* () {
-    return yield* Effect.fromResult(parseRepository(name, yield* Config.String(name)));
-  });
+export const repositorySetting = Effect.fnUntraced(function* (name: string) {
+  return yield* Effect.fromResult(parseRepository(name, yield* Config.String(name)));
+});

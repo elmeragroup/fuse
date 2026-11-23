@@ -12,7 +12,11 @@
  */
 
 import { NodeRuntime, NodeServices } from "@effect/platform-node";
-import { Console, Data, Effect, Result, Runtime } from "effect";
+import * as Console from "effect/Console";
+import * as Effect from "effect/Effect";
+import * as Result from "effect/Result";
+import * as Runtime from "effect/Runtime";
+import * as Schema from "effect/Schema";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -34,13 +38,15 @@ const USAGE =
  * The run stopped, and what it printed says why. The runtime exits 1 and prints nothing more, as
  * `cli.ts`'s reported failure does.
  */
-class CompareStopped extends Data.TaggedError("CompareStopped") {
+class CompareStopped extends Schema.TaggedError<CompareStopped>()("CompareStopped", {}) {
   override readonly [Runtime.errorReported] = false;
   override readonly [Runtime.errorExitCode] = 1;
 }
 
 /** The command line asks for something the script does not run, such as a threshold above 1. */
-class ArgumentsInvalid extends Data.TaggedError("ArgumentsInvalid")<{ readonly message: string }> {}
+class ArgumentsInvalid extends Schema.TaggedError<ArgumentsInvalid>()("ArgumentsInvalid", {
+  message: Schema.String,
+}) {}
 
 /** The text of a thrown value, for a message. */
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- throw boundary: Node's parser and file reads throw values with no static type
@@ -120,10 +126,9 @@ const program = Effect.gen(function* () {
   return yield* compare(snapshotPath, options);
 }).pipe(
   // Print why the run stopped, on stderr, once. A failed self-check has printed its own lines.
-  Effect.catch((failure) =>
-    failure instanceof CompareStopped
-      ? Effect.fail(failure)
-      : Console.error(failure.message).pipe(Effect.andThen(Effect.fail(new CompareStopped())))
+  Effect.catchIf(
+    (failure) => !Schema.is(CompareStopped)(failure),
+    (failure) => Console.error(failure.message).pipe(Effect.andThen(Effect.fail(new CompareStopped())))
   )
 );
 
