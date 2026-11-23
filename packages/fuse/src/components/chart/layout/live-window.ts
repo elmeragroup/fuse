@@ -12,7 +12,8 @@ import { bisector, tickIncrement } from "d3-array";
 import { area, line } from "d3-shape";
 
 import type { ChartInstant } from "../chart-types";
-import type { PropIssue, RowSubjectIssue } from "./errors";
+import { dataMessage, issueMessage } from "./errors";
+import type { RowSubjectIssue } from "./errors";
 import { pathNumber } from "./rounding";
 import { curveAlongX, heightY } from "./scatter-frame";
 import { isBoundedValue } from "./value-domain";
@@ -30,12 +31,49 @@ export type LiveSeries = {
   readonly issues: readonly RowSubjectIssue[];
 };
 
+/** The data rules only a live line chart reports. */
+export type LiveDataRule = "non-finite-live-value";
+
+/**
+ * What each live data rule says after the part, ending with the production fallback. The messages
+ * live beside the rules rather than in `DATA_MESSAGES`, so a cartesian route ships none of them.
+ */
+const LIVE_DATA_MESSAGES = {
+  "non-finite-live-value":
+    "received a value that is not a finite number within ±1e15. Pass a number, or leave it out to show the latest reading's. Production shows the latest reading's value.",
+} as const satisfies { readonly [R in LiveDataRule]: string };
+
+/** A data issue about a prop rather than a row, such as a live chart's `value`. */
+export type LivePropIssue = {
+  readonly kind: "prop";
+  readonly rule: LiveDataRule;
+  /** The prop the rule is about. */
+  readonly subject: string;
+};
+
 /** The latest value, with the issue Root's `value` raised, if any. */
 export type LiveLatest = {
   /** Root's `value` when it parses, otherwise the latest reading's, or null with no reading. */
   readonly latest: number | null;
-  readonly issues: readonly PropIssue[];
+  readonly issues: readonly LivePropIssue[];
 };
+
+/** A live issue names its own row, so no slot maps to one. */
+const NO_SLOT_ROWS: readonly number[] = [];
+
+/**
+ * What a live line issue says after the part: a skipped reading's message from `DATA_MESSAGES`,
+ * or a prop's from `LIVE_DATA_MESSAGES`.
+ *
+ * @param issue - The first issue of its rule and subject.
+ * @param count - How many issues share the rule and subject.
+ * @returns The text.
+ */
+export function liveMessage(issue: RowSubjectIssue | LivePropIssue, count?: number): string {
+  return "kind" in issue
+    ? issueMessage(LIVE_DATA_MESSAGES[issue.rule], issue, NO_SLOT_ROWS, count)
+    : dataMessage(issue, NO_SLOT_ROWS, count);
+}
 
 /** A time window in epoch milliseconds, `start` before `end`. */
 export type LiveWindow = { readonly start: number; readonly end: number };

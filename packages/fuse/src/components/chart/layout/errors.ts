@@ -10,6 +10,7 @@
  */
 import type { ChartConfig } from "../chart-types";
 import type { ModelIssue } from "./cartesian-model";
+import type { LiveDataRule, LivePropIssue } from "./live-window";
 import type { ScatterDataRule, ScatterIssue } from "./scatter-model";
 
 /** The composition rules this layer reaches. */
@@ -58,13 +59,13 @@ export type ChartDataRule =
   | "negative-polar-value"
   | "radar-series-cap"
   | "unknown-category"
-  | "non-finite-live-value";
+  | LiveDataRule;
 
 /**
- * The data rules whose messages `DATA_MESSAGES` holds: every rule but the scatter model's, which
- * `SCATTER_DATA_MESSAGES` holds beside them.
+ * The data rules whose messages `DATA_MESSAGES` holds: every rule but the scatter model's and the
+ * live line chart's, which `SCATTER_DATA_MESSAGES` and `LIVE_DATA_MESSAGES` hold beside them.
  */
-type DataMessageRule = Exclude<ChartDataRule, ScatterDataRule>;
+type DataMessageRule = Exclude<ChartDataRule, ScatterDataRule | LiveDataRule>;
 
 /** The development hints, which warn in development only. */
 export type ChartHintRule =
@@ -141,8 +142,6 @@ export const DATA_MESSAGES = {
     "received more than 4 series. A radar chart compares at most 4 polygons, so pick the 4 that matter, or split the chart. Production draws the first 4 config keys.",
   "unknown-category":
     "received a row whose category has no config entry. Add the category to config. Production folds the row into the Other slice.",
-  "non-finite-live-value":
-    "received a value that is not a finite number within ±1e15. Pass a number, or leave it out to show the latest reading's. Production shows the latest reading's value.",
 } as const satisfies { readonly [R in DataMessageRule]: string };
 
 /**
@@ -173,19 +172,11 @@ export type RowSubjectIssue = {
   readonly subject: string;
 };
 
-/** A data issue about a prop rather than a row, such as a live chart's `value`. */
-export type PropIssue = {
-  readonly kind: "prop";
-  readonly rule: DataMessageRule;
-  /** The prop the rule is about. */
-  readonly subject: string;
-};
-
 /** A data issue whose message `DATA_MESSAGES` holds. */
-type DataMessageIssue = ModelIssue | RowSubjectIssue | PropIssue;
+type DataMessageIssue = ModelIssue | RowSubjectIssue;
 
 /** Every data issue a Root reports: a cartesian model's, one that names its row, or a prop's. */
-export type DataIssue = DataMessageIssue | ScatterIssue;
+export type DataIssue = DataMessageIssue | ScatterIssue | LivePropIssue;
 
 /**
  * What a data issue is about, so production warns once per rule and subject however many rows break
