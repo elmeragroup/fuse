@@ -7,7 +7,7 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
-import { createDrawGate, openDrawingSoon, useClientMount } from "./chart-draw-gate";
+import { createDrawGate, useOpenDrawing } from "./chart-draw-gate";
 import { useIssueWarnings } from "./chart-issue-warnings";
 import { StatusRegion } from "./chart-listbox";
 import { BROWSER_FRAMES } from "./chart-motion";
@@ -209,13 +209,7 @@ export function LiveLineChartRoot({
   const figureRef = useMergedRefs(rootRef, ref);
   const plotRef = useRef<HTMLDivElement>(null);
   const { plot, probe, reads } = useMeasuredPlot(plotRef);
-  // A browser mount draws in the render right after its first commit, which measured the plot. A
-  // hydrating Root draws in a microtask after its hydration commit, before the browser paints.
-  const clientMount = useClientMount();
-  useLayoutEffect(() => {
-    if (clientMount) drawing.openNow();
-    else openDrawingSoon(drawing);
-  }, [drawing, clientMount]);
+  useOpenDrawing(drawing);
   const reduced = useReducedMotion();
   // The mode goes first, so a Root that mounts paused holds the first frame, at the latest reading.
   useLayoutEffect(() => {

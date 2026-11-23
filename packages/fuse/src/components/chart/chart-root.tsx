@@ -12,7 +12,7 @@ import { keyDomains, useChartCommit } from "./chart-commit";
 import { partOutsidePanel, useChartRoot } from "./chart-context";
 import type { ChartLayoutContextValue, ChartRootContextValue, PanelEntry } from "./chart-context";
 import { writeAttribute, writeStyle } from "./chart-dom";
-import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
+import { useOpenDrawing } from "./chart-draw-gate";
 import { useEntrance } from "./chart-entrance";
 import { createChartFollowers } from "./chart-followers";
 import type { ActiveSlot, ChartFollowers } from "./chart-followers";
@@ -580,15 +580,8 @@ export function ChartRoot<
   const span = usePanelSpan(frameRef, panels);
   const placeSpan = span.follow;
   const { plot, probe, reads } = useMeasuredPlot(plotRef, span.place);
-  // A browser mount draws in the render right after its first commit, which measured the plot. A
-  // hydrating Root draws in a microtask after its hydration commit, once React has hydrated what
-  // else the task holds, so its marks render once, before the browser paints. Either way they draw
-  // at the entrance's first frame while it waits.
-  const clientMount = useClientMount();
-  useLayoutEffect(() => {
-    if (clientMount) store.drawing.openNow();
-    else openDrawingSoon(store.drawing);
-  }, [store, clientMount]);
+  // The marks draw at the entrance's first frame while it waits.
+  useOpenDrawing(store.drawing);
   const modelRef = useRef(model);
   useLayoutEffect(() => {
     motion.setReduced(reduced);

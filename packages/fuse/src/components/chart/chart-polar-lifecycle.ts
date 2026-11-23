@@ -50,8 +50,6 @@ export type PolarLifecycle = {
   readonly motion: ChartMotion;
   /** Whether the figure plays an entrance: it asks for one and the reader allows motion. */
   readonly entrance: boolean;
-  /** Whether the figure mounted in the browser, with no server HTML before it. */
-  readonly clientMount: boolean;
   /** The figure, once it mounts. */
   readonly rootRef: RefObject<HTMLElement | null>;
   /** The ref the figure takes: the Root's own and the consumer's. */
@@ -182,7 +180,6 @@ export function usePolarLifecycle(input: PolarLifecycleInput): PolarLifecycle {
     store,
     motion,
     entrance,
-    clientMount,
     rootRef,
     figureRef,
     cellRef,
