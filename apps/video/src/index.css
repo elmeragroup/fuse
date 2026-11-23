@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@import "@elmeragroup/fuse/css";
+/* Fuse charts style their parts from their own stylesheet, imported beside Fuse's. */
+@import "@elmeragroup/fuse/chart.css";
+@import "@elmeragroup/fuse/themes.css";
+@import "@elmeragroup/fuse/demo-stage-density.css";
+/* The video draws body text and headings in Roboto (see the --font-sans rule below) and ships the
+   faces, so a render never depends on the machine's installed fonts. */
+@import "@fontsource/roboto/latin-400.css";
+@import "@fontsource/roboto/latin-500.css";
+@import "@fontsource/roboto/latin-600.css";
+@import "@fontsource/roboto/latin-700.css";
+/* Mono text draws in JetBrains Mono, the face the remocn terminal uses, bundled for the same
+   reason. Fuse's mono stack names only system faces, so the video points it at this one. */
+@import "@fontsource/jetbrains-mono/latin-400.css";
+@import "@fontsource/jetbrains-mono/latin-500.css";
+@import "@fontsource/jetbrains-mono/latin-700.css";
+/* Automatic source detection is rooted at this file's directory, so the library's recipes are
+   named explicitly. */
+@source "../../../packages/fuse/src";
+@source "./";
+
+:root {
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+/* Fuse leaves --font-sans and --font-heading to the app. The video sets them on the root and again
+   on every theme scope, because a `var(--font-sans)` resolves where it is declared. */
+:root,
+[data-theme-identity] {
+  --font-sans: Roboto, ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+}
+
+/* A native caret blinks on the wall clock, which no seek can pause, and no frame needs one. */
+input,
+textarea,
+[contenteditable] {
+  caret-color: transparent;
+}
