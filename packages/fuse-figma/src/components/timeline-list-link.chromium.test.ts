@@ -15,20 +15,16 @@
  */
 import { NodeServices } from "@effect/platform-node";
 import { Effect } from "effect";
-import { TestConsole } from "effect/testing";
 import type { Browser, Page } from "playwright";
 import { chromium } from "playwright";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import * as CssColor from "@elmeragroup/color/css-color";
-
 import { builtKit, variantRoot } from "../../test/built-kit.ts";
 import type { BuiltSets } from "../../test/built-kit.ts";
-import { FILE_KEY, run, TOKEN } from "../../test/cli-fixture.ts";
-import { InMemoryFigma } from "../../test/in-memory-figma.ts";
-import { everyPin, pinName, pinStamps } from "../../test/mode-pins.ts";
-import type { Pin } from "../../test/mode-pins.ts";
+import type { InMemoryFigma } from "../../test/in-memory-figma.ts";
+import { computedColor, named, resolvedIn, stampsOf, sweptFile } from "../../test/mode-sweep.ts";
+import type { SweptMode } from "../../test/mode-sweep.ts";
 import { locateFuseBuild, readPageAssets } from "../compare/page-assets.ts";
 import { STYLES_LAYERS } from "../compare/preview-page.ts";
 import type { ThemeStamps } from "../compare/preview-theme.ts";
@@ -127,22 +123,9 @@ function bytes(color: {
   return [color.r, color.g, color.b, color.a].map((channel) => Math.round(channel * 255)).join(",");
 }
 
-/** A color Chromium computes, as 8-bit sRGB. */
-function computedBytes(value: string): string {
-  const parsed = CssColor.parse(value);
-  if (parsed._tag === "err") {
-    throw new Error(`Chromium computed ${value}, which the color parser does not read`);
-  }
-  const srgb = CssColor.toSrgb(parsed.value);
-  return bytes({ r: srgb.r, g: srgb.g, b: srgb.b, a: srgb.alpha });
-}
-
 /** A spec color as the file resolves it under a pin, as 8-bit sRGB. */
-function resolvedBytes(figma: InMemoryFigma, color: ColorSpec, pin: Pin): string {
-  if (color.kind === "literal") {
-    return bytes(color.color);
-  }
-  const value = figma.resolve(color.variable.collection, color.variable.name, pin);
+function resolvedBytes(figma: InMemoryFigma, color: ColorSpec, pin: SweptMode): string {
+  const value = resolvedIn(figma, color, pin);
   return value instanceof Object ? bytes(value) : `not a color: ${String(value)}`;
 }
 
@@ -177,7 +160,7 @@ function textsIn(layers: readonly ChildLayerSpec[]): readonly TextLayerSpec[] {
 }
 
 /** What a text shows at each of its characters: whether it is underlined, its fill and its underline's color. */
-function characterLooks(figma: InMemoryFigma, text: TextLayerSpec, pin: Pin): readonly Look[] {
+function characterLooks(figma: InMemoryFigma, text: TextLayerSpec, pin: SweptMode): readonly Look[] {
   return Array.from({ length: text.characters.length }, (_, index) => {
     const range = text.ranges?.find((each) => each.start <= index && index < each.end);
     const fill = range?.color ?? text.color;
@@ -197,16 +180,12 @@ function characterLooks(figma: InMemoryFigma, text: TextLayerSpec, pin: Pin): re
 let browser: Browser | undefined;
 let kit: BuiltSets;
 let figma: InMemoryFigma;
-let pins: readonly Pin[];
+let pins: readonly SweptMode[];
 let measured: readonly (readonly MeasuredDescription[])[];
 
 beforeAll(async () => {
   kit = await builtKit();
-  figma = new InMemoryFigma(FILE_KEY, TOKEN);
-  await Effect.runPromise(
-    run(figma, ["--file-key", FILE_KEY, "sync"]).pipe(Effect.provide(TestConsole.layer))
-  );
-  pins = everyPin(figma);
+  ({ figma, modes: pins } = await sweptFile());
   const assets = await Effect.runPromise(
     Effect.gen(function* () {
       return yield* readPageAssets(yield* locateFuseBuild(), new Map());
@@ -215,7 +194,7 @@ beforeAll(async () => {
   browser = await chromium.launch();
   const page = await browser.newPage();
   await page.setContent(linksDocument(assets.preflight, `${assets.styles}\n${assets.themes}`));
-  measured = await measurePins(page, pins.map(pinStamps));
+  measured = await measurePins(page, pins.map(stampsOf));
 });
 
 afterAll(async () => {
@@ -229,19 +208,19 @@ describe("the Timeline list links set's descriptions", () => {
       (measured[index] ?? []).flatMap((description) => {
         const text = texts.find((each) => each.characters === description.text);
         if (text === undefined) {
-          return [`${pinName(pin)}: no text layer shows ${JSON.stringify(description.text)}`];
+          return [`${named(pin)}: no text layer shows ${JSON.stringify(description.text)}`];
         }
         const expected = Array.from({ length: description.text.length }, (_, at): Look => {
           const linked = description.link.start <= at && at < description.link.end;
-          const fill = computedBytes(linked ? description.linkColor : description.color);
+          const fill = bytes(computedColor(linked ? description.linkColor : description.color));
           const line = linked ? description.linkLine : description.line;
           const link = linked ? description.linkTarget : null;
           return line === "underline"
             ? {
                 underlined: true,
                 fill,
-                underline: computedBytes(
-                  linked ? description.linkDecorationColor : description.decorationColor
+                underline: bytes(
+                  computedColor(linked ? description.linkDecorationColor : description.decorationColor)
                 ),
                 link,
               }
@@ -255,12 +234,12 @@ describe("the Timeline list links set's descriptions", () => {
           runs(drawn) === runs(expected)
             ? []
             : [
-                `${pinName(pin)} ${JSON.stringify(description.text)}: drawn ${runs(drawn)}, Chromium ${runs(expected)}`,
+                `${named(pin)} ${JSON.stringify(description.text)}: drawn ${runs(drawn)}, Chromium ${runs(expected)}`,
               ];
         const weights = faces.every((face) => face === text.fontStyle)
           ? []
           : [
-              `${pinName(pin)} ${JSON.stringify(description.text)}: drawn ${text.fontStyle}, Chromium ${faces.join(" and ")}`,
+              `${named(pin)} ${JSON.stringify(description.text)}: drawn ${text.fontStyle}, Chromium ${faces.join(" and ")}`,
             ];
         return [...looks, ...weights];
       })
