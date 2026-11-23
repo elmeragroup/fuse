@@ -19,6 +19,7 @@ import { Button } from "../button/button";
 import { pageStatus } from "../data-table/data-table-pagination-status";
 import { dataTableStrings } from "../data-table/intl";
 import { Table } from "../table/table";
+import type { ChartStrings } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 
 /** Above this many rows a chart's table pages. */
@@ -48,6 +49,57 @@ export type TablePages = {
   /** Shows a page by its index. A page outside the pages or the shown one does nothing. */
   readonly go: (index: number) => void;
 };
+
+/** The dictionary strings a paged table's status reads. */
+export type RowPageStrings = Pick<ChartStrings, "pageStatus" | "rowRange">;
+
+/** A paged table's place, with the half-open row range `[from, to)` of the shown page. */
+export type RowPages = TablePages & {
+  readonly from: number;
+  readonly to: number;
+};
+
+/**
+ * The pages of a table of `rowCount` rows, `PAGE_ROWS` to a page. A data update that drops the
+ * shown page shows the last page, and the page asked for returns once the rows grow back. A move to
+ * another page announces its status.
+ *
+ * @param rowCount - How many rows the table holds.
+ * @param strings - The locale's page status and row range.
+ * @param announce - Announces a status message through the Root's status region.
+ * @returns The shown page, its rows, its status and the move.
+ */
+export function useRowPages(
+  rowCount: number,
+  strings: RowPageStrings,
+  announce: (text: string) => void
+): RowPages {
+  const [page, setPage] = useState(0);
+  const count = Math.max(1, Math.ceil(rowCount / PAGE_ROWS));
+  const index = Math.min(page, count - 1);
+  const status = (at: number): string => {
+    const start = at * PAGE_ROWS;
+    const end = Math.min(rowCount, start + PAGE_ROWS);
+    return strings.pageStatus(
+      String(at + 1),
+      String(count),
+      strings.rowRange(String(start + 1), String(end))
+    );
+  };
+  const from = index * PAGE_ROWS;
+  return {
+    index,
+    count,
+    from,
+    to: Math.min(rowCount, from + PAGE_ROWS),
+    status: status(index),
+    go: (next) => {
+      if (next < 0 || next >= count || next === index) return;
+      setPage(next);
+      announce(status(next));
+    },
+  };
+}
 
 /** Whether a table shows, and the toggle that shows or hides it and focuses it when shown. */
 export type TableDisclosure = {

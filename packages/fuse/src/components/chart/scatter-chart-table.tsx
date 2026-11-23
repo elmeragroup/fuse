@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { ReactElement } from "react";
 
 import { countOf } from "../../intl/count-of";
 import { Table } from "../table/table";
-import { ChartTableShell, PAGE_ROWS, Twin, useTableDisclosure } from "./chart-table-shell";
+import { ChartTableShell, Twin, useRowPages, useTableDisclosure } from "./chart-table-shell";
 import type { ChartLayerProps } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
@@ -74,12 +74,8 @@ export function ScatterChartTable({
   const { model, config, locale, xFormat, valueFormat, id, store } = context;
   const strings = CHART_STRINGS[locale];
   const disclosure = useTableDisclosure();
-  const [page, setPage] = useState(0);
-  const pages = Math.max(1, Math.ceil(model.count / PAGE_ROWS));
-  // A data update that drops pages clamps to the last one.
-  const index = Math.min(page, pages - 1);
-  const from = index * PAGE_ROWS;
-  const to = Math.min(model.count, from + PAGE_ROWS);
+  const pages = useRowPages(model.count, strings, store.announce);
+  const { from, to } = pages;
   // The shown page's rows format once per page, data, format or locale change, so a render for
   // anything else, such as a live update's tick while the table is collapsed, formats none.
   const rows = useMemo(
@@ -88,19 +84,6 @@ export function ScatterChartTable({
   );
   if (model.empty) return <></>;
   const names = axisNames(context);
-  const range = (start: number, end: number) => strings.rowRange(String(start + 1), String(end));
-  const go = (next: number): void => {
-    if (next < 0 || next >= pages || next === index) return;
-    setPage(next);
-    const start = next * PAGE_ROWS;
-    store.announce(
-      strings.pageStatus(
-        String(next + 1),
-        String(pages),
-        range(start, Math.min(model.count, start + PAGE_ROWS))
-      )
-    );
-  };
   return (
     <ChartTableShell
       disclosure={disclosure}
@@ -120,12 +103,7 @@ export function ScatterChartTable({
           <Table.Head scope="col">{names.y}</Table.Head>
         </>
       }
-      pages={{
-        index,
-        count: pages,
-        status: strings.pageStatus(String(index + 1), String(pages), range(from, to)),
-        go,
-      }}>
+      pages={pages}>
       {rows.map((row, offset) => (
         // Rows key by their place on the page, so a page or data change updates them in place.
         <Table.Row key={offset}>
