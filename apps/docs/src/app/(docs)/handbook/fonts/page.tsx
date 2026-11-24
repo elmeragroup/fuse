@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 
+import { DocsCodeBlock, DocsPlainCodeBlock } from "../../../../components/docs-code-block";
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 import { DocsTable } from "../../../../components/docs-table";
 
@@ -126,15 +127,9 @@ export default function FontsPage(): ReactElement {
         <code>variable</code>. Use <code>next/font/local</code> for a licensed face, or for any face you want
         the build to read from disk instead of downloading.
       </p>
-      <pre>
-        <code>{NEXT_FONTS}</code>
-      </pre>
-      <pre>
-        <code>{NEXT_LAYOUT}</code>
-      </pre>
-      <pre>
-        <code>{NEXT_CSS}</code>
-      </pre>
+      <DocsCodeBlock source={NEXT_FONTS} />
+      <DocsCodeBlock source={NEXT_LAYOUT} />
+      <DocsPlainCodeBlock text={NEXT_CSS} />
       <p>
         Keep <code>preload</code> on for the faces the first paint draws, and pass <code>preload: false</code>{" "}
         for a face that only some theme scopes draw.
@@ -145,17 +140,11 @@ export default function FontsPage(): ReactElement {
         <code>@fontsource</code> packages declare the faces under their real names. Import one stylesheet per
         weight, and declare Neo Sans with <code>@font-face</code>, as in the next recipe:
       </p>
-      <pre>
-        <code>{FONTSOURCE}</code>
-      </pre>
-      <pre>
-        <code>{FONTSOURCE_CSS}</code>
-      </pre>
+      <DocsCodeBlock source={FONTSOURCE} />
+      <DocsPlainCodeBlock text={FONTSOURCE_CSS} />
 
       <h2 id="font-face">Plain CSS</h2>
-      <pre>
-        <code>{FONT_FACE}</code>
-      </pre>
+      <DocsPlainCodeBlock text={FONT_FACE} />
 
       <h2 id="per-brand">Per brand</h2>
       <p>
@@ -168,9 +157,7 @@ export default function FontsPage(): ReactElement {
         The <code>font-family</code> on <code>&lt;body&gt;</code> resolves the variables once, at the body. If
         a page nests a <code>ThemeScope</code> of another identity, set the font on each scope:
       </p>
-      <pre>
-        <code>{NESTED}</code>
-      </pre>
+      <DocsPlainCodeBlock text={NESTED} />
       <p>
         To keep the page chrome in one font while its scopes switch, add <code>:not(:root)</code> to the
         identity and scope rules.

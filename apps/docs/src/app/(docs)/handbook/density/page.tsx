@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 
 import Link from "next/link";
 
+import { DocsCodeBlock, DocsPlainCodeBlock } from "../../../../components/docs-code-block";
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 
 const HREF = "/handbook/density";
@@ -126,9 +127,7 @@ export default function DensityPage(): ReactElement {
         it as <code>data-density</code>, and <code>documentAttributes</code> stamps it there with the theme,
         so a page names its density every time:
       </p>
-      <pre>
-        <code>{ONE_DOCUMENT}</code>
-      </pre>
+      <DocsCodeBlock source={ONE_DOCUMENT} />
       <p>
         No identity implies a density. A neutral internal tool is usually dense and a branded marketing page
         comfortable, but a branded customer dashboard is dense too, with the brand&apos;s colours, type and
@@ -143,19 +142,11 @@ export default function DensityPage(): ReactElement {
         in its own route group with its own root layout. Each layout renders its own <code>&lt;html&gt;</code>{" "}
         and stamps its density there:
       </p>
-      <pre>
-        <code>{ROUTE_GROUPS}</code>
-      </pre>
+      <DocsPlainCodeBlock text={ROUTE_GROUPS} />
       <p>Share the theme and the colour-scheme options through one module, so both documents agree:</p>
-      <pre>
-        <code>{SHARED_THEME}</code>
-      </pre>
-      <pre>
-        <code>{DASHBOARD_LAYOUT}</code>
-      </pre>
-      <pre>
-        <code>{PROMO_LAYOUT}</code>
-      </pre>
+      <DocsCodeBlock source={SHARED_THEME} />
+      <DocsCodeBlock source={DASHBOARD_LAYOUT} />
+      <DocsCodeBlock source={PROMO_LAYOUT} />
 
       <h2 id="pitfalls">Pitfalls</h2>
       <ul>
@@ -180,9 +171,7 @@ export default function DensityPage(): ReactElement {
           comfortable modal over a dense dashboard needs its own page.
         </li>
       </ul>
-      <pre>
-        <code>{GLOBAL_NOT_FOUND}</code>
-      </pre>
+      <DocsCodeBlock source={GLOBAL_NOT_FOUND} />
 
       <h2 id="branded-dashboard">A branded dashboard</h2>
       <p>
@@ -191,9 +180,7 @@ export default function DensityPage(): ReactElement {
         branded button keeps at least 12px of padding on its label edges at dense density, so a pill does not
         crowd its label.
       </p>
-      <pre>
-        <code>{BRANDED_DASHBOARD}</code>
-      </pre>
+      <DocsCodeBlock source={BRANDED_DASHBOARD} />
       <p>
         See <Link href="/handbook/theming#document-theme">The document theme</Link> for the rest of the
         document setup and <Link href="/handbook/tokens">Tokens</Link> for every density metric at both

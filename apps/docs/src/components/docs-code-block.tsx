@@ -34,8 +34,23 @@ type DocsCodeBlockProps = Omit<ComponentProps<"pre">, "children"> & {
  * The docs' one highlighted code renderer. MDX fences (`standalone`), the demo frame's
  * source region (`embedded`) and the API panel's full signature (`signature`) all hand over
  * raw source and get the same `pre > code` with sugar-high markup back, so highlighted code
- * cannot drift into three renderings.
+ * cannot drift into three renderings. A snippet in another language goes through
+ * `DocsPlainCodeBlock` instead, because this highlighter reads only JavaScript.
  */
 export function DocsCodeBlock({ source, ...props }: DocsCodeBlockProps): ReactElement {
   return <DocsCodePre {...props} code={{ html: highlightSource(source) }} />;
+}
+
+type DocsPlainCodeBlockProps = {
+  /** CSS, a shell command, a file tree or other text the JavaScript highlighter would miscolor. */
+  readonly text: string;
+};
+
+/**
+ * A standalone block that is never highlighted, in the foreground color, for a snippet that is
+ * not JavaScript. The JavaScript highlighter misreads CSS comments and shell commands and paints
+ * them in syntax colors with too little contrast on the card.
+ */
+export function DocsPlainCodeBlock({ text }: DocsPlainCodeBlockProps): ReactElement {
+  return <DocsCodePre className="text-foreground" code={{ text }} />;
 }

@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 
+import { DocsCodeBlock, DocsPlainCodeBlock } from "../../../components/docs-code-block";
 import { DocsPage, pageMetadata } from "../../../components/docs-page";
 import { INSTALL_COMMAND } from "../../../lib/docs-model";
 
@@ -84,9 +85,7 @@ export default function QuickStartPage(): ReactElement {
         <code>react-dom</code> are peers; every component lives behind its own subpath, so importing{" "}
         <code>Button</code> never pays for anything else.
       </p>
-      <pre>
-        <code>{INSTALL_COMMAND}</code>
-      </pre>
+      <DocsPlainCodeBlock text={INSTALL_COMMAND} />
       <p>
         Tailwind v4 apps compile Fuse&apos;s classes with their own build: import{" "}
         <code>@elmeragroup/fuse/css</code> and <code>themes.css</code>, and point <code>@source</code> at the
@@ -100,9 +99,7 @@ export default function QuickStartPage(): ReactElement {
         preflight-free build that imports Tailwind&apos;s sheets into layers declares{" "}
         <code>@layer theme, base, components, utilities;</code> before them.
       </p>
-      <pre>
-        <code>{STYLES_TAILWIND}</code>
-      </pre>
+      <DocsPlainCodeBlock text={STYLES_TAILWIND} />
       <p>
         Apps without Tailwind import the prebuilt standalone stylesheet and <code>themes.css</code>. It
         includes the library utilities without Tailwind&apos;s preflight, so keep your own reset. Fuse&apos;s
@@ -111,9 +108,7 @@ export default function QuickStartPage(): ReactElement {
         <code>hidden</code>, which preflight makes <code>display: none !important</code> so it beats a
         part&apos;s display class.
       </p>
-      <pre>
-        <code>{STYLES_STANDALONE}</code>
-      </pre>
+      <DocsCodeBlock source={STYLES_STANDALONE} />
 
       <h2 id="temporal">Temporal for dates</h2>
       <p>
@@ -126,9 +121,7 @@ export default function QuickStartPage(): ReactElement {
         level evaluates first. Other hosts import it first in the module their bundler starts the client from.
         The root <code>@elmeragroup/fuse</code> entry never imports it.
       </p>
-      <pre>
-        <code>{TEMPORAL_POLYFILL}</code>
-      </pre>
+      <DocsCodeBlock source={TEMPORAL_POLYFILL} />
       <p>
         The entry installs <code>temporal-polyfill</code> only where no <code>Temporal</code> exists, and
         leaves an engine&apos;s own one in place. Where it installs, it also replaces{" "}
@@ -152,9 +145,7 @@ export default function QuickStartPage(): ReactElement {
         components refuse with a <code>TypeError</code>. A server component that holds a date as text, from a
         database or a URL, passes that text to its own small client component, which builds the value:
       </p>
-      <pre>
-        <code>{TEMPORAL_CLIENT_VALUE}</code>
-      </pre>
+      <DocsCodeBlock source={TEMPORAL_CLIENT_VALUE} />
       <p>
         A server component can still render <code>DateField</code>, <code>DatePickerField</code> and{" "}
         <code>DateRangePickerField</code> without a date value. The kind of value a field emits follows its
@@ -197,9 +188,7 @@ export default function QuickStartPage(): ReactElement {
           a heading hierarchy that starts at <code>h1</code> and does not skip levels.
         </li>
       </ul>
-      <pre>
-        <code>{SCAFFOLD}</code>
-      </pre>
+      <DocsCodeBlock source={SCAFFOLD} />
       <p>
         Focus management across route changes is yours too: after a client-side navigation, move focus to the
         new page&apos;s heading or main landmark.
@@ -210,9 +199,7 @@ export default function QuickStartPage(): ReactElement {
         Components read their colours from the theme in scope. Nothing in the snippet below names a brand —
         the attributes on <code>&lt;html&gt;</code> already decided that.
       </p>
-      <pre>
-        <code>{USAGE}</code>
-      </pre>
+      <DocsCodeBlock source={USAGE} />
     </DocsPage>
   );
 }

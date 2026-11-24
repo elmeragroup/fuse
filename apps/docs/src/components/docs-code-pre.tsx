@@ -4,23 +4,28 @@ import { tv } from "tailwind-variants";
 
 const docsCodeBlock = tv({
   slots: {
-    pre: "overflow-x-auto [tab-size:2] text-sh-identifier [&_.sh__line]:block [&_.sh__line]:min-h-[1lh]",
+    pre: "[tab-size:2] text-sh-identifier [&_.sh__line]:block [&_.sh__line]:min-h-[1lh]",
     code: "block",
   },
   variants: {
+    scrolls: {
+      // The code keeps its longest line whole, so that line scrolls the block. The ring is inset,
+      // as on the palette inspector's scroller, so no clipping ancestor hides it.
+      true: {
+        pre: "overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+        code: "min-w-max",
+      },
+    },
     variant: {
-      // `standalone` has no live instance — no `page.mdx` authors a fenced block yet — and
-      // inside `.prose.prose-sm` its inner `code` would compute 10.29px (12px × .857):
-      // typography's `.prose-sm :where(code)` rule beats `.prose :where(pre code){font-size:
-      // inherit}` on source order. `not-prose` removes the block and its subtree from prose
-      // styling, so the `text-xs` on the `pre` is the whole type scale.
+      // Inside `.prose.prose-sm`, a `standalone` block's inner `code` would compute 10.29px
+      // (12px × .857): typography's `.prose-sm :where(code)` rule beats `.prose :where(pre code)
+      // {font-size:inherit}` on source order. `not-prose` removes the block and its subtree from
+      // prose styling, so the `text-xs` on the `pre` is the whole type scale.
       standalone: {
         pre: "not-prose text-xs leading-relaxed my-[1.1rem] rounded-xl border border-border bg-card px-4 py-3.5",
-        code: "min-w-max",
       },
       embedded: {
         pre: "text-xs leading-relaxed m-0 bg-card px-4.5 py-4",
-        code: "min-w-max",
       },
       signature: {
         pre: "text-xs leading-relaxed m-0 rounded-lg border border-border bg-muted px-2.5 py-2",
@@ -44,10 +49,11 @@ type DocsCodePreProps = Omit<ComponentProps<"pre">, "children"> & {
 };
 
 /**
- * The docs' `pre > code`, which `DocsCodeBlock` fills with highlighted markup on the server. It
- * reaches no highlighter, so a client component draws the same block around raw text, as the demo
- * frame does until its Code view shows. Tailwind preflight's `code, kbd, samp, pre` rule owns the
- * mono family for both elements, so neither slot restates it.
+ * The docs' `pre > code`. It renders plain text or the highlighted HTML `DocsCodeBlock` makes on
+ * the server, without importing the highlighter, so a client component can draw the same block
+ * around raw text, as the demo frame does until its Code view shows. Tailwind
+ * preflight's `code, kbd, samp, pre` rule owns the mono family for both elements, so neither slot
+ * restates it.
  */
 export function DocsCodePre({
   className,
@@ -55,9 +61,20 @@ export function DocsCodePre({
   code: content,
   ...props
 }: DocsCodePreProps): ReactElement {
-  const { pre, code } = docsCodeBlock({ variant });
+  // A wrapped signature never scrolls, so it stays out of the tab order.
+  const scrolls = variant !== "signature";
+  const { pre, code } = docsCodeBlock({ variant, scrolls });
+  const scrollStop: Pick<ComponentProps<"pre">, "tabIndex" | "role" | "aria-label"> = {};
+  if (scrolls) {
+    // A long line scrolls the block sideways, so the block is a tab stop that arrow keys scroll.
+    // It takes `group` rather than `region` because a page holds dozens of blocks, and each
+    // region would be another landmark.
+    scrollStop.tabIndex = 0;
+    scrollStop.role = "group";
+    scrollStop["aria-label"] = "Code";
+  }
   return (
-    <pre className={pre({ className })} {...props}>
+    <pre {...scrollStop} className={pre({ className })} {...props}>
       {"html" in content ? (
         <code key="html" className={code()} dangerouslySetInnerHTML={{ __html: content.html }} />
       ) : (
