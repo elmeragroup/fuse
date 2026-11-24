@@ -91,6 +91,15 @@ function buttonNamed(name: string): HTMLElement {
   return element;
 }
 
+/** The addon rail around the caret. */
+function addonRail(): HTMLElement {
+  const rail = buttonNamed(TOGGLE_COPY["en-US"]).parentElement;
+  if (!(rail instanceof HTMLElement) || rail.getAttribute("data-slot") !== "input-group-addon") {
+    throw new Error("expected the addon rail around the caret");
+  }
+  return rail;
+}
+
 /**
  * Base UI renders chips as focusable `div`s with no role of their own, so the test finds a focused
  * chip by the accessible name of the remove button it owns, not by a slot.
@@ -590,10 +599,7 @@ describe("Combobox", () => {
      * A disabled input or button gets no mousedown, so only the field box's own handler sees it.
      */
     async function pressAddonRail(): Promise<void> {
-      const rail = buttonNamed(TOGGLE_COPY["en-US"]).parentElement;
-      if (!(rail instanceof HTMLElement) || rail.getAttribute("data-slot") !== "input-group-addon") {
-        throw new Error("expected the addon rail around the caret");
-      }
+      const rail = addonRail();
       const box = rail.getBoundingClientRect();
       const position = { x: box.width - 1, y: box.height / 2 };
       expect(document.elementFromPoint(box.left + position.x, box.top + position.y)).toBe(rail);
@@ -641,5 +647,18 @@ describe("Combobox", () => {
     await expect.element(page.getByRole("textbox", { name: "Other", exact: true })).toHaveFocus();
     // Base UI focuses the input and requests the open state inside the press's own handlers.
     expect(events).toEqual([]);
+  });
+
+  it("focuses an input rendered through a custom element from a click on the addon rail", () => {
+    renderCombobox(
+      <Combobox.Root items={[...FRUITS]}>
+        <Combobox.Input aria-label="Fruit" render={<input data-slot="fruit-search" />} />
+      </Combobox.Root>
+    );
+    const input = comboboxNamed("Fruit");
+    expect(input.getAttribute("data-slot")).toBe("fruit-search");
+    // A click with no mousedown, as assistive tech can send, so Base UI's press handler stays out.
+    addonRail().click();
+    expect(document.activeElement).toBe(input);
   });
 });

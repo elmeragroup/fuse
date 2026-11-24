@@ -19,6 +19,7 @@ import { mergeClassName } from "../../styles/merge-class-name";
 import {
   InputGroupAddon,
   InputGroupButton,
+  INPUT_GROUP_CONTROL_MARKER,
   InputGroupPlainInput,
   InputGroupRoot,
 } from "../input-group/input-group";
@@ -243,7 +244,7 @@ export function AutocompleteInput({
       <AutocompletePrimitive.Input
         disabled={disabled}
         render={<InputGroupPlainInput />}
-        {...definedProps(props)}
+        {...definedProps({ ...props, ...INPUT_GROUP_CONTROL_MARKER })}
       />
       {showTrigger || showClear ? (
         <InputGroupAddon align="inline-end">

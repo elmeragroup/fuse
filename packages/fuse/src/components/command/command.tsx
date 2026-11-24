@@ -32,6 +32,7 @@ import { DialogOverlay, DialogPortal, DialogTrigger } from "../dialog/dialog";
 import {
   InputGroupAddon,
   InputGroupButton,
+  INPUT_GROUP_CONTROL_MARKER,
   InputGroupPlainInput,
   InputGroupRoot,
 } from "../input-group/input-group";
@@ -533,7 +534,7 @@ export function CommandInput({
             stack.pop();
           }
         }}
-        {...definedProps(props)}
+        {...definedProps({ ...props, ...INPUT_GROUP_CONTROL_MARKER })}
       />
       {children ?? (
         <InputGroupAddon>{canGoBack(stack) ? <CommandBack /> : <MagnifyingGlass />}</InputGroupAddon>
