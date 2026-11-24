@@ -8,7 +8,7 @@ import type { PhoneEditorProps, PhoneEditorState } from "./phone-editor";
 import { defaultMetadata } from "./phone-engine";
 import type { PhoneCountryCode, PhoneNumberFormat } from "./phone-engine";
 
-const { shown, proposedValue, echo } = phoneEditorFixtures(PhoneEditor);
+const { fill, shown, proposedValue, echo } = phoneEditorFixtures(PhoneEditor);
 
 // A catalog without NO, so SJ is the only country for +47. It reads the same digits and number as
 // the default catalog but formats the national output differently.
@@ -443,5 +443,200 @@ describe("PhoneEditor proposal answers: a carried output is no answer the parent
     expect(PhoneEditor.observeCountry(answered).proposed?.code).toBe("SE");
     expect(shown(answered)).toEqual({ display: "701234567", output: "70 123 45 67", country: "NO" });
     expect(PhoneEditor.steeredValue(answered)).toBeNull();
+  });
+});
+
+// #712: an uncontrolled number under a controlled country. A format change while a pick, paste or
+// typed number proposes a country re-formats the shown number without calling `onChange`, so the
+// answer compares with the output from before the proposal.
+describe("PhoneEditor proposal answers: the notices the editor returns for an uncontrolled number while a country proposal waits", () => {
+  type Case = {
+    readonly props: PhoneEditorProps;
+    readonly propose: (state: PhoneEditorState) => PhoneEditorState;
+    readonly answerFormat: PhoneNumberFormat;
+    readonly country: PhoneCountryCode;
+    readonly output: string;
+    readonly steered: string | null;
+  };
+  it.each<[string, Case]>([
+    // The output before the pick is "+4741234567".
+    [
+      "returns a notice when the confirmed pick changes the output from before the pick",
+      {
+        props: {
+          countryCode: "NO",
+          countries: ["NO", "SE"],
+          defaultValue: "41234567",
+          outputFormat: "e164",
+          preserveOnCountryChange: true,
+        },
+        propose: (state) => PhoneEditor.selectCountry(state, "SE"),
+        answerFormat: "raw",
+        country: "SE",
+        output: "41234567",
+        steered: "41234567",
+      },
+    ],
+    // The output before the paste is "070-123 45 67". The format change shows "0701234567" in NO.
+    [
+      "returns no notice when the confirmed paste shows the output from before the paste",
+      {
+        props: {
+          countryCode: "NO",
+          countries: ["NO", "SE"],
+          defaultValue: "070-123 45 67",
+          outputFormat: "raw",
+          preserveOnCountryChange: true,
+        },
+        propose: (state) => PhoneEditor.paste(state, "+46701234567"),
+        answerFormat: "national",
+        country: "SE",
+        output: "070-123 45 67",
+        steered: null,
+      },
+    ],
+    // Typing the international prefix proposes SE. The output before it is "+47701234567".
+    [
+      "returns a notice when the confirmed typed number changes the output from before it",
+      {
+        props: {
+          countryCode: "NO",
+          countries: ["NO", "SE"],
+          defaultValue: "701234567",
+          outputFormat: "e164",
+          preserveOnCountryChange: true,
+        },
+        propose: (state) => fill(state, "+46701234567"),
+        answerFormat: "raw",
+        country: "SE",
+        output: "701234567",
+        steered: "701234567",
+      },
+    ],
+  ])(
+    "%s, after a format change while it waits",
+    (_name, { props, propose, answerFormat, country, output, steered }) => {
+      const carried = PhoneEditor.reconcile(propose(PhoneEditor.create(props)), {
+        ...props,
+        outputFormat: answerFormat,
+      });
+      expect(PhoneEditor.observeCountry(carried).proposed?.code).toBe(country);
+      const accepted = PhoneEditor.reconcile(carried, {
+        ...props,
+        outputFormat: answerFormat,
+        countryCode: country,
+      });
+      expect(PhoneEditor.observeCountry(accepted).proposed).toBeNull();
+      expect(shown(accepted).output).toBe(output);
+      expect(PhoneEditor.steeredValue(accepted)?.value ?? null).toBe(steered);
+    }
+  );
+
+  // A change that answers nothing about the waiting pick compares with the output the field shows.
+  // Each row starts in one format and switches to the other while the pick waits.
+  const outputIn = { e164: "+4741234567", raw: "41234567" } as const;
+  it.each<[string, "e164" | "raw", Partial<PhoneEditorProps>, PhoneCountryCode, string, string | null]>([
+    [
+      "returns a notice when a fallback restores the format",
+      "e164",
+      { countries: ["SJ"], outputFormat: "e164" },
+      "SJ",
+      "+4741234567",
+      "+4741234567",
+    ],
+    [
+      "returns no notice when a fallback that still offers the pick's country keeps the shown output",
+      "e164",
+      { countries: ["SE", "DK"] },
+      "DK",
+      "41234567",
+      null,
+    ],
+    [
+      "returns no notice when a new country in a catalog without the pick's keeps the shown output",
+      "e164",
+      { countryCode: "SJ", countries: ["NO", "SJ"] },
+      "SJ",
+      "41234567",
+      null,
+    ],
+    [
+      "returns no notice when a new code falls back where the old one does and keeps the shown output",
+      "e164",
+      { countryCode: "GB", countries: ["DK", "SE"] },
+      "DK",
+      "41234567",
+      null,
+    ],
+    [
+      "returns a notice when a new code falls back where the old one does and changes the shown output",
+      "raw",
+      { countryCode: "GB", countries: ["DK", "SE"], outputFormat: "raw" },
+      "DK",
+      "41234567",
+      "41234567",
+    ],
+  ])("%s, after a format change while a pick waits", (_name, format, change, country, output, steered) => {
+    const carriedFormat = format === "e164" ? "raw" : "e164";
+    const props = {
+      countryCode: "NO",
+      countries: ["NO", "SE", "SJ"],
+      defaultValue: "41234567",
+      outputFormat: format,
+      preserveOnCountryChange: true,
+    } as const;
+    const picked = PhoneEditor.selectCountry(PhoneEditor.create(props), "SE");
+    const carried = PhoneEditor.reconcile(picked, { ...props, outputFormat: carriedFormat });
+    expect(shown(carried).output).toBe(outputIn[carriedFormat]);
+    const moved = PhoneEditor.reconcile(carried, { ...props, outputFormat: carriedFormat, ...change });
+    expect(PhoneEditor.observeCountry(moved).proposed).toBeNull();
+    expect(shown(moved).country).toBe(country);
+    expect(shown(moved).output).toBe(output);
+    expect(PhoneEditor.steeredValue(moved)?.value ?? null).toBe(steered);
+  });
+
+  // Releasing `countryCode` answers nothing about the waiting pick, so the notice compares with the
+  // output the field shows. Narrowing `countries` to the pick's country shows the pick.
+  it.each<[string, PhoneNumberFormat, PhoneNumberFormat, string | null]>([
+    ["returns no notice when the release keeps the shown output", "e164", "raw", null],
+    ["returns a notice when the release restores the format from before the pick", "raw", "e164", "41234567"],
+  ])("%s, after a format change while a pick waits", (_name, format, carriedFormat, steered) => {
+    const props = {
+      countryCode: "NO",
+      countries: ["NO", "SE"],
+      defaultValue: "41234567",
+      outputFormat: format,
+      preserveOnCountryChange: true,
+    } as const;
+    const picked = PhoneEditor.selectCountry(PhoneEditor.create(props), "SE");
+    const carried = PhoneEditor.reconcile(picked, { ...props, outputFormat: carriedFormat });
+    expect(PhoneEditor.observeCountry(carried).proposed?.code).toBe("SE");
+    const { countryCode: _released, ...uncontrolled } = props;
+    const released = PhoneEditor.reconcile(carried, {
+      ...uncontrolled,
+      outputFormat: "raw",
+      countries: ["SE"],
+    });
+    expect(PhoneEditor.observeCountry(released).proposed).toBeNull();
+    expect(shown(released)).toEqual({ display: "41234567", output: "41234567", country: "SE" });
+    expect(PhoneEditor.steeredValue(released)?.value ?? null).toBe(steered);
+  });
+
+  // #712, case 2. Before #710 the accepted pick showed "+4402012345678" with the output
+  // "+44 (0)20 1234 5678", and the editor returned no notice.
+  it("shows and returns a notice for the number the full catalog reads once the parent sets the pick's country after a metadata replacement", () => {
+    const props = {
+      countryCode: "NO",
+      countries: ["NO", "SJ", "GB"],
+      defaultValue: "+44 (0)20 1234 5678",
+      outputFormat: "raw",
+      preserveOnCountryChange: true,
+    } as const;
+    const picked = PhoneEditor.selectCountry(PhoneEditor.create(props), "SJ");
+    const carried = PhoneEditor.reconcile(picked, { ...props, metadata: maxMetadata });
+    const accepted = PhoneEditor.reconcile(carried, { ...props, metadata: maxMetadata, countryCode: "SJ" });
+    expect(PhoneEditor.observeCountry(accepted).proposed).toBeNull();
+    expect(shown(accepted)).toEqual({ display: "+442012345678", output: "+442012345678", country: "SJ" });
+    expect(PhoneEditor.steeredValue(accepted)?.value).toBe("+442012345678");
   });
 });
