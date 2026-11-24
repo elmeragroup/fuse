@@ -4,12 +4,13 @@
 // is a Toolbar.Group of Toolbar.Buttons. State and wiring sit on the Base UI part, and the Fuse
 // Button is only its `render` element.
 
-import { use, useCallback, useMemo } from "react";
+import { use, useCallback, useEffect, useMemo, useRef } from "react";
 import type {
   ComponentProps,
   FocusEvent,
   KeyboardEvent,
   MouseEvent,
+  PointerEvent,
   ReactElement,
   ReactNode,
   Ref,
@@ -26,6 +27,7 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { Funnel } from "../../icons/generated/funnel";
 import { X } from "../../icons/generated/x";
 import { XCircle } from "../../icons/generated/x-circle";
+import { hasFocus } from "../../internal/active-element";
 import { definedProps } from "../../internal/defined-props";
 import { isHTMLElement, isNode } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
@@ -194,6 +196,28 @@ export function DataTableFilterTrigger({
   );
 }
 
+/**
+ * Calls `end` when the press that the pointerdown `event` starts ends, and returns the function that
+ * stops listening. A mouse focuses on pointerdown, so its press ends at its pointerup. Touch and pen
+ * focus after pointerup, so their press ends only at a pointer cancel. A release outside the strip
+ * brings it no click, so the listeners are on the document.
+ */
+function listenForPressEnd(event: PointerEvent<HTMLElement>, end: () => void): () => void {
+  const { pointerId, pointerType } = event;
+  const { ownerDocument } = event.currentTarget;
+  const onPressEnd = (next: globalThis.PointerEvent) => {
+    if (next.pointerId === pointerId && (next.type === "pointercancel" || pointerType === "mouse")) {
+      end();
+    }
+  };
+  ownerDocument.addEventListener("pointerup", onPressEnd, true);
+  ownerDocument.addEventListener("pointercancel", onPressEnd, true);
+  return () => {
+    ownerDocument.removeEventListener("pointerup", onPressEnd, true);
+    ownerDocument.removeEventListener("pointercancel", onPressEnd, true);
+  };
+}
+
 /** Props for `DataTableFilter.Chips`. */
 export type DataTableFilterChipsProps = Omit<ComponentProps<"div">, "children"> & {
   /**
@@ -208,27 +232,68 @@ export type DataTableFilterChipsProps = Omit<ComponentProps<"div">, "children"> 
  * One chip context per filter, keyed by field id, with no element per chip, in one strip that
  * scrolls sideways at every width. Its ends fade while chips hide past them. A focused segment
  * scrolls into view, since `focus()` leaves a partly visible element where it is, and a vertical
- * mouse wheel scrolls the strip until it reaches an end.
+ * mouse wheel scrolls the strip until it reaches an end. A `DataTableFilter.Value` that a pointer
+ * press focuses stays where it is, and its chip scrolls into view once the popover anchors to it.
  */
 export function DataTableFilterChips({
   className,
   children,
   onFocus,
+  onPointerDownCapture,
+  onClickCapture,
   ref,
   ...props
 }: DataTableFilterChipsProps): ReactElement {
-  const { state } = useFilterInternals("DataTableFilter.Chips");
+  const { state, meta } = useFilterInternals("DataTableFilter.Chips");
   const stripRef = useMergedRefs(ref, scrollStripOnWheel);
+  // The Value a primary pointer press is on, with the function that stops listening for the press's
+  // end. The record lasts from the pointerdown until the strip's next focus or click, or until the
+  // press ends without either. A press on the Value that already has focus brings no focus, so it
+  // records nothing that a later keyboard focus could meet. Only event handlers read and write it.
+  const press = useRef<{ readonly value: HTMLElement; readonly stop: () => void } | null>(null);
+  const forgetPress = () => {
+    press.current?.stop();
+    press.current = null;
+  };
+  // A strip that unmounts or hides mid-press, before the focus or click that would end it, forgets it.
+  useEffect(
+    () => () => {
+      press.current?.stop();
+      press.current = null;
+    },
+    []
+  );
   return (
     <div
       ref={stripRef}
       data-slot="data-table-filter-chips"
       className={cn(slots.chips(), className)}
-      onFocus={chain((event: FocusEvent<HTMLDivElement>) => {
-        if (isHTMLElement(event.target)) {
-          event.target.scrollIntoView({ block: "nearest", inline: "nearest" });
+      onFocus={(event: FocusEvent<HTMLDivElement>) => {
+        onFocus?.(event);
+        // A press focuses a Value before its click. A scroll then would move the Value out from
+        // under the pointer, so the click would miss it, and an open popover would follow its old
+        // chip out of the strip.
+        const pressed = press.current?.value === event.target;
+        forgetPress();
+        if (pressed || event.defaultPrevented || !isHTMLElement(event.target)) {
+          return;
         }
-      }, onFocus)}
+        event.target.scrollIntoView({ block: "nearest", inline: "nearest" });
+      }}
+      onPointerDownCapture={(event: PointerEvent<HTMLDivElement>) => {
+        // The strip's capture runs before any handler inside it, and the consumer's capture runs
+        // after the record, so a handler that focuses the Value still meets the record.
+        forgetPress();
+        const value = isNode(event.target) ? meta.valueHolding(event.target) : null;
+        if (event.isPrimary && event.button === 0 && value !== null && !hasFocus(value)) {
+          press.current = { value, stop: listenForPressEnd(event, forgetPress) };
+        }
+        onPointerDownCapture?.(event);
+      }}
+      onClickCapture={(event: MouseEvent<HTMLDivElement>) => {
+        onClickCapture?.(event);
+        forgetPress();
+      }}
       {...props}>
       {state.chips.map((chip) => (
         <ChipContext key={chip.id} value={chip}>
@@ -422,7 +487,14 @@ export function DataTableFilterValue({
 }: DataTableFilterValueProps): ReactElement | null {
   const chip = useChip("DataTableFilter.Value");
   const { state, actions, meta } = useFilterInternals("DataTableFilter.Value");
-  const segmentRef = useSegmentRef(chip.id, ref);
+  const { registerValue } = actions;
+  const register = useCallback(
+    (element: HTMLElement | null) => {
+      registerValue(chip.id, element);
+    },
+    [registerValue, chip.id]
+  );
+  const segmentRef = useSegmentRef(chip.id, useMergedRefs(ref, register));
   // One payload object per chip. Base UI measures the popover again whenever the payload's
   // identity changes (`usePopupViewport.tsx`), so a new object per render would remeasure on
   // every render and lose the height morph between chips.

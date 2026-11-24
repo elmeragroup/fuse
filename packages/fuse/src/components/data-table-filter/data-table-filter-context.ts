@@ -176,6 +176,11 @@ export type DataTableFilterInternals = {
     readonly registerValueContent: () => () => void;
     /** `Chip` calls it from its ref, so focus moves and the popover's anchor never search by id. */
     readonly registerChip: (fieldId: string, element: HTMLElement | null) => void;
+    /**
+     * Registers the element rendered by `DataTableFilter.Value` for `edit()` and scrolling. `Value`
+     * calls it from its ref.
+     */
+    readonly registerValue: (fieldId: string, element: HTMLElement | null) => void;
     /** `Trigger` calls it from its ref. */
     readonly registerTrigger: (element: HTMLElement | null) => void;
     /**
@@ -195,6 +200,8 @@ export type DataTableFilterInternals = {
     readonly valueId: (fieldId: string) => string;
     /** A chip's element, or `null`. */
     readonly chipElement: (fieldId: string) => HTMLElement | null;
+    /** The registered `DataTableFilter.Value` element that holds `node`, or `null`. */
+    readonly valueHolding: (node: Node) => HTMLElement | null;
     /** Whether a `Content` is registered, which the Trigger checks in development. */
     readonly hasContent: () => boolean;
     /** Whether a `ValueContent` is registered, which a Value checks in development. */

@@ -1,10 +1,14 @@
+import type { ReactElement, ReactNode } from "react";
+
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames, recordFrames, useFakeTimeouts } from "../../../test/animation-frames";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import {
   active,
+  captureActions,
   columnFilters,
   CUSTOMER_NORD,
   FIELDS,
@@ -17,9 +21,11 @@ import {
   focusIs,
   menuOpen,
   pickOption,
+  popoverOpen,
   FIELDS_WITH_RUSH_TOGGLE,
 } from "../../../test/data-table-filter-fixture";
 import { withLocale } from "../../../test/locale-matrix";
+import { whilePointerPressed } from "../../../test/pointer-press";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { FilterField, FilterFieldMap } from "./filter-fields";
@@ -184,6 +190,244 @@ describe("DataTableFilter value popover", () => {
     await userEvent.click(chip.getByRole("button").first());
     await expect.poll(() => chip.query()).toBeNull();
     await expect.poll(active).toBe(roleNamed("combobox", "Customer operator"));
+  });
+
+  /** The value popover's positioner, while it is mounted. */
+  const positioner = (): HTMLElement | null =>
+    document.querySelector<HTMLElement>("[data-slot=data-table-filter-positioner]");
+
+  /** The chip strip. */
+  const chipStrip = (): HTMLElement => {
+    const strip = document.querySelector<HTMLElement>("[data-slot=data-table-filter-chips]");
+    if (strip === null) {
+      throw new Error("expected the chip strip");
+    }
+    return strip;
+  };
+
+  /** A bar whose chip template renders `value` as its Value, and the value popover. */
+  const barWithValue = (value: ReactElement) => (
+    <>
+      <DataTableFilter.Bar>
+        <DataTableFilter.Trigger />
+        <DataTableFilter.Chips>
+          <DataTableFilter.Chip>
+            <DataTableFilter.Subject />
+            <DataTableFilter.Operator />
+            {value}
+            <DataTableFilter.Remove />
+          </DataTableFilter.Chip>
+        </DataTableFilter.Chips>
+      </DataTableFilter.Bar>
+      <DataTableFilter.ValueContent />
+    </>
+  );
+
+  /**
+   * Renders a Customer and an Amount chip, and sizes the page so Amount's Value shows only its first
+   * 12px at the strip's end, with Customer's chip, the first, still in view. The strip ends a fixed
+   * distance before the page's.
+   */
+  const renderAmountPeeking = async (children?: ReactNode) => {
+    renderOrders({
+      initial: [
+        ...CUSTOMER_NORD,
+        { id: "amount", value: { kind: "number", operator: "isGreaterThan", values: [500] } },
+      ],
+      children,
+    });
+    const strip = chipStrip();
+    const amountValue = roleNamed("button", "500");
+    const stripInset = window.innerWidth - strip.getBoundingClientRect().right;
+    await page.viewport(Math.round(amountValue.getBoundingClientRect().left + 12 + stripInset), 896);
+    expect(strip.getBoundingClientRect().right).toBeLessThan(amountValue.getBoundingClientRect().right);
+    return { strip, amountValue };
+  };
+
+  /**
+   * Presses where `element` shows at the strip's end, past which it hides. `userEvent.click` would
+   * scroll the element into view before it pressed.
+   */
+  const pressShownStart = async (
+    element: Element,
+    read: () => Promise<number | void> = () => nextFrames(1)
+  ) => {
+    const rect = element.getBoundingClientRect();
+    await userEvent.hover(document.documentElement, {
+      position: { x: rect.left + 4, y: rect.top + rect.height / 2 },
+      force: true,
+    });
+    await whilePointerPressed(read);
+  };
+
+  /** Whether `element` lies inside the strip's box. */
+  const insideStrip = (strip: Element, element: Element) => {
+    const outer = strip.getBoundingClientRect();
+    const inner = element.getBoundingClientRect();
+    return inner.left >= outer.left - 0.5 && inner.right <= outer.right + 0.5;
+  };
+
+  it("moves from one chip to a partly hidden chip's pressed Value without clamping to the viewport edge", async () => {
+    useFakeTimeouts();
+    const { strip, amountValue } = await renderAmountPeeking();
+    const customerChip = page.getByRole("group", { name: "Customer filter" }).element();
+    const amountChip = page.getByRole("group", { name: "Amount filter" }).element();
+    await userEvent.click(roleNamed("button", "“nord”"));
+    await finishMotion();
+    const positionerLeft = () => positioner()?.getBoundingClientRect().left;
+    const openedLeft = positionerLeft() ?? Number.NaN;
+    // A draft the move settles widens Customer's chip, which pushes Amount's further out. The typing
+    // pause has not run out, so the summary still shows the applied value.
+    await userEvent.fill(roleNamed("textbox", "Customer"), "nordlys og fjellvind");
+    expect(page.getByRole("button", { name: "“nord”", exact: true }).query()).not.toBeNull();
+
+    // Unit under test: the popover's drawn left edge on each frame of the move. Oracle: the strip's
+    // start. The popover lines up with its chip, which sits inside the strip at both ends of the
+    // move, so no frame of the glide between them draws left of it. A popover that followed
+    // Customer's chip out of the strip clamps at the viewport's 8px edge, left of the strip.
+    const stripLeft = strip.getBoundingClientRect().left;
+    const clamped = (left: number | undefined) => left === undefined || left < stripLeft - 0.5;
+    let released = false;
+    // The move ends once Amount's dialog shows and its positioner rests aligned with Amount's chip,
+    // at the chip's start, or at its end where the start would overflow the viewport. The page-wide
+    // dialog query runs last, only on a frame that may have settled.
+    const settledOnAmount = () => {
+      const element = positioner();
+      if (element?.getAnimations().length !== 0) {
+        return false;
+      }
+      const box = element.getBoundingClientRect();
+      const chip = amountChip.getBoundingClientRect();
+      const aligned = [chip.left, chip.right - box.width].some((left) => Math.abs(box.left - left) < 0.5);
+      return aligned && popoverOpen("Amount");
+    };
+    // The recording stops at the first missing or clamped frame, or once the move settles.
+    const frames = recordFrames(
+      positionerLeft,
+      () => clamped(positionerLeft()) || (released && settledOnAmount())
+    );
+    // The press holds through three frames, so a scroll on pointerdown draws before the release.
+    await pressShownStart(amountValue, () => nextFrames(3));
+    released = true;
+
+    expect(openedLeft).toBeGreaterThanOrEqual(stripLeft - 0.5);
+    expect((await frames).filter(clamped)).toEqual([]);
+    expect(roleNamed("button", "“nordlys og fjellvind”")).toBeTruthy();
+    // The strip scrolled Amount's chip into view and Customer's out past its start.
+    expect(customerChip.getBoundingClientRect().left).toBeLessThan(strip.getBoundingClientRect().left);
+    expect(insideStrip(strip, amountValue)).toBe(true);
+  });
+
+  it("opens the popover for a pressed Value whose own pointerdown capture focuses it", async () => {
+    const { strip, amountValue } = await renderAmountPeeking(
+      barWithValue(
+        <DataTableFilter.Value
+          onPointerDownCapture={(event) => {
+            event.currentTarget.focus({ preventScroll: true });
+          }}
+        />
+      )
+    );
+    await pressShownStart(amountValue, () => nextFrames(3));
+    await finishMotion();
+    expect(popoverOpen("Amount")).toBe(true);
+    expect(insideStrip(strip, amountValue)).toBe(true);
+  });
+
+  it("scrolls a Value into view on focus after a press on it that focused nothing ended outside the strip", async () => {
+    const { strip, amountValue } = await renderAmountPeeking(
+      barWithValue(
+        <DataTableFilter.Value
+          onPointerDown={(event) => {
+            event.preventDefault();
+          }}
+        />
+      )
+    );
+    const below = strip.getBoundingClientRect().bottom + 40;
+    await pressShownStart(amountValue, () =>
+      userEvent.hover(document.documentElement, { position: { x: 4, y: below }, force: true })
+    );
+    expect({
+      focused: document.activeElement === amountValue,
+      visible: insideStrip(strip, amountValue),
+    }).toEqual({
+      focused: false,
+      visible: false,
+    });
+
+    // With `preventScroll`, only the strip's own scroll can bring the Value into view.
+    amountValue.focus({ preventScroll: true });
+    expect(insideStrip(strip, amountValue)).toBe(true);
+  });
+
+  it("leaves the strip where it is when a press on the open chip's Value closes the popover", async () => {
+    const { strip } = await renderAmountPeeking();
+    const customerValue = roleNamed("button", "“nord”");
+    await userEvent.click(customerValue);
+    await finishMotion();
+    // Customer's chip starts past the strip's start, and its Value shows whole.
+    strip.scrollLeft = 35;
+    const customerChip = page.getByRole("group", { name: "Customer filter" }).element();
+    expect(customerChip.getBoundingClientRect().left).toBeLessThan(strip.getBoundingClientRect().left);
+    expect(insideStrip(strip, customerValue)).toBe(true);
+
+    await userEvent.click(customerValue);
+    await finishMotion();
+    expect({ open: popoverOpen("Customer"), scrollLeft: strip.scrollLeft }).toEqual({
+      open: false,
+      scrollLeft: 35,
+    });
+  });
+
+  it("reveals the open chip's Value again when edit() asks for the field already open", async () => {
+    const { Capture, act } = captureActions();
+    const { strip, amountValue } = await renderAmountPeeking(
+      <>
+        <DataTableFilter.Bar />
+        <DataTableFilter.ValueContent />
+        <Capture />
+      </>
+    );
+    act().edit("amount");
+    await expect.poll(() => popoverOpen("Amount")).toBe(true);
+    await finishMotion();
+    strip.scrollLeft = 0;
+    expect(insideStrip(strip, amountValue)).toBe(false);
+
+    act().edit("amount");
+    await expect.poll(() => insideStrip(strip, amountValue)).toBe(true);
+    expect(popoverOpen("Amount")).toBe(true);
+  });
+
+  it("reveals the pressed Value of a chip wider than the strip", async () => {
+    renderOrders({
+      initial: [
+        { id: "amount", value: { kind: "number", operator: "isGreaterThan", values: [500] } },
+        {
+          id: "customer",
+          value: {
+            kind: "text",
+            operator: "contains",
+            values: ["nordlys og fjellvind og havbris i nord og sør"],
+          },
+        },
+      ],
+    });
+    await page.viewport(360, 896);
+    const strip = chipStrip();
+    const customerChip = page.getByRole("group", { name: "Customer filter" });
+    // The chip's buttons are its Value, then its Remove.
+    const customerValue = customerChip.getByRole("button").first().element();
+    // Customer's Value starts 30px before the strip's end, and its chip is wider than the strip.
+    strip.scrollLeft = customerValue.getBoundingClientRect().left - strip.getBoundingClientRect().right + 30;
+    expect(customerChip.element().getBoundingClientRect().width).toBeGreaterThan(strip.clientWidth);
+    expect(insideStrip(strip, customerValue)).toBe(false);
+
+    await pressShownStart(customerValue);
+    await finishMotion();
+    expect(popoverOpen("Customer")).toBe(true);
+    expect(insideStrip(strip, customerValue)).toBe(true);
   });
 });
 

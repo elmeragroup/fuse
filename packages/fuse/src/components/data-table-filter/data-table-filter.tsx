@@ -242,8 +242,10 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
 
   const [menuHandle] = useState(() => MenuPrimitive.createHandle());
   const [valueHandle] = useState(() => PopoverPrimitive.createHandle<ValuePayload>());
-  // The field each overlay keeps mounted, through its exit animation too.
-  const [editing, setEditing] = useState<string | null>(null);
+  // The field the value popover keeps mounted, through its exit animation too. Each open, move or
+  // `edit()` stores a new object, so the reveal below runs again for the same field.
+  const [editRequest, setEditRequest] = useState<{ readonly fieldId: string } | null>(null);
+  const editing = editRequest?.fieldId ?? null;
   const [ghost, setGhost] = useState<Ghost | null>(null);
   // The field the person works with now, apart from what stays mounted for an exit.
   const [intent, setIntent] = useState<Intent>(null);
@@ -353,10 +355,20 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
     };
   }, []);
   const chipElement = useCallback((fieldId: string) => chipElements.current.get(fieldId) ?? null, []);
-  const valueElement = useCallback(
-    (fieldId: string) =>
-      chipElement(fieldId)?.querySelector<HTMLElement>("[data-slot=data-table-filter-value]") ?? null,
-    [chipElement]
+  // Each chip's Value by field id, from its ref, so neither `edit()` nor the reveal below depends
+  // on attributes a consumer can override.
+  const valueElements = useRef(new Map<string, HTMLElement>());
+  const registerValue = useCallback((fieldId: string, element: HTMLElement | null) => {
+    if (element === null) {
+      valueElements.current.delete(fieldId);
+    } else {
+      valueElements.current.set(fieldId, element);
+    }
+  }, []);
+  const valueElement = useCallback((fieldId: string) => valueElements.current.get(fieldId) ?? null, []);
+  const valueHolding = useCallback(
+    (node: Node) => [...valueElements.current.values()].find((element) => element.contains(node)) ?? null,
+    []
   );
   const triggerElement = useCallback(() => triggerRef.current, []);
   const valueId = useCallback((fieldId: string) => `${rootId}value-${fieldId}`, [rootId]);
@@ -438,24 +450,42 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
    * the new editor takes focus, through the popover's `initialFocus` on an opening, and through a
    * focus request when the open popover moves to another chip, since Base UI does not run initial
    * focus again for a new trigger. A press opens or moves the popover through Base UI. From code,
-   * the chip scrolls into view first, because the popover anchors to it and the bar's strip may
-   * hide it, and then the handle opens on it. `handle.open(id)` throws for a trigger id nothing
-   * registered, in `popupHandle.ts`, so code enters only a chip whose Value is mounted.
+   * the handle opens on the chip. `handle.open(id)` throws for a trigger id nothing registered, in
+   * `popupHandle.ts`, so code enters only a chip whose Value is mounted.
    */
   const enterEditor = (fieldId: string, via: "press" | "code") => {
     if (via === "code" && valueElement(fieldId) === null) {
       return;
     }
     applyDrafts();
-    setEditing(fieldId);
+    const closesOpenChip = via === "press" && valueHandle.isOpen && editing === fieldId;
+    // A closing press keeps the current request through the exit, so no reveal runs and the strip
+    // stays where it is.
+    if (!closesOpenChip) {
+      setEditRequest({ fieldId });
+    }
     setIntent({ field: fieldId, owner: "value", queued: false });
     setGhost((current) => (current?.id === fieldId ? current : null));
     setFocusRequest(valueHandle.isOpen ? editKey(fieldId) : null);
     if (via === "code") {
-      chipElement(fieldId)?.scrollIntoView({ block: "nearest", inline: "nearest" });
       valueHandle.open(valueId(fieldId));
     }
   };
+
+  // The popover anchors to the edited chip, and the bar's strip may hide it, so the chip scrolls
+  // into view once the commit that anchors the popover to it lands. A scroll before that commit
+  // would take an open popover out of the strip with the chip it leaves, and miss a draft the
+  // move settles that widens a chip. Scrolling a chip wider than the strip can leave its Value
+  // clipped, so the Value scrolls into view after it. The scroll is instant, since the popover's
+  // glide is the motion.
+  useLayoutEffect(() => {
+    if (editRequest === null) {
+      return;
+    }
+    for (const element of [chipElement(editRequest.fieldId), valueElement(editRequest.fieldId)]) {
+      element?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
+    }
+  }, [editRequest, chipElement, valueElement]);
 
   const activeField = intent?.field ?? null;
   // The latest callback, so an inline one that sets the host's state never loops. It hears each
@@ -648,7 +678,7 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
         setIntent((current) =>
           current?.owner === "value" && !current.queued && current.field === editing ? null : current
         );
-        setEditing(null);
+        setEditRequest(null);
         setGhost(null);
         setFocusRequest(null);
       },
@@ -667,6 +697,7 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       registerContent,
       registerValueContent,
       registerChip,
+      registerValue,
       registerTrigger,
       registerOverlay,
     },
@@ -679,6 +710,7 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       triggerId,
       valueId,
       chipElement,
+      valueHolding,
       hasContent: () => contentRegistered.current,
       hasValueContent: () => valueContentRegistered.current,
       neighborOf,
