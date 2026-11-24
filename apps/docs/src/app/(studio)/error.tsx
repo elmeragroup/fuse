@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 
 import { Button } from "@elmeragroup/fuse/button";
 
-import { discardStudioSession } from "../../studio/components/studio-persistence";
+import { retryStudio } from "../../studio/components/studio-persistence";
 
 export type StudioErrorProps = {
   error: Error & { digest?: string };
@@ -29,12 +29,16 @@ export default function StudioError({ retry }: StudioErrorProps): ReactElement {
           and opens the studio without them.
         </p>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={retry}>Try again</Button>
+          <Button
+            onClick={() => {
+              retryStudio(retry, "keep");
+            }}>
+            Try again
+          </Button>
           <Button
             variant="outline"
             onClick={() => {
-              discardStudioSession();
-              retry();
+              retryStudio(retry, "discard");
             }}>
             Start a fresh session
           </Button>
