@@ -393,6 +393,7 @@ function NumberEditorBody({
           }}
         />
       )}
+      {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- the group handles Enter bubbling from its number inputs to apply the filter and close */}
       <div
         ref={firstRef}
         role="group"

@@ -438,6 +438,7 @@ describe("PhoneNumberField caret", () => {
       const [commits, setCommits] = useState(0);
       return (
         // A parent that renders again on a key the field ignores, with focus kept in the input.
+        // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- the form catches Shift bubbling from the phone input
         <form
           aria-label="Phone form"
           onKeyUp={(event) => {
@@ -476,6 +477,7 @@ describe("PhoneNumberField caret", () => {
         return (
           // Hides and reveals the field in one task, on a key the field ignores, so focus stays
           // in the input while React disconnects and reconnects its layout effects.
+          // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- the form catches Shift bubbling from the phone input
           <form
             aria-label="Phone form"
             onKeyUp={(event) => {

@@ -385,6 +385,7 @@ function EditorFrame({
   );
   return (
     <EditorContext value={editor}>
+      {/* oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- unless a caller gives it a tabIndex, the group only receives key and composition events bubbling from the editor's controls */}
       <div
         data-slot="data-table-filter-editor"
         data-kind={field.kind}
