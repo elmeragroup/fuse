@@ -353,6 +353,7 @@ describe("NumberField", () => {
           defaultValue={1234}
           id={undefined}
           aria-label={undefined}
+          // oxlint-disable-next-line jsx-a11y/no-autofocus -- the test checks that an `autoFocus` forwarded as undefined skips autofocus
           autoFocus={undefined}
           minValue={undefined}
           formatOptions={undefined}

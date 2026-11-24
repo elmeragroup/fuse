@@ -304,6 +304,7 @@ describe("Carousel autoplay that mounts with focus already moving in", () => {
   }
 
   it("starts stopped when an autofocused field takes keyboard focus as the carousel mounts", async () => {
+    // oxlint-disable-next-line jsx-a11y/no-autofocus -- focus must land as the carousel mounts, and keyboard focus then keeps rotation stopped
     renderThemed(<Opener focusable={<input aria-label="Code" autoFocus />} />);
     await userEvent.hover(roleNamed("button", "Open"));
     roleNamed("button", "Open").focus();
@@ -324,6 +325,7 @@ describe("Carousel autoplay that mounts with focus already moving in", () => {
     renderThemed(
       <Opener
         focusable={
+          // oxlint-disable-next-line jsx-a11y/no-autofocus -- focus must land as the carousel mounts, and focus that follows a mouse press lets rotation start
           <button type="button" autoFocus>
             Details
           </button>

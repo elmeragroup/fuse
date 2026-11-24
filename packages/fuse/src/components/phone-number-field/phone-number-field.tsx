@@ -620,6 +620,7 @@ export function PhoneNumberField({
             }}
             onBlur={onBlur}
             placeholder={placeholder}
+            // oxlint-disable-next-line jsx-a11y/no-autofocus -- forwards the consumer's own `autoFocus` to the number input
             autoFocus={autoFocus}
             inputMode={inputMode}
             enterKeyHint={enterKeyHint}
