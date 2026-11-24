@@ -1518,25 +1518,15 @@
 
   /*
     A Sector is the wedge from the sweep's start to the reading, cut from the band from 0.6 to 0.8
-    of the track's radius, which clears the center's text: two masks, the band and the conic wedge
-    the frame writes, intersect. "flat"
-    paints one 28 % tint, "radial" brightens toward the rim and "conic" toward the reading's edge.
-    Below Chrome 120 mask does nothing on an HTML element, which would tint the whole box, so the
-    same masks come first prefixed, intersected by the legacy source-in.
+    of the track's radius, which clears the center's text. Each frame writes the wedge's start and
+    span as --_sector-from and --_sector-span. The conic mask draws the wedge from them and
+    intersects the radial band's mask. "flat" paints one 28 % tint, "radial" brightens toward the
+    rim and "conic" toward the reading's edge.
   */
   [data-slot="gauge-chart-sector"] {
     --_at: var(--_cx) var(--_cy);
     --_reach-x: calc(var(--_rx) * var(--_gauge-track) * 100%);
     --_reach-y: calc(var(--_ry) * var(--_gauge-track) * 100%);
-    -webkit-mask:
-      conic-gradient(from var(--_sector-from) at var(--_at), #000 0 var(--_sector-span), transparent 0),
-      radial-gradient(
-        var(--_reach-x) var(--_reach-y) at var(--_at),
-        transparent calc(var(--_hole) * 100% - 0.5px),
-        #000 calc(var(--_hole) * 100%) calc(100% - 0.5px),
-        transparent 100%
-      );
-    -webkit-mask-composite: source-in;
     mask:
       conic-gradient(from var(--_sector-from) at var(--_at), #000 0 var(--_sector-span), transparent 0),
       radial-gradient(
@@ -4362,7 +4352,6 @@
     box-sizing: content-box;
     margin-block: calc(var(--chart-stroke) / -2);
     padding-block: calc(var(--chart-stroke) / 2);
-    -webkit-mask-image: linear-gradient(to right, transparent, black 2rem);
     mask-image: linear-gradient(to right, transparent, black 2rem);
   }
 
