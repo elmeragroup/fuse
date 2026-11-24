@@ -1,7 +1,7 @@
 /**
  * Value-driven color. A series whose `color` names a scale paints each value with one of 7 steps.
- * The bins read every row of the data, never a brush window, so a color never shifts while the
- * window moves.
+ * The bins read every row of the data, never the `xRange` window, so a color never shifts while
+ * the window moves.
  */
 
 /** The two scales a series color may name. */

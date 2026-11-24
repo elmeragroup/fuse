@@ -40,8 +40,7 @@ export type ChartCompositionRule =
   | "invalid-gauge-domain"
   | "invalid-sweep"
   | "slot-limit"
-  | "horizontal-linear-axis"
-  | "brush-needs-slot-axis";
+  | "horizontal-linear-axis";
 
 /** The data rules, each with a production fallback. */
 export type ChartDataRule =

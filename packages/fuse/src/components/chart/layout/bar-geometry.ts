@@ -17,8 +17,9 @@ import { slotCount } from "./x-domain";
 const BAR_LIMIT = 100;
 
 /**
- * Which form a Bar draws in. The count covers the whole domain, so a brush never switches it.
- * Horizontal bars always draw one element per bar, because each category gets a row of its own.
+ * Which form a Bar draws in. The count covers the whole domain, so an `xRange` window never
+ * switches it. Horizontal bars always draw one element per bar, because each category gets a row
+ * of its own.
  *
  * @param model - The Root's model.
  * @param orientation - Root's orientation.

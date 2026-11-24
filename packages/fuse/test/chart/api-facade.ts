@@ -13,7 +13,6 @@ import { ChartArea } from "../../src/components/chart/chart-area";
 import { ChartXAxis, ChartYAxis } from "../../src/components/chart/chart-axis";
 import { ChartBackground } from "../../src/components/chart/chart-background";
 import { ChartBar, ChartBarGroup } from "../../src/components/chart/chart-bar";
-import { ChartBrush, ChartBrushPreview } from "../../src/components/chart/chart-brush";
 import { ChartCrosshair } from "../../src/components/chart/chart-crosshair";
 import {
   ChartActiveDot,
@@ -184,8 +183,6 @@ export const Chart = {
   TooltipTotal: ChartTooltipTotal,
   Glow: ChartGlow,
   Reveal: ChartReveal,
-  Brush: ChartBrush,
-  BrushPreview: ChartBrushPreview,
   Skeleton: ChartSkeleton,
   Headline: ChartHeadline,
   Takeaway: ChartTakeaway,

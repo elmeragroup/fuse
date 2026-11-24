@@ -131,9 +131,7 @@ type ClosedNames = {
     | "ActiveValue"
     | "ActiveValueLine"
     | "Glow"
-    | "Reveal"
-    | "Brush"
-    | "BrushPreview";
+    | "Reveal";
   PieChart: SharedClosed | PolarClosed | "Pie" | "Labels";
   RadialChart: SharedClosed | PolarClosed | "Bar";
   RadarChart:
@@ -307,9 +305,7 @@ test("closed parts take no DOM handler and no render", () => {
 });
 
 test("the only functions on Roots are the gesture callbacks", () => {
-  expectTypeOf<FunctionKeys<Roots[0], RootOwn<Roots[0]>>>().toEqualTypeOf<
-    "onSelectedKeyChange" | "onXRangeChange" | "onXRangeCommitted"
-  >();
+  expectTypeOf<FunctionKeys<Roots[0], RootOwn<Roots[0]>>>().toEqualTypeOf<"onSelectedKeyChange">();
   expectTypeOf<FunctionKeys<Roots[1], RootOwn<Roots[1]>>>().toEqualTypeOf<"onSelectedKeyChange">();
   expectTypeOf<FunctionKeys<Roots[2], RootOwn<Roots[2]>>>().toEqualTypeOf<"onSelectedKeyChange">();
   expectTypeOf<FunctionKeys<Roots[3], RootOwn<Roots[3]>>>().toEqualTypeOf<"onSelectedKeyChange">();

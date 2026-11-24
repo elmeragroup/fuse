@@ -1,8 +1,8 @@
 /**
- * The keys marks render under, one per domain slot. A slot keeps the key it had, so a pan or an
- * update that shares slots keeps every surviving node. An update that shares no slot with the old
- * domain at the same interval pairs slots by position from the domain start instead, so the bar at
- * each position keeps its node and moves to the new geometry.
+ * The keys marks render under, one per domain slot. A slot keeps the key it had, so an `xRange`
+ * change or an update that shares slots keeps every surviving node. An update that shares no slot
+ * with the old domain at the same interval pairs slots by position from the domain start instead, so
+ * the bar at each position keeps its node and moves to the new geometry.
  */
 import type { XDomain } from "./x-domain";
 

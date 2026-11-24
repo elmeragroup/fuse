@@ -286,7 +286,7 @@
       [end] auto [legend-end] auto;
     grid-template-rows:
       auto auto auto auto auto var(--chart-plot-height, calc(var(--chart-slots) * var(--chart-row-height)))
-      auto auto auto auto auto;
+      auto auto auto auto;
     grid-template-areas:
       "headline headline headline headline headline"
       "takeaway takeaway takeaway takeaway takeaway"
@@ -297,7 +297,6 @@
       ". under-start under under-end ."
       "legend-bottom legend-bottom legend-bottom legend-bottom legend-bottom"
       "toggles-bottom toggles-bottom toggles-bottom toggles-bottom toggles-bottom"
-      "brush brush brush brush brush"
       "table table table table table";
   }
 

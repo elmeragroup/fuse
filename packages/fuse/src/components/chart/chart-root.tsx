@@ -176,8 +176,8 @@ export type ChartRootProps<
      * motion, "none" and printing draw the marks at rest at once. A Bar behind its own Suspense
      * boundary that arrives while the entrance waits grows with the rest, and one that arrives
      * after the entrance started draws at rest. A bar that a data update adds after the entrance
-     * writes `data-intro="fade"` on itself and fades in. A bar that an `xRange` change, a brush
-     * step or a pan adds writes `data-intro="none"` and takes its place at once.
+     * writes `data-intro="fade"` on itself and fades in. A bar that an `xRange` change adds writes
+     * `data-intro="none"` and takes its place at once.
      */
     "data-intro"?: ChartIntro;
     /** "past" fades marks whose slot ended before `now`. */
@@ -367,8 +367,6 @@ export function ChartRoot<
   yInclude,
   xRange,
   defaultXRange,
-  onXRangeChange: _onXRangeChange,
-  onXRangeCommitted: _onXRangeCommitted,
   defaultActiveX,
   selectedKey,
   defaultSelectedKey,

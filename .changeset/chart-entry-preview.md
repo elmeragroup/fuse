@@ -5,7 +5,6 @@
 A new preview entry, `@elmeragroup/fuse/chart`, ships Fuse's chart family. Its names and props can
 change until Fuse's first stable release, so it stays out of the root barrel and every export is
 tagged `@beta`. The cartesian parts, every `Bar` form, lines, areas, Panels and `Sparkline` render.
-The brush renders nothing yet, and a later release adds it behind the same types.
 
 - `Chart` with its aliases `AreaChart`, `BarChart` and `LineChart`, plus `PieChart`, `RadialChart`
   and `RadarChart`. Each starts at `Root`, which reads every series from `config` and never inspects

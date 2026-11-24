@@ -54,7 +54,7 @@ const SHARED_KEYS = [
 describe("chart namespaces", () => {
   it("hold their part counts", () => {
     expect(NAMESPACES.map(([name, namespace]) => [name, Object.keys(namespace).length])).toEqual([
-      ["Chart", 45],
+      ["Chart", 43],
       // PieChart's and RadialChart's counts include CenterName, the line that names the active item
       // in the center. RadarChart exports none.
       ["PieChart", 32],
