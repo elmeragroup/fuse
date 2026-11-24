@@ -18,6 +18,7 @@ import {
   parseLiveSeries,
   stepIndex,
   tickStep,
+  timeShare,
   timeTicks,
   visibleSpan,
   walkRange,
@@ -223,6 +224,19 @@ describe("time ticks", () => {
       0, 0.5, 1, 1, 0.5, 0,
     ]);
     expect(edgeFade(-0.2, 0.25)).toBe(0);
+  });
+
+  it("draws a tick on the fade's inner edge opaque, whatever the rounding", () => {
+    // 14:00:20 sits 4 s of a 30 s window from its end at 14:00:24, 40 px of 300 px, where a 40 px
+    // fade ends.
+    const window = windowEndingAt(NOON + 24 * SECOND, 30 * SECOND);
+    expect(edgeFade(timeShare(window, NOON + 20 * SECOND), 40 / 300)).toBe(1);
+    // Readings 0 to 83⅓ fit [−10, 93⅓], where 80 sits 13⅓ / 103⅓ × 124 = 16 px from the top of a
+    // 124 px plot, where its 16 px fade ends. Two roundings of 83⅓ both put it there.
+    for (const high of [83.333_333_333_333_31, 83.333_333_333_333_33]) {
+      const [low, top] = liveDomain([0, high]);
+      expect(edgeFade((80 - low) / (top - low), 16 / 124)).toBe(1);
+    }
   });
 });
 

@@ -1,7 +1,7 @@
 // LiveLineChart in Chromium. Unit under test: the whole path from Root's readings to the drawn
 // line, the live dot, the badge, the axes, the keyboard walk, the pointer pick, the crosshair, the
-// tooltip, the table, pausing, the value ticks' fades, the sizers and reduced motion. The server
-// HTML is apps/docs' RSC fixture's.
+// tooltip, the table, pausing, the ticks the axes leave out of their edge fades, the sizers and
+// reduced motion. The server HTML is apps/docs' RSC fixture's.
 // Oracles: pixels worked out by hand on a 300 by 124 px plot whose 30 s window ends at the latest
 // of three readings, 0 at 14:00:00, 50 at 14:00:10 and 100 at 14:00:20 Oslo time, which sit at
 // 100, 200 and 300 px across, and whose domain [−12, 112] puts a value v at 112 − v px from the
@@ -14,7 +14,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { nextFrames } from "../../../test/animation-frames";
+import { nextFrames, useFakeFramesAt } from "../../../test/animation-frames";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import { pointerAt } from "../../../test/chart/marks";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
@@ -146,6 +146,60 @@ function focused(): readonly [string | null, string | null, string | null] {
   ];
 }
 
+/**
+ * Freeze the wall clock at an instant for the rest of the test, so the live window Root ends at
+ * `Date.now()` holds still while animation frames keep running.
+ */
+function freezeWallClock(at: number): void {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(at);
+  onTestFinished(() => {
+    vi.useRealTimers();
+  });
+}
+
+/** The time axis's ticks, each label with its computed opacity. */
+function xTickOpacities(host: HTMLElement): (readonly [string, number])[] {
+  return [...host.querySelectorAll<HTMLElement>('[data-slot="chart-x-tick"]')].map(
+    (tick) => [tick.textContent, Number(getComputedStyle(tick).opacity)] as const
+  );
+}
+
+/** The value ticks or grid lines of a slot still in their list, the leaving ones left out. */
+function staying(host: HTMLElement, slot: "chart-y-tick" | "chart-grid-line"): HTMLElement[] {
+  return [...host.querySelectorAll<HTMLElement>(`[data-slot="${slot}"]:not([data-leaving])`)];
+}
+
+/** The labels of the value ticks still in the axis's list. */
+function labelsOf(host: HTMLElement): string[] {
+  return staying(host, "chart-y-tick").map((tick) => tick.textContent);
+}
+
+/** A chart of the value guides alone: the grid and the value axis. */
+function Guides({
+  data = READINGS,
+  paused,
+}: {
+  readonly data?: readonly LiveLineChartPoint[];
+  readonly paused: boolean;
+}): ReactNode {
+  return (
+    <Live data={data} paused={paused}>
+      <LiveLineChart.Grid />
+      <LiveLineChart.YAxis />
+    </Live>
+  );
+}
+
+/** A paused 150 px chart of the time axis alone, whose window ends at a last reading of 100. */
+function NarrowTimeAxis({ end }: { readonly end: number }): ReactNode {
+  return (
+    <Live width={150} data={[...READINGS, { time: end, value: 100 }]}>
+      <LiveLineChart.XAxis />
+    </Live>
+  );
+}
+
 afterEach(async () => {
   await emulateReducedMotion("no-preference");
 });
@@ -210,10 +264,12 @@ describe("the line", () => {
 });
 
 describe("the axes", () => {
-  it("labels the paused window's round times and the domain's nice values", async () => {
+  it("labels the paused window's round times and the domain's nice values, less the ticks at rest in a fade", async () => {
     // A 400 px chart leaves the plot room for three to five time labels, so the axis steps 10 s:
     // the window from 13:59:50 to 14:00:20 holds ticks at both ends and every 10 s between. The
-    // domain [−12, 112] ticks at d3's step of 20 from 0 to 100.
+    // ticks at both ends sit on the plot's edges, inside the 40 px fades, and the axis leaves them
+    // out. The domain [−12, 112] ticks at d3's step of 20 from 0 to 100, and 0 and 100 sit 12 px
+    // from the plot's bottom and top, inside the 16 px fades, so the axis and the grid leave them out.
     const { host } = renderThemed(
       <Live width={400}>
         <LiveLineChart.Grid />
@@ -225,16 +281,138 @@ describe("the axes", () => {
       [...host.querySelectorAll<HTMLElement>('[data-slot="chart-x-axis"] [data-slot="chart-x-tick"]')].map(
         (tick) => [tick.textContent, Number.parseFloat(tick.style.getPropertyValue("--chart-at"))] as const
       );
-    await expect.poll(() => xTicks().length).toBe(4);
+    await expect.poll(() => xTicks().length).toBe(2);
     const ticks = xTicks();
-    expect(ticks.map(([label]) => label)).toEqual(["13:59:50", "14:00:00", "14:00:10", "14:00:20"]);
-    const places = [0, 1 / 3, 2 / 3, 1];
+    expect(ticks.map(([label]) => label)).toEqual(["14:00:00", "14:00:10"]);
+    const places = [1 / 3, 2 / 3];
     for (const [index, [, at]] of ticks.entries()) expect(at).toBeCloseTo(places[index] ?? Number.NaN, 9);
     const yTicks = [
       ...host.querySelectorAll('[data-slot="chart-y-axis"] [data-part="ticks"] [data-slot="chart-y-tick"]'),
     ].map((tick) => tick.textContent);
-    expect(yTicks).toEqual(["0", "20", "40", "60", "80", "100"]);
-    expect(host.querySelectorAll('[data-slot="chart-grid-line"]')).toHaveLength(6);
+    expect(yTicks).toEqual(["20", "40", "60", "80"]);
+    expect(host.querySelectorAll('[data-slot="chart-grid-line"]')).toHaveLength(4);
+  });
+
+  it("leaves out a value tick that comes to rest in the fade, and keeps one the domain carries out until it leaves", async () => {
+    // Readings 0, 50 and 120 rest the domain at [−14.4, 134.4], whose step of 20 puts 0 and 120
+    // 12 px from the plot's edges, inside the 16 px fades. A correction of 120 to 82 sends the
+    // domain inward over 900 ms, to rest at [−9.84, 91.84], at the same step, where 80 rests
+    // (91.84 − 80) / 101.68 × 124 = 14.4 px from the top, inside the fade, and 100 and 120 lie
+    // beyond it. The glide starts from [−14.4, 134.4], where 100 sits (134.4 − 100) / 148.8 × 124
+    // ≈ 28.7 px from the top, opaque, and 120 sits in the fade.
+    const step = useFakeFramesAt(NOON + 22 * SECOND);
+    const latest = (value: number) => [...READINGS.slice(0, 2), { time: NOON + 20 * SECOND, value }];
+    const { host, rerender } = renderThemed(<Guides data={latest(120)} paused={false} />);
+    const hundred = () => staying(host, "chart-y-tick").find((tick) => tick.textContent === "100");
+    await expect.poll(() => labelsOf(host)).toEqual(["20", "40", "60", "80", "100"]);
+    // A frame of the running clock, which the correction's glide starts from.
+    step(1);
+    rerender(<Guides data={latest(82)} paused={false} />);
+    step(1);
+    expect(labelsOf(host)).toEqual(["20", "40", "60", "100"]);
+    expect(staying(host, "chart-grid-line")).toHaveLength(4);
+    expect(hundred()?.style.opacity).toBe("1");
+    // 100 fades as the domain carries it to the top edge, and stays in the axis and the grid while
+    // it does.
+    const fades: (readonly [number, number])[] = [];
+    for (let frame = 0; frame < 60 && hundred() !== undefined; frame += 1) {
+      step(1);
+      fades.push([Number(hundred()?.style.opacity ?? Number.NaN), staying(host, "chart-grid-line").length]);
+    }
+    expect(fades.find(([opacity]) => opacity > 0 && opacity < 1)).toEqual([expect.any(Number), 4]);
+    step(60);
+    expect(labelsOf(host)).toEqual(["20", "40", "60"]);
+    expect(staying(host, "chart-grid-line")).toHaveLength(3);
+  });
+
+  it("fades a time tick at the right edge while the window scrolls, and leaves it out once paused", async () => {
+    // At 14:00:22 the 30 s window runs from 13:59:52, so the 300 px plot puts 14:00:00 at 80 px,
+    // 14:00:10 at 180 px and 14:00:20 at 280 px, halfway into the right edge's 40 px fade.
+    freezeWallClock(NOON + 22 * SECOND);
+    const chart = (paused: boolean) => (
+      <Live paused={paused}>
+        <LiveLineChart.XAxis />
+      </Live>
+    );
+    const { host, rerender } = renderThemed(chart(false));
+    await expect
+      .poll(() => xTickOpacities(host).map(([label]) => label))
+      .toEqual(["14:00:00", "14:00:10", "14:00:20"]);
+    expect(xTickOpacities(host).at(-1)?.[1]).toBeCloseTo(0.5, 6);
+    rerender(chart(true));
+    await expect
+      .poll(() => xTickOpacities(host))
+      .toEqual([
+        ["14:00:00", 1],
+        ["14:00:10", 1],
+      ]);
+  });
+
+  it("keeps a still window's one time tick, opaque in the fade, when its label fits", async () => {
+    // A paused 150 px plot holds the 30 s window that ends at its latest reading, and leaves room
+    // for one label, so the axis steps 30 s. Ending at 14:00:24, its one tick, 14:00:00, sits 6 s
+    // in, 30 px from the left edge, inside the 40 px fade, and its label, at most 58 px wide, fits
+    // centered there. Ending at 14:00:28, the tick sits 10 px in, where the label does not fit.
+    const fits = renderThemed(<NarrowTimeAxis end={NOON + 24 * SECOND} />).host;
+    const overflows = renderThemed(<NarrowTimeAxis end={NOON + 28 * SECOND} />).host;
+    await expect.poll(() => xTickOpacities(fits)).toEqual([["14:00:00", 1]]);
+    expect(xTickOpacities(overflows)).toEqual([]);
+  });
+
+  it("fits the one time tick it keeps at the axis's font size", async () => {
+    // At 12 px, "14:00:00" draws at most 58 px wide in a common sans: six digits of up to 8 px and
+    // two colons of up to 5 px. A 20 px root draws the 0.75rem labels at 15 px, where the bound is
+    // 72.5 px, so the label needs 36.25 px on either side. Ending at 14:00:23.6, the 150 px plot's
+    // one tick sits 32 px from the left edge, where the 12 px label fits and the 15 px one may not:
+    // Inter draws it 66.4 px wide there, 1.2 px past the edge. Ending at 14:00:22.2, the tick sits
+    // 39 px in, inside the 40 px fade, where the 15 px label fits.
+    onTestFinished(() => {
+      document.documentElement.style.removeProperty("font-size");
+    });
+    const narrow = renderThemed(<NarrowTimeAxis end={NOON + 23.6 * SECOND} />).host;
+    await expect.poll(() => xTickOpacities(narrow)).toEqual([["14:00:00", 1]]);
+    document.documentElement.style.fontSize = "20px";
+    await expect.poll(() => xTickOpacities(narrow)).toEqual([]);
+    const wide = renderThemed(<NarrowTimeAxis end={NOON + 22.2 * SECOND} />).host;
+    await expect.poll(() => xTickOpacities(wide)).toEqual([["14:00:00", 1]]);
+    const axis = wide.querySelector('[data-slot="chart-x-axis"]')?.getBoundingClientRect();
+    const label = wide.querySelector('[data-slot="chart-x-tick"]')?.getBoundingClientRect();
+    expect(label?.left).toBeGreaterThanOrEqual(axis?.left ?? Number.NaN);
+    expect(label?.right).toBeLessThanOrEqual(axis?.right ?? Number.NaN);
+  });
+
+  it("leaves out a time tick in the fade while the clock holds the live window behind a decaying lead", async () => {
+    // A reading stamped 14:00:52, 32 s ahead of the wall clock at 14:00:20, sets a lead of 32 s, and
+    // the window runs from 14:00:22 to 14:00:52, which puts 14:00:50 at 280 px, halfway into the
+    // 300 px plot's 40 px fade at the right edge. The feed then restamps the reading 14:00:20, and
+    // 1 s on the lead has decayed to 32 × 2^(−0.1) ≈ 29.86 s. The wall clock and the lead reach
+    // 14:00:50.86, behind the window's end, so the clock holds the window at 14:00:52. At 14:01:00
+    // the lead is 32 × 2^(−4) = 2 s, the window ends at 14:01:02 and scrolls again, and 14:01:00
+    // sits 20 px from the right edge, halfway into the fade.
+    freezeWallClock(NOON + 20 * SECOND);
+    const chart = (latest: number) => (
+      <Live data={[...READINGS.slice(0, 2), { time: latest, value: 100 }]} paused={false}>
+        <LiveLineChart.XAxis />
+      </Live>
+    );
+    const { host, rerender } = renderThemed(chart(NOON + 52 * SECOND));
+    await expect
+      .poll(() => xTickOpacities(host).map(([label]) => label))
+      .toEqual(["14:00:30", "14:00:40", "14:00:50"]);
+    expect(xTickOpacities(host).at(-1)?.[1]).toBeCloseTo(0.5, 6);
+    rerender(chart(NOON + 20 * SECOND));
+    vi.setSystemTime(NOON + 21 * SECOND);
+    await expect
+      .poll(() => xTickOpacities(host))
+      .toEqual([
+        ["14:00:30", 1],
+        ["14:00:40", 1],
+      ]);
+    vi.setSystemTime(NOON + 60 * SECOND);
+    await expect
+      .poll(() => xTickOpacities(host).map(([label]) => label))
+      .toEqual(["14:00:40", "14:00:50", "14:01:00"]);
+    expect(xTickOpacities(host).at(-1)?.[1]).toBeCloseTo(0.5, 6);
   });
 });
 
@@ -244,7 +422,8 @@ describe("the time axis in a zone off the hour", () => {
     // 3 h window ending at 08:00 UTC shows 10:45 to 13:45 there, and a 400 px chart leaves room for
     // six to eleven labels, so the axis steps 30 min: 11:00 to 13:30, the first a quarter of an hour
     // into the window and each next one half an hour on, at (0.25 + 0.5 k) / 3 of its width. Ticks
-    // on UTC's half hours would sit at 0, 1/6, … 1 and read 10:45, 11:15, …
+    // on UTC's half hours would sit at 0, 1/6, … 1 and read 10:45, 11:15, … The paused axis leaves
+    // out 11:00 and 13:30, which rest 1/12 of the 400 px plot, 33 px, inside its 40 px edge fades.
     const HOUR = 3_600 * SECOND;
     const end = Date.UTC(2026, 9, 16, 8);
     const { host } = renderThemed(
@@ -264,10 +443,10 @@ describe("the time axis in a zone off the hour", () => {
       [...host.querySelectorAll<HTMLElement>('[data-slot="chart-x-axis"] [data-slot="chart-x-tick"]')].map(
         (tick) => [tick.textContent, Number.parseFloat(tick.style.getPropertyValue("--chart-at"))] as const
       );
-    await expect.poll(() => xTicks().length).toBe(6);
+    await expect.poll(() => xTicks().length).toBe(4);
     const ticks = xTicks();
-    expect(ticks.map(([label]) => label)).toEqual(["11:00", "11:30", "12:00", "12:30", "13:00", "13:30"]);
-    const places = [1 / 12, 3 / 12, 5 / 12, 7 / 12, 9 / 12, 11 / 12];
+    expect(ticks.map(([label]) => label)).toEqual(["11:30", "12:00", "12:30", "13:00"]);
+    const places = [3 / 12, 5 / 12, 7 / 12, 9 / 12];
     for (const [index, [, at]] of ticks.entries()) expect(at).toBeCloseTo(places[index] ?? Number.NaN, 9);
   });
 });
@@ -313,18 +492,6 @@ describe("the readout", () => {
     await userEvent.keyboard("{Home}");
     expect(focused()).toEqual(["kl.\u00a014:00:00, Pris: 0", "1", "3"]);
   });
-
-  /**
-   * Freeze the wall clock at an instant for the rest of the test, so the live window Root ends at
-   * `Date.now()` holds still while animation frames keep running.
-   */
-  function freezeWallClock(at: number): void {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(at);
-    onTestFinished(() => {
-      vi.useRealTimers();
-    });
-  }
 
   it("counts every reading when the live window shows none, as Home walks them all", async () => {
     // At 14:01:40 the three readings are 100, 90 and 80 s old, all before the live 30 s window.
@@ -574,22 +741,48 @@ describe("live motion", () => {
     await expect.poll(badge).toBe("87");
   });
 
-  it("moves nothing under reduced motion: a new reading redraws once, at rest, and the ping stops", async () => {
+  it("moves nothing under reduced motion: a new reading redraws once, at rest, every tick opaque, and the ping stops", async () => {
+    // At 14:00:22 the domain [−12, 112] over the 124 px plot puts 0 and 100 12 px inside the 16 px
+    // fades at the bottom and the top, and 20 32 px from the bottom. The latest time tick, 14:00:20,
+    // sits 2 s of the 30 s window from the right edge, inside its 40 px fade on a plot under 600 px.
     await emulateReducedMotion("reduce");
-    const readings = recentReadings();
-    const { host, rerender } = renderThemed(<Live data={readings} paused={false} />);
-    await expect.poll(() => dotAt(host)).toBe("translate(300 12)");
+    freezeWallClock(NOON + 22 * SECOND);
+    const chart = (data: readonly LiveLineChartPoint[]) => (
+      <Live data={data} paused={false}>
+        <LiveLineChart.Line curve="linear" />
+        <LiveLineChart.LiveDot />
+        <LiveLineChart.Grid />
+        <LiveLineChart.YAxis />
+        <LiveLineChart.XAxis />
+      </Live>
+    );
+    const { host, rerender } = renderThemed(chart(READINGS));
+    await expect.poll(() => dotAt(host)).toMatch(/^translate\([\d.]+ 12\)$/u);
+    expect(labelsOf(host)).toEqual(["20", "40", "60", "80"]);
+    expect(xTickOpacities(host)).toEqual([
+      ["14:00:00", 1],
+      ["14:00:10", 1],
+    ]);
+    const lines = staying(host, "chart-grid-line");
+    expect(lines.map((line) => Number(getComputedStyle(line).opacity))).toEqual([1, 1, 1, 1]);
+    for (const tick of staying(host, "chart-y-tick")) expect(Number(getComputedStyle(tick).opacity)).toBe(1);
+    // Each label centers on its grid line.
+    const twenty = staying(host, "chart-y-tick")[0]?.getBoundingClientRect();
+    const line = lines.find((each) => Math.abs(Number(each.getAttribute("y1")) - 92) < 1e-6);
+    expect((twenty?.top ?? 0) + (twenty?.height ?? 0) / 2).toBeCloseTo(
+      line?.getBoundingClientRect().top ?? 0,
+      1
+    );
+    // A second on, a running window would have scrolled 10 px.
     const still = lineD(host);
+    vi.setSystemTime(NOON + 23 * SECOND);
     await nextFrames(10);
     expect(lineD(host)).toBe(still);
     const ping = host.querySelector('[data-slot="live-line-chart-live-dot"] [data-part="ping"]');
     expect(ping === null ? null : getComputedStyle(ping).animationName).toBe("none");
     // A reading of 50 a moment later keeps the domain [−12, 112], and the dot lands at once.
-    const latest = readings.at(-1);
-    rerender(
-      <Live data={[...readings, { time: Number(latest?.time ?? 0) + 1, value: 50 }]} paused={false} />
-    );
-    expect(dotAt(host)).toBe("translate(300 62)");
+    rerender(chart([...READINGS, { time: NOON + 20 * SECOND + 1, value: 50 }]));
+    expect(dotAt(host)).toMatch(/^translate\([\d.]+ 62\)$/u);
   });
 
   it("holds the crosshair under a resting pointer while the line scrolls under it", async () => {
@@ -634,33 +827,48 @@ describe("live motion", () => {
     expect(ping(host)).toBe("none");
   });
 
-  it("fades a value tick and its grid line over the last 16 px at the plot's top and bottom", async () => {
-    // The domain [−12, 112] over the 124 px plot puts 100 at 12 px from the top and 0 at 12 px from
-    // the bottom, three quarters of the way into the 16 px fade, and 20 at 32 px from the bottom.
-    const { host } = renderThemed(
-      <Live>
-        <LiveLineChart.Grid />
-        <LiveLineChart.YAxis />
-      </Live>
+  it("fades a value tick and its grid line in at the edge while the domain glides out, opaque at rest", async () => {
+    // A reading of 120 keeps d3's step of 20 and sends the domain out to rest at [−14.4, 134.4],
+    // where 100 sits (134.4 − 100) / 148.8 × 124 ≈ 28.7 px from the top, past the 16 px fade, so
+    // it enters. The glide starts from [−12, 112], where 100 sits 12 px from the top, three
+    // quarters of the way into the fade.
+    const step = useFakeFramesAt(NOON + 22 * SECOND);
+    const { host, rerender } = renderThemed(<Guides paused={false} />);
+    await expect.poll(() => labelsOf(host)).toEqual(["20", "40", "60", "80"]);
+    // A frame of the running clock, which the reading's glide starts from.
+    step(1);
+    rerender(<Guides data={[...READINGS, { time: NOON + 21 * SECOND, value: 120 }]} paused={false} />);
+    step(1);
+    const hundred = staying(host, "chart-y-tick").find((tick) => tick.textContent === "100");
+    const top = staying(host, "chart-grid-line").find(
+      (line) => Math.abs(Number(line.getAttribute("y1")) - 12) < 1e-6
     );
-    const label = (text: string) =>
-      [...host.querySelectorAll<HTMLElement>('[data-slot="chart-y-tick"]')].find(
-        (tick) => tick.textContent === text
-      );
-    await expect.poll(() => label("100")).toBeDefined();
-    const lines = [...host.querySelectorAll('[data-slot="chart-grid-line"]')];
-    const settled = [...lines, label("0"), label("20"), label("100")];
-    await Promise.all(settled.flatMap((each) => each?.getAnimations().map((fade) => fade.finished) ?? []));
-    const opacity = (element: Element | undefined) =>
-      element === undefined ? Number.NaN : Number.parseFloat(getComputedStyle(element).opacity);
-    expect(opacity(label("100"))).toBeCloseTo(0.75, 6);
-    expect(opacity(label("0"))).toBeCloseTo(0.75, 6);
-    expect(opacity(label("20"))).toBe(1);
-    const top = lines.find((line) => Math.abs(Number(line.getAttribute("y1")) - 12) < 1e-6);
-    expect(opacity(top)).toBeCloseTo(0.75, 6);
-    // Each label centers on its grid line.
-    const box = label("100")?.getBoundingClientRect();
-    expect((box?.top ?? 0) + (box?.height ?? 0) / 2).toBeCloseTo(top?.getBoundingClientRect().top ?? 0, 1);
+    expect(Number(hundred?.style.opacity)).toBeCloseTo(0.75, 6);
+    expect(Number(top?.style.opacity)).toBeCloseTo(0.75, 6);
+    step(60);
+    expect(hundred?.style.opacity).toBe("1");
+  });
+
+  it("labels the domain a pause holds mid-glide, at that domain's step", async () => {
+    // A reading of 1000 sends the domain out to rest at [−120, 1120], whose step of 200 has only 0
+    // inside the [−12, 112] the glide starts from, and 0 sits in the bottom fade. A pause in the
+    // glide's first frame holds [−12, 112], whose ticks every 20 from 20 to 80 sit 112 − v px down.
+    const step = useFakeFramesAt(NOON + 22 * SECOND);
+    const risen = [...READINGS, { time: NOON + 21 * SECOND, value: 1000 }];
+    const { host, rerender } = renderThemed(<Guides paused={false} />);
+    await expect.poll(() => labelsOf(host)).toEqual(["20", "40", "60", "80"]);
+    // A frame of the running clock, which the reading's glide starts from.
+    step(1);
+    rerender(<Guides data={risen} paused={false} />);
+    step(1);
+    expect(labelsOf(host)).toEqual([]);
+    rerender(<Guides data={risen} paused />);
+    expect(labelsOf(host)).toEqual(["20", "40", "60", "80"]);
+    const plot = plotBox(host).top;
+    for (const label of staying(host, "chart-y-tick")) {
+      const box = label.getBoundingClientRect();
+      expect(box.top + box.height / 2 - plot).toBeCloseTo(112 - Number(label.textContent), 0);
+    }
   });
 
   it("fades a value tick out as the step changes, placing it as the domain moves until it is gone", async () => {

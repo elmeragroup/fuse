@@ -437,6 +437,9 @@ export function timeTicks(window: LiveWindow, step: number, offset: number): num
   return ticks;
 }
 
+/** How far short of 1 an edge fade's opacity may fall and still count as opaque. */
+const OPAQUE_TOLERANCE = 1e-9;
+
 /**
  * How opaque a tick is at its place. It is opaque inside, fades over the last `fade` share of the
  * axis at either edge, and is gone at the edge itself, so a tick enters at the right as the window reaches it
@@ -447,7 +450,10 @@ export function timeTicks(window: LiveWindow, step: number, offset: number): num
  * @returns The opacity, 0 to 1.
  */
 export function edgeFade(share: number, fade: number): number {
-  return Math.max(0, Math.min(1, share / fade, (1 - share) / fade));
+  const opacity = Math.max(0, Math.min(1, share / fade, (1 - share) / fade));
+  // A tick on the fade's inner edge lands a rounding error short of 1, and the axes leave out a
+  // tick that rests short of 1, so a tick there would come and go from one reading to the next.
+  return opacity > 1 - OPAQUE_TOLERANCE ? 1 : opacity;
 }
 
 /**

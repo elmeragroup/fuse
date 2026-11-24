@@ -198,7 +198,7 @@ export function LiveLineChartLiveDot({
       ref={layer}
       data-slot="live-line-chart-live-dot"
       data-variant={variant}
-      data-paused={context.paused ? "" : undefined}
+      data-paused={context.mode === "paused" ? "" : undefined}
       aria-hidden="true"
       className={className}
       style={style}>
