@@ -136,6 +136,9 @@
   --color-secondary-soft-foreground: var(--secondary-soft-foreground);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  /* Without --brand-ink, brand text takes the color `text-brand` takes, including a host's own
+     `@theme` --color-brand. A host that clears --color-brand gets --brand. */
+  --color-brand-ink: var(--brand-ink, --theme(--color-brand, var(--brand)));
   --color-error: var(--error);
   --color-error-foreground: var(--error-foreground);
   --color-error-soft: var(--error-soft);

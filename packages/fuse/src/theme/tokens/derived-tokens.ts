@@ -2,6 +2,7 @@ import * as Oklch from "@elmeragroup/color/oklch";
 import { getOrThrow } from "@elmeragroup/color/result";
 
 import { tokenOklch } from "../token-color";
+import { readableBrandInk } from "./brand-ink";
 import { chartForegrounds } from "./chart-foreground";
 import { DERIVED_ROLES } from "./contract";
 import type { DerivedTokenName, LayerTokens, TokenContract } from "./contract";
@@ -47,6 +48,7 @@ function mixLiteral(tokens: LayerTokens, role: MixRole): string {
 export function withDerivedTokens(tokens: LayerTokens): TokenContract {
   const derived = {
     "secondary-hover": mixLiteral(tokens, DERIVED_ROLES["secondary-hover"]),
+    ...readableBrandInk(tokens),
     ...readableSidebarBrand(tokens),
     ...chartForegrounds(tokens),
   } satisfies Record<DerivedTokenName, string>;

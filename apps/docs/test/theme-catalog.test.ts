@@ -18,7 +18,7 @@ const ILLEGAL_SLUGS = [
   "branded-fkse-company",
 ] as const;
 
-// Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the
+// Counts the derived `secondary-hover` and `brand-ink` roles, the `radius-step` rung spacing, the
 // `radius-field` field corner, the card edge, section divider and shadow, the two outline Button roles, the resting and
 // checked selection row borders and dividers, the disabled selection row fill, stripe and text,
 // the pressed Toggle fill and label, the selection row title weight, the three paragraph line
@@ -27,7 +27,7 @@ const ILLEGAL_SLUGS = [
 // foreground, 7 ramp steps, 7 diverging steps and 2 sentiments, and 11 steps from 50 to 950 in
 // each of the three brand ramps: the brand neutral ramp and brand palettes 1 and 2. Themes name
 // no fonts, so `font-sans` and `font-heading` are not tokens.
-const ROLE_TOKEN_COUNT = 168;
+const ROLE_TOKEN_COUNT = 169;
 
 function catalogTheme(slug: string): ThemeCatalogEntry {
   const theme = THEME_CATALOG.themes.find((entry) => entry.slug === slug);

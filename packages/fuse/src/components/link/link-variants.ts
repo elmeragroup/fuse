@@ -36,8 +36,10 @@ const {
  *   the full color.
  * - `hover` underlines only under the pointer, for a link whose place already reads as a link,
  *   such as a row of footer links.
- * - `none` never underlines and fades the text under the pointer, for a link a container
- *   already marks, such as a card's title.
+ * - `none` drops the underline and fades the text under the pointer, for a link a container
+ *   already marks, such as a card's title. A `brand` link underlines under the pointer and keeps
+ *   its opacity instead. `--brand-ink` sits near the 4.5:1 floor in some themes, and the 80% fade
+ *   takes it under: Fjordkraft's neutral light brand text drops from 4.66:1 to 3.47:1.
  *
  * The keyboard ring paints the shared self focus ring. `box-decoration-clone` gives each line
  * of a wrapped link its own whole ring, where the default slicing leaves the line ends open.
@@ -71,6 +73,13 @@ export const linkVariants = tv({
       true: "inline-block max-w-full truncate align-bottom",
     },
   },
+  compoundVariants: [
+    {
+      variant: "brand",
+      underline: "none",
+      class: "enabled-hover:underline enabled-hover:opacity-100",
+    },
+  ],
   defaultVariants: {
     variant: "default",
     underline: "always",

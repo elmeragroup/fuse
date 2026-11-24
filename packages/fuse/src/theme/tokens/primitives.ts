@@ -80,6 +80,16 @@ export const PRIMITIVES = {
 } as const satisfies PrimitiveTokens;
 
 /**
+ * Whether a name is a primitive.
+ *
+ * @param name - Any name, such as a custom property without its `--`.
+ * @returns `true` when the name is a primitive.
+ */
+export function isPrimitiveName(name: string): name is PrimitiveName {
+  return Object.hasOwn(PRIMITIVES, name);
+}
+
+/**
  * Where Fuse paints each primitive. The neutral ramp has no paints. It holds one value in every
  * theme and scheme, so a part painted with it breaks dark mode and brand switching, and
  * `elmera/no-primitive-colors` bans it in Fuse and the docs. It stays a public alias target. A

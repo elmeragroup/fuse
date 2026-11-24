@@ -42,6 +42,7 @@ export const TOKEN_NAMES = [
   "secondary-soft-foreground",
   "brand",
   "brand-foreground",
+  "brand-ink",
   "error",
   "error-foreground",
   "error-soft",
@@ -196,6 +197,8 @@ export type DerivedRole = OklchMixRole | ComposedRole;
 export const DERIVED_ROLES = {
   // The secondary Button hover, which the recipe used to spell as an inline color-mix().
   "secondary-hover": { _tag: "OklchMix", from: "secondary", toward: "foreground", percent: 5 },
+  // The brand as text on the page and on a Card, stepped to 4.5:1 on both. See `brand-ink.ts`.
+  "brand-ink": { _tag: "Composed", sources: ["brand", "background", "card"] },
   // The brand on the sidebar, stepped to 4.5:1 there, and the text on its fill. See
   // `sidebar-brand.ts`.
   "sidebar-brand": { _tag: "Composed", sources: ["brand", "sidebar"] },
@@ -297,6 +300,7 @@ export const TOKEN_KINDS = {
   "secondary-soft-foreground": "color",
   brand: "color",
   "brand-foreground": "color",
+  "brand-ink": "color",
   error: "color",
   "error-foreground": "color",
   "error-soft": "color",
@@ -405,6 +409,16 @@ export const TOKEN_KINDS = {
   "heading-3-weight": "fontWeight",
 } as const satisfies Record<TokenName, TokenKind>;
 
+/**
+ * Whether a name is a contract token.
+ *
+ * @param name - Any name, such as a custom property without its `--`.
+ * @returns `true` when the name is a contract token.
+ */
+export function isTokenName(name: string): name is TokenName {
+  return Object.hasOwn(TOKEN_KINDS, name);
+}
+
 /** A contract token whose value is a color. */
 export type ColorTokenName = {
   [Name in TokenName]: (typeof TOKEN_KINDS)[Name] extends "color" ? Name : never;
@@ -457,6 +471,7 @@ export const TOKEN_PAINTS = {
   "secondary-soft-foreground": ["ink"],
   brand: ["surface", "ink"],
   "brand-foreground": ["ink"],
+  "brand-ink": ["ink"],
   error: ["surface", "ink", "line"],
   "error-foreground": ["ink"],
   "error-soft": ["surface"],
@@ -615,9 +630,11 @@ export const TOKEN_DESCRIPTIONS = {
   "secondary-soft": "The soft companion of secondary. Set text on it in secondary-soft-foreground.",
   "secondary-soft-foreground": "Text and icons on secondary-soft, text-grade on it.",
   brand:
-    "The brand accent of the theme, which points at the brand-* primitive of the theme brand. Fill brand shapes with it and set text on them in brand-foreground. For brand-colored text on the Sidebar, use sidebar-brand, which Fuse steps to 4.5:1 there.",
+    "The brand accent of the theme, which points at the brand-* primitive of the theme brand. Fill brand shapes with it and set text on them in brand-foreground. For brand-colored text on the page or a Card, use brand-ink, and on the Sidebar, use sidebar-brand. Fuse steps each to 4.5:1 there.",
   "brand-foreground":
     "Text and icons on a brand fill, which points at the brand-*-foreground primitive of the theme brand.",
+  "brand-ink":
+    "The brand as text on the page and on a Card, stepped until it holds 4.5:1 on both. A brand that already does keeps the brand alias. Fuse computes it, so no theme sets it.",
   error:
     "The error status color: field errors, the invalid field border and ring, and destructive buttons and badges. It is text-grade on background, card and card-soft.",
   "error-foreground": "Text and icons on an error fill, text-grade on it.",

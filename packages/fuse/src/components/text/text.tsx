@@ -7,11 +7,13 @@ import { useRender } from "@base-ui/react/use-render";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import type { TextColorProps } from "../../styles/typography-fragments";
 import { textVariants } from "./text-variants";
 
 /** `Text` takes a native paragraph's props plus the recipe axes, `elementType` and `render`. */
 export type TextProps = ComponentPropsWithoutRef<"p"> &
-  Omit<VariantProps<typeof textVariants>, "size" | "leading" | "weight"> & {
+  Omit<VariantProps<typeof textVariants>, "variant" | "size" | "leading" | "weight"> &
+  TextColorProps<VariantProps<typeof textVariants>["variant"]> & {
     /**
      * The font size. Descendants take the same font size. Descendants without their own line
      * height inherit the Text's, so a `<strong>` inside keeps the paragraph's type. An element's

@@ -41,16 +41,6 @@ const SLUGS = [
   "branded-ngfi-company",
 ] as const;
 
-// Counts the derived `secondary-hover` role, the `radius-step` rung spacing, the `radius-field` field corner,
-// the card edge, section divider and shadow, the two outline Button roles, the resting and checked selection
-// row borders and dividers, the disabled selection row fill, stripe and text, the pressed Toggle fill and
-// label, the selection row title weight, the three paragraph line heights, the size, line height and weight
-// of h1 to h3, the modal fill and text, the content panel fill and text, the 26 chart roles: 8 slot
-// foregrounds, Other and its foreground, 7 ramp steps, 7 diverging steps and 2 sentiments, and 11 steps from
-// 50 to 950 in each of the three brand ramps: the brand neutral ramp and brand palettes 1 and 2. Themes name
-// no fonts, so `font-sans` and `font-heading` are not tokens.
-const TOKEN_COUNT = 168;
-
 // xs, sm, md, lg and xl.
 const RUNG_COUNT = 5;
 
@@ -84,7 +74,6 @@ describe("resolveThemeCatalog", () => {
     for (const resolved of catalog.themes) {
       expect(Object.keys(resolved.schemes)).toEqual(["light", "dark"]);
       for (const scheme of [resolved.schemes.light, resolved.schemes.dark]) {
-        expect(Object.keys(scheme.tokens)).toHaveLength(TOKEN_COUNT);
         expect(Object.keys(scheme.tokens)).toEqual(TOKEN_NAMES);
         expect(Object.keys(scheme.rungs)).toHaveLength(RUNG_COUNT);
         expect(Object.keys(scheme.rungs)).toEqual(RADIUS_RUNG_NAMES);

@@ -15,10 +15,32 @@
  *
  * `destructive` keeps the ref value name; the class is `text-error`.
  *
+ * `brand` sets `text-brand-ink`, not `text-brand`. `--brand` fills brand shapes and falls under
+ * 4.5:1 on the page in some themes, and `--brand-ink` is the brand stepped to 4.5:1 on the page
+ * and on a Card.
+ *
  * `secondary` is an identity alias of `foreground`, kept for consumer compatibility and
  * deprecated: `--secondary` is a surface token, never a text role. See the arm itself.
  */
 import { tv } from "./tv";
+
+/**
+ * The `variant` prop of `Heading`, `Text`, `Span` and `Link`, over each one's own variant union.
+ * It is package-private.
+ *
+ * @template Variant - The component's variant union.
+ */
+export type TextColorProps<Variant> = {
+  /**
+   * The text color. `default` takes the color of the text around it, so text in an error message
+   * is the error color. The others set a text role. `brand` sets the brand color as text at 4.5:1
+   * or more on the page and on a Card in every theme. On another surface, such as a filled panel
+   * or the Sidebar, check its contrast. To recolor brand text, override `--brand-ink`, not
+   * `--brand`, on the element that carries the theme attributes. Some themes declare
+   * `--brand-ink` as its own color, and a `--brand` override leaves that color unchanged.
+   */
+  variant?: Variant;
+};
 
 export const typographyFragments = tv({
   variants: {
@@ -33,7 +55,7 @@ export const typographyFragments = tv({
        * consumer compatibility and can only be removed in a major.
        */
       secondary: "text-foreground",
-      brand: "text-brand",
+      brand: "text-brand-ink",
       muted: "text-muted-foreground",
       inherit: "text-inherit",
       destructive: "text-error",

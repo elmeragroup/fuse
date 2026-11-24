@@ -428,6 +428,18 @@ export default function ThemingPage(): ReactElement {
         dark itself, such as a themed <code>&lt;html&gt;</code>.
       </p>
       <DocsPlainCodeBlock text={SIDEBAR_BRAND_OVERRIDE} />
+      <p>
+        Brand-colored text, the <code>brand</code> variant of <code>Heading</code>, <code>Text</code>,{" "}
+        <code>Link</code> and <code>Span</code>, takes <code>--brand-ink</code>. The build steps it the same
+        way until it reaches 4.5:1 on both the page and a card, <code>--background</code> and{" "}
+        <code>--card</code>. Fjordkraft, Fjordkraft Företag and TrøndelagKraft have a stepped tone in light
+        themes, and Gudbrandsdal Energi, Telinet, Elmera and Nordic Green Energy have one in dark themes. In
+        those themes a host override of <code>--brand</code> no longer moves brand text. To restyle it,
+        override <code>--brand-ink</code> with the same selectors as the sidebar pair above. In every theme,
+        the theme rules resolve <code>--brand-ink</code> on the element that carries the theme attributes, so
+        a <code>--brand</code> override on a plain wrapper inside it no longer reaches brand text. Set{" "}
+        <code>--brand-ink</code> on that wrapper as well.
+      </p>
 
       <h2 id="inner-corners">Inner corners</h2>
       <p>

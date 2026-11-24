@@ -27,6 +27,7 @@ import type { ThemeIdentity, ThemeInput, ThemeSlug } from "./theme-input";
 import { readTokenColor } from "./token-color";
 import {
   isColorTokenName,
+  isTokenName,
   TOKEN_DESCRIPTIONS,
   TOKEN_KINDS,
   TOKEN_NAMES,
@@ -42,7 +43,13 @@ import type {
 } from "./tokens/density-metrics";
 import { DENSITY_ROLES, PART_DENSITY } from "./tokens/density-roles";
 import type { DensityPart, DensityRole } from "./tokens/density-roles";
-import { PRIMITIVE_DESCRIPTIONS, PRIMITIVE_NAMES, PRIMITIVE_PAINTS, PRIMITIVES } from "./tokens/primitives";
+import {
+  isPrimitiveName,
+  PRIMITIVE_DESCRIPTIONS,
+  PRIMITIVE_NAMES,
+  PRIMITIVE_PAINTS,
+  PRIMITIVES,
+} from "./tokens/primitives";
 import type { PrimitiveName } from "./tokens/primitives";
 
 /**
@@ -326,16 +333,6 @@ const LITERAL_READERS: LiteralReaders = {
     return weight;
   },
 };
-
-const PRIMITIVE_NAME_SET: ReadonlySet<string> = new Set(PRIMITIVE_NAMES);
-
-function isPrimitiveName(name: string): name is PrimitiveName {
-  return PRIMITIVE_NAME_SET.has(name);
-}
-
-function isTokenName(name: string): name is TokenName {
-  return Object.hasOwn(TOKEN_KINDS, name);
-}
 
 /** The property a single `var()` names, or `undefined` for a literal. */
 function referenceIn(site: Site): Reference | undefined {

@@ -213,7 +213,9 @@ const ROLE_TINTS = [
   // in `components/label-decoration.ts`).
   ["foreground", 35],
   ["primary", 35],
+  // The brand Link's line before it took `brand-ink`. Kept so layers bound to it keep the binding.
   ["brand", 35],
+  ["brand-ink", 35],
   ["muted-foreground", 35],
   ["error", 35],
   // Tour.Progress's inactive dot, `bg-muted-foreground/30`.
