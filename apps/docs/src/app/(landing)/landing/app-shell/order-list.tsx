@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 
-import { tv } from "tailwind-variants";
+import { cn, tv } from "tailwind-variants";
 
 import { Avatar } from "@elmeragroup/fuse/avatar";
 import { Badge } from "@elmeragroup/fuse/badge";
@@ -18,6 +18,10 @@ import type { Order } from "./dashboard-orders";
 import { audienceOf, groupByStatus, visibleOrders } from "./dashboard-state";
 import type { Audience, StatusGroup } from "./dashboard-state";
 import { OrderStatusIcon } from "./order-status-icon";
+
+// The current row fills with accent, and muted text on it measures 4.43:1 in the neutral themes,
+// so a muted cell takes the accent foreground on that row through the row's `group/order`.
+const MUTED_CELL = cn("text-muted-foreground group-aria-[current=true]/order:text-accent-foreground");
 
 const orderList = tv({
   slots: {
@@ -38,23 +42,23 @@ const orderList = tv({
     // A 40px column the checkbox sits in, shown on hover, focus or once anything is checked.
     check:
       "absolute inset-y-0 left-0 z-10 flex w-10 items-center justify-center opacity-0 transition-opacity duration-150 group-hover/row:opacity-100 group-data-[checking=true]/list:opacity-100 focus-within:opacity-100 motion-reduce:transition-none",
-    row: "text-sm flex h-10 w-full cursor-default items-center gap-3 pr-4 pl-10 text-left text-foreground transition-colors duration-100 outline-none hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset aria-[current=true]:bg-accent aria-[current=true]:text-accent-foreground motion-reduce:transition-none",
-    id: "text-xs w-13 shrink-0 font-mono text-muted-foreground tabular-nums",
+    row: "group/order text-sm flex h-10 w-full cursor-default items-center gap-3 pr-4 pl-10 text-left text-foreground transition-colors duration-100 outline-none hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset aria-[current=true]:bg-accent aria-[current=true]:text-accent-foreground motion-reduce:transition-none",
+    id: `text-xs w-13 shrink-0 font-mono tabular-nums ${MUTED_CELL}`,
     // The customer keeps its name; the product gives way first. The campaign is in the detail.
     customer: "font-medium w-32 shrink-0 truncate",
     // The product takes the free width itself; the spacer stands in only where it is hidden, so
     // no empty flex item spends a gap the product could use.
-    product: "@lg:block hidden min-w-0 flex-1 truncate text-muted-foreground",
+    product: `@lg:block hidden min-w-0 flex-1 truncate ${MUTED_CELL}`,
     spacer: "@lg:hidden flex-1",
-    meter: "text-xs @4xl:block hidden shrink-0 font-mono text-muted-foreground tabular-nums",
+    meter: `text-xs @4xl:block hidden shrink-0 font-mono tabular-nums ${MUTED_CELL}`,
     // `outline` draws in the text colour; the border token keeps the badge quieter than the name.
-    channel: "@md:inline-flex hidden shrink-0 border-border text-muted-foreground",
+    channel: `@md:inline-flex hidden shrink-0 border-border ${MUTED_CELL}`,
     // The seller's column keeps its width in personal views, where it stays empty, so every
     // view lines up column for column.
     seller: "@md:flex hidden size-6 shrink-0",
     // A ring keeps the avatar's edge on hovered and selected rows, which share its fill.
     avatar: "size-6 ring-1 ring-border",
-    date: "text-xs w-8 shrink-0 text-right text-muted-foreground tabular-nums",
+    date: `text-xs w-8 shrink-0 text-right tabular-nums ${MUTED_CELL}`,
     skeletonRow: "flex h-10 items-center gap-3 border-b border-border/60 pr-4 pl-10",
     skeletonIcon: "size-3.5 rounded-full",
     skeletonId: "h-3 w-12",
@@ -114,7 +118,8 @@ function OrderRow({ order, audience }: { order: Order; audience: Audience }): Re
         <time dateTime={order.created} className={styles.date()}>
           {relativeDate(order.created)}
         </time>
-        {/* The icon shows the status; the row's name comes from its cells, so it says it too. */}
+        {/* The icon shows the status. The row takes its name from its cells, so this span puts
+            the status in the name. */}
         <span className="sr-only">{`, ${ORDER_STATUSES[order.status].label}`}</span>
       </button>
     </li>

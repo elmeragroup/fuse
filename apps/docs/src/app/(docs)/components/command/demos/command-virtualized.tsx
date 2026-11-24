@@ -47,7 +47,9 @@ export function CommandVirtualized() {
                   setLastRun(point.label);
                 }}>
                 {point.label}
-                <span className="text-xs ms-auto text-muted-foreground tabular-nums">{point.id}</span>
+                <span className="text-xs ms-auto text-muted-foreground tabular-nums in-data-highlighted:text-accent-foreground">
+                  {point.id}
+                </span>
               </Command.Item>
             )}
           </Command.List>
