@@ -98,7 +98,7 @@ describe("publish manifest and packed tarball", () => {
     stamped = readManifestFields(join(root, "dist/package.json"));
     writePublishManifest(root);
     unstamped = readManifestFields(join(root, "dist/package.json"));
-  }, 30_000);
+  });
 
   it("stamps the release version and elmeraRelease identity into the publish manifest", () => {
     expect(stamped.name).toBe("@elmeragroup/fuse");

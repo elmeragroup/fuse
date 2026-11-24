@@ -29,11 +29,11 @@ const ENGINES_TESTS = "**/*.engines.browser.test.{ts,tsx}";
 const VIEWPORT = { width: 414, height: 896 } as const;
 
 /**
- * Every project's test timeout: a hang guard, not a budget. No Fuse test asserts how long it
- * takes, and a test's wall time scales with how starved its machine is. The chart layout
- * property tests are pure arithmetic that take about a second alone and over 5 s, Vitest's
- * default, under a `pnpm check` that shares the machine; a browser wait lasts as long as the
- * browser takes to deliver its event. A real hang still fails here.
+ * A hang guard, not a budget, which every project inherits as its test and hook timeout. No Fuse
+ * test or hook asserts how long it takes, and its wall time scales with how starved its machine
+ * is. Under load, the chart layout property tests ran past Vitest's 5 s test default. The
+ * `afterEach` in `flag-source.test.ts` ran past the 10 s hook default while it reset its git
+ * fixture. An awaited hang still fails here.
  */
 const HANG_GUARD = 30_000;
 
@@ -87,10 +87,8 @@ function browserProject(
     test: {
       name,
       setupFiles: ["./test/page-frame-setup.ts"],
-      // Hang guards, not budgets. Every expect.poll and expect.element waits on an event the
-      // browser delivers in its own time, such as an IntersectionObserver report or a frame, and
-      // Vitest's default second failed WebKit hydration on a saturated CI runner.
-      testTimeout: HANG_GUARD,
+      // A WebKit hydration check ran past Vitest's 1 s `expect.poll` default on a saturated CI
+      // runner.
       expect: { poll: { timeout: 10_000 } },
       include: options.include ?? BROWSER_TESTS,
       exclude: options.exclude,
@@ -112,6 +110,8 @@ function browserProject(
 export default defineConfig({
   test: {
     passWithNoTests: true,
+    testTimeout: HANG_GUARD,
+    hookTimeout: HANG_GUARD,
     typecheck: {
       enabled: false,
       include: ["src/**/*.test-d.tsx"],
@@ -133,7 +133,6 @@ export default defineConfig({
           // Outside the browser, Vitest blanks CSS ids that `test.css` leaves out. The
           // consumer-build helper reads stylesheet text through `?raw`.
           css: { include: [/\.css\?raw$/] },
-          testTimeout: HANG_GUARD,
         },
       },
       browserProject("browser", { exclude: [CLIPBOARD_TESTS, ENGINES_TESTS] }),
