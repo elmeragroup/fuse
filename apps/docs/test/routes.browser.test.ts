@@ -72,10 +72,10 @@ const LANDING = /^\/(?:themed\/.+)?$/u;
  * axe once read Base UI switches, checkboxes and a meter before Field and the labelable parts had
  * linked their labels. Next hydrates each route segment in a pass of its own after the layouts,
  * so no one layout signal covers every page: the landing, the docs shell, every demo frame, the
- * studio canvas and the block previews each have their own. These signals are the only readiness
- * wait. `networkidle` is not one: it also counts a block page's preview frame and Next's link
- * prefetches, which axe never reads, and on a loaded runner it once held `/blocks/app-shell`, a
- * route that settles in two seconds locally, past the 60-second guard.
+ * studio canvas and the block previews each have their own. These signals, and the settled
+ * reveals below, are the readiness waits. `networkidle` is not one: it also counts a block page's
+ * preview frame and Next's link prefetches, which axe never reads, and on a loaded runner it once
+ * held `/blocks/app-shell`, a route that settles in two seconds locally, past the 60-second guard.
  */
 async function waitForHydration(page: Page, route: string): Promise<void> {
   if (LANDING.test(route)) await waitForLandingHydration(page);
@@ -88,6 +88,44 @@ async function waitForHydration(page: Page, route: string): Promise<void> {
     [...document.querySelectorAll("[data-demo-frame]")].every((frame) =>
       frame.hasAttribute("data-demo-hydrated")
     )
+  );
+}
+
+/**
+ * The SkeletonReveal demos that pass `loading` for good, so their roots keep `aria-busy` and their
+ * bones keep pulsing. A demo that never lands and is missing here holds the wait below until the
+ * page guard fails the route, rather than letting a scan race it.
+ */
+const STAYS_LOADING = ["reveal-refetch", "reveal-plain-children", "reveal-markers"]
+  .map((id) => `[data-demo-frame][aria-labelledby="${id}"]`)
+  .join(", ");
+
+/**
+ * Waits until no SkeletonReveal on the page will change again: every reveal has landed its
+ * content, apart from the demos `STAYS_LOADING` names, no leaving pane is left, and no fade under
+ * a reveal is still running. Reduced motion keeps a reveal's opacity fades, so text axe reads
+ * mid-fade fails contrast, and the skeleton page's timed demos land their data while the scans
+ * may be running. Once every condition holds it stays true, since nothing loads again without a
+ * click. Only a running, finite animation on the document timeline counts: a pulse never ends,
+ * and a scroll-driven animation stays running at rest.
+ */
+async function waitForSettledReveals(page: Page): Promise<void> {
+  await page.waitForFunction(
+    (staysLoading) =>
+      [...document.querySelectorAll('[data-slot="skeleton-reveal"]')].every(
+        (root) =>
+          (root.getAttribute("aria-busy") !== "true" || root.closest(staysLoading) !== null) &&
+          root.querySelector(":scope > [data-exiting]") === null &&
+          !root
+            .getAnimations({ subtree: true })
+            .some(
+              (animation) =>
+                animation.playState === "running" &&
+                animation.timeline instanceof DocumentTimeline &&
+                animation.effect?.getComputedTiming().endTime !== Number.POSITIVE_INFINITY
+            )
+      ),
+    STAYS_LOADING
   );
 }
 
@@ -117,6 +155,7 @@ describe("every docs route", () => {
       const response = await page.goto(`${docsBaseUrl()}${route}`, { waitUntil: "load" });
       expect(response?.status(), route).toBeLessThan(400);
       await waitForHydration(page, route);
+      await waitForSettledReveals(page);
       // Frames stay out of the scan: the only framed content, the block previews under
       // /blocks/<block>/preview, is in ROUTES and checked as a route of its own. Legacy mode runs
       // one axe.run in the page, which honours iframes: false; the partial runner descends into
