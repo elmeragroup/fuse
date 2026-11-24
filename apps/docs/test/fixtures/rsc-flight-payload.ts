@@ -49,3 +49,46 @@ export function inlinedFlightPayload(html: string): string {
   }
   return chunks.join("");
 }
+
+/** A value in a Flight model row, which is JSON. */
+export type FlightJson = string | number | boolean | null | readonly FlightJson[] | FlightObject;
+
+export type FlightObject = { readonly [key: string]: FlightJson };
+
+/** The JSON models of a Flight payload's model rows (`<hex id>:[…]` or `<hex id>:{…}`). */
+export function flightModels(payload: string): FlightJson[] {
+  return payload.split("\n").flatMap((line) => {
+    const [, body] = /^[0-9a-f]+:(.*)$/u.exec(line) ?? [];
+    // SAFETY: Flight model rows are the I/O boundary. The body starts with `[` or `{`, and
+    // JSON.parse yields only JSON values, so the result is a FlightJson array or object.
+    return body !== undefined && (body.startsWith("[") || body.startsWith("{"))
+      ? [JSON.parse(body) as FlightJson]
+      : [];
+  });
+}
+
+function isFlightArray(value: FlightJson): value is readonly FlightJson[] {
+  return Array.isArray(value);
+}
+
+function isFlightObject(value: FlightJson | undefined): value is FlightObject {
+  return value instanceof Object && !isFlightArray(value);
+}
+
+/**
+ * Every Flight element at any depth of `value`. An element is `["$", type, key, props, …]`;
+ * dev builds add fields after the props.
+ */
+export function flightElements(value: FlightJson): { type: FlightJson | undefined; props: FlightObject }[] {
+  if (!(value instanceof Object)) {
+    return [];
+  }
+  const nested = Object.values(value).flatMap(flightElements);
+  if (isFlightArray(value) && value[0] === "$") {
+    const props = value[3];
+    if (isFlightObject(props)) {
+      return [{ type: value[1], props }, ...nested];
+    }
+  }
+  return nested;
+}

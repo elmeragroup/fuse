@@ -13,7 +13,7 @@ import { trackPointer } from "./layout/pointer-speed";
 import type { TrackedPointer } from "./layout/pointer-speed";
 import { followSpring } from "./layout/spring";
 import type { Spring } from "./layout/spring";
-import { readPlace, SPARKLINE_PART, SPARKLINE_SLOT } from "./sparkline-marks";
+import { readPlace, SPARKLINE_MARKER, SPARKLINE_PART } from "./sparkline-marks";
 import type { SparklineMarkPlace } from "./sparkline-marks";
 
 /**
@@ -50,15 +50,12 @@ type Movers = {
 /** One Sparkline's glide group and the groups in it that move. */
 type GlideMarks = { readonly glide: SVGGElement; readonly movers: Movers };
 
-/** The selector of a slot a Sparkline part spreads. */
-const slot = ({ "data-slot": name }: { readonly "data-slot": string }) => `[data-slot="${name}"]`;
-
 /** The selector of a mover group, a child of the glide group. */
 const mover = (name: string) => `:scope > [data-part="${name}"]`;
 
-const VALUE = slot(SPARKLINE_SLOT.value);
-const SPARKLINE = `svg${slot(SPARKLINE_SLOT.root)}`;
-const GLIDE = slot(SPARKLINE_SLOT.glide);
+const VALUE = `[${SPARKLINE_MARKER.value}]`;
+const SPARKLINE = `svg[${SPARKLINE_MARKER.root}]`;
+const GLIDE = `[${SPARKLINE_MARKER.glide}]`;
 
 /**
  * The attribute every wrapper element carries, written after the consumer's props. A `render`

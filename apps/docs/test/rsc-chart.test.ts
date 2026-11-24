@@ -11,7 +11,13 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { fetchText } from "./docs-server";
-import { flightClientReferences, inlinedFlightPayload } from "./fixtures/rsc-flight-payload";
+import {
+  flightClientReferences,
+  flightElements,
+  flightModels,
+  inlinedFlightPayload,
+} from "./fixtures/rsc-flight-payload";
+import { tagAttribute } from "./html";
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
@@ -34,6 +40,21 @@ type SsrResult = { clientModules: string[]; flight: string; clientOnly: string }
 /** How many elements of the HTML carry the data-slot. */
 function slotCount(html: string, slot: string): number {
   return html.split(`data-slot="${slot}"`).length - 1;
+}
+
+/** The props of each Sparkline svg in a Flight payload, at any depth of its model rows. */
+function flightSparklines(payload: string) {
+  return flightModels(payload)
+    .flatMap(flightElements)
+    .filter(({ type, props }) => type === "svg" && props["data-slot"] === "sparkline")
+    .map(({ props }) => props);
+}
+
+/** The opening tag of each Sparkline svg in the HTML. */
+function htmlSparklines(html: string): string[] {
+  return Array.from(html.matchAll(/<svg\b[^>]*>/gu), ([tag]) => tag).filter(
+    (tag) => tagAttribute(tag, "data-slot") === "sparkline"
+  );
 }
 
 describe("the chart entry under React Server Components", () => {
@@ -63,9 +84,13 @@ describe("the chart entry under React Server Components", () => {
       "components/chart/sparkline-hover.tsx#SparklineHover",
     ]);
     // SparklineHover's child crosses Flight as the svg the server rendered. The name joins the consumer's label and the range sentence, which the server writes.
-    expect(payload).toContain(
-      '["$","svg",null,{"data-slot":"sparkline","data-variant":"line","role":"img","aria-label":"Spotpris i dag. Lavest 0,8, høyest 1,2."'
-    );
+    expect(flightSparklines(payload)).toEqual([
+      expect.objectContaining({
+        "data-variant": "line",
+        role: "img",
+        "aria-label": "Spotpris i dag. Lavest 0,8, høyest 1,2.",
+      }),
+    ]);
   });
 
   it("formats the headline on the server with Fuse's canonical spaces", () => {
@@ -102,9 +127,21 @@ describe("the chart entry under React Server Components", () => {
       /data-slot="chart-series-icon" aria-hidden="true"><svg [^>]*viewBox="0 0 256 256"/u
     );
     // The Sparkline's two readings sit between a gap, so each draws as a dot in its 10-unit cell.
-    expect(ssr.flight).toContain(
-      '<svg data-slot="sparkline" data-variant="line" role="img" aria-label="Spotpris i dag. Lavest 0,8, høyest 1,2." viewBox="0 0 30 100"'
-    );
+    expect(
+      htmlSparklines(ssr.flight).map((tag) => ({
+        variant: tagAttribute(tag, "data-variant"),
+        role: tagAttribute(tag, "role"),
+        name: tagAttribute(tag, "aria-label"),
+        viewBox: tagAttribute(tag, "viewBox"),
+      }))
+    ).toEqual([
+      {
+        variant: "line",
+        role: "img",
+        name: "Spotpris i dag. Lavest 0,8, høyest 1,2.",
+        viewBox: "0 0 30 100",
+      },
+    ]);
     expect(ssr.flight).toContain('<path data-slot="sparkline-path" d="M5,0ZM25,100Z"></path>');
   });
 
