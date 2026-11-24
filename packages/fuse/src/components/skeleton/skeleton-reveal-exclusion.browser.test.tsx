@@ -4,6 +4,8 @@
  * `onFormSubmit`; the live control's accessible name, label and description; and the page's
  * dialogs, focus and scroll lock, which a ghost must leave as they were.
  */
+import { useState } from "react";
+
 import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
@@ -173,6 +175,234 @@ describe("SkeletonReveal outgoing content", () => {
       expect(hit === control || control.contains(hit)).toBe(false);
     }
     expect(leaving.isConnected).toBe(true);
+  });
+
+  /** Each plan picker's version bump, by its group element, so a test can render one copy again. */
+  const pickers = new WeakMap<Element, () => void>();
+
+  /**
+   * A plan picker of native radios that checks Fixed first. `uncontrolled` leaves the choice to the
+   * inputs, and `controlled` keeps it in state. Each radio carries the picker's version, and
+   * `remount` mounts the radios afresh whenever the version changes. `name` is the group's name.
+   */
+  function PlanRadios({
+    radios,
+    remount,
+    name,
+  }: {
+    radios: "uncontrolled" | "controlled";
+    remount: boolean;
+    name: string;
+  }) {
+    const [version, setVersion] = useState(0);
+    const [plan, setPlan] = useState("fixed");
+    const radio = (value: string, label: string) => (
+      <label>
+        <input
+          type="radio"
+          name={name}
+          value={value}
+          data-version={version}
+          {...(radios === "controlled"
+            ? { checked: plan === value, onChange: () => setPlan(value) }
+            : { defaultChecked: value === "fixed" })}
+        />
+        {label}
+      </label>
+    );
+    return (
+      <div
+        role="radiogroup"
+        aria-label="Plan"
+        key={remount ? version : undefined}
+        ref={(group) => {
+          if (group !== null) pickers.set(group, () => setVersion((current) => current + 1));
+        }}>
+        {radio("fixed", "Fixed")}
+        {radio("spot", "Spot")}
+      </div>
+    );
+  }
+
+  // A radio a form owns is also a named property of that form, so the names `id` and `remove` shadow
+  // the private form's own `id` and `remove()`.
+  it.each([
+    {
+      radios: "uncontrolled",
+      remount: false,
+      form: true,
+      updates: ["both"],
+      resolves: "after the exit",
+      name: "plan",
+    },
+    {
+      radios: "controlled",
+      remount: false,
+      form: false,
+      updates: ["ghost"],
+      resolves: "after the exit",
+      name: "plan",
+    },
+    {
+      radios: "controlled",
+      remount: true,
+      form: false,
+      updates: ["outgoing", "ghost"],
+      resolves: "after the exit",
+      name: "plan",
+    },
+    {
+      radios: "uncontrolled",
+      remount: false,
+      form: false,
+      updates: ["ghost"],
+      resolves: "during the fade",
+      name: "plan",
+    },
+    {
+      radios: "uncontrolled",
+      remount: false,
+      form: false,
+      updates: ["ghost"],
+      resolves: "after the exit",
+      name: "id",
+    },
+    {
+      radios: "uncontrolled",
+      remount: false,
+      form: false,
+      updates: ["ghost"],
+      resolves: "after the exit",
+      name: "remove",
+    },
+  ] as const)(
+    "keeps the selection the user made in its native radios, and leaves other radios of that name alone, while a ghost holds a checked copy ($radios, remounting: $remount, in a form: $form, updating $updates, data arriving $resolves, named $name)",
+    async ({ radios, remount, form, updates, resolves, name }) => {
+      const reveal = (loading: boolean) => (
+        <SkeletonReveal loading={loading} label="Henter" reveal="smart">
+          <PlanRadios radios={radios} remount={remount} name={name} />
+        </SkeletonReveal>
+      );
+      // Inside a form, a checked radio of the same name outside it, in the page's form-less group.
+      const view = (loading: boolean) =>
+        form ? (
+          <>
+            <label>
+              <input type="radio" name={name} value="outside" defaultChecked />
+              Outside
+            </label>
+            <form aria-label="Plan">{reveal(loading)}</form>
+          </>
+        ) : (
+          reveal(loading)
+        );
+      const { rerender } = renderThemed(view(false));
+      await nextFrames(2);
+      await page.getByRole("radio", { name: "Spot" }).click();
+      expect(roleNamed("radio", "Spot")).toMatchObject({ checked: true });
+
+      const forms = document.forms.length;
+      // A refetch: the ghost renders a copy of the group, with Fixed checked, before the outgoing
+      // content, which stays on screen through the skeleton's hold and then fades.
+      rerender(view(true));
+      const root = slot("skeleton-reveal");
+      const ghost = slot("skeleton-reveal-ghost", root);
+      const leaving = currentPane("skeleton-reveal-skeleton", root).nextElementSibling;
+      if (!(leaving instanceof HTMLElement)) throw new Error("expected the outgoing content pane");
+      expect(leaving.hasAttribute("data-exiting")).toBe(true);
+      // Hold every animation on the pane, so the test reaches the hold and the fade at set points.
+      const animations = leaving.getAnimations();
+      for (const animation of animations) animation.pause();
+      const exit = animations.find((animation) => (animation.effect?.getTiming().delay ?? 0) > 0);
+      if (exit === undefined) throw new Error("expected the outgoing content's held exit");
+      const timing = exit.effect?.getTiming();
+      const delay = timing?.delay ?? 0;
+      const duration = Number(timing?.duration);
+      if (!(duration > 0)) throw new Error("expected a held fade");
+      const radioIn = (pane: Element, value: string) => {
+        const input = pane.querySelector(`input[value="${value}"]`);
+        if (!(input instanceof HTMLInputElement)) throw new Error(`expected a ${value} radio`);
+        return input;
+      };
+      const outside = document.querySelector('input[value="outside"]');
+      const outsideChecked = () => (outside instanceof HTMLInputElement ? outside.checked : null);
+      const selection = () => ({
+        spot: radioIn(leaving, "spot").checked,
+        fixed: radioIn(leaving, "fixed").checked,
+        outside: outsideChecked(),
+      });
+      const expected = { spot: true, fixed: false, outside: form ? true : null };
+
+      exit.currentTime = delay / 2;
+      expect(radioIn(ghost, "fixed").checked, "the ghost's Fixed radio is checked").toBe(true);
+      for (const update of updates) {
+        const panes = update === "both" ? [ghost, leaving] : [update === "ghost" ? ghost : leaving];
+        for (const pane of panes) {
+          const group = pane.querySelector('[role="radiogroup"]');
+          const bump = group === null ? undefined : pickers.get(group);
+          if (bump === undefined) throw new Error("expected a plan picker");
+          bump();
+        }
+        // Each updated copy commits its radios again, with the new version on them.
+        for (const pane of panes)
+          await expect.poll(() => radioIn(pane, "spot").getAttribute("data-version")).toBe("1");
+        expect(selection(), `through the hold, after updating ${update}`).toEqual(expected);
+      }
+      // The outgoing radios keep their name, so author styles that select it still match.
+      expect(radioIn(leaving, "spot").matches(`[name="${name}"]`), "the outgoing radio keeps its name").toBe(
+        true
+      );
+
+      exit.currentTime = delay + duration / 2;
+      // A frame at the fade lets anything the pane runs on the animation's progress run first.
+      await nextFrames(1);
+      expect(selection(), "through the fade").toEqual(expected);
+
+      // The data can arrive before the outgoing content has gone, which mounts content that checks
+      // Fixed again.
+      if (resolves === "during the fade") rerender(view(false));
+      const incoming = resolves === "during the fade" ? currentPane("skeleton-reveal-content", root) : null;
+      // Once the outgoing content has gone, every radio left keeps its checked state, and the page
+      // has the forms it had before the refetch.
+      for (const animation of animations) animation.finish();
+      await expect.poll(() => leaving.isConnected).toBe(false);
+      expect({
+        outside: outsideChecked(),
+        incoming: incoming === null ? null : radioIn(incoming, "fixed").checked,
+      }).toEqual({ outside: expected.outside, incoming: incoming === null ? null : true });
+      expect(document.forms.length, "forms after the exit").toBe(forms);
+    }
+  );
+
+  it("keeps each form's selection in its own native radios while it leaves", async () => {
+    const plans = (checked: string) => (
+      <form aria-label={`Plan, ${checked} first`}>
+        {["fixed", "spot"].map((value) => (
+          <label key={value}>
+            <input type="radio" name="plan" value={value} defaultChecked={value === checked} />
+            {value}
+          </label>
+        ))}
+      </form>
+    );
+    const view = (loading: boolean) => (
+      <SkeletonReveal loading={loading} label="Henter" reveal="smart">
+        <div>
+          {plans("fixed")}
+          {plans("spot")}
+        </div>
+      </SkeletonReveal>
+    );
+    const { rerender } = renderThemed(view(false));
+    await nextFrames(2);
+    rerender(view(true));
+    const leaving = currentPane("skeleton-reveal-skeleton", slot("skeleton-reveal")).nextElementSibling;
+    if (!(leaving instanceof HTMLElement)) throw new Error("expected the outgoing content pane");
+    expect(leaving.hasAttribute("data-exiting")).toBe(true);
+    const checked = [...leaving.querySelectorAll("input")].filter((radio) => radio.checked);
+    expect(
+      checked.map((radio) => `${radio.closest("form")?.getAttribute("aria-label")}: ${radio.value}`)
+    ).toEqual(["Plan, fixed first: fixed", "Plan, spot first: spot"]);
   });
 });
 
