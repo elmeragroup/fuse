@@ -6,6 +6,7 @@ test("parts take the public props, Text render, and no polymorphic as prop", () 
   const _root = (
     <ButtonGroup.Root orientation="horizontal" className="w-full" aria-label="Actions">
       <ButtonGroup.Text>https://</ButtonGroup.Text>
+      {/* oxlint-disable-next-line jsx-a11y/label-has-associated-control -- the rule reads the empty `<label>` in `render`, but Text passes its children ("NOK") to that label as its text */}
       <ButtonGroup.Text render={<label htmlFor="amount" />}>NOK</ButtonGroup.Text>
       <ButtonGroup.Separator />
       <ButtonGroup.Separator orientation="horizontal" />
