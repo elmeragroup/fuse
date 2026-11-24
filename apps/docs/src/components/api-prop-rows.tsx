@@ -20,7 +20,7 @@ import type { MouseEvent, ReactElement } from "react";
 import type { ApiPropView } from "../lib/api-row";
 import { ApiRows } from "./api-rows";
 import { DocsInlineCode } from "./docs-inline-code";
-import { InlineCode } from "./inline-code";
+import { InlineMarkdown } from "./inline-markdown";
 
 type ApiPropRowsProps = {
   /** Complete accessible name for this source group; only the group's label reads it. */
@@ -93,7 +93,7 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
             <ApiRows.PanelItem>
               <ApiRows.Term>Description</ApiRows.Term>
               <ApiRows.Definition>
-                <InlineCode text={prop.description} />
+                <InlineMarkdown text={prop.description} />
               </ApiRows.Definition>
             </ApiRows.PanelItem>
           )}

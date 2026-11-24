@@ -3,7 +3,7 @@ import type { ReactElement } from "react";
 import { requireComponent } from "../lib/component-page";
 import { DocsLede } from "./docs-lede";
 import { DocsPageTitle } from "./docs-page-title";
-import { InlineCode } from "./inline-code";
+import { InlineMarkdown } from "./inline-markdown";
 import { MetaLinks } from "./meta-links";
 
 /** The page whose intro to render, named by its route slug. */
@@ -22,7 +22,7 @@ export function ComponentIntro({ slug }: ComponentIntroProps): ReactElement {
     <>
       <DocsPageTitle>{component.title}</DocsPageTitle>
       <DocsLede>
-        <InlineCode text={component.lede} />
+        <InlineMarkdown text={component.lede} />
       </DocsLede>
       <MetaLinks
         markdownUrl={component.markdownUrl}

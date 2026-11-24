@@ -76,6 +76,20 @@ describe("component page anatomy", () => {
     }
   });
 
+  it("renders a markdown link in a prop description as an anchor", async () => {
+    // Oracle: `Field.Error`'s `match` description links `ValidityState` to MDN in markdown.
+    const html = await fetchText("/components/field");
+    expect(html.slice(html.indexOf('id="api-reference"'))).toMatch(
+      /<a[^>]*href="https:\/\/developer\.mozilla\.org\/en-US\/docs\/Web\/API\/ValidityState"[^>]*>ValidityState<\/a>/u
+    );
+  });
+
+  it("renders a hook description's code spans as code", async () => {
+    // Oracle: `useCarousel`'s JSDoc names `Carousel.Root` in a code span.
+    const html = await fetchText("/components/carousel");
+    expect(html).toMatch(/The enclosing <code[^>]*>Carousel\.Root<\/code>/u);
+  });
+
   it("renders the API reference as expandable rows with a per-part RSC indicator", async () => {
     const html = await fetchText("/components/button");
     expect(html).toContain('id="api-reference"');
