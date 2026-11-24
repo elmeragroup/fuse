@@ -1,5 +1,7 @@
+import { Activity } from "react";
 import type { ReactElement, ReactNode } from "react";
 
+import { flushSync } from "react-dom";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -223,25 +225,28 @@ describe("DataTableFilter value popover", () => {
     </>
   );
 
+  const PEEKING_FILTERS = [
+    ...CUSTOMER_NORD,
+    { id: "amount", value: { kind: "number", operator: "isGreaterThan", values: [500] } },
+  ];
+
   /**
-   * Renders a Customer and an Amount chip, and sizes the page so Amount's Value shows only its first
-   * 12px at the strip's end, with Customer's chip, the first, still in view. The strip ends a fixed
-   * distance before the page's.
+   * Sizes the page so Amount's Value shows only its first 12px at the strip's end, with Customer's
+   * chip, the first, still in view. The strip ends a fixed distance before the page's.
    */
-  const renderAmountPeeking = async (children?: ReactNode) => {
-    renderOrders({
-      initial: [
-        ...CUSTOMER_NORD,
-        { id: "amount", value: { kind: "number", operator: "isGreaterThan", values: [500] } },
-      ],
-      children,
-    });
+  const sizeAmountPeeking = async () => {
     const strip = chipStrip();
     const amountValue = roleNamed("button", "500");
     const stripInset = window.innerWidth - strip.getBoundingClientRect().right;
     await page.viewport(Math.round(amountValue.getBoundingClientRect().left + 12 + stripInset), 896);
     expect(strip.getBoundingClientRect().right).toBeLessThan(amountValue.getBoundingClientRect().right);
     return { strip, amountValue };
+  };
+
+  /** Renders a Customer and an Amount chip, and sizes the page with `sizeAmountPeeking`. */
+  const renderAmountPeeking = async (children?: ReactNode) => {
+    renderOrders({ initial: PEEKING_FILTERS, children });
+    return sizeAmountPeeking();
   };
 
   /**
@@ -361,16 +366,24 @@ describe("DataTableFilter value popover", () => {
     expect(insideStrip(strip, amountValue)).toBe(true);
   });
 
-  it("leaves the strip where it is when a press on the open chip's Value closes the popover", async () => {
-    const { strip } = await renderAmountPeeking();
+  /**
+   * Opens Customer's editor and scrolls the strip to 35px, where Customer's chip starts past the
+   * strip's start and its Value shows whole. Returns Customer's Value.
+   */
+  const openCustomerScrolled = async (strip: HTMLElement) => {
     const customerValue = roleNamed("button", "“nord”");
     await userEvent.click(customerValue);
     await finishMotion();
-    // Customer's chip starts past the strip's start, and its Value shows whole.
     strip.scrollLeft = 35;
-    const customerChip = page.getByRole("group", { name: "Customer filter" }).element();
+    const customerChip = roleNamed("group", "Customer filter");
     expect(customerChip.getBoundingClientRect().left).toBeLessThan(strip.getBoundingClientRect().left);
     expect(insideStrip(strip, customerValue)).toBe(true);
+    return customerValue;
+  };
+
+  it("leaves the strip where it is when a press on the open chip's Value closes the popover", async () => {
+    const { strip } = await renderAmountPeeking();
+    const customerValue = await openCustomerScrolled(strip);
 
     await userEvent.click(customerValue);
     await finishMotion();
@@ -378,6 +391,93 @@ describe("DataTableFilter value popover", () => {
       open: false,
       scrollLeft: 35,
     });
+  });
+
+  type Shown = { readonly filter: "hidden" | "visible"; readonly bar: "hidden" | "visible" };
+
+  /**
+   * Renders the Customer and Amount chips with the filter under an Activity, and returns a rerender
+   * that sets the Activity's `mode` and toggles `display: none` on the Bar in one synchronous
+   * commit. A hidden Bar stays mounted, so its chips and Values keep their refs.
+   */
+  const renderInActivity = () => {
+    const { Capture, act } = captureActions();
+    const view = (shown: Shown) =>
+      withLocale(
+        "en-US",
+        <Activity mode={shown.filter}>
+          <Orders initial={PEEKING_FILTERS}>
+            <DataTableFilter.Bar {...(shown.bar === "hidden" && { style: { display: "none" } })} />
+            <DataTableFilter.ValueContent />
+            <Capture />
+          </Orders>
+        </Activity>
+      );
+    const { rerender } = renderThemed(view({ filter: "visible", bar: "visible" }));
+    return { act, show: (shown: Shown) => rerender(view(shown)) };
+  };
+
+  it("keeps the strip's scroll when an Activity hides and reveals the filter with an editor open", async () => {
+    const { show } = renderInActivity();
+    const { strip } = await sizeAmountPeeking();
+    await openCustomerScrolled(strip);
+
+    show({ filter: "hidden", bar: "visible" });
+    expect(strip.checkVisibility()).toBe(false);
+    show({ filter: "visible", bar: "visible" });
+    expect({ open: popoverOpen("Customer"), scrollLeft: strip.scrollLeft }).toEqual({
+      open: true,
+      scrollLeft: 35,
+    });
+  });
+
+  it("reveals the edited Value when the filter shows again after edit() ran as the Bar hid", async () => {
+    const { act, show } = renderInActivity();
+    const { strip, amountValue } = await sizeAmountPeeking();
+    // An open editor keeps focus in the popover, so no focus lands in the strip to scroll it.
+    await userEvent.click(roleNamed("button", "“nord”"));
+    await finishMotion();
+
+    // One commit moves the editor to Amount and hides the Bar with `display: none`, so Amount's chip
+    // and Value stay registered but have no box to reveal.
+    flushSync(() => {
+      act().edit("amount");
+      show({ filter: "visible", bar: "hidden" });
+    });
+    expect(strip.checkVisibility()).toBe(false);
+    await expect.poll(() => popoverOpen("Amount")).toBe(true);
+    show({ filter: "hidden", bar: "hidden" });
+    expect(popoverOpen("Amount")).toBe(false);
+    show({ filter: "visible", bar: "visible" });
+    expect({
+      open: popoverOpen("Amount"),
+      revealed: amountValue.checkVisibility() && insideStrip(strip, amountValue),
+    }).toEqual({ open: true, revealed: true });
+  });
+
+  it("reveals the edited chip when its Value has `display: none`", async () => {
+    const { Capture, act } = captureActions();
+    renderOrders({
+      initial: PEEKING_FILTERS,
+      children: (
+        <>
+          {barWithValue(<DataTableFilter.Value style={{ display: "none" }} />)}
+          <Capture />
+        </>
+      ),
+    });
+    const strip = chipStrip();
+    const amountChip = roleNamed("group", "Amount filter");
+    // Amount's chip shows only its first half at the strip's end.
+    const stripInset = window.innerWidth - strip.getBoundingClientRect().right;
+    const chipRect = amountChip.getBoundingClientRect();
+    await page.viewport(Math.round(chipRect.left + chipRect.width / 2 + stripInset), 896);
+    expect(strip.clientWidth).toBeGreaterThan(chipRect.width);
+    expect(insideStrip(strip, amountChip)).toBe(false);
+
+    act().edit("amount");
+    await expect.poll(() => popoverOpen("Amount")).toBe(true);
+    expect(insideStrip(strip, amountChip)).toBe(true);
   });
 
   it("reveals the open chip's Value again when edit() asks for the field already open", async () => {
