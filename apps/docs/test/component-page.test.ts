@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { COMPONENT_INVENTORY } from "./component-inventory";
 import { fetchText } from "./docs-server";
+import { markupText } from "./html";
 
 /** The reviewed demo files of the Button page, the oracle for how many frames it renders. */
 const BUTTON_DEMOS = COMPONENT_INVENTORY.get("button")?.demos ?? [];
@@ -104,15 +105,20 @@ describe("component page anatomy", () => {
 
   it("collapses long types in closed rows, keeps the full signature in the panel", async () => {
     const html = await fetchText("/components/button");
+    // The summary carries the row's id, and the panel follows it inside the same `details`.
+    const onIntentStart = html.indexOf('id="api-button-onIntent"');
+    expect(onIntentStart).toBeGreaterThan(-1);
+    const summaryEnd = html.indexOf("</summary>", onIntentStart);
+    const summary = html.slice(onIntentStart, summaryEnd);
+    const panel = html.slice(summaryEnd, html.indexOf("</details>", summaryEnd));
     // `onIntent` prints as `(() => void) | undefined`; the closed row says `function`.
-    expect(html).toMatch(/<code[^>]*>function<\/code>/);
-    expect(html).toContain('aria-label="Prop: onIntent, type: function"');
-    const api = html.slice(html.indexOf('id="api-reference"'));
-    // The expanded panel carries the real signature, highlighted by sugar-high.
-    expect(api).toContain("<pre");
-    expect(api).toContain("sh__token");
-    // A prop with no default renders an em-dash, never an empty cell.
-    expect(api).toMatch(/<dt[^>]*>Default<\/dt>[\s\S]*?<span[^>]*>—<\/span>/);
+    expect(summary).toMatch(/<code[^>]*>function<\/code>/);
+    // The panel carries the real signature, highlighted by sugar-high.
+    const signature = /<pre[^>]*>([\s\S]*?)<\/pre>/.exec(panel)?.[1] ?? "";
+    expect(signature).toContain("sh__token");
+    expect(markupText(signature)).toBe("(() => void) | undefined");
+    // `onIntent` has no default, so its panel shows the dash, never an empty cell.
+    expect(panel).toMatch(/<dt[^>]*>Default<\/dt>\s*<dd[^>]*><span[^>]*>—<\/span>/);
   });
 
   it("renders the generated tokens-consumed section with swatches", async () => {

@@ -158,14 +158,13 @@ export function CommandMenu(): ReactElement {
           <Button
             variant="outline"
             size="sm"
-            aria-label="Search"
             aria-keyshortcuts="Meta+K Control+K"
             className="sm:w-56 sm:justify-start"
           />
         }>
         <MagnifyingGlass data-icon="inline-start" />
-        <span className="sm:inline hidden">Search…</span>
-        <KbdGroup className="sm:inline-flex ml-auto hidden">
+        <span className="sm:not-sr-only sr-only">Search…</span>
+        <KbdGroup aria-hidden className="sm:inline-flex ml-auto hidden">
           <Kbd>{apple ? "⌘" : "Ctrl"}</Kbd>
           <Kbd>K</Kbd>
         </KbdGroup>

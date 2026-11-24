@@ -1,15 +1,10 @@
 /**
  * Turning the committed API artifact into what a reference row displays.
  *
- * The presentation contract asks each row three questions the artifact does not answer
- * literally: what one line stands in for the type while the row is closed, what a missing
- * default looks like, and what a screen reader hears from a single `summary`. Answering them
- * here keeps the accordion a rendering of ready values — which is what lets the accordion be
- * the page's only client component while the artifact read, the em-dash and the syntax
- * highlighting all stay on the server. The full signature is rendered here through the one
- * docs code renderer (`DocsCodeBlock`, the same component demo source and MDX fences use)
- * and handed to the accordion as a finished element, so `sugar-high` never reaches the
- * client graph and no signature is highlighted at hydration.
+ * This module prepares each row's values on the server, including the one-line type a closed
+ * row shows. It renders the full signature with `DocsCodeBlock`, which also renders demo source
+ * and MDX fences. It hands the signature to the client accordion as a finished element, so
+ * `sugar-high` never reaches the client graph and no signature is highlighted at hydration.
  */
 
 import { DocsCodeBlock } from "../components/docs-code-block";
@@ -47,30 +42,15 @@ function rscLabel(rsc: RscStatus): string {
   return rsc === "server" ? "server-safe" : '"use client"';
 }
 
-/**
- * The label for a row's `summary`.
- *
- * A closed row is four cells of code in a grid; announced cell by cell it is noise. The
- * composed label says the same thing as one sentence — name, whether it is required, the
- * collapsed type, and the default when there is one.
- */
-function propLabel(prop: ApiProp, closedType: string): string {
-  const required = prop.required ? " required," : "";
-  const fallback = prop.defaultValue === null ? "" : ` (default: ${prop.defaultValue})`;
-  return `Prop: ${prop.name},${required} type: ${closedType}${fallback}`;
-}
-
 function toPropView(partName: string, prop: ApiProp): ApiPropView {
-  const closedType = prop.shortType ?? prop.type;
   return {
     name: prop.name,
     id: apiPropAnchor(partName, prop.name),
     required: prop.required,
-    closedType,
+    closedType: prop.shortType ?? prop.type,
     signature: <DocsCodeBlock variant="signature" source={prop.type} />,
     defaultValue: prop.defaultValue,
     description: propDescription(prop),
-    label: propLabel(prop, closedType),
   };
 }
 

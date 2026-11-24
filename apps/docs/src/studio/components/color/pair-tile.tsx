@@ -87,7 +87,6 @@ function PairSwatch({ pair }: { pair: RolePair }): ReactElement {
         variant="ghost"
         className={styles.swatch()}
         style={{ "--pair-fill": `var(--${pair.role})`, "--pair-text": `var(--${pair.foreground})` }}
-        aria-label={`--${pair.role}`}
         onClick={() => {
           focusToken(pair.role, scheme);
         }}>

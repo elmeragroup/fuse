@@ -64,11 +64,14 @@ export async function shownSide(page: Page): Promise<"Neutral" | "Branded" | "mi
   return "mismatch";
 }
 
-/** The row button for `customer`; its accessible name starts with the order's customer. */
+/**
+ * The row button for `customer`, matched on its `data-customer` attribute. The accessible name
+ * holds every cell's text, so a name match would also find a customer whose name contains this one.
+ */
 export function row(scope: Locator, customer: string): Locator {
   return scope
     .getByRole("list", { name: "Orders" })
-    .getByRole("button", { name: new RegExp(`^${customer}`, "u") });
+    .locator(`button[data-customer=${JSON.stringify(customer)}]`);
 }
 
 /** The customer of the focused row's opener, or `null` when no row has focus. */

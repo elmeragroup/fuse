@@ -57,16 +57,16 @@ function WorkspaceSwitcher(): ReactElement {
     <Sidebar.Menu>
       <Sidebar.MenuItem>
         <DropdownMenu.Root open={open} onOpenChange={setOpen}>
-          <DropdownMenu.Trigger
-            render={
-              <Sidebar.MenuButton size="lg" aria-label={`Workspace: ${BRANDS[theme.brand].displayName}`} />
-            }>
+          <DropdownMenu.Trigger render={<Sidebar.MenuButton size="lg" />}>
             <span className={styles.workspaceMark()}>
               <BrandMark brand={theme.brand} size="icon" className={styles.workspaceLogo()} />
             </span>
             <span className={styles.workspaceText()}>
               <span className={styles.workspaceName()}>Dashboard</span>
-              <span className={styles.workspaceBrand()}>{BRANDS[theme.brand].displayName}</span>
+              <span className={styles.workspaceBrand()}>
+                {BRANDS[theme.brand].displayName}
+                <span className="sr-only"> workspace</span>
+              </span>
             </span>
             <CaretUpDown className={styles.caret()} />
           </DropdownMenu.Trigger>
@@ -174,8 +174,7 @@ function SellerMenu(): ReactElement {
     <Sidebar.Menu>
       <Sidebar.MenuItem>
         <DropdownMenu.Root open={open} onOpenChange={setOpen}>
-          <DropdownMenu.Trigger
-            render={<Sidebar.MenuButton size="lg" aria-label={`Signed in as ${SIGNED_IN.name}`} />}>
+          <DropdownMenu.Trigger render={<Sidebar.MenuButton size="lg" />}>
             <Avatar.Root className={styles.avatar()}>
               <Avatar.Fallback>{SIGNED_IN.initials}</Avatar.Fallback>
             </Avatar.Root>
