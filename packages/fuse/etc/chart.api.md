@@ -521,6 +521,12 @@ export type ChartPolarFieldCheck<TConfig> = string extends keyof TConfig ? unkno
 export type ChartPolarRole = ChartCategoricalRole | ChartSequentialRole | "chart-other";
 
 // @beta
+export type ChartPolarTooltipProps = ChartLayerProps & {
+    variant?: "default" | "frosted";
+    children?: ReactNode;
+};
+
+// @beta
 export type ChartQuality = "measured" | "estimated" | "corrected" | "missing";
 
 // @beta
@@ -1188,7 +1194,7 @@ export type ClockChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "r
 function ClockChartTable(props: ChartTableProps): ReactElement;
 
 // @beta
-function ClockChartTooltip(input: ChartTooltipProps): ReactElement;
+function ClockChartTooltip(input: ChartPolarTooltipProps): ReactElement;
 
 // @beta
 function ClockChartTooltipTotal(props: ChartTooltipTotalProps): ReactElement;
@@ -1701,7 +1707,7 @@ export type PieChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "ren
 function PieChartTable(props: ChartTableProps): ReactElement;
 
 // @beta
-function PieChartTooltip(props: ChartTooltipProps): ReactElement;
+function PieChartTooltip(props: ChartPolarTooltipProps): ReactElement;
 
 // @beta
 function PieChartTrack(input: PieChartTrackProps): ReactElement;
@@ -1835,7 +1841,7 @@ export type RadarChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "r
 function RadarChartTable(props: ChartTableProps): ReactElement;
 
 // @beta
-function RadarChartTooltip(props: ChartTooltipProps): ReactElement;
+function RadarChartTooltip(props: ChartPolarTooltipProps): ReactElement;
 
 declare namespace RadialChart {
     export {
@@ -1920,7 +1926,7 @@ export type RadialChartSkeletonProps = Omit<ChartDomProps<"div">, "children" | "
 function RadialChartTable(props: ChartTableProps): ReactElement;
 
 // @beta
-function RadialChartTooltip(props: ChartTooltipProps): ReactElement;
+function RadialChartTooltip(props: ChartPolarTooltipProps): ReactElement;
 
 declare namespace ScatterChart {
     export {

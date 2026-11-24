@@ -85,7 +85,7 @@ export type AnchorInput = {
   readonly active: number | null;
   /** The tooltip's positioner, whose size the anchor reads and on which it writes. */
   readonly positioner: RefObject<HTMLDivElement | null>;
-  /** The Tooltip's `anchor` prop. */
+  /** The cartesian anchor's placement preference, from `Chart.Tooltip`'s `anchor` prop. */
   readonly placement: "point" | "top";
   /** A count the tooltip raises to ask Base UI to place the popup again over a fresh measure. */
   readonly measures: number;

@@ -5,7 +5,7 @@
  * `test/packed-consumer/chart-types/`, because the workspace's csstype augmentation accepts every
  * `--*` property.
  */
-import type { ReactElement } from "react";
+import type { ComponentProps, ReactElement } from "react";
 
 import { expectTypeOf, test } from "vitest";
 
@@ -38,6 +38,7 @@ import type {
   ChartTooltipProps,
   ChartTooltipValueProps,
   ChartYAxisProps,
+  ClockChart,
   PieChartRootProps,
   RadarChartGlowProps,
   ValueFormat,
@@ -155,6 +156,13 @@ test("no compatibility flag, mode prop or hidden attribute exists below or on Ro
   void (<LineChart.Glow dataKey="day" />);
   // @ts-expect-error a radar Glow takes its marks as children, not a dataKey
   void (<RadarChart.Glow dataKey="a" />);
+});
+
+test("no polar Tooltip has an anchor prop", () => {
+  expectTypeOf<ComponentProps<typeof PieChart.Tooltip>>().not.toHaveProperty("anchor");
+  expectTypeOf<ComponentProps<typeof RadialChart.Tooltip>>().not.toHaveProperty("anchor");
+  expectTypeOf<ComponentProps<typeof RadarChart.Tooltip>>().not.toHaveProperty("anchor");
+  expectTypeOf<ComponentProps<typeof ClockChart.Tooltip>>().not.toHaveProperty("anchor");
 });
 
 test("keys and values follow the data", () => {

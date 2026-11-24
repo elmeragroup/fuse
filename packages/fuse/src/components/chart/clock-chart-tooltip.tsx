@@ -7,9 +7,9 @@
 import type { ReactElement } from "react";
 
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
-import type { ChartTooltipProps } from "./chart-tooltip";
 import { ClockChartTooltipTotal } from "./clock-chart-tooltip-total";
 import { DefaultPolarTooltip, PolarTooltip } from "./polar-chart-tooltip";
+import type { ChartPolarTooltipProps } from "./polar-chart-tooltip";
 
 /** The default content: the slot's label and rows, then one total per stack of two or more series. */
 function DefaultClockTooltip(): ReactElement {
@@ -33,12 +33,11 @@ function DefaultClockTooltip(): ReactElement {
  * content; otherwise it rests below the dial and its labels, or above the chart where below would
  * leave the viewport. Like `Chart.Tooltip`'s, it may reach past the chart's box, below or above it,
  * and stays inside the viewport, but it never covers its dial, its labels or its title. Escape
- * closes it and keeps the reader's place. `anchor` does nothing here, since the lane decides where
- * the popup rests.
+ * closes it and keeps the reader's place.
  *
  * @beta
  */
-export function ClockChartTooltip({ children, ...props }: ChartTooltipProps): ReactElement {
+export function ClockChartTooltip({ children, ...props }: ChartPolarTooltipProps): ReactElement {
   return <PolarTooltip {...props}>{children ?? <DefaultClockTooltip />}</PolarTooltip>;
 }
 
