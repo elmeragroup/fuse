@@ -116,7 +116,8 @@ describe("Item", () => {
     {
       on: "root",
       decor: (
-        <Item.Root aria-hidden="true" render={<a href="#decor" />}>
+        // A render element puts the row in the listitem wrapper, which must copy the root's `aria-hidden`.
+        <Item.Root aria-hidden="true" render={<div />}>
           <Item.Title>Decor</Item.Title>
         </Item.Root>
       ),
@@ -124,7 +125,7 @@ describe("Item", () => {
     {
       on: "render element",
       decor: (
-        <Item.Root render={<a href="#decor" aria-hidden="true" />}>
+        <Item.Root render={<div aria-hidden="true" />}>
           <Item.Title>Decor</Item.Title>
         </Item.Root>
       ),
