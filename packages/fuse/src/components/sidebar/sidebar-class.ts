@@ -35,7 +35,8 @@ export const sidebarRailClass = cn(
  * it becomes a rounded, shadowed card 8px from the page edges, and 8px from the collapsed panel.
  */
 export const sidebarInsetClass = cn(
-  "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2 relative flex w-full flex-1 flex-col bg-background"
+  "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm relative flex w-full flex-1 flex-col bg-background",
+  "md:peer-[[data-variant=inset][data-state=expanded][data-side=left]]:ml-0 md:peer-[[data-variant=inset][data-state=expanded][data-side=right]]:mr-0"
 );
 
 /** `Sidebar.Input`: the Input field box at the row height, full width, on the background fill. */
