@@ -252,8 +252,7 @@ export function AutocompleteInput({
               size="icon-sm"
               variant="ghost"
               aria-label={triggerLabel ?? strings.format("toggle")}
-              // The `aria-labelledby` from Field.Label would win over `aria-label`. An empty value
-              // overrides it, so the caret keeps `triggerLabel` or the dictionary `toggle`.
+              // oxlint-disable-next-line jsx-a11y/aria-proptypes -- the empty list overrides Field.Label's `aria-labelledby`, which would win over `aria-label`
               aria-labelledby=""
               render={<AutocompleteTrigger />}
               data-slot="input-group-button"

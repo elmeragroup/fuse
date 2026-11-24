@@ -270,8 +270,7 @@ export function ComboboxInput({
             size="icon-sm"
             variant="ghost"
             aria-label={triggerLabel ?? strings.format("toggle")}
-            // Field.Label's `aria-labelledby` would win over `aria-label`. An empty list overrides
-            // it, so the caret keeps the dictionary's `toggle` name.
+            // oxlint-disable-next-line jsx-a11y/aria-proptypes -- the empty list overrides Field.Label's `aria-labelledby`, which would win over `aria-label`
             aria-labelledby=""
             render={<ComboboxTrigger />}
             data-slot="input-group-button"

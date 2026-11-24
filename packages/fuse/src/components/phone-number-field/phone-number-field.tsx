@@ -569,9 +569,7 @@ export function PhoneNumberField({
                   <ComboboxPrimitive.Input
                     render={<InputGroupPlainInput />}
                     aria-label={resolvedSearchCountriesLabel}
-                    // The picker's own labelable scope keeps the field's label off this input;
-                    // the empty list is a safeguard that keeps dictionary `searchCountries`
-                    // the name.
+                    // oxlint-disable-next-line jsx-a11y/aria-proptypes -- the picker's own labelable scope keeps the field's label off this input; the empty list is a safeguard that keeps `aria-label` the name
                     aria-labelledby=""
                     autoComplete="one-time-code"
                     // An empty name keeps the search box out of autofill heuristics and
