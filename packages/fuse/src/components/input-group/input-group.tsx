@@ -26,11 +26,17 @@ import {
 const CONTROL_ATTRIBUTE = "data-input-group-control";
 
 /**
- * Marks the group's own control for `InputGroup.Addon`. Each part that renders the control takes
- * it after the consumer's props. A Base UI part takes it in its own props, not on its `render`
- * element, so a consumer's `render` replacement carries it too.
+ * The attributes that mark the group's own control, one for each reader. The click handler of
+ * `InputGroup.Addon` finds the control by `data-input-group-control`. The classes of
+ * `InputGroup.Root` read `data-focus-ring-control` for the focus ring, the disabled and read-only
+ * fills and the invalid border and ring. Each part that renders the control takes them after the
+ * consumer's props. A Base UI part takes them in its own props, not on its `render` element, so a
+ * consumer's `render` replacement carries them too.
  */
-export const INPUT_GROUP_CONTROL_MARKER = { [CONTROL_ATTRIBUTE]: "" } as const;
+export const INPUT_GROUP_CONTROL_ATTRIBUTES = {
+  [CONTROL_ATTRIBUTE]: "",
+  "data-focus-ring-control": "",
+} as const;
 
 /** Props for `InputGroup.Root`. */
 export type InputGroupRootProps = Omit<ComponentProps<"div">, "children"> & {
@@ -154,7 +160,7 @@ export function InputGroupAddon({
         // The addon is an extension of the group's own control's hit area, except over a
         // nested control, such as a button, a label or a field, which keeps its own click and
         // focus, and except for a click that bubbles through React from a portaled popup.
-        // The own control is the Root's direct child that carries `INPUT_GROUP_CONTROL_MARKER`.
+        // The own control is the Root's direct child that carries `data-input-group-control`.
         // The first input in DOM order can be a field nested in an addon or a combobox's hidden
         // input, and a Textarea group has no input at all.
         const { currentTarget, target } = event;
@@ -214,10 +220,9 @@ export function InputGroupInput({ className, ...props }: InputGroupInputProps): 
   return (
     <InputControl
       data-slot="input-group-control"
-      data-focus-ring-control=""
       className={cn(inputClass, inputGroupInputControlClass, className)}
       {...props}
-      {...INPUT_GROUP_CONTROL_MARKER}
+      {...INPUT_GROUP_CONTROL_ATTRIBUTES}
     />
   );
 }
@@ -231,10 +236,9 @@ export function InputGroupPlainInput({ className, ...props }: ComponentProps<"in
   return (
     <input
       data-slot="input-group-control"
-      data-focus-ring-control=""
       className={cn(inputClass, inputGroupInputControlClass, className)}
       {...props}
-      {...INPUT_GROUP_CONTROL_MARKER}
+      {...INPUT_GROUP_CONTROL_ATTRIBUTES}
     />
   );
 }
@@ -246,10 +250,9 @@ export function InputGroupTextarea({ className, ...props }: InputGroupTextareaPr
   return (
     <textarea
       data-slot="input-group-control"
-      data-focus-ring-control=""
       className={cn(textareaClass, inputGroupControlClass, "resize-none py-2", className)}
       {...props}
-      {...INPUT_GROUP_CONTROL_MARKER}
+      {...INPUT_GROUP_CONTROL_ATTRIBUTES}
     />
   );
 }

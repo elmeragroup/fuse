@@ -7,8 +7,10 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
+import { expectFocusRing } from "../../../test/assert-focus-ring";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
-import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { MUTED, expectSameColor, roleFill, toSrgb } from "../../../test/surface-paint";
+import { fieldBoxOf, formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Field } from "../field";
 import { Form } from "../form/form";
 import { InputGroup } from "../input-group";
@@ -534,4 +536,39 @@ describe("Autocomplete", () => {
     expect(scope).not.toBeNull();
     expect(scope?.contains(listbox)).toBe(true);
   });
+
+  it("rings the field box of an input rendered through a custom element on keyboard focus", async () => {
+    renderAutocomplete(
+      <>
+        <button type="button">Before</button>
+        <Autocomplete.Root items={[...FRUITS]}>
+          <Autocomplete.Input aria-label="Fruit" render={<input />} />
+        </Autocomplete.Root>
+      </>
+    );
+    roleNamed("button", "Before").focus();
+    await userEvent.keyboard("{Tab}");
+    const input = autocompleteNamed("Fruit");
+    expect(document.activeElement).toBe(input);
+    expectFocusRing(fieldBoxOf(input), "the field box rings for its custom input");
+  });
+
+  it.each([
+    ["disabled", { disabled: true }, [{ role: "--input", alpha: 0.5 }]],
+    ["read-only", { readOnly: true }, MUTED],
+  ] as const)(
+    "gives the field box of a %s input rendered through a custom element its fill",
+    (_state, rootProps, fill) => {
+      // Unit under test: the fill the InputGroup root paints around a custom `render` input. Oracle:
+      // the theme role `field-box.ts` names for the state, `--input` at 50% for a disabled control
+      // and `--muted` for a read-only one, read at the box.
+      renderAutocomplete(
+        <Autocomplete.Root items={[...FRUITS]} {...rootProps}>
+          <Autocomplete.Input aria-label="Fruit" render={<input />} />
+        </Autocomplete.Root>
+      );
+      const box = fieldBoxOf(autocompleteNamed("Fruit"));
+      expectSameColor(toSrgb(getComputedStyle(box).backgroundColor), roleFill(box, fill));
+    }
+  );
 });

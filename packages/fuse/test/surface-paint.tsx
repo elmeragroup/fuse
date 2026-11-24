@@ -120,7 +120,7 @@ export function paintedFill(element: Element): Srgb.Srgb {
 export type Layer = { readonly role: `--${string}`; readonly alpha?: number };
 
 /** The color the expected fill roles paint, read at the element and composited top first. */
-function roleFill(element: HTMLElement, layers: readonly Layer[]): Srgb.Srgb {
+export function roleFill(element: HTMLElement, layers: readonly Layer[]): Srgb.Srgb {
   return layers.reduceRight<Srgb.Srgb>((beneath, { role, alpha = 1 }) => {
     const { r, g, b, alpha: opacity } = toSrgb(cssVarColor(element, role));
     return Srgb.compositeOver(getOrThrow(Srgb.make({ r, g, b, alpha: opacity * alpha })), beneath);

@@ -27,7 +27,7 @@ import { Button } from "../button/button";
 import {
   InputGroupAddon,
   InputGroupButton,
-  INPUT_GROUP_CONTROL_MARKER,
+  INPUT_GROUP_CONTROL_ATTRIBUTES,
   InputGroupPlainInput,
   InputGroupRoot,
 } from "../input-group/input-group";
@@ -263,7 +263,7 @@ export function ComboboxInput({
       <ComboboxPrimitive.Input
         disabled={disabled}
         render={<InputGroupPlainInput />}
-        {...definedProps({ ...props, ...INPUT_GROUP_CONTROL_MARKER })}
+        {...definedProps({ ...props, ...INPUT_GROUP_CONTROL_ATTRIBUTES })}
       />
       <InputGroupAddon align="inline-end">
         {showTrigger ? (
