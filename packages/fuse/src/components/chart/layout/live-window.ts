@@ -415,6 +415,16 @@ export function tickStep(duration: number, room: number): number {
 }
 
 /**
+ * The round tick steps finer than a step, coarsest first.
+ *
+ * @param step - The step in milliseconds.
+ * @returns The finer steps in milliseconds.
+ */
+export function finerTickSteps(step: number): number[] {
+  return LIVE_TICK_STEPS.filter((finer) => finer < step).reverse();
+}
+
+/**
  * The tick instants inside a window, both ends included. They are the instants whose wall clock,
  * the instant plus the zone's offset there, is a whole multiple of the step. The function reads one
  * offset, where the window ends, and uses it across the window, so a window that spans a
