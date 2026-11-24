@@ -30,6 +30,12 @@ const SEGMENT_STATE_ATTRIBUTES = {
 };
 
 /**
+ * Marks a segment that is not a literal, so the date box around it rings while the segment is
+ * focus-visible. The `date-segment` value keeps other marked controls inside the box from ringing it.
+ */
+const FOCUS_RING_CONTROL = { "data-focus-ring-control": "date-segment" } as const;
+
+/**
  * One segment of a `DateInput.Root`. An editable one is a `spinbutton`, or a `textbox` on iOS,
  * whose VoiceOver cannot focus a spinbutton. Its unit and the field's label name it, its number is
  * its value, and its value text says the month's name or the hour. It edits through the
@@ -100,6 +106,7 @@ export function DateInputSegment({
       ? { "aria-hidden": true, suppressHydrationWarning: true }
       : {
           ...segmentAttributes(root, segment, id, editable),
+          ...FOCUS_RING_CONTROL,
           onKeyDown(event: KeyboardEvent<HTMLElement>) {
             actions.keyDown(segment, event);
           },

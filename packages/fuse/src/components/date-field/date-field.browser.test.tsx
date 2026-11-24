@@ -17,9 +17,12 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { expectFocusRing } from "../../../test/assert-focus-ring";
+import { expectInvalidFocusRing } from "../../../test/assert-invalid-ring";
 import { expectRenderTypeError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { wrappedSegment } from "../../../test/wrapped-date-segment";
 import type { SupportedLocale } from "../../intl/locale-context";
 import "../../temporal-polyfill";
 import { Field } from "../field";
@@ -198,6 +201,48 @@ describe("DateField keys", () => {
     await expect
       .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
       .toHaveFocus();
+  });
+});
+
+describe("DateField focus ring", () => {
+  it.each([
+    {
+      face: "the focus ring",
+      field: <DateField label="Start date" />,
+      expectRing: (box: HTMLElement) => expectFocusRing(box, "the Start date box rings"),
+    },
+    {
+      face: "the invalid focus ring",
+      field: <DateField label="Start date" isInvalid />,
+      expectRing: (box: HTMLElement) => expectInvalidFocusRing("the Start date box", box),
+    },
+    {
+      face: "the focus ring around wrapped segments",
+      field: <DateInput.Root aria-label="Start date">{wrappedSegment}</DateInput.Root>,
+      expectRing: (box: HTMLElement) => expectFocusRing(box, "the Start date box rings"),
+    },
+    {
+      face: "the invalid focus ring for aria-invalid",
+      field: <DateInput.Root aria-label="Start date" aria-invalid="true" />,
+      expectRing: (box: HTMLElement) => expectInvalidFocusRing("the Start date box", box),
+    },
+  ])("paints $face on the box while Tab puts a segment in focus", async ({ field, expectRing }) => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <button type="button">Before</button>
+          {field}
+        </>
+      )
+    );
+    await userEvent.click(roleNamed("button", "Before"));
+    await userEvent.keyboard("{Tab}");
+
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start date", exact: true }))
+      .toHaveFocus();
+    expectRing(roleNamed("group", "Start date"));
   });
 });
 

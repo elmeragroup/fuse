@@ -13,7 +13,8 @@ import { tv } from "./tv";
  *   its `control` slot cancels the control's own ring so the group paints once. Only a direct
  *   child counts, as in the within state face in `state-face.ts`, so a field box nested in the
  *   group's addon, such as a NumberField, rings itself and leaves the outer group unpainted.
- *   The owner keeps its control as a direct child.
+ *   The owner keeps its control as a direct child. A date box, whose segments may sit deeper,
+ *   rings through {@link dateBoxFocusRingClass} instead.
  *
  * A focused invalid control paints the invalid focus face from the constants below instead,
  * which the state face composes: see {@link ariaInvalidFocusRingClass}.
@@ -57,7 +58,7 @@ export const withinFocusRingClass = focusRing({ target: "within" }).root();
 /**
  * The control half of the within-target focus ring: it suppresses the control's own
  * ring, the invalid face's offset line included, so only the parent paints one. Pair with
- * {@link withinFocusRingClass}.
+ * {@link withinFocusRingClass} or {@link dateBoxFocusRingClass}.
  */
 export const withinFocusRingControlClass = focusRing({ target: "within" }).control();
 
@@ -103,6 +104,18 @@ export const withinInvalidFocusRingClass = cn(
  */
 export const dataWithinInvalidFocusRingClass = cn(
   "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1 data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
+);
+
+/**
+ * The focus ring of a date box: DateField's box, a picker's group and a picker popup's time
+ * input. The box rings while one of its segments matches `:focus-visible`, and paints the invalid
+ * focus face of {@link dataInvalidFocusRingClass} instead while the box carries
+ * `data-invalid` or `aria-invalid="true"`. Its `date-box-focus` variant lives in `fuse.css`.
+ */
+export const dateBoxFocusRingClass = cn(
+  "date-box-focus:ring-2 date-box-focus:ring-ring date-box-focus:outline-hidden",
+  "data-invalid:date-box-focus:ring-3 data-invalid:date-box-focus:ring-error/20 data-invalid:date-box-focus:ring-offset-1 data-invalid:date-box-focus:ring-offset-error",
+  "aria-invalid:date-box-focus:ring-3 aria-invalid:date-box-focus:ring-error/20 aria-invalid:date-box-focus:ring-offset-1 aria-invalid:date-box-focus:ring-offset-error"
 );
 
 /** Icon-crossfade faces. */

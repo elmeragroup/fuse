@@ -8,8 +8,8 @@
  *   source order: month, `/`, day, `/`, year. Each segment is a `<span data-slot="date-input-segment">`
  *   that the box holds as a flex item. An empty field shows each segment's placeholder, `mm`, `dd`
  *   and `yyyy`; a filled one the date's numbers.
- * - The focus cell focuses the month segment, which DateInput highlights. The box does not ring,
- *   since no segment marks itself as the box's focus-ring control (#778), so the set draws none.
+ * - In the focus cell the month segment fills with `primary` and the field box draws its focus
+ *   ring.
  * - The visually hidden `<input>` that submits the ISO value draws nothing, so the set leaves it out.
  * - The label, the error and the description, and the states Base UI stamps on them, come from
  *   `field-frame-kit.ts`, with the default demo's copy and the Error demo's message.
