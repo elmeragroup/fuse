@@ -14,6 +14,7 @@ import { fromHourCycle, segmentLimits } from "./date-draft";
 import { hourName, monthName } from "./date-field-format";
 import { useDateInputRootContext } from "./date-input-context";
 import type { DateInputRootContextValue } from "./date-input-context";
+import { SEGMENT_ATTRIBUTE } from "./date-input-focus";
 import { useSegmentInput } from "./date-input-segment-dom";
 import type {
   DateInputEditableSegmentData,
@@ -34,6 +35,9 @@ const SEGMENT_STATE_ATTRIBUTES = {
  * focus-visible. The `date-segment` value keeps other marked controls inside the box from ringing it.
  */
 const FOCUS_RING_CONTROL = { "data-focus-ring-control": "date-segment" } as const;
+
+/** Marks a segment that is not a literal for the Root's focus lookups; see `SEGMENT_ATTRIBUTE`. */
+const SEGMENT_MARKER = { [SEGMENT_ATTRIBUTE]: "" } as const;
 
 /**
  * One segment of a `DateInput.Root`. An editable one is a `spinbutton`, or a `textbox` on iOS,
@@ -73,8 +77,8 @@ export function DateInputSegment({
   });
 
   // The element this segment renders, read when it unmounts: a focused segment that leaves hands
-  // focus on before React removes it, so focus never drops to the body. Only an unmount does: the
-  // cleanup runs once, reading the Root's actions as they are then.
+  // focus on before React removes it; see `focusAroundRemoved`. Only an unmount does: the cleanup
+  // runs once, reading the Root's actions as they are then.
   const elementRef = useRef<HTMLElement>(null);
   const actionsRef = useRef(actions);
   useLayoutEffect(() => {
@@ -135,6 +139,10 @@ export function DateInputSegment({
         // `undefined` from a consumer must not erase the segment's own id, name or description.
         definedProps(props)
       ),
+      // The marker goes after the consumer's props, so none of them erases or replaces it. A `render`
+      // element's own `data-date-segment` overrides it, and a `render` function that does not spread
+      // its props drops it, as it drops the segment's `tabIndex` and handlers.
+      ...(segment.type === "literal" ? undefined : SEGMENT_MARKER),
     },
   });
 }

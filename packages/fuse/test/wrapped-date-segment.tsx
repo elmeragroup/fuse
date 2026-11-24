@@ -17,3 +17,15 @@ export function wrappedSegment(segment: DateInputSegmentData): ReactElement {
     </span>
   );
 }
+
+/**
+ * Renders a segment with a custom `data-slot`, `booking-segment`, in place of the segment's own. Pass
+ * it to `DateInput.Root` or a picker's input part as its children callback, or call it for one
+ * segment.
+ *
+ * @param segment - The segment the Root passes.
+ * @returns The segment with the custom `data-slot`.
+ */
+export function segmentWithCustomSlot(segment: DateInputSegmentData): ReactElement {
+  return <DateInput.Segment key={segment.index} segment={segment} data-slot="booking-segment" />;
+}

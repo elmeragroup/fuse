@@ -23,11 +23,10 @@ import { DateInputBoundaryContext } from "./date-input-boundary";
 import { DateInputRootContext } from "./date-input-context";
 import type { DateInputRootContextValue } from "./date-input-context";
 import { useDateInputField } from "./date-input-field";
-import { boxPressHandlers, firstFocusableSegment } from "./date-input-focus";
+import { boxPressHandlers, edgeSegment } from "./date-input-focus";
 import { useIsIOS } from "./date-input-ios";
 import { DateInputKindContext } from "./date-input-kind";
 import { useDateInputNaming } from "./date-input-naming";
-import { DateInputNeighborContext } from "./date-input-neighbors";
 import { DateInputResetContext } from "./date-input-reset";
 import { DateInputScopeContext, scopeShows, standInDay } from "./date-input-scope";
 import { DateInputSegment } from "./date-input-segment";
@@ -116,7 +115,6 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
   const { locale, timeZone: localeTimeZone } = useLocale();
   const strings = useLocalizedStrings(dateFieldStrings);
   const ios = useIsIOS();
-  const neighbor = use(DateInputNeighborContext);
   const boundary = use(DateInputBoundaryContext);
   const resetOwner = use(DateInputResetContext);
   const inputScope = use(DateInputScopeContext);
@@ -189,7 +187,7 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
   const firstSegment = useMemo(
     () => ({
       get current(): HTMLElement | null {
-        return firstFocusableSegment(rootRef.current);
+        return edgeSegment(rootRef.current, "first");
       },
     }),
     []
@@ -260,7 +258,6 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
     settings,
     rules,
     onValueChange,
-    neighbor,
     boundary,
     resetOwner,
     rootRef,
