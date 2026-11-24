@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { ReactElement, ReactNode, SetStateAction } from "react";
+import { Component, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { ReactElement, ReactNode, RefObject, SetStateAction } from "react";
 
 // Base UI's own Form and Field wiring, as the phone field uses it: the contexts every Field and
 // control joins its form through.
@@ -10,6 +10,7 @@ import { FormContext, useFormContext } from "@base-ui/react/internals/form-conte
 import { useLabelableContext } from "@base-ui/react/internals/labelable-provider";
 import { NOOP } from "@base-ui/react/internals/noop";
 
+import { isFocusRoot } from "../../internal/dom-node";
 import { OverlayExclusionContext, useOverlayExcluded } from "../../internal/overlay-exclusion";
 import { useOwnLabelableScope } from "./skeleton-reveal-labelable";
 import type { LabelableValue } from "./skeleton-reveal-labelable";
@@ -111,6 +112,128 @@ function useRecordingLabelableScope(field: LabelableValue, excluded: boolean): L
   );
 }
 
+/** Props for `RadioGroupIsolation`. */
+type RadioGroupIsolationProps = {
+  /** Whether the pane is content on its way out. */
+  readonly leaving: boolean;
+  /** The pane's fieldset, which holds its radios. */
+  readonly scope: RefObject<HTMLFieldSetElement | null>;
+  readonly children: ReactNode;
+};
+
+/** The native radios. HTML matches the `type` attribute without regard to case. */
+const RADIOS = 'input[type="radio"]';
+
+/** How many private radio forms this module has made, which numbers the next one's id. */
+let radioForms = 0;
+
+/** A private radio form, with the id its radios name. */
+type PrivateRadioForm = { readonly element: HTMLFormElement; readonly id: string };
+
+/**
+ * Makes an empty form that nobody sees or submits, with an id no other element in `fieldset`'s
+ * tree has, and appends it to that tree, which is the shadow root that holds `fieldset` or else the
+ * document's body. The id is kept beside the form because a radio named `id` that the form owns
+ * would shadow `form.id`.
+ */
+function privateRadioForm(fieldset: HTMLFieldSetElement): PrivateRadioForm {
+  const { ownerDocument } = fieldset;
+  const root = fieldset.getRootNode();
+  // Compared with the document, not tested for `host`, which an element named `host` puts on it.
+  const shadow = isFocusRoot(root) && root !== ownerDocument ? root : null;
+  let id: string;
+  do {
+    radioForms += 1;
+    id = `fuse-skeleton-reveal-radios-${radioForms}`;
+  } while ((shadow ?? ownerDocument).getElementById(id) !== null);
+  const form = ownerDocument.createElement("form");
+  form.id = id;
+  form.hidden = true;
+  // An author rule such as `form { display: grid }` would otherwise give it a box.
+  form.style.display = "none";
+  form.setAttribute("aria-hidden", "true");
+  // A `dialog` form outside a dialog submits nowhere, and the listener also cancels the submit
+  // event that `requestSubmit()` fires, so a consumer's autosave on a leaving radio never navigates.
+  form.method = "dialog";
+  form.addEventListener("submit", (event) => event.preventDefault());
+  (shadow ?? ownerDocument.body).append(form);
+  return { element: form, id };
+}
+
+/**
+ * The pane's content, with its native radios moved into groups of their own once it starts
+ * leaving. It is package-private. Radios share a group only when they share a tree, a name and a
+ * form owner, and a `form` attribute makes the form with that id in the radio's tree the owner.
+ * So for each form owner the pane's radios have, none included, the class makes one private form
+ * and points those radios at it. Radios that shared a group still share one, apart from the rest
+ * of the page, and they keep their `name`, so author styles still match.
+ *
+ * It works in `getSnapshotBeforeUpdate` because that runs before the commit changes the DOM, so
+ * the radios have moved before React inserts the ghost, whose checked copy of a group would
+ * otherwise take the selection away from the content the user still sees. A class component is
+ * the only kind with such a lifecycle. A mutation observer on the fieldset moves radios that mount
+ * in the pane later.
+ *
+ * It has three known limits. The observer runs after the commit, so a checked radio that mounts in
+ * the leaving pane can uncheck a radio on screen before it moves. A radio whose `form` prop changes
+ * there joins that form's group again, since the observer watches only for added nodes. A required
+ * group split across the pane's edge can match `:invalid` while the pane leaves.
+ *
+ * The radios are still connected when the pane unmounts, and removing the private forms would put
+ * them back in a live group. So the class unchecks them first, which fires no event.
+ */
+class RadioGroupIsolation extends Component<RadioGroupIsolationProps, Record<string, never>, null> {
+  /** The leaving pane's fieldset, from the moment it starts leaving. */
+  private fieldset: HTMLFieldSetElement | null = null;
+  /** The private form for each form owner the pane's radios had, with `null` for none. */
+  private readonly forms = new Map<HTMLFormElement | null, PrivateRadioForm>();
+  private observer: MutationObserver | null = null;
+
+  override getSnapshotBeforeUpdate(previous: RadioGroupIsolationProps): null {
+    const fieldset = this.props.scope.current;
+    if (previous.leaving || !this.props.leaving || fieldset === null) return null;
+    this.fieldset = fieldset;
+    this.claim(fieldset);
+    this.observer = new MutationObserver(() => this.claim(fieldset));
+    this.observer.observe(fieldset, { childList: true, subtree: true });
+    return null;
+  }
+
+  override componentDidUpdate(): void {
+    // React logs an error for a `getSnapshotBeforeUpdate` without a `componentDidUpdate`.
+  }
+
+  override componentWillUnmount(): void {
+    this.observer?.disconnect();
+    if (this.fieldset !== null && this.forms.size > 0) {
+      for (const radio of this.fieldset.querySelectorAll<HTMLInputElement>(RADIOS)) radio.checked = false;
+    }
+    // A radio named `remove` that the form owns shadows `form.remove`.
+    for (const { element } of this.forms.values()) Element.prototype.remove.call(element);
+    this.forms.clear();
+  }
+
+  override render(): ReactNode {
+    return this.props.children;
+  }
+
+  /** Points each radio in `fieldset` that has not moved yet at the private form for its form owner. */
+  private claim(fieldset: HTMLFieldSetElement): void {
+    const moved = new Set([...this.forms.values()].map(({ element }) => element));
+    for (const radio of fieldset.querySelectorAll<HTMLInputElement>(RADIOS)) {
+      const owner = radio.form;
+      if (owner !== null && moved.has(owner)) continue;
+      let form = this.forms.get(owner);
+      if (form === undefined) {
+        form = privateRadioForm(fieldset);
+        this.forms.set(owner, form);
+        moved.add(form.element);
+      }
+      radio.setAttribute("form", form.id);
+    }
+  }
+}
+
 /**
  * How a pane is kept out of the page: not at all for the content on screen, as the skeleton's
  * ghost, unseen and excluded in server HTML with no script, or as content on its way out, which is
@@ -118,8 +241,11 @@ function useRecordingLabelableScope(field: LabelableValue, excluded: boolean): L
  */
 type PaneExclusionKind = false | "ghost" | "leaving";
 
-/** The listed form controls, which take a form owner and so a `form` attribute. */
-const LISTED_CONTROLS = "button, fieldset, input, object, output, select, textarea";
+/**
+ * The listed form controls other than radios, which `RadioGroupIsolation` moves. A listed control
+ * takes a form owner and so a `form` attribute.
+ */
+const LISTED_CONTROLS = 'button, fieldset, input:not([type="radio"]), object, output, select, textarea';
 
 /**
  * Keeps a pane that is not the content on screen, a SkeletonReveal's ghost or content on its way
@@ -130,9 +256,10 @@ const LISTED_CONTROLS = "button, fieldset, input, object, output, select, textar
  *   unseen behind its bones, so the disabled look its controls take never shows. Content on its
  *   way out is still seen, and a disabled control takes Fuse's disabled look, so its fieldset is
  *   `inert` instead, which has no look, and a layout effect sets `form=""` on every listed control
- *   under it as it starts leaving. A control whose `form` names no form has no form owner, so it
- *   is neither submitted nor validated, nor any form's default button. A leaving pane never comes
- *   back, so nothing restores the attribute. Either fieldset is `display: contents`, with no box,
+ *   under it but its radios as it starts leaving. A control whose `form` names no form has no
+ *   form owner, so it is neither submitted nor validated, nor any form's default button. A leaving
+ *   pane never comes back, so nothing restores the attribute. Either fieldset is
+ *   `display: contents`, with no box,
  *   and `role="none"` keeps it out of the accessibility tree. Fuse's `Form`, which is Base UI's,
  *   serializes and validates its own registry of Fields instead, which every Field joins through
  *   the form context, disabled or not, so an excluded pane hands its Fields a registry of their own
@@ -142,6 +269,8 @@ const LISTED_CONTROLS = "button, fieldset, input, object, output, select, textar
  *   detached too. The control keeps the Field's name, invalid state and validity for its look,
  *   while registering, validating and reporting touched, dirty, filled or focused state do
  *   nothing.
+ * - Radios: content on its way out moves its native radios into groups of their own; see
+ *   `RadioGroupIsolation`.
  * - Labels: a live pane registers its controls, label and messages in the Field's labelable scope
  *   through a recording scope, which takes back exactly those registrations when the pane is
  *   excluded. An excluded pane registers in a labelable scope of its own, so a copy never claims
@@ -225,7 +354,9 @@ export function PaneExclusion({
       disabled={exclusion === "ghost"}
       inert={leaving}
       className="contents">
-      {children}
+      <RadioGroupIsolation leaving={leaving} scope={fieldsetRef}>
+        {children}
+      </RadioGroupIsolation>
     </fieldset>
   );
   return (
