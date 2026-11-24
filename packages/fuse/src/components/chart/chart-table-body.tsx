@@ -132,7 +132,7 @@ export function ChartTableBody({
       hideLabel={hideLabel ?? strings.hideTable}
       className={className}
       style={style}
-      caption={caption ?? table.caption()}
+      caption={caption ?? <Twin text={table.caption()} />}
       head={
         <>
           <Table.Head scope="col">{xHeader ?? table.xHeader()}</Table.Head>

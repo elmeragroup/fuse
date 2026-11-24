@@ -3,6 +3,7 @@
 import { useId, useLayoutEffect, useMemo, useRef } from "react";
 import type { ReactElement, RefCallback, RefObject } from "react";
 
+import type { SupportedLocale } from "../../intl/locale-context";
 import { usePlotLayout, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { partsCache, writeAttribute, writeAttributes, writeStyle } from "./chart-dom";
@@ -14,11 +15,11 @@ import type { ChartFrame } from "./chart-plot";
 import { usePlotRead } from "./chart-plot-measure";
 import { referenceSentence } from "./chart-reference-text";
 import { sameShallow, useSteady } from "./chart-steady";
-import { linearLabel, slotLabel } from "./chart-text";
+import { linearLabel, NUMBER_RANGE_SEPARATOR, slotLabel, slotRangeLabel } from "./chart-text";
 import type { ChartLayerProps, ChartTone, ChartX, ValueFormat, XFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
-import { formatValue } from "./format/value-format";
+import { formatValue, formatValueRun } from "./format/value-format";
 import { barForm } from "./layout/bar-geometry";
 import { ChartCompositionError, isChartDevelopment } from "./layout/errors";
 import {
@@ -115,8 +116,9 @@ export type ChartReferenceAreaProps = ChartLayerProps &
          */
         x2?: never;
         /**
-         * How `{value}` in `label` prints the range, a `ValueFormat` for `y1` and `y2` and an
-         * `XFormat` for `x1` and `x2`.
+         * How `{value}` in `label` prints the range.
+         * A band over `y1` and `y2` takes a `ValueFormat` and joins its values with an en dash,
+         * writing a shared unit once, as in `5–10 kWh`.
          */
         format?: ValueFormat;
       }
@@ -136,8 +138,16 @@ export type ChartReferenceAreaProps = ChartLayerProps &
         /** The band's last value. A band takes `y1` and `y2`, or `x1` and `x2`. */
         y2?: never;
         /**
-         * How `{value}` in `label` prints the range, a `ValueFormat` for `y1` and `y2` and an
-         * `XFormat` for `x1` and `x2`.
+         * How `{value}` in `label` prints the range.
+         * A band over `x1` and `x2` takes an `XFormat`. On a time or category axis, the locale's
+         * range separator joins the two ends. On a time axis finer than a day, a format that prints
+         * a time of day prints the first slot's start and the last slot's end. On a minute,
+         * quarter-hour or hour axis, a range preset prints each end in its point form, as
+         * `"hour-range"` does in `"hour"`. On a second axis, or a day or longer one, a range preset
+         * throws a `RangeError`, as on `interval="second"`. Any other band prints its first and last
+         * slot's labels, and a category band prints its category names whatever the format. A band
+         * on a linear axis prints its exact `x1` and `x2` in Root's `xFormat`, not in this format,
+         * and joins them with an en dash.
          */
         format?: XFormat;
       }
@@ -189,20 +199,14 @@ export function childSlot(context: ChartRootContextValue, part: string, x: Chart
   return slotOf(domain, x);
 }
 
-/** The value of a value-axis reference in the layout's first series' format. */
-function valueText(
+/** The format of a value-axis reference: its own, or the layout's first series' format. */
+function valueFormat(
   context: ChartRootContextValue,
   keys: readonly string[],
-  value: number,
   format: ValueFormat | undefined
-): FormattedText {
+): ValueFormat {
   const first = keys[0];
-  return formatValue(
-    context.locale,
-    value,
-    format ?? (first === undefined ? {} : context.config[first]?.format) ?? {},
-    "full"
-  );
+  return format ?? (first === undefined ? {} : context.config[first]?.format) ?? {};
 }
 
 /** Warns once per Root in development when a reference sits outside the value domain. */
@@ -305,17 +309,21 @@ function useStackedLabel(
   );
 }
 
-/** A range in visual form with a bare en dash, writing a shared unit once, such as `5–10 kWh`. */
-function rangeText(
-  from: FormattedText,
-  to: FormattedText,
-  join: (from: string, to: string) => string
-): FormattedText {
-  const fromParts = from.text.split("\u00a0");
-  const toParts = to.text.split("\u00a0");
-  const sharedUnit = fromParts.length > 1 && fromParts.at(-1) === toParts.at(-1);
-  const head = sharedUnit ? fromParts.slice(0, -1).join("\u00a0") : from.text;
-  return { text: `${head}\u2013${to.text}`, spoken: join(from.spoken, to.spoken) };
+/**
+ * A number range from `low` to `high`, joined by a bare en dash in its visual form. Ends that write
+ * the same text after their numbers write it once, such as `5–10 kWh`. Each number stays whole, so
+ * nb-NO's `1 000` and `2 000` keep their digit groups. When Intl wraps a negative end in
+ * parentheses, its closing parenthesis stays with that end.
+ */
+function rangeText(locale: SupportedLocale, low: number, high: number, format: ValueFormat): FormattedText {
+  const from = formatValueRun(locale, low, format, "full");
+  const to = formatValueRun(locale, high, format, "full");
+  const shared = from.after !== "" && from.after === to.after && !from.before.includes("(");
+  const head = shared ? `${from.before}${from.number}` : from.text;
+  return {
+    text: `${head}${NUMBER_RANGE_SEPARATOR}${to.text}`,
+    spoken: CHART_STRINGS[locale].valueRange(from.spoken, to.spoken),
+  };
 }
 
 /**
@@ -593,7 +601,7 @@ export function ChartReferenceLine({
   } else {
     warnOutside(context, "Chart.ReferenceLine", [props.y], layout.y.domain);
     at = valueTop(layout.y.domain, props.y);
-    value = valueText(context, layout.keys, props.y, props.format);
+    value = formatValue(context.locale, props.y, valueFormat(context, layout.keys, props.format), "full");
     axis = "value";
   }
   const text = referenceSentence(label, value, strings.referenceLine);
@@ -684,7 +692,7 @@ export function ChartReferenceArea({
     from = Math.min(a, b);
     to = Math.max(a, b);
     const [low, high] = x2 < x1 ? [x2, x1] : [x1, x2];
-    value = rangeText(linearLabel(context, low), linearLabel(context, high), strings.valueRange);
+    value = rangeText(context.locale, low, high, context.xValue?.format ?? {});
     axis = "slot";
   } else if (props.y1 === undefined) {
     const window = context.model.window;
@@ -698,11 +706,7 @@ export function ChartReferenceArea({
     value =
       a === -1 || b === -1
         ? { text: "", spoken: "" }
-        : rangeText(
-            slotLabel(context, Math.min(a, b), props.format),
-            slotLabel(context, Math.max(a, b), props.format),
-            strings.valueRange
-          );
+        : slotRangeLabel(context, Math.min(a, b), Math.max(a, b), props.format);
     axis = "slot";
   } else {
     const low = Math.min(props.y1, props.y2);
@@ -710,11 +714,7 @@ export function ChartReferenceArea({
     warnOutside(context, "Chart.ReferenceArea", [low, high], layout.y.domain);
     from = valueTop(layout.y.domain, high);
     to = valueTop(layout.y.domain, low);
-    value = rangeText(
-      valueText(context, layout.keys, low, props.format),
-      valueText(context, layout.keys, high, props.format),
-      strings.valueRange
-    );
+    value = rangeText(context.locale, low, high, valueFormat(context, layout.keys, props.format));
     axis = "value";
   }
   const text = referenceSentence(label, value, strings.referenceArea);

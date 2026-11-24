@@ -51,7 +51,7 @@ export function itemTable(
   const page = { key: 0, slots: rows.map((_, index) => index), label: "", spoken: "" };
   return {
     pages: () => [page],
-    caption: () => input.name ?? "",
+    caption: () => ({ text: input.name ?? "", spoken: input.name ?? "" }),
     xHeader: () => strings.xHeaderCategory,
     heads: () => [
       header(polarStrings.valueHeader),

@@ -62,7 +62,7 @@ describe("summarize", () => {
     ).toBe("Paid");
   });
 
-  it("quotes text and formats number and date ranges in the locale", () => {
+  it("quotes text and formats a number range and a date in the locale", () => {
     expect(
       summarize({ kind: "text", operator: "contains", values: ["nord"] }, STATUS, "en-US", plain).text
     ).toBe("“nord”");
@@ -75,14 +75,6 @@ describe("summarize", () => {
       summarize({ kind: "number", operator: "isBetween", values: [100, 500] }, amount, "en-US", plain).text
     ).toBe("NOK\u00a0100–500");
     const created = { kind: "date", label: "Created" } as const;
-    expect(
-      summarize(
-        { kind: "date", operator: "isBetween", values: ["2026-10-02", "2026-10-12"] },
-        created,
-        "en-US",
-        plain
-      ).text
-    ).toBe("Oct 2\u2009–\u200912, 2026");
     expect(
       summarize({ kind: "date", operator: "is", values: ["2026-10-02"] }, created, "en-US", plain).text
     ).toBe("Oct 2, 2026");

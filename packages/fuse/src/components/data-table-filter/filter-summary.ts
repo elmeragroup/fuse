@@ -1,8 +1,14 @@
 // A chip's value summary in the LocaleProvider's locale. No noun takes a form chosen by a count:
-// options list up to two labels and a bare "+N", and numbers and dates use the platform's own
-// `formatRange`.
+// options list up to two labels and a bare "+N". A date range writes both ends in full and joins
+// them with the locale's `rangeSeparator`, because `Intl.DateTimeFormat#formatRange` shortens a
+// range differently by engine. A range from a day to the same day writes that day once. A name
+// the runtime supplies can still differ by engine, such as a currency's name under
+// `currencyDisplay: "name"`.
 
 import { dateTimeFormat, listFormat, numberFormat } from "../../internal/intl-cache";
+import { canonicalSpaces } from "../../intl/canonical-spaces";
+import type { SupportedLocale } from "../../intl/locale-context";
+import { rangeSeparator } from "../../intl/range-separator";
 import type { FilterField } from "./filter-fields";
 import { optionsOf } from "./filter-fields";
 import type { FilterValue } from "./filter-model";
@@ -47,7 +53,7 @@ function utcDay(iso: string): Date {
 export function summarize(
   value: FilterValue,
   field: FilterField,
-  locale: string,
+  locale: SupportedLocale,
   strings: SummaryStrings
 ): FilterSummary {
   switch (value.kind) {
@@ -74,19 +80,20 @@ export function summarize(
     }
     case "number": {
       const numbers = numberFormat(locale, field.kind === "number" ? field.format : undefined);
+      // Intl applies CLDR's number range pattern, which spaces the dash around a sign and writes an
+      // affix both ends share once, such as `NOK 100–500`.
       const text =
         value.values.length === 2
-          ? numbers.formatRange(value.values[0], value.values[1])
+          ? canonicalSpaces(numbers.formatRange(value.values[0], value.values[1]))
           : numbers.format(value.values[0]);
       return { text, full: text };
     }
     case "date": {
       // The values are calendar days, so they format in UTC, where midnight is that same day.
       const dates = dateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" });
-      const text =
-        value.values.length === 2
-          ? dates.formatRange(utcDay(value.values[0]), utcDay(value.values[1]))
-          : dates.format(utcDay(value.values[0]));
+      const first = dates.format(utcDay(value.values[0]));
+      const last = value.values.length === 2 ? dates.format(utcDay(value.values[1])) : first;
+      const text = last === first ? first : `${first}${rangeSeparator(locale)}${last}`;
       return { text, full: text };
     }
     case "boolean": {

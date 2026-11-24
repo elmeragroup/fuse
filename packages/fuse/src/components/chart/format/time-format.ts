@@ -5,7 +5,7 @@ import { dateTimeFormat } from "../../../internal/intl-cache";
  * explicit IANA zone, never the runtime's zone, so a server and a browser in any zones write the
  * same text. Fuse reads the zone rules through Intl and ships no zone database of its own.
  */
-import { formatDateTime } from "../../../intl/date-time-join";
+import { asksForTime, formatDateTime } from "../../../intl/date-time-join";
 import type { SupportedLocale } from "../../../intl/locale-context";
 import { rangeSeparator } from "../../../intl/range-separator";
 import { makeFormattedText } from "./formatted-text";
@@ -69,6 +69,19 @@ export type ClockPreset = {
   readonly [P in TimePreset]: (typeof PRESET_INTERVAL)[P] extends ClockInterval ? P : never;
 }[TimePreset];
 
+/**
+ * The preset that prints one end of a run, for each clock preset. A range preset maps to the preset
+ * that prints its slot's start, and any other clock preset maps to itself. A clock preset added to
+ * `TimePreset` fails to compile here until it has a point form.
+ */
+const POINT_FORM = {
+  hour: "hour",
+  "hour-range": "hour",
+  time: "time",
+  "time-seconds": "time-seconds",
+  "time-range": "time",
+} as const satisfies { readonly [P in ClockPreset]: ClockPreset };
+
 /** Whether an interval is shorter than a day. */
 export function isClockInterval(interval: Interval): interval is ClockInterval {
   return Object.hasOwn(SUB_DAY_MS, interval);
@@ -83,6 +96,17 @@ export function isClockInterval(interval: Interval): interval is ClockInterval {
 export function isClockPreset(format: TimePreset | Intl.DateTimeFormatOptions): format is ClockPreset {
   // oxlint-disable-next-line anti-slop/no-runtime-typeof -- an XFormat is a preset string or an options object
   return typeof format === "string" && isClockInterval(PRESET_INTERVAL[format]);
+}
+
+/**
+ * Whether a format prints a time of day: a clock preset, or Intl options with a time field.
+ *
+ * @param format - A preset, or Intl date-time options.
+ * @returns Whether it prints a time of day.
+ */
+export function printsTimeOfDay(format: TimePreset | Intl.DateTimeFormatOptions): boolean {
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- an XFormat is a preset string or an options object
+  return typeof format === "string" ? isClockPreset(format) : asksForTime(format);
 }
 
 /** One period of a time axis. */
@@ -718,6 +742,37 @@ export function formatSlot(
   role: LabelRole
 ): FormattedText {
   return formatInstant(locale, timeZone, slotStart(at, interval, timeZone), interval, format, role);
+}
+
+/**
+ * The two ends of a run of slots, the first slot's start and the last slot's end, each as a full
+ * label in the format's point form. A range preset prints one slot as a range, so `"hour-range"`
+ * prints its ends as `"hour"` does and `"time-range"` as `"time"` does. A caller passes the last
+ * slot's end from its time domain's `ends`, so a run across the spring-forward gap ends at the
+ * wall clock after the gap. A caller joins the two complete labels.
+ *
+ * @param locale - The active supported locale.
+ * @param timeZone - The IANA zone of the data's market.
+ * @param start - The first slot's start, as `slotStart` returns it.
+ * @param end - The last slot's end, which is the start of the slot after it.
+ * @param interval - The slot length.
+ * @param format - A preset, or Intl date-time options.
+ * @returns The visual and spoken labels of the start and the end.
+ * @throws A `RangeError` when `timeZone` is not an IANA zone.
+ */
+export function slotRunEnds(
+  locale: SupportedLocale,
+  timeZone: string,
+  start: number,
+  end: number,
+  interval: Interval,
+  format: TimePreset | Intl.DateTimeFormatOptions
+): readonly [FormattedText, FormattedText] {
+  const point = isClockPreset(format) ? POINT_FORM[format] : format;
+  return [
+    formatSlot(locale, timeZone, start, interval, point, "full"),
+    formatSlot(locale, timeZone, end, interval, point, "full"),
+  ];
 }
 
 /**
