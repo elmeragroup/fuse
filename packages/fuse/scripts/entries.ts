@@ -471,7 +471,7 @@ export function walkImportedSourceFiles(packageRoot: string, entryFiles: readonl
   return [...seen].toSorted((left, right) => left.localeCompare(right));
 }
 
-/** The chart stylesheet, plain CSS that `build-css` copies to `dist/chart.css` unchanged. */
+/** The package-relative path to the source chart stylesheet that `build-css` compiles to `dist/chart.css`. */
 export const CHART_CSS_SOURCE = "src/components/chart/chart.css";
 
 function cssEntries(packageRoot: string): CssExportEntry[] {

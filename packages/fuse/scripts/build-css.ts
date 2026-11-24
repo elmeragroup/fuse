@@ -1,8 +1,10 @@
-import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { transform } from "lightningcss";
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { generateThemesCss } from "../src/theme/generate-css";
 import { generateDemoStageDensityCss } from "../src/theme/generate-demo-stage-css";
+import { BROWSER_FLOOR_EXCLUDE, BROWSER_FLOOR_TARGETS } from "./browser-floor";
 import { CHART_CSS_SOURCE, TOOLING_ONLY_CSS_ENTRIES } from "./entries";
 import { packageRootFromScript } from "./paths";
 import { runCommand } from "./run-command";
@@ -30,7 +32,16 @@ export function buildCss(packageRoot: string): void {
     writeFileSync(join(distDir, entry.distFile), TOOLING_ONLY_CSS_GENERATORS[entry.distFile]());
   }
   copyFileSync(fuseCssPath, join(distDir, "styles/fuse.css"));
-  copyFileSync(join(packageRoot, CHART_CSS_SOURCE), join(distDir, "chart.css"));
+  // Lightning CSS runs on the chart sheet unminified. It adds the `-webkit-` prefixes the floor
+  // needs, such as `-webkit-mask-image` below Chrome 120 and `-webkit-print-color-adjust` below
+  // Chrome 136, and drops the source's comments.
+  const chartCss = transform({
+    filename: CHART_CSS_SOURCE,
+    code: readFileSync(join(packageRoot, CHART_CSS_SOURCE)),
+    targets: BROWSER_FLOOR_TARGETS,
+    exclude: BROWSER_FLOOR_EXCLUDE,
+  });
+  writeFileSync(join(distDir, "chart.css"), chartCss.code);
   // `fuse.css` imports its private sheets by relative path, so each ships beside it.
   for (const privateSheet of FUSE_CSS_PRIVATE_SHEETS) {
     copyFileSync(join(srcStylesDir, privateSheet), join(distDir, "styles", privateSheet));

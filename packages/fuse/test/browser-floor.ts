@@ -35,11 +35,7 @@ import * as csstree from "css-tree";
 import type { Atrule, CssNode, Declaration, Rule } from "css-tree";
 import { createRequire } from "node:module";
 
-/**
- * Fuse's browser floor, Tailwind v4's, which `src/styles/fuse.css` cites: the oldest release of
- * each engine the shipped CSS must keep working in.
- */
-const BROWSER_FLOOR = { chrome: "111", safari: "16.4", firefox: "128" } as const;
+import { BROWSER_FLOOR } from "../scripts/browser-floor";
 
 type Engine = keyof typeof BROWSER_FLOOR;
 
