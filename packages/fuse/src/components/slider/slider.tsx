@@ -249,6 +249,7 @@ export function Slider<Value extends SliderValue = number>({
         ) : null}
         <SliderPrimitive.Control
           data-slot="slider-control"
+          data-slider-control=""
           className={slots.control()}
           // The thumbs follow base-ui's live values, not the latest `defaultValue`: an
           // uncontrolled slider keeps the value it mounted with.
