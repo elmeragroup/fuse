@@ -168,8 +168,8 @@ export type ChartTableRow = {
 export type ChartTableModel = {
   /** The pages, built on first read. */
   readonly pages: () => readonly ChartTablePage[];
-  /** The generated caption, the chart name and the period the rows span. */
-  readonly caption: () => string;
+  /** The generated caption, the chart name and the period the rows span, as shown and as heard. */
+  readonly caption: () => FormattedText;
   /** The first column's header. */
   readonly xHeader: () => string;
   /** The column headers after the first. */

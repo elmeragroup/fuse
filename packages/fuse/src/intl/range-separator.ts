@@ -8,19 +8,20 @@ import type { SupportedLocale } from "./locale-context";
 
 /**
  * CLDR's interval fallback pattern in each locale Fuse supports: `{0} – {1}` in en-US and
- * `{0}–{1}` in the Nordic locales. A caller maps the joined text through `canonicalSpaces`, so the
- * en-US spaces print as no-break spaces. A locale added to `SupportedLocale` fails to compile here
- * until it has a separator.
+ * `{0}–{1}` in the Nordic locales. The en-US spaces are no-break spaces, as `canonicalSpaces` writes
+ * every space, so a range stays on one line. A locale added to `SupportedLocale` fails to compile
+ * here until it has a separator.
  */
 const RANGE_SEPARATORS = {
-  "en-US": " – ",
+  "en-US": "\u00a0–\u00a0",
   "nb-NO": "–",
   "sv-SE": "–",
   "fi-FI": "–",
 } as const satisfies Record<SupportedLocale, string>;
 
 /**
- * The text between the two ends of a range in a locale, such as ` – ` in en-US.
+ * The text between the two ends of a range in a locale, such as ` – ` in en-US, with its spaces
+ * written as no-break spaces.
  *
  * @param locale - A locale Fuse supports.
  * @returns The separator.

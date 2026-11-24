@@ -7,6 +7,7 @@
  * family that builds a `CartesianModel`. It reads no plot geometry.
  */
 import type { SupportedLocale } from "../../intl/locale-context";
+import { rangeSeparator } from "../../intl/range-separator";
 import { readingPaint, seriesPaintOf, swatchPaint } from "./chart-paint";
 import type {
   ChartReadout,
@@ -17,7 +18,14 @@ import type {
   ReadoutItem,
 } from "./chart-readout-port";
 import { PAGE_ROWS } from "./chart-table-shell";
-import { ownSlotLabel, qualityWords, slotLabel, stackTotalAt } from "./chart-text";
+import {
+  NUMBER_RANGE_SEPARATOR,
+  ownSlotLabel,
+  qualityWords,
+  slotLabel,
+  slotRangeLabel,
+  stackTotalAt,
+} from "./chart-text";
 import type { TextContext } from "./chart-text";
 import type { ChartConfig, ChartFallback, ChartQuality, ChartRow, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
@@ -261,18 +269,26 @@ export type SeriesTableContext = TextContext & {
   readonly rows: readonly ChartRow[];
 };
 
-/** The caption: the chart name and the period the rows span. */
-function captionText(context: SeriesTableContext, slots: readonly number[]): string {
+/**
+ * The caption: the chart name and the period the rows span. The visible period joins its ends as a
+ * reference band prints a range, and readers hear the dictionary's range words, such as
+ * `Usage, Jan to Apr`.
+ */
+function captionText(context: SeriesTableContext, slots: readonly number[]): FormattedText {
   const { domain } = context.model;
   const first = slots[0] ?? 0;
   const last = slots.at(-1) ?? first;
-  let period: string;
+  const { valueRange } = CHART_STRINGS[context.locale];
+  // A period of one slot prints that slot once.
+  const range = (from: string, to: string, join: string): FormattedText =>
+    from === to
+      ? { text: from, spoken: from }
+      : { text: `${from}${join}${to}`, spoken: valueRange(from, to) };
+  let period: FormattedText;
   if (domain.kind === "category") {
-    period = CHART_STRINGS[context.locale].valueRange(domain.names[first] ?? "", domain.names[last] ?? "");
+    period = slotRangeLabel(context, first, last);
   } else if (domain.kind === "linear") {
-    const from = slotLabel(context, first).text;
-    const to = slotLabel(context, last).text;
-    period = from === to ? from : CHART_STRINGS[context.locale].valueRange(from, to);
+    period = range(slotLabel(context, first).text, slotLabel(context, last).text, NUMBER_RANGE_SEPARATOR);
   } else {
     const options: Intl.DateTimeFormatOptions =
       domain.interval === "year"
@@ -283,11 +299,10 @@ function captionText(context: SeriesTableContext, slots: readonly number[]): str
     const label = (slot: number) =>
       formatSlot(context.locale, domain.timeZone, domain.starts[slot] ?? 0, domain.interval, options, "full")
         .text;
-    const from = label(first);
-    const to = label(last);
-    period = from === to ? from : CHART_STRINGS[context.locale].valueRange(from, to);
+    period = range(label(first), label(last), rangeSeparator(context.locale));
   }
-  return context.name === undefined ? period : `${context.name}, ${period}`;
+  if (context.name === undefined) return period;
+  return { text: `${context.name}, ${period.text}`, spoken: `${context.name}, ${period.spoken}` };
 }
 
 /** The first column's header, which the interval picks, or a linear axis's `xLabel`. */

@@ -8,6 +8,7 @@ import type { Inflected } from "../../intl/count-of";
  * `format/` modules, so a reader hears the same unit and range words the table speaks.
  */
 import type { SupportedLocale } from "../../intl/locale-context";
+import { rangeSeparator } from "../../intl/range-separator";
 import type { EmphasisEntry } from "./chart-store";
 import type { ChartSeriesConfig, ValueFormat, XFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
@@ -16,7 +17,14 @@ import type { UnitLabel } from "./format/description-words";
 import type { FormattedText, LabelRole } from "./format/formatted-text";
 import { POINT_WORDS } from "./format/point-words";
 import { seriesLabel } from "./format/series-label";
-import { formatSlot, LABEL_PRESETS, wallClock } from "./format/time-format";
+import {
+  formatSlot,
+  isClockInterval,
+  LABEL_PRESETS,
+  printsTimeOfDay,
+  slotRunEnds,
+  wallClock,
+} from "./format/time-format";
 import type { Interval } from "./format/time-format";
 import { formatValue } from "./format/value-format";
 import { CHART_WORDS } from "./format/words";
@@ -24,6 +32,7 @@ import type { CartesianModel } from "./layout/cartesian-model";
 import { ownWindowSlots } from "./layout/coarse-slots";
 import type { Reading, ReadingQuality } from "./layout/readings";
 import { seriesOf } from "./layout/series-of";
+import type { XDomain } from "./layout/x-domain";
 
 /** What the text builders read beside the model. */
 export type TextContext = {
@@ -48,8 +57,13 @@ export type LinearXText = {
   readonly label: string | undefined;
 };
 
-/** The intervals finer than a day, whose labels name a time of day and no date. */
-const SUB_DAY: ReadonlySet<string> = new Set(["second", "minute", "quarter-hour", "hour"]);
+/**
+ * The join between the two numbers of a chart's number range, a bare en dash in every locale, such
+ * as `1–2` or `1 000–2 000`. It is the chart's own convention for a value band, a linear x band and a
+ * table caption over a linear axis, where each end prints in full. Date and category ranges join
+ * with `rangeSeparator` instead.
+ */
+export const NUMBER_RANGE_SEPARATOR = "\u2013";
 
 /** A slot's date with its year, the `date` preset's fields plus the year. */
 const DATE_WITH_YEAR = { weekday: "long", day: "numeric", month: "long", year: "numeric" } as const;
@@ -111,10 +125,8 @@ function datedLabel(
     format ?? LABEL_PRESETS[interval],
     "full"
   );
-  if (format !== undefined || !SUB_DAY.has(interval) || !span.dates) return label;
-  const date = dateAt(context, timeZone, start);
-  const join = CHART_WORDS[context.locale].slotOnDate;
-  return { text: join(date.text, label.text), spoken: join(date.spoken, label.spoken) };
+  if (format !== undefined || !isClockInterval(interval) || !span.dates) return label;
+  return onDate(context, timeZone, start, label);
 }
 
 /**
@@ -158,6 +170,88 @@ export function slotLabel(context: TextContext, slot: number, format?: XFormat):
     domain.interval,
     format ?? context.xFormat
   );
+}
+
+/**
+ * The range of slots from `first` to `last` on a time or category axis, as a band across them
+ * prints it and readers hear it. On a time axis finer than a day, a format that prints a time of day
+ * prints the band's ends, the first slot's start and the last slot's end, from `slotRunEnds`. A
+ * default label leads each end with its date when `slotLabel` would. Any other band prints the
+ * first and the last slot's labels. The visual text joins the two ends with the locale's range
+ * separator, and the spoken text joins them with the dictionary's range words.
+ *
+ * @param context - The model and the locale.
+ * @param first - The first slot index.
+ * @param last - The last slot index, at or after `first`.
+ * @param format - A preset or Intl options that replace a time slot's default.
+ * @returns The visual and spoken range.
+ * @throws A `RangeError` when a range preset gets an interval that `slotLabel` rejects.
+ */
+export function slotRangeLabel(
+  context: TextContext,
+  first: number,
+  last: number,
+  format?: XFormat
+): FormattedText {
+  const { domain } = context.model;
+  // Both labels format first, so a range preset on an axis it does not fit throws as `slotLabel` does.
+  const labels = [slotLabel(context, first, format), slotLabel(context, last, format)] as const;
+  const chosen = format ?? context.xFormat;
+  const [head, tail] =
+    domain.kind === "time" &&
+    isClockInterval(domain.interval) &&
+    printsTimeOfDay(chosen ?? LABEL_PRESETS[domain.interval])
+      ? runEnds(context, domain, first, last, chosen)
+      : labels;
+  return joinRange(context.locale, head, tail);
+}
+
+/**
+ * Joins the two ends of a time or category range. The visual text puts the locale's range
+ * separator between them, and the spoken text joins them with the dictionary's range words, such
+ * as `5 PM to 8 PM`.
+ *
+ * @param locale - The active supported locale.
+ * @param head - The range's first end.
+ * @param tail - The range's last end.
+ * @returns The visual and spoken range.
+ */
+export function joinRange(locale: SupportedLocale, head: FormattedText, tail: FormattedText): FormattedText {
+  return {
+    text: `${head.text}${rangeSeparator(locale)}${tail.text}`,
+    spoken: CHART_STRINGS[locale].valueRange(head.spoken, tail.spoken),
+  };
+}
+
+/**
+ * The first slot's start and the last slot's end of a run on a time axis. A default label on a
+ * domain over more than one date leads each end with its date, as `datedLabel` does.
+ */
+function runEnds(
+  context: TextContext,
+  domain: Extract<XDomain, { kind: "time" }>,
+  first: number,
+  last: number,
+  chosen: XFormat | undefined
+): readonly [FormattedText, FormattedText] {
+  const { timeZone, interval } = domain;
+  const start = domain.starts[first] ?? 0;
+  const end = domain.ends[last] ?? 0;
+  const ends = slotRunEnds(context.locale, timeZone, start, end, interval, chosen ?? LABEL_PRESETS[interval]);
+  if (chosen !== undefined || !domainSpan(context.model).dates) return ends;
+  return [onDate(context, timeZone, start, ends[0]), onDate(context, timeZone, end, ends[1])];
+}
+
+/** A label led by the date of an instant, as a default sub-day label on many dates is. */
+function onDate(
+  context: TextContext,
+  timeZone: string,
+  instant: number,
+  label: FormattedText
+): FormattedText {
+  const date = dateAt(context, timeZone, instant);
+  const join = CHART_WORDS[context.locale].slotOnDate;
+  return { text: join(date.text, label.text), spoken: join(date.spoken, label.spoken) };
 }
 
 /**
@@ -409,7 +503,7 @@ export function extremesSentence(
  */
 function spanLabel(context: TextContext, slot: number): string {
   const { domain } = context.model;
-  return domain.kind === "time" && SUB_DAY.has(domain.interval)
+  return domain.kind === "time" && isClockInterval(domain.interval)
     ? slotDate(context, slot).spoken
     : slotLabel(context, slot).spoken;
 }

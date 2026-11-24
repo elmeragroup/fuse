@@ -138,7 +138,7 @@ describe("DataTableFilter editors", () => {
       ],
     });
     expect(visibleOrders()).toBe("1 2");
-    await userEvent.click(roleNamed("button", "Oct 1\u2009–\u200910, 2026"));
+    await userEvent.click(roleNamed("button", "Oct 1, 2026\u00a0–\u00a0Oct 10, 2026"));
     const to = page.getByLabelText("To", { exact: true });
     await userEvent.fill(to, "2026-10-12");
     // Tab steps through a native date input's own fields, so the test blurs it.

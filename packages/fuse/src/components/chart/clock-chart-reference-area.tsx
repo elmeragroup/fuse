@@ -9,14 +9,14 @@ import type { ReactElement } from "react";
 
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import { referenceSentence } from "./chart-reference-text";
-import { slotLabel } from "./chart-text";
+import { joinRange, NUMBER_RANGE_SEPARATOR, slotLabel } from "./chart-text";
 import type { ChartLayerProps, ChartTone, ChartX, ValueFormat, XFormat } from "./chart-types";
 import { labelPlace, slotOfX } from "./clock-chart-dial";
 import type { LabelPlace } from "./clock-chart-dial";
 import { PlacedLabel } from "./clock-chart-placed-label";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
-import { formatSlot, isClockInterval, nextSlotStart } from "./format/time-format";
+import { isClockInterval, slotRunEnds } from "./format/time-format";
 import { formatValue } from "./format/value-format";
 import { slotAngles } from "./layout/clock";
 import { sectorPath } from "./layout/clock-path";
@@ -46,10 +46,11 @@ export type ClockChartReferenceAreaProps = ChartLayerProps &
         x2?: never;
         /**
          * How `{value}` in `label` prints the range. An annulus prints its values in this value
-         * format. A sector prints its ends, the first slot's start and the last slot's end, joined
-         * by an en dash, and a range preset prints each end in its point form, as "hour-range" does
-         * in "hour". By default a dial of slots shorter than a day prints a sector's ends in
-         * "time", and a coarser dial prints the first and the last slot's labels.
+         * format, joined by an en dash. A sector prints its ends, the first slot's start and the
+         * last slot's end, joined by the locale's range separator, and a range preset prints each
+         * end in its point form, as "hour-range" does in "hour". By default a dial of slots shorter
+         * than a day prints a sector's ends in "time", and a coarser dial prints the first and the
+         * last slot's labels.
          */
         format?: ValueFormat;
       }
@@ -70,10 +71,11 @@ export type ClockChartReferenceAreaProps = ChartLayerProps &
         y2?: never;
         /**
          * How `{value}` in `label` prints the range. An annulus prints its values in this value
-         * format. A sector prints its ends, the first slot's start and the last slot's end, joined
-         * by an en dash, and a range preset prints each end in its point form, as "hour-range" does
-         * in "hour". By default a dial of slots shorter than a day prints a sector's ends in
-         * "time", and a coarser dial prints the first and the last slot's labels.
+         * format, joined by an en dash. A sector prints its ends, the first slot's start and the
+         * last slot's end, joined by the locale's range separator, and a range preset prints each
+         * end in its point form, as "hour-range" does in "hour". By default a dial of slots shorter
+         * than a day prints a sector's ends in "time", and a coarser dial prints the first and the
+         * last slot's labels.
          */
         format?: XFormat;
       }
@@ -125,7 +127,7 @@ export function ClockChartReferenceArea({
     // Readers hear the range low to high, as the cartesian ReferenceArea says it.
     const [lowEnd, highEnd] = props.y1 <= props.y2 ? [first, second] : [second, first];
     value = {
-      text: `${first.text}\u2013${second.text}`,
+      text: `${first.text}${NUMBER_RANGE_SEPARATOR}${second.text}`,
       spoken: strings.valueRange(lowEnd.spoken, highEnd.spoken),
     };
     place = labelPlace(box, 0, high);
@@ -143,25 +145,17 @@ export function ClockChartReferenceArea({
     const timeZone = domain.kind === "time" ? domain.timeZone : "UTC";
     const interval = domain.kind === "time" ? domain.interval : "hour";
     const from = clock.starts[Math.min(first, last)];
-    const until = clock.starts[Math.max(first, last)];
-    // A range preset prints one slot as a range, so each end prints its own point preset.
-    const format =
-      props.format === "hour-range" ? "hour" : props.format === "time-range" ? "time" : props.format;
-    const instants = format !== undefined || isClockInterval(interval);
+    const until = domain.kind === "time" ? domain.ends[Math.max(first, last)] : undefined;
+    const instants = props.format !== undefined || isClockInterval(interval);
     // A sector outside the cycle draws nothing, its label included, and has no range to print, as a
     // cartesian x range outside the axis has none.
     drawn = ok && from !== undefined && until !== undefined;
     if (!ok || from === undefined || until === undefined) value = { text: "", spoken: "" };
     else {
-      const at = (instant: number): FormattedText =>
-        formatSlot(kernel.locale, timeZone, instant, interval, format ?? "time", "full");
       const [head, tail] = instants
-        ? [at(from), at(nextSlotStart(until, interval, timeZone))]
+        ? slotRunEnds(kernel.locale, timeZone, from, until, interval, props.format ?? "time")
         : [slotLabel(clock.text, Math.min(first, last)), slotLabel(clock.text, Math.max(first, last))];
-      value = {
-        text: `${head.text}\u2013${tail.text}`,
-        spoken: strings.valueRange(head.spoken, tail.spoken),
-      };
+      value = joinRange(kernel.locale, head, tail);
     }
     place = labelPlace(box, (start + end) / 2, 1.02);
   }

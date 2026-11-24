@@ -39,6 +39,17 @@ const TIME_FIELDS: ReadonlySet<string> = new Set([
   "dayPeriod",
 ]);
 
+/**
+ * Whether Intl options ask for a time field, such as `hour`, `dayPeriod` or `timeStyle`. A field
+ * set to `undefined` asks for nothing.
+ *
+ * @param options - Intl date-time options.
+ * @returns Whether the options print a time of day.
+ */
+export function asksForTime(options: Intl.DateTimeFormatOptions): boolean {
+  return Object.entries(options).some(([key, value]) => TIME_FIELDS.has(key) && value !== undefined);
+}
+
 /** The options whose keys pass `keep` and whose values are set. */
 function half(
   options: Intl.DateTimeFormatOptions,
@@ -142,8 +153,7 @@ function buildPlan(locale: string, options: Intl.DateTimeFormatOptions): JoinPla
   // CLDR 48 holds one skeleton for a weekday with a time, such as `Ehm`, so only a date half with
   // another field takes a join.
   const hasDate = Object.keys(date).some((key) => DATE_FIELDS.has(key) && key !== "weekday");
-  const hasTime = Object.keys(time).some((key) => TIME_FIELDS.has(key));
-  return separators === undefined || !hasDate || !hasTime
+  return separators === undefined || !hasDate || !asksForTime(options)
     ? { whole }
     : {
         whole,
