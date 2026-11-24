@@ -73,7 +73,7 @@ test("the context surface and part props match the public API", () => {
         <Sidebar.Content>
           <Sidebar.Group>
             <Sidebar.GroupLabel render={<h2 />}>Funnel</Sidebar.GroupLabel>
-            <Sidebar.GroupAction render={<a href="#" />}>Add</Sidebar.GroupAction>
+            <Sidebar.GroupAction render={<a href="#add-funnel" />}>Add</Sidebar.GroupAction>
             <Sidebar.GroupContent>
               <Sidebar.Menu>
                 <Sidebar.MenuItem>
