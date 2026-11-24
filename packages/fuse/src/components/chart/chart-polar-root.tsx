@@ -18,7 +18,7 @@ import type { ReactElement, ReactNode, Ref, RefObject } from "react";
 import { definedProps } from "../../internal/defined-props";
 import type { SupportedLocale } from "../../intl/locale-context";
 import { writeAttribute, writeStyle } from "./chart-dom";
-import { openDrawingSoon } from "./chart-draw-gate";
+import { useOpenDrawing } from "./chart-draw-gate";
 import { createChartFollowers } from "./chart-followers";
 import type { ActiveSlot } from "./chart-followers";
 import { useIssueWarnings } from "./chart-issue-warnings";
@@ -252,17 +252,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
     span: (pace) => entranceSpan(entranceItems(model), ENTRANCE_SPRINGS, pace),
     refresh,
   });
-  const {
-    store,
-    motion,
-    rootRef,
-    figureRef,
-    cellRef,
-    clientMount,
-    hidden,
-    root: getRoot,
-    commit,
-  } = lifecycle;
+  const { store, motion, rootRef, figureRef, cellRef, hidden, root: getRoot, commit } = lifecycle;
   const [follow] = useState(() =>
     createPolarFollow({
       frames: BROWSER_FRAMES,
@@ -274,12 +264,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
   );
   const strings = CHART_STRINGS[locale];
 
-  // A browser mount draws in the render right after its first commit, and a hydrating Root in a
-  // microtask after its hydration commit, so its marks render once before the browser paints.
-  useLayoutEffect(() => {
-    if (clientMount) store.drawing.openNow();
-    else openDrawingSoon(store.drawing);
-  }, [store, clientMount]);
+  useOpenDrawing(store.drawing);
 
   // The active option keeps its place across new data while it still exists, and leaves otherwise.
   const countRef = useRef(model.count);

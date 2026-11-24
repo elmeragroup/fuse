@@ -8,7 +8,7 @@ import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { writeAttribute } from "./chart-dom";
-import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
+import { useOpenDrawing } from "./chart-draw-gate";
 import { useEntrance } from "./chart-entrance";
 import { useIssueWarnings } from "./chart-issue-warnings";
 import { BROWSER_FRAMES, createChartMotion } from "./chart-motion";
@@ -221,13 +221,7 @@ export function ScatterChartRoot<
   const figureRef = useMergedRefs(rootRef, ref);
   const plotRef = useRef<HTMLDivElement>(null);
   const { plot, probe, reads } = useMeasuredPlot(plotRef);
-  // A browser mount draws in the render right after its first commit, which measured the plot. A
-  // hydrating Root draws in a microtask after its hydration commit, before the browser paints.
-  const clientMount = useClientMount();
-  useLayoutEffect(() => {
-    if (clientMount) store.drawing.openNow();
-    else openDrawingSoon(store.drawing);
-  }, [store, clientMount]);
+  useOpenDrawing(store.drawing);
   const reduced = useReducedMotion();
   // The entrance's loop moves no mark. It only holds and releases the entrance's phase.
   const [motion] = useState(() => createChartMotion(BROWSER_FRAMES, reduced, () => undefined));

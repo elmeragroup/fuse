@@ -5,7 +5,7 @@
  * open for the Root's life. Every chart family's Root owns one gate, so this module reads no Root
  * context.
  */
-import { useState, useSyncExternalStore } from "react";
+import { useLayoutEffect, useState, useSyncExternalStore } from "react";
 
 import { flushSync } from "react-dom";
 
@@ -71,7 +71,7 @@ const opening = new Set<DrawGate>();
  *
  * @param gate - The Root's gate.
  */
-export function openDrawingSoon(gate: DrawGate): void {
+function openDrawingSoon(gate: DrawGate): void {
   if (opening.size === 0) {
     queueMicrotask(() => {
       const gates = [...opening];
@@ -100,6 +100,23 @@ export function useClientMount(): boolean {
   );
   const [first] = useState(client);
   return first;
+}
+
+/**
+ * Opens a Root's draw gate after its first commit. A browser mount opens it in that commit's layout
+ * effect, so the marks draw in the render right after, which reads the measured plot. A hydrating
+ * Root opens it through `openDrawingSoon`, in a microtask after its hydration commit, so its marks
+ * render once, before the browser paints.
+ *
+ * @param gate - The Root's gate.
+ */
+export function useOpenDrawing(gate: DrawGate): void {
+  // `useClientMount` latches its first value, so a Root that also reads it gets the same answer.
+  const clientMount = useClientMount();
+  useLayoutEffect(() => {
+    if (clientMount) gate.openNow();
+    else openDrawingSoon(gate);
+  }, [gate, clientMount]);
 }
 
 /** A store subscription for a value that never changes after hydration. */
