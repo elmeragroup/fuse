@@ -66,17 +66,35 @@ function writeHash(text: string | undefined): void {
   }
   const url = new URL(window.location.href);
   url.hash = text ?? "";
-  window.history.replaceState(null, "", text === undefined ? `${url.pathname}${url.search}` : url);
+  // Next's patched `replaceState` dispatches a call without its private `__NA` marker as
+  // `ACTION_RESTORE`, which cancels a page link the router is still loading. Passing the entry's
+  // own state carries the marker through. Next source:
+  // https://github.com/vercel/next.js/blob/v16.4.5/packages/next/src/client/components/app-router.tsx#L374-L389
+  // Guarded by "finishes a page link that is loading when an edit writes its share link" in
+  // apps/docs/test/studio/studio.browser.test.ts.
+  window.history.replaceState(window.history.state, "", url);
 }
 
 /**
- * Discards the saved session: the autosave and the address's share hash. The studio's error page
- * calls it before it tries again, so a session whose edits break rendering cannot break every
- * reload too.
+ * Runs the studio error page's `retry`. With `session: "discard"`, it first discards the saved
+ * session, the autosave and the address's share hash, so a session whose edits break rendering
+ * cannot break every reload too.
+ *
+ * @param retry - The error page's retry.
+ * @param session - Whether the retry keeps or discards the saved session.
  */
-export function discardStudioSession(): void {
-  writeAutosave(undefined);
-  writeHash(undefined);
+export function retryStudio(retry: () => void, session: "keep" | "discard"): void {
+  const url = new URL(window.location.href);
+  if (session === "discard") {
+    writeAutosave(undefined);
+    url.hash = "";
+  }
+  // `writeHash` leaves Next's router holding an older hash, and the retry's refresh writes the
+  // router's address back. A write without the `__NA` marker makes the router adopt `url` first.
+  // It writes even when the visible address matches, since the router's may not, and no page link
+  // is loading on the error page for it to cancel.
+  window.history.replaceState(null, "", url);
+  retry();
 }
 
 function isPristine(document: StudioDocument, opening: StudioDocument): boolean {

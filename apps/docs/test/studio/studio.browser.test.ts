@@ -1,8 +1,8 @@
 import type { Locator, Page } from "playwright";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from "vitest";
 
 import { auditTargets, settleFrames } from "../landing-page";
-import { launchSuiteBrowser } from "../suite-browser";
+import { closeContext, launchSuiteBrowser } from "../suite-browser";
 import {
   ARTBOARDS,
   artboard,
@@ -15,12 +15,12 @@ import {
   layers,
   openStudio as openStudioPage,
 } from "./page";
-import type { Box, StudioContextOptions, StudioPage } from "./page";
+import type { Box, StudioPage } from "./page";
 
 const browser = launchSuiteBrowser();
 
 /** Opens `/studio` in a fresh context; each test closes its page, and the suite the rest. */
-async function openStudio(options: StudioContextOptions & { hash?: string } = {}): Promise<StudioPage> {
+async function openStudio(options?: Parameters<typeof openStudioPage>[1]): Promise<StudioPage> {
   return openStudioPage(browser(), options);
 }
 
@@ -364,5 +364,60 @@ describe("theme studio", () => {
     expect(await isFocused(marked)).toBe(true);
     await expect.poll(async () => clearBelow(await box(marked), await box(themeBar(page)))).toBe(true);
     await page.close();
+  });
+
+  it("finishes a page link that is loading when an edit writes its share link, carrying the share link along", async () => {
+    // The Shape page's RSC payloads, its prefetches among them, wait until the test releases them,
+    // so the navigation is still loading when the edit's delayed hash write lands. A document
+    // request would mean a full page load, which restores the autosave and hides the cancel.
+    const { promise: released, resolve: release } = Promise.withResolvers<void>();
+    const { promise: holding, resolve: hold } = Promise.withResolvers<void>();
+    let documents = 0;
+    const { context, page } = await openStudio({
+      prepare: async (opened) => {
+        await opened.route(
+          (url) => url.pathname === "/studio/shape",
+          async (route) => {
+            if (route.request().resourceType() === "document") {
+              documents += 1;
+            } else {
+              hold();
+              await released;
+            }
+            await route.continue();
+          }
+        );
+      },
+    });
+    onTestFinished(async () => {
+      release();
+      await closeContext(context);
+    });
+    expect(new URL(page.url()).hash).toBe("");
+
+    await layers(page)
+      .getByRole("region", { name: "Pages", exact: true })
+      .getByRole("link", { name: "Shape", exact: true })
+      .click();
+    await holding;
+    await page.getByRole("button", { name: /^Base theme:/u }).click();
+    await page
+      .getByRole("menu")
+      .getByRole("menuitemradio", { checked: false })
+      .filter({ hasText: /^(Neutral|Branded)$/u })
+      .click();
+    await page.waitForFunction(() => window.location.hash.length > 1);
+    const written = new URL(page.url());
+    expect(written.pathname).toBe("/studio");
+    release();
+
+    await artboard(page, "Shells in Fuse").waitFor({ state: "visible" });
+    await expect
+      .poll(() => {
+        const url = new URL(page.url());
+        return { pathname: url.pathname, hash: url.hash };
+      })
+      .toEqual({ pathname: "/studio/shape", hash: written.hash });
+    expect(documents).toBe(0);
   });
 });
