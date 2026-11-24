@@ -1,7 +1,8 @@
 import { AxeBuilder } from "@axe-core/playwright";
 // Every docs route, once, in Chromium. Units under test: the pages the docs build prerenders.
 // Oracles: a page that renders reports no console error and no uncaught exception while it loads
-// and hydrates, and axe-core's WCAG 2.2 A and AA rules find no violation at the default zoom.
+// and hydrates, and axe-core's WCAG 2.2 A and AA rules find no violation at the default zoom,
+// apart from the nodes `KNOWN_NODES` lists for one rule.
 // The route list is the build's own prerender manifest, so a new page joins the sweep the moment
 // it exists, and routes that serve no HTML page (API, Open Graph images, text endpoints) stay out.
 import type { Page } from "playwright";
@@ -18,11 +19,42 @@ const EXPECTED_MISSING = ["/this-avatar-does-not-exist.png"];
 
 /** Rules the sweep leaves off, open until #554. */
 const DEFERRED_RULES = [
-  // Syntax-highlighted code under the contrast minimum.
-  "color-contrast",
   // A few docs controls under the 24px target.
   "target-size",
 ];
+
+/**
+ * The nodes each rule skips, grouped by the open issue or WCAG exemption that keeps them out.
+ * Each rule runs in a scan of its own that excludes only these selectors, so the other rules still
+ * check the nodes, and a node no selector matches still fails the route. `.exclude()` skips the
+ * whole subtree of each node a selector matches.
+ */
+const KNOWN_NODES = {
+  "color-contrast": [
+    // #1037: the light Sugar High syntax colors. The identifier color passes, so it stays checked.
+    ".sh__token--keyword",
+    ".sh__token--string",
+    ".sh__token--class",
+    ".sh__token--property",
+    ".sh__token--entity",
+    ".sh__token--jsxliterals",
+    ".sh__token--sign",
+    ".sh__token--comment",
+    // #1038: variant="brand" text in a component demo.
+    '[data-demo-stage] [data-slot="heading"].text-brand',
+    '[data-demo-stage] [data-slot="text"].text-brand',
+    '[data-demo-stage] [data-slot="span"].text-brand',
+    '[data-demo-stage] [data-slot="link"].text-brand',
+    // #1039: every LiveLineChart axis tick. Only the ticks in the edge fade fail, but a tick's
+    // opacity changes as readings arrive, so a selector keyed to it races the scan.
+    '[data-slot$="-axis"][data-live] [data-slot$="-tick"]',
+    // WCAG 1.4.3 exempts the text of an inactive control.
+    '[data-slot="file-upload"][data-disabled] [data-slot="file-upload-description"]',
+    '[data-slot="input-group"]:has(> [data-slot="input-group-control"]:disabled) [data-slot="input-group-text"]',
+  ],
+} satisfies { readonly [rule: string]: ReadonlyArray<string> };
+
+const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 const ROUTES = prerenderedRoutes(true);
 
@@ -67,7 +99,10 @@ describe("every docs route", () => {
   // `maxConcurrency` bounds the pool, and no route shares state with another.
   it.concurrent.for(ROUTES)("renders %s without console errors and passes axe", async (route, { expect }) => {
     // axe-core opens a page of its own in the same context, so the page has an explicit one.
-    const context = await browser().newContext({ viewport: DESKTOP_VIEWPORT });
+    // Reduced motion skips the chart entrances, whose mid-animation frames fail contrast. Waiting
+    // for `[data-entering]` to clear races, because a chart below the fold starts its entrance
+    // only when it scrolls into view, which can happen during the scan.
+    const context = await browser().newContext({ viewport: DESKTOP_VIEWPORT, reducedMotion: "reduce" });
     const page = await context.newPage();
     const errors = collectPageErrors(page, {
       console: true,
@@ -82,16 +117,22 @@ describe("every docs route", () => {
       // one axe.run in the page, which honours iframes: false; the partial runner descends into
       // every frame whatever the options say. The frame element itself is still checked here.
       // `options` replaces the whole option object, so it comes before the tags and the rules.
-      const results = await new AxeBuilder({ page })
-        .options({ iframes: false })
-        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-        .disableRules(DEFERRED_RULES)
-        .setLegacyMode()
-        .analyze();
-      expect(
-        results.violations.map(
-          ({ id, nodes }) => `${id}: ${nodes.map((node) => node.target.join(" ")).join(", ")}`
+      const scan = (): AxeBuilder => new AxeBuilder({ page }).options({ iframes: false }).setLegacyMode();
+      const scopedRules = Object.keys(KNOWN_NODES);
+      const scans = [
+        scan()
+          .withTags(AXE_TAGS)
+          .disableRules([...DEFERRED_RULES, ...scopedRules]),
+        ...Object.entries(KNOWN_NODES).map(([rule, selectors]) =>
+          selectors.reduce((builder, selector) => builder.exclude(selector), scan().withRules(rule))
         ),
+      ];
+      // The scans run one after another, because axe-core refuses to start a run while another is
+      // in progress.
+      const violations = [];
+      for (const builder of scans) violations.push(...(await builder.analyze()).violations);
+      expect(
+        violations.map(({ id, nodes }) => `${id}: ${nodes.map((node) => node.target.join(" ")).join(", ")}`),
         route
       ).toEqual([]);
       expect(errors, route).toEqual([]);

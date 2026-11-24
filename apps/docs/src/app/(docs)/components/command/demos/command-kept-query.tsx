@@ -30,7 +30,9 @@ function Palette({ onRun }: { onRun: (summary: string) => void }) {
           {(customer: Customer) => (
             <Command.PageTrigger key={customer.id} value={customer} page={customer.id}>
               {customer.label}
-              <span className="text-xs text-muted-foreground">{customer.city}</span>
+              <span className="text-xs text-muted-foreground in-data-highlighted:text-accent-foreground">
+                {customer.city}
+              </span>
             </Command.PageTrigger>
           )}
         </Command.List>

@@ -247,7 +247,7 @@ export function DensityPanel(): ReactElement {
         <div className={styles.part()}>
           <InspectedPartDetails part={inspected} />
         </div>
-        <Accordion.Root multiple defaultValue={["control"]}>
+        <Accordion.Root variant="card" multiple defaultValue={["control"]}>
           {METRIC_ROLES.map(({ role, title }) => {
             const count = DENSITIES.reduce(
               (total, density) =>
