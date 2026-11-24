@@ -173,15 +173,19 @@ export const LAYER_DEFAULTS = {
   // of a value. Each is its own literal, so a host override of a slot leaves it alone.
   "chart-sentiment-positive": CHART_AQUA,
   "chart-sentiment-negative": CHART_ORANGE,
+  // The syntax palette measures at least 4.55:1 on every fill `Code` names, in all 24 themes. The
+  // property, sign, string and keyword roles, which a Live code edit writes, keep extra margin for
+  // the docs' `primary/10` tint over a card. `apps/docs/test/live-code.browser.test.ts` measures
+  // them on that tint.
   "sh-identifier": "#5c6773",
-  "sh-keyword": "#ff7733",
-  "sh-string": "#86b300",
-  "sh-class": "#a37acc",
-  "sh-property": "#36a3d9",
-  "sh-entity": "#f29718",
-  "sh-jsxliterals": "#4cbf99",
-  "sh-sign": "#ed9366",
-  "sh-comment": "#abb0b6",
+  "sh-keyword": "#b04500",
+  "sh-string": "#537000",
+  "sh-class": "#835aaa",
+  "sh-property": "#006e9a",
+  "sh-entity": "#9d5e00",
+  "sh-jsxliterals": "#007b5d",
+  "sh-sign": "#a24f21",
+  "sh-comment": "#696d73",
   // A scope without a brand reads an untinted gray at every ramp step, at the lightness every
   // brand's ramps share. Each brand rule declares its own tinted ramps.
   ...GRAY_RAMP_TOKENS,

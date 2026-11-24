@@ -54,6 +54,7 @@ const CHART_MARK_ROLES = [
   "chart-sentiment-negative",
 ] as const;
 
+/** The `--sh-*` roles sugar-high paints code tokens with. */
 const SYNTAX_ROLES = [
   "sh-identifier",
   "sh-keyword",
@@ -195,7 +196,15 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     floor: 2,
   },
   { schemes: ["light", "dark"], matches: () => true, pairs: CHART_ON_COLOR_PAIRS, floor: 4.5 },
-  { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(SYNTAX_ROLES), floor: 4.5 },
+  {
+    // Code tokens on the surfaces Code's JSDoc names. Code paints no fill, so it reads on its
+    // container's. The docs paint code blocks on `card` and the API panel's type signature on
+    // `muted`.
+    schemes: ["light", "dark"],
+    matches: () => true,
+    pairs: [...roleOnSurfaces(SYNTAX_ROLES), ...SYNTAX_ROLES.map((role) => [role, "muted"] as const)],
+    floor: 4.5,
+  },
   { schemes: ["dark"], matches: () => true, pairs: roleOnSurfaces(["input"]), floor: 3 },
   {
     // The focus ring, under WCAG 1.4.11. It is drawn flush against the control, so it must separate

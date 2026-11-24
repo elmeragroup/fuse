@@ -26,15 +26,6 @@ const EXPECTED_MISSING = ["/this-avatar-does-not-exist.png"];
  */
 const AXE_EXCLUSIONS_BY_RULE = {
   "color-contrast": [
-    // #1037: the light Sugar High syntax colors. The identifier color passes, so it stays checked.
-    ".sh__token--keyword",
-    ".sh__token--string",
-    ".sh__token--class",
-    ".sh__token--property",
-    ".sh__token--entity",
-    ".sh__token--jsxliterals",
-    ".sh__token--sign",
-    ".sh__token--comment",
     // #1038: variant="brand" text in a component demo.
     '[data-demo-stage] [data-slot="heading"].text-brand',
     '[data-demo-stage] [data-slot="text"].text-brand',

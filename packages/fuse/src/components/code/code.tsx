@@ -24,6 +24,12 @@ export type CodeProps = Omit<ComponentProps<"pre">, "children" | "aria-label"> &
   /**
    * The source text, highlighted as JavaScript and JSX. Pass raw text, not HTML. The highlighter
    * escapes it, so markup shows as text.
+   *
+   * The block paints no fill, so its `--sh-*` syntax colors read on the fill behind it. They reach
+   * 4.5:1 on `background`, `card`, `card-soft`, `dialog`, `panel` and `muted` in every theme and
+   * scheme. Place the block on one of those fills, such as inside a `bg-card` or `bg-muted`
+   * container. On other fills, such as `primary-soft` or `foreground`, some syntax colors fall
+   * under 4.5:1.
    */
   code: string;
   /**
