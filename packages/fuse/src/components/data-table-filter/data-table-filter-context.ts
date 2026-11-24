@@ -200,8 +200,6 @@ export type DataTableFilterInternals = {
     readonly valueId: (fieldId: string) => string;
     /** A chip's element, or `null`. */
     readonly chipElement: (fieldId: string) => HTMLElement | null;
-    /** The registered `DataTableFilter.Value` element that holds `node`, or `null`. */
-    readonly valueHolding: (node: Node) => HTMLElement | null;
     /** Whether a `Content` is registered, which the Trigger checks in development. */
     readonly hasContent: () => boolean;
     /** Whether a `ValueContent` is registered, which a Value checks in development. */

@@ -1,5 +1,6 @@
 import { Activity } from "react";
 import type { ReactElement, ReactNode } from "react";
+import { useState } from "react";
 
 import { flushSync } from "react-dom";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
@@ -29,7 +30,8 @@ import {
 import { withLocale } from "../../../test/locale-matrix";
 import { whilePointerPressed } from "../../../test/pointer-press";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
-import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
+import { useDataTableFilterChip } from "./data-table-filter-context";
 import type { FilterField, FilterFieldMap } from "./filter-fields";
 import { DataTableFilter } from "./index";
 
@@ -231,22 +233,23 @@ describe("DataTableFilter value popover", () => {
   ];
 
   /**
-   * Sizes the page so Amount's Value shows only its first 12px at the strip's end, with Customer's
-   * chip, the first, still in view. The strip ends a fixed distance before the page's.
+   * Sizes the page so Amount's `peeking` segment, its Value by default, shows only its first 12px at
+   * the strip's end, with Customer's chip, the first, still in view. The strip ends a fixed distance
+   * before the page's.
    */
-  const sizeAmountPeeking = async () => {
+  const sizeAmountPeeking = async (peeking: () => HTMLElement = () => roleNamed("button", "500")) => {
     const strip = chipStrip();
-    const amountValue = roleNamed("button", "500");
+    const segment = peeking();
     const stripInset = window.innerWidth - strip.getBoundingClientRect().right;
-    await page.viewport(Math.round(amountValue.getBoundingClientRect().left + 12 + stripInset), 896);
-    expect(strip.getBoundingClientRect().right).toBeLessThan(amountValue.getBoundingClientRect().right);
-    return { strip, amountValue };
+    await page.viewport(Math.round(segment.getBoundingClientRect().left + 12 + stripInset), 896);
+    expect(strip.getBoundingClientRect().right).toBeLessThan(segment.getBoundingClientRect().right);
+    return { strip, segment };
   };
 
   /** Renders a Customer and an Amount chip, and sizes the page with `sizeAmountPeeking`. */
-  const renderAmountPeeking = async (children?: ReactNode) => {
+  const renderAmountPeeking = async (children?: ReactNode, peeking?: () => HTMLElement) => {
     renderOrders({ initial: PEEKING_FILTERS, children });
-    return sizeAmountPeeking();
+    return sizeAmountPeeking(peeking);
   };
 
   /**
@@ -274,7 +277,7 @@ describe("DataTableFilter value popover", () => {
 
   it("moves from one chip to a partly hidden chip's pressed Value without clamping to the viewport edge", async () => {
     useFakeTimeouts();
-    const { strip, amountValue } = await renderAmountPeeking();
+    const { strip, segment: amountValue } = await renderAmountPeeking();
     const customerChip = page.getByRole("group", { name: "Customer filter" }).element();
     const amountChip = page.getByRole("group", { name: "Amount filter" }).element();
     await userEvent.click(roleNamed("button", "“nord”"));
@@ -323,8 +326,65 @@ describe("DataTableFilter value popover", () => {
     expect(insideStrip(strip, amountValue)).toBe(true);
   });
 
+  it("opens the list of a partly hidden chip's pressed Operator", async () => {
+    const { segment: operator } = await renderAmountPeeking(undefined, () =>
+      roleNamed("combobox", "Amount operator")
+    );
+    // The press holds through three frames, so a scroll on pointerdown draws before the release.
+    await pressShownStart(operator, () => nextFrames(3));
+    await finishMotion();
+    await expect.element(page.getByRole("listbox")).toBeVisible();
+    expect(operator.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("opens the popover for a pressed Value while the strip itself has focus", async () => {
+    const { strip, segment: amountValue } = await renderAmountPeeking();
+    strip.tabIndex = -1;
+    strip.focus({ preventScroll: true });
+    expect(active()).toBe(strip);
+    await pressShownStart(amountValue, () => nextFrames(3));
+    await finishMotion();
+    expect(popoverOpen("Amount")).toBe(true);
+    expect(insideStrip(strip, amountValue)).toBe(true);
+  });
+
+  it("holds the strip still under a press whose Value's own pointerdown capture replaces the pressed label", async () => {
+    /** Amount's Value, whose pointerdown capture swaps its label for a new element, then focuses it. */
+    function RelabelingValue() {
+      const chip = useDataTableFilterChip();
+      const [presses, setPresses] = useState(0);
+      return (
+        <DataTableFilter.Value
+          onPointerDownCapture={(event) => {
+            const value = event.currentTarget;
+            flushSync(() => {
+              setPresses((count) => count + 1);
+            });
+            value.focus({ preventScroll: true });
+          }}>
+          {chip.id === "amount" ? <span key={presses}>500</span> : undefined}
+        </DataTableFilter.Value>
+      );
+    }
+    const { strip, segment: pressedLabel } = await renderAmountPeeking(
+      barWithValue(<RelabelingValue />),
+      () => textNamed("500")
+    );
+    const scrollLeft = strip.scrollLeft;
+    // Chromium sends no click for a press whose pressed node left the page, so the test reads the
+    // strip while the press holds, three frames after a scroll on pointerdown would draw.
+    await pressShownStart(pressedLabel, async () => {
+      await nextFrames(3);
+      expect({
+        focused: focusIs("button", "500"),
+        scrollLeft: strip.scrollLeft,
+        labelAttached: pressedLabel.isConnected,
+      }).toEqual({ focused: true, scrollLeft, labelAttached: false });
+    });
+  });
+
   it("opens the popover for a pressed Value whose own pointerdown capture focuses it", async () => {
-    const { strip, amountValue } = await renderAmountPeeking(
+    const { strip, segment: amountValue } = await renderAmountPeeking(
       barWithValue(
         <DataTableFilter.Value
           onPointerDownCapture={(event) => {
@@ -340,7 +400,7 @@ describe("DataTableFilter value popover", () => {
   });
 
   it("scrolls a Value into view on focus after a press on it that focused nothing ended outside the strip", async () => {
-    const { strip, amountValue } = await renderAmountPeeking(
+    const { strip, segment: amountValue } = await renderAmountPeeking(
       barWithValue(
         <DataTableFilter.Value
           onPointerDown={(event) => {
@@ -433,7 +493,7 @@ describe("DataTableFilter value popover", () => {
 
   it("reveals the edited Value when the filter shows again after edit() ran as the Bar hid", async () => {
     const { act, show } = renderInActivity();
-    const { strip, amountValue } = await sizeAmountPeeking();
+    const { strip, segment: amountValue } = await sizeAmountPeeking();
     // An open editor keeps focus in the popover, so no focus lands in the strip to scroll it.
     await userEvent.click(roleNamed("button", "“nord”"));
     await finishMotion();
@@ -482,7 +542,7 @@ describe("DataTableFilter value popover", () => {
 
   it("reveals the open chip's Value again when edit() asks for the field already open", async () => {
     const { Capture, act } = captureActions();
-    const { strip, amountValue } = await renderAmountPeeking(
+    const { strip, segment: amountValue } = await renderAmountPeeking(
       <>
         <DataTableFilter.Bar />
         <DataTableFilter.ValueContent />
