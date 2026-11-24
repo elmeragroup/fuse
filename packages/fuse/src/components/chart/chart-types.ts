@@ -19,9 +19,7 @@ export type {
   ChartTimeAxisProps,
   ChartTimeFields,
   ChartXAxisKind,
-  ChartXOut,
   ChartXRange,
-  ChartXRangeChangeReason,
   ChartXScaleProps,
   ChartXValue,
 } from "./chart-x-axis-types";

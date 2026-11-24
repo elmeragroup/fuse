@@ -37,8 +37,8 @@ export type ChartPanelProps = ChartLayerProps & {
   yInclude?: readonly number[];
   /**
    * The Panel's plot parts. Put each plot part in the Panel whose series it draws, and the `XAxis`
-   * in the last Panel. Tooltip, Legend, LegendToggleGroup, Brush, Table, Empty, Headline and
-   * Takeaway stay under Root, beside the Panels.
+   * in the last Panel. Tooltip, Legend, LegendToggleGroup, Table, Empty, Headline and Takeaway
+   * stay under Root, beside the Panels.
    */
   children?: ReactNode;
 };

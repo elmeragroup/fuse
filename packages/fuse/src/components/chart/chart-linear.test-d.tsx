@@ -31,7 +31,7 @@ test("a number column takes xScale=linear with a value format, an x name and x i
   expectTypeOf(time).toExtend<ReactElement>();
 });
 
-test("xScale=linear forbids the time-axis props, a time format, the horizontal orientation and the brush callbacks", () => {
+test("xScale=linear forbids the time-axis props, a time format and the horizontal orientation", () => {
   // @ts-expect-error A linear axis has no interval.
   void (<Chart.Root {...linear} interval="hour" />);
   // @ts-expect-error A linear axis has no time zone.
@@ -44,8 +44,6 @@ test("xScale=linear forbids the time-axis props, a time format, the horizontal o
   void (<Chart.Root {...linear} xFormat="hour" />);
   // @ts-expect-error A linear axis runs along the bottom.
   void (<Chart.Root {...linear} orientation="horizontal" />);
-  // @ts-expect-error A linear axis has no brush, so its range never changes from inside.
-  void (<Chart.Root {...linear} onXRangeChange={() => undefined} />);
   // @ts-expect-error A linear range names x numbers.
   void (<Chart.Root {...linear} xRange={[new Date(0), new Date(1)]} />);
 });

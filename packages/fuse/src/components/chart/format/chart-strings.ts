@@ -43,12 +43,6 @@ export type ChartStrings = {
   readonly xHeaderCategory: string;
   /** A linear axis's first table column header when Root has no `xLabel`. */
   readonly xHeaderValue: string;
-  readonly brushGroup: string;
-  readonly brushStart: string;
-  readonly brushEnd: string;
-  readonly brushWindow: string;
-  readonly brushRange: (from: string, to: string) => string;
-  readonly brushWindowValue: (from: string, to: string) => string;
   readonly loading: string;
   readonly noData: string;
   readonly sparklineRange: (min: string, max: string) => string;
@@ -122,12 +116,6 @@ const NB_NO: ChartStrings = {
   xHeaderYear: "År",
   xHeaderCategory: "Kategori",
   xHeaderValue: "Verdi",
-  brushGroup: "Periode",
-  brushStart: "fra",
-  brushEnd: "til",
-  brushWindow: "Flytt periode",
-  brushRange: (from, to) => `Viser ${from} til ${to}`,
-  brushWindowValue: (from, to) => `fra ${from} til og med ${to}`,
   loading: "Laster diagram",
   noData: "Ingen data for perioden",
   sparklineRange: (min, max) => `Lavest ${min}, høyest ${max}.`,
@@ -190,12 +178,6 @@ const SV_SE: ChartStrings = {
   xHeaderYear: "År",
   xHeaderCategory: "Kategori",
   xHeaderValue: "Värde",
-  brushGroup: "Period",
-  brushStart: "från",
-  brushEnd: "till",
-  brushWindow: "Flytta period",
-  brushRange: (from, to) => `Visar ${from} till ${to}`,
-  brushWindowValue: (from, to) => `från ${from} till och med ${to}`,
   loading: "Laddar diagram",
   noData: "Ingen data för perioden",
   sparklineRange: (min, max) => `Lägst ${min}, högst ${max}.`,
@@ -258,12 +240,6 @@ const FI_FI: ChartStrings = {
   xHeaderYear: "Vuosi",
   xHeaderCategory: "Luokka",
   xHeaderValue: "Arvo",
-  brushGroup: "Jakso",
-  brushStart: "alku",
-  brushEnd: "loppu",
-  brushWindow: "Siirrä jaksoa",
-  brushRange: (from, to) => `Näytetään ${from}–${to}`,
-  brushWindowValue: (from, to) => `${from}–${to}`,
   loading: "Ladataan kaaviota",
   noData: "Ei tietoja jaksolta",
   sparklineRange: (min, max) => `Alin ${min}, korkein ${max}.`,
@@ -326,12 +302,6 @@ const EN_US: ChartStrings = {
   xHeaderYear: "Year",
   xHeaderCategory: "Category",
   xHeaderValue: "Value",
-  brushGroup: "Period",
-  brushStart: "start",
-  brushEnd: "end",
-  brushWindow: "Move period",
-  brushRange: (from, to) => `Showing ${from} to ${to}`,
-  brushWindowValue: (from, to) => `from ${from} through ${to}`,
   loading: "Loading chart",
   noData: "No data for the period",
   sparklineRange: (min, max) => `Lowest ${min}, highest ${max}.`,

@@ -1,7 +1,7 @@
 /**
  * Unit under test: the API report's leak filter in `scripts/api-report.ts`.
- * Oracle: part counts written by hand, 45 Chart parts with `Chart.SlotLabel`, the 12, 3 and 10
- * own parts of PieChart, RadialChart and RadarChart and each family's Tooltip and Table, and
+ * Oracle: part counts written by hand for Chart with `Chart.SlotLabel`, for the own parts of
+ * PieChart, RadialChart and RadarChart, and for each family's Tooltip and Table, and
  * report and message lines written by hand in api-extractor's format.
  */
 import { readFileSync } from "node:fs";
@@ -21,9 +21,9 @@ function message(symbol: string): string {
 describe("the chart API report's forgotten-export filter", () => {
   it("reads every namespace part from the committed report", () => {
     const parts = namespaceParts(readFileSync(join(packageRoot, "etc/chart.api.md"), "utf8"), "chart");
-    // Chart's 44 parts and Chart.SlotLabel, then the pie, radial and radar parts of their own, and
-    // each family's Tooltip and Table. The pie's twelve include CenterName.
-    expect(parts).toHaveLength(45 + 12 + 3 + 10 + 6);
+    // Chart's parts and Chart.SlotLabel, then the pie, radial and radar parts of their own, and each
+    // family's Tooltip and Table. The pie's twelve include CenterName.
+    expect(parts).toHaveLength(43 + 12 + 3 + 10 + 6);
     expect(parts).toContain("PieChartCenter");
     expect(parts).toContain("PieChartCenterName");
     expect(parts).toContain("RadialChartBar");

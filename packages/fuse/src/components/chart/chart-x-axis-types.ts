@@ -1,9 +1,9 @@
 /**
- * The public x-axis contracts of `Chart.Root`: what a prop that names an x takes and reports, and
- * the props each x scale admits. A slot axis is a time or category axis. This module exports types
- * only and carries no directive, so server and client modules import it alike.
+ * The public x-axis contracts of `Chart.Root`: what a prop that names an x takes, and the props
+ * each x scale admits. A slot axis is a time or category axis. This module exports types only and
+ * carries no directive, so server and client modules import it alike.
  */
-import type { ChartChangeEventDetails, ChartInstant, ChartPeriod, ChartX, XFormat } from "./chart-types";
+import type { ChartInstant, ChartPeriod, ChartX, XFormat } from "./chart-types";
 import type { Interval } from "./format/time-format";
 import type { ValueFormat } from "./format/value-format";
 
@@ -21,28 +21,12 @@ export type ChartXValue<TX> = [TX] extends [string]
     : ChartX;
 
 /**
- * What a callback reports for an x, which is the category, or the slot start as a `Date` for every
- * instant column.
- *
- * @template TX - The type of the x column.
- * @beta
- */
-export type ChartXOut<TX> = [TX] extends [string] ? TX : [TX] extends [ChartInstant] ? Date : string | Date;
-
-/**
  * The first and last slot of a window, both inclusive.
  *
  * @template TX - The type of the x column.
  * @beta
  */
 export type ChartXRange<TX> = readonly [first: ChartXValue<TX>, last: ChartXValue<TX>];
-
-/**
- * The gestures that change the brushed window, Base UI Slider's own names.
- *
- * @beta
- */
-export type ChartXRangeChangeReason = "drag" | "keyboard" | "track-press" | "input-change";
 
 /**
  * The time-axis props other than `interval`. A wrapper uses this helper to type its props.
@@ -135,29 +119,11 @@ export type ChartSlotScaleProps<TX> = {
   orientation?: "vertical" | "horizontal";
   /**
    * The first and last slot of the window, both inclusive. On a linear axis they are any two x
-   * numbers, and the window holds the rows between them. Under a brush, prefer the uncontrolled
-   * `defaultXRange` with `onXRangeCommitted`, because a controlled range renders every series on
-   * each brush step.
+   * numbers, and the window holds the rows between them.
    */
   xRange?: ChartXRange<TX>;
   /** The window on first render. */
   defaultXRange?: ChartXRange<TX>;
-  /**
-   * Called on every brush step with the first and last slot. A data update never calls it. A
-   * linear axis has no brush, so it takes none.
-   */
-  onXRangeChange?: (
-    range: readonly [first: ChartXOut<TX>, last: ChartXOut<TX>],
-    details: ChartChangeEventDetails<ChartXRangeChangeReason>
-  ) => void;
-  /**
-   * Called once when a brush drag, track press or key press ends. Fetch new data here. A linear
-   * axis has no brush, so it takes none.
-   */
-  onXRangeCommitted?: (
-    range: readonly [first: ChartXOut<TX>, last: ChartXOut<TX>],
-    details: ChartChangeEventDetails<ChartXRangeChangeReason>
-  ) => void;
   /**
    * The slot that is active before any pointer or key moves, by its x. On a linear axis the x is a
    * number. An x survives a reload where an index would not.
@@ -178,8 +144,8 @@ export type ChartSlotScaleProps<TX> = {
  * numbers, such as capacity tariff thresholds in kW or an EV's charging power by state of charge,
  * keep their true distances. Each row is still one slot: one option for the keyboard, one tooltip
  * readout, one table row and one spoken item, in ascending x order. The time-axis props do not
- * apply, and neither do `orientation="horizontal"` and the brush. The props it shares with a slot
- * axis are documented on `ChartSlotScaleProps`. A wrapper uses this helper to type its props.
+ * apply, and neither does `orientation="horizontal"`. The props it shares with a slot axis are
+ * documented on `ChartSlotScaleProps`. A wrapper uses this helper to type its props.
  *
  * @beta
  */
@@ -201,8 +167,6 @@ export type ChartLinearScaleProps = {
   orientation?: "vertical";
   xRange?: readonly [first: number, last: number];
   defaultXRange?: readonly [first: number, last: number];
-  onXRangeChange?: never;
-  onXRangeCommitted?: never;
   defaultActiveX?: number;
 };
 

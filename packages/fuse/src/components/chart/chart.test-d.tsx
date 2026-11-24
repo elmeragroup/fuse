@@ -234,57 +234,41 @@ test("rows may be interfaces with Date and null cells, read-only", () => {
   expectTypeOf(chart).toExtend<ReactElement>();
 });
 
-test("config keys stay literal, so callbacks report the key union and instants report a Date", () => {
+test("config keys stay literal, so onSelectedKeyChange reports the key union", () => {
   const config = {
     desktop: { label: "Desktop", color: "chart-1" },
     mobile: { label: "Mobile", color: "chart-2" },
   } satisfies ChartConfig;
-  const epoch = [{ t: 0, kwh: 1 }];
-  const charts = (
-    <>
-      <Chart.Root
-        data={months}
-        config={config}
-        xKey="month"
-        aria-label="x"
-        onSelectedKeyChange={(key, details) => {
-          expectTypeOf(key).toEqualTypeOf<"desktop" | "mobile" | null>();
-          expectTypeOf(details.reason).toEqualTypeOf<"legend" | "plot" | "keyboard">();
-        }}
-        onXRangeCommitted={(range) => {
-          expectTypeOf(range[0]).toEqualTypeOf<string>();
-        }}
-      />
-      <Chart.Root
-        data={hours}
-        config={{ kwh: { label: "k", color: "chart-1" } }}
-        xKey="start"
-        interval="hour"
-        timeZone="Europe/Oslo"
-        defaultXRange={[0, new Date(3_600_000)]}
-        defaultActiveX={new Date(0)}
-        aria-label="x"
-        onXRangeCommitted={(range, details) => {
-          expectTypeOf(range[0]).toEqualTypeOf<Date>();
-          expectTypeOf(details.reason).toEqualTypeOf<"drag" | "keyboard" | "track-press" | "input-change">();
-        }}
-      />
-      <Chart.Root
-        data={epoch}
-        config={{ kwh: { label: "k", color: "chart-1" } }}
-        xKey="t"
-        interval="hour"
-        timeZone="Europe/Oslo"
-        data-intro="left"
-        data-fade="past"
-        aria-label="x"
-        onXRangeCommitted={(range) => {
-          expectTypeOf(range[1]).toEqualTypeOf<Date>();
-        }}
-      />
-    </>
+  const chart = (
+    <Chart.Root
+      data={months}
+      config={config}
+      xKey="month"
+      aria-label="x"
+      onSelectedKeyChange={(key, details) => {
+        expectTypeOf(key).toEqualTypeOf<"desktop" | "mobile" | null>();
+        expectTypeOf(details.reason).toEqualTypeOf<"legend" | "plot" | "keyboard">();
+      }}
+    />
   );
-  expectTypeOf(charts).toExtend<ReactElement>();
+  expectTypeOf(chart).toExtend<ReactElement>();
+});
+
+test("a time axis takes data-fade and a window that mixes Dates and epoch milliseconds", () => {
+  const chart = (
+    <Chart.Root
+      data={hours}
+      config={{ kwh: { label: "k", color: "chart-1" } }}
+      xKey="start"
+      interval="hour"
+      timeZone="Europe/Oslo"
+      defaultXRange={[0, new Date(3_600_000)]}
+      defaultActiveX={new Date(0)}
+      data-fade="past"
+      aria-label="x"
+    />
+  );
+  expectTypeOf(chart).toExtend<ReactElement>();
 });
 
 test("a bill's center names its active part, and its default names a config key", () => {
@@ -561,11 +545,6 @@ test("grouped bars, horizontal bars, markers, totals and table columns compose",
             format={{ style: "percent", maximumFractionDigits: 1 }}
           />
         </BarChart.Table>
-        <BarChart.Brush minSpan={7} format="date">
-          <BarChart.BrushPreview>
-            <BarChart.Bar dataKey="peak" />
-          </BarChart.BrushPreview>
-        </BarChart.Brush>
         <BarChart.Background variant="4-pointed-star" />
         <BarChart.Reveal>
           <BarChart.Line dataKey="peak" variant="flowing" />

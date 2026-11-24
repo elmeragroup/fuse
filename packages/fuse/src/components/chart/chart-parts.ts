@@ -25,7 +25,6 @@ export {
 } from "./chart-active-value";
 export { ChartTooltipTotal as TooltipTotal } from "./chart-tooltip-total";
 export { ChartGlow as Glow, ChartReveal as Reveal } from "./chart-effects";
-export { ChartBrush as Brush, ChartBrushPreview as BrushPreview } from "./chart-brush";
 export { ChartSkeleton as Skeleton } from "./chart-skeleton";
 export { ChartHeadline as Headline, ChartTakeaway as Takeaway } from "./chart-headline";
 export {

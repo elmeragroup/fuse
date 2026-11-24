@@ -382,7 +382,6 @@
       "chart-reference-line-error.tsx",
       "chart-reference-area-muted.tsx",
       "chart-reference-area-error.tsx",
-      "chart-brush.tsx",
       "chart-axis-titles.tsx",
       "chart-grid-dashed.tsx",
       "chart-grid-vertical.tsx",

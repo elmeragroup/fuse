@@ -201,7 +201,7 @@ function drawOverlay(overlay: SVGPolygonElement, look: OverlayLook, values: Mark
 }
 
 /**
- * One bar. It keys by its slot, so a pan keeps every surviving node, and it keeps the
+ * One bar. It keys by its slot, so an `xRange` change keeps every surviving node, and it keeps the
  * `data-intro` value its first render chose. Each commit that renders it places it through the
  * loop, which grows it in the entrance, moves it on a data update and snaps it otherwise.
  */

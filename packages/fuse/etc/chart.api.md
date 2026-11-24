@@ -20,8 +20,6 @@ declare namespace AreaChart {
         ChartBackground as Background,
         ChartBar as Bar,
         ChartBarGroup as BarGroup,
-        ChartBrush as Brush,
-        ChartBrushPreview as BrushPreview,
         ChartCrosshair as Crosshair,
         ChartDots as Dots,
         ChartEmpty as Empty,
@@ -70,8 +68,6 @@ declare namespace BarChart {
         ChartBackground as Background,
         ChartBar as Bar,
         ChartBarGroup as BarGroup,
-        ChartBrush as Brush,
-        ChartBrushPreview as BrushPreview,
         ChartCrosshair as Crosshair,
         ChartDots as Dots,
         ChartEmpty as Empty,
@@ -120,8 +116,6 @@ declare namespace Chart {
         ChartBackground as Background,
         ChartBar as Bar,
         ChartBarGroup as BarGroup,
-        ChartBrush as Brush,
-        ChartBrushPreview as BrushPreview,
         ChartCrosshair as Crosshair,
         ChartDots as Dots,
         ChartEmpty as Empty,
@@ -240,28 +234,6 @@ export type ChartBarProps = ChartLayerProps & {
 
 // @beta
 export type ChartBarVariant = "default" | "hatched" | "duotone" | "duotone-reverse" | "gradient" | "striped" | "blocks" | "expandable" | "isometric";
-
-// @beta
-function ChartBrush(_props: ChartBrushProps): ReactElement;
-
-// @beta
-function ChartBrushPreview(_props: ChartBrushPreviewProps): ReactElement;
-
-// @beta
-export type ChartBrushPreviewProps = ChartLayerProps & {
-    children?: ReactNode;
-};
-
-// @beta
-export type ChartBrushProps = ChartLayerProps & {
-    "aria-label"?: string;
-    startLabel?: string;
-    endLabel?: string;
-    windowLabel?: string;
-    minSpan?: number;
-    format?: XFormat;
-    children?: ReactNode;
-};
 
 // @beta
 export type ChartCategoricalRole = `chart-${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}`;
@@ -478,8 +450,6 @@ export type ChartLinearScaleProps = {
     orientation?: "vertical";
     xRange?: readonly [first: number, last: number];
     defaultXRange?: readonly [first: number, last: number];
-    onXRangeChange?: never;
-    onXRangeCommitted?: never;
     defaultActiveX?: number;
 };
 
@@ -759,8 +729,6 @@ export type ChartSlotScaleProps<TX> = {
     orientation?: "vertical" | "horizontal";
     xRange?: ChartXRange<TX>;
     defaultXRange?: ChartXRange<TX>;
-    onXRangeChange?: (range: readonly [first: ChartXOut<TX>, last: ChartXOut<TX>], details: ChartChangeEventDetails<ChartXRangeChangeReason>) => void;
-    onXRangeCommitted?: (range: readonly [first: ChartXOut<TX>, last: ChartXOut<TX>], details: ChartChangeEventDetails<ChartXRangeChangeReason>) => void;
     defaultActiveX?: ChartXValue<TX>;
     xLabel?: never;
     xInclude?: never;
@@ -954,13 +922,7 @@ export type ChartXAxisProps = ChartLayerProps & {
 export type ChartXKey<TRow> = ChartKeyOf<TRow, ChartX>;
 
 // @beta
-export type ChartXOut<TX> = [TX] extends [string] ? TX : [TX] extends [ChartInstant] ? Date : string | Date;
-
-// @beta
 export type ChartXRange<TX> = readonly [first: ChartXValue<TX>, last: ChartXValue<TX>];
-
-// @beta
-export type ChartXRangeChangeReason = "drag" | "keyboard" | "track-press" | "input-change";
 
 // @beta
 export type ChartXScaleProps<TX, TAxis extends ChartXAxisKind = ChartXAxisKind> = ("slot" extends TAxis ? ChartSlotScaleProps<TX> : never) | ("linear" extends TAxis ? [TX] extends [string] ? never : [TX] extends [number] ? ChartLinearScaleProps : [TX] extends [ChartInstant] ? never : ChartLinearScaleProps : never);
@@ -1424,8 +1386,6 @@ declare namespace LineChart {
         ChartBackground as Background,
         ChartBar as Bar,
         ChartBarGroup as BarGroup,
-        ChartBrush as Brush,
-        ChartBrushPreview as BrushPreview,
         ChartCrosshair as Crosshair,
         ChartDots as Dots,
         ChartEmpty as Empty,
