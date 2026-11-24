@@ -7,7 +7,6 @@
  * family that builds a `CartesianModel`. It reads no plot geometry.
  */
 import type { SupportedLocale } from "../../intl/locale-context";
-import { rangeSeparator } from "../../intl/range-separator";
 import { readingPaint, seriesPaintOf, swatchPaint } from "./chart-paint";
 import type {
   ChartReadout,
@@ -19,9 +18,10 @@ import type {
 } from "./chart-readout-port";
 import { PAGE_ROWS } from "./chart-table-shell";
 import {
-  NUMBER_RANGE_SEPARATOR,
+  joinRange,
   ownSlotLabel,
   qualityWords,
+  rangeText,
   slotLabel,
   slotRangeLabel,
   stackTotalAt,
@@ -270,25 +270,30 @@ export type SeriesTableContext = TextContext & {
 };
 
 /**
- * The caption: the chart name and the period the rows span. The visible period joins its ends as a
- * reference band prints a range, and readers hear the dictionary's range words, such as
- * `Usage, Jan to Apr`.
+ * The caption: the chart name and the period the rows span. On a category or linear axis the
+ * period's two ends print as a reference band's do, so a linear axis writes a unit both ends share
+ * once, such as `5–10 km`. Unlike a band, a period whose two ends print alike, such as 5.1 and 5.4
+ * with no fraction digits, prints one label. A time axis joins its ends with the locale's range
+ * separator. Readers hear the dictionary's range words, such as `Usage, Jan to Apr`.
  */
 function captionText(context: SeriesTableContext, slots: readonly number[]): FormattedText {
   const { domain } = context.model;
   const first = slots[0] ?? 0;
   const last = slots.at(-1) ?? first;
-  const { valueRange } = CHART_STRINGS[context.locale];
-  // A period of one slot prints that slot once.
-  const range = (from: string, to: string, join: string): FormattedText =>
-    from === to
-      ? { text: from, spoken: from }
-      : { text: `${from}${join}${to}`, spoken: valueRange(from, to) };
   let period: FormattedText;
   if (domain.kind === "category") {
     period = slotRangeLabel(context, first, last);
   } else if (domain.kind === "linear") {
-    period = range(slotLabel(context, first).text, slotLabel(context, last).text, NUMBER_RANGE_SEPARATOR);
+    const head = slotLabel(context, first);
+    period =
+      head.text === slotLabel(context, last).text
+        ? head
+        : rangeText(
+            context.locale,
+            domain.values[first] ?? 0,
+            domain.values[last] ?? 0,
+            context.xValue?.format ?? {}
+          );
   } else {
     const options: Intl.DateTimeFormatOptions =
       domain.interval === "year"
@@ -297,9 +302,10 @@ function captionText(context: SeriesTableContext, slots: readonly number[]): For
           ? { month: "long", year: "numeric" }
           : { day: "numeric", month: "long", year: "numeric" };
     const label = (slot: number) =>
-      formatSlot(context.locale, domain.timeZone, domain.starts[slot] ?? 0, domain.interval, options, "full")
-        .text;
-    period = range(label(first), label(last), rangeSeparator(context.locale));
+      formatSlot(context.locale, domain.timeZone, domain.starts[slot] ?? 0, domain.interval, options, "full");
+    const head = label(first);
+    const tail = label(last);
+    period = head.text === tail.text ? head : joinRange(context.locale, head, tail);
   }
   if (context.name === undefined) return period;
   return { text: `${context.name}, ${period.text}`, spoken: `${context.name}, ${period.spoken}` };

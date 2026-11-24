@@ -9,7 +9,7 @@ import type { ReactElement } from "react";
 
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import { referenceSentence } from "./chart-reference-text";
-import { joinRange, rangeText, slotLabel } from "./chart-text";
+import { joinRange, rangeText, slotRangeLabel } from "./chart-text";
 import type { ChartLayerProps, ChartTone, ChartX, ValueFormat, XFormat } from "./chart-types";
 import { labelPlace, slotOfX } from "./clock-chart-dial";
 import type { LabelPlace } from "./clock-chart-dial";
@@ -50,7 +50,8 @@ export type ClockChartReferenceAreaProps = ChartLayerProps &
          * start and the last slot's end, joined by the locale's range separator, and a range preset
          * prints each end in its point form, as "hour-range" does in "hour". By default a dial of
          * slots shorter than a day prints a sector's ends in "time", and a coarser dial prints the
-         * first and the last slot's labels.
+         * first and the last slot's labels. A sector with no `format` on a dial of slots a day or
+         * longer whose two ends fall in the same slot prints that slot's label once.
          */
         format?: ValueFormat;
       }
@@ -76,7 +77,8 @@ export type ClockChartReferenceAreaProps = ChartLayerProps &
          * start and the last slot's end, joined by the locale's range separator, and a range preset
          * prints each end in its point form, as "hour-range" does in "hour". By default a dial of
          * slots shorter than a day prints a sector's ends in "time", and a coarser dial prints the
-         * first and the last slot's labels.
+         * first and the last slot's labels. A sector with no `format` on a dial of slots a day or
+         * longer whose two ends fall in the same slot prints that slot's label once.
          */
         format?: XFormat;
       }
@@ -135,7 +137,8 @@ export function ClockChartReferenceArea({
     d = ok ? sectorPath(start, end, clock.inner, 1) : "";
     // On a dial of slots shorter than a day, or with a format, `{value}` prints the first slot's
     // start and the last slot's end, in Root's locale and zone. A coarser slot starts at midnight,
-    // so by default it prints the two slots' labels, as the cartesian ReferenceArea does.
+    // so by default it prints the two slots' labels, or one slot's label once, as the cartesian
+    // ReferenceArea does.
     const domain = clock.text.model.domain;
     const timeZone = domain.kind === "time" ? domain.timeZone : "UTC";
     const interval = domain.kind === "time" ? domain.interval : "hour";
@@ -147,10 +150,12 @@ export function ClockChartReferenceArea({
     drawn = ok && from !== undefined && until !== undefined;
     if (!ok || from === undefined || until === undefined) value = { text: "", spoken: "" };
     else {
-      const [head, tail] = instants
-        ? slotRunEnds(kernel.locale, timeZone, from, until, interval, props.format ?? "time")
-        : [slotLabel(clock.text, Math.min(first, last)), slotLabel(clock.text, Math.max(first, last))];
-      value = joinRange(kernel.locale, head, tail);
+      value = instants
+        ? joinRange(
+            kernel.locale,
+            ...slotRunEnds(kernel.locale, timeZone, from, until, interval, props.format ?? "time")
+          )
+        : slotRangeLabel(clock.text, Math.min(first, last), Math.max(first, last));
     }
     place = labelPlace(box, (start + end) / 2, 1.02);
   }
