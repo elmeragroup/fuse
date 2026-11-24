@@ -391,6 +391,8 @@ export default defineConfig({
         "react-hooks/rules-of-hooks": "error",
         "react-hooks/exhaustive-deps": "error",
         "react/no-unstable-nested-components": "error",
+        // The rule asks for each role's native tag, which is wrong for most hits: `<output>` resets with
+        // its form, `<img>` cannot contain inline SVG, and no `<select>` can replace a chart's listbox.
         "jsx-a11y/prefer-tag-over-role": "off",
         // The rule checks the element passed to `render` on its own, but the part names it
         // with its children or `aria-label`. Browser role/name tests and the docs axe sweep check names.
