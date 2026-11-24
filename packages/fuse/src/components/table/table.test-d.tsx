@@ -71,6 +71,7 @@ test("parts take native attributes, Header render, and no polymorphic as prop", 
   const _vertical = (
     <VerticalTable.Root variant="non-bordered-compact">
       <VerticalTable.Header>Customer</VerticalTable.Header>
+      {/* oxlint-disable-next-line jsx-a11y/heading-has-content -- the part forwards its children to the heading */}
       <VerticalTable.Header render={<h3 />}>Section</VerticalTable.Header>
       <VerticalTable.Body data={items} aria-labelledby="customer">
         <VerticalTable.Row fontWeight="bold" isHidden>

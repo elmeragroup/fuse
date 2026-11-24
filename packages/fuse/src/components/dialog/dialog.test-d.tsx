@@ -50,7 +50,7 @@ test("Content carries the 13-value overlay width axis and the close affordance p
   const _noVariant = <Dialog.Content variant="ghost" />;
 
   const _trigger = <Dialog.Trigger render={<button type="button" />} />;
-  const _title = <Dialog.Title render={<h2 />} />;
+  const _title = <Dialog.Title render={<h2>Refund</h2>} />;
 
   // @ts-expect-error polymorphism is never an `as` prop
   const _noAs = <Dialog.Trigger as="span" />;

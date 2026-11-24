@@ -391,6 +391,7 @@ describe("DescriptionList", () => {
     renderThemed(
       <DescriptionList.Root>
         <DescriptionList.Heading>Customer</DescriptionList.Heading>
+        {/* oxlint-disable-next-line jsx-a11y/heading-has-content -- the part forwards its children to the heading */}
         <DescriptionList.Heading render={<h3 />}>Section</DescriptionList.Heading>
       </DescriptionList.Root>
     );

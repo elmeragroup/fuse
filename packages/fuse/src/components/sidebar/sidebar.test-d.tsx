@@ -72,6 +72,7 @@ test("the context surface and part props match the public API", () => {
         </Sidebar.Header>
         <Sidebar.Content>
           <Sidebar.Group>
+            {/* oxlint-disable-next-line jsx-a11y/heading-has-content -- the part forwards its children to the heading */}
             <Sidebar.GroupLabel render={<h2 />}>Funnel</Sidebar.GroupLabel>
             <Sidebar.GroupAction render={<a href="#add-funnel" />}>Add</Sidebar.GroupAction>
             <Sidebar.GroupContent>

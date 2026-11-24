@@ -10,5 +10,6 @@ type DocsPageTitleProps = ComponentProps<"h1">;
 
 /** The page H1. Title styles live here so the shell does not restyle every heading. */
 export function DocsPageTitle({ className, ...props }: DocsPageTitleProps): ReactElement {
+  // oxlint-disable-next-line jsx-a11y/heading-has-content -- the heading's children arrive through props
   return <h1 className={docsPageTitle({ className })} {...props} />;
 }
