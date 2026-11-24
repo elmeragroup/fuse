@@ -272,7 +272,7 @@
     {"property":"padding","value":"0","important":true,"longhands":["padding-top","padding-right","padding-bottom","padding-left"],"source":"fuse","layer":"","selector":".group-data-\\[collapsible\\=icon\\]\\:p-0\\!:is(:where(.group)[data-collapsible=\"icon\"] *)","className":"group-data-[collapsible=icon]:p-0!","owner":0},
     {"property":"width","value":"var(--sidebar-width-icon)","important":false,"longhands":["width"],"source":"fuse","layer":"","selector":".group-data-\\[collapsible\\=icon\\]\\:w-\\(--sidebar-width-icon\\):is(:where(.group)[data-collapsible=\"icon\"] *)","className":"group-data-[collapsible=icon]:w-(--sidebar-width-icon)","owner":0},
     {"property":"background-color","value":"var(--sidebar)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".has-data-\\[variant\\=inset\\]\\:bg-sidebar:has([data-variant=\"inset\"])","className":"has-data-[variant=inset]:bg-sidebar","owner":0},
-    {"property":"width","value":"calc(var(--sidebar-width-icon) + (calc(.25rem * 4)) + 2px)","important":false,"longhands":["width"],"source":"fuse","layer":"","selector":".group-data-\\[collapsible\\=icon\\]\\:w-\\[calc\\(var\\(--sidebar-width-icon\\)\\+\\(--spacing\\(4\\)\\)\\+2px\\)\\]:is(:where(.group)[data-collapsible=\"icon\"] *)","className":"group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]","owner":0},
+    {"property":"width","value":"calc(var(--sidebar-width-icon) + (calc(.25rem * 4)))","important":false,"longhands":["width"],"source":"fuse","layer":"","selector":".group-data-\\[collapsible\\=icon\\]\\:w-\\[calc\\(var\\(--sidebar-width-icon\\)\\+\\(--spacing\\(4\\)\\)\\)\\]:is(:where(.group)[data-collapsible=\"icon\"] *)","className":"group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]","owner":0},
     {"property":"padding","value":"var(--surface-pad-sm)","important":false,"longhands":["padding-top","padding-right","padding-bottom","padding-left"],"source":"fuse","layer":"","selector":":where([data-slot=\"sidebar-inner\"]) .in-data-\\[slot\\=sidebar-inner\\]\\:group-data-\\[variant\\=floating\\]\\:p-\\(--surface-pad-sm\\):is(:where(.group)[data-variant=\"floating\"] *)","className":"in-data-[slot=sidebar-inner]:group-data-[variant=floating]:p-(--surface-pad-sm)","owner":0},
     {"property":"--shell-inner","value":"max(0px, var(--radius) - var(--surface-pad-sm))","important":false,"longhands":["--shell-inner"],"source":"fuse","layer":"","selector":":where([data-slot=\"sidebar-inner\"]) .in-data-\\[slot\\=sidebar-inner\\]\\:group-data-\\[variant\\=floating\\]\\:\\[--shell-inner\\:max\\(0px\\,--theme\\(--radius-lg\\)-var\\(--surface-pad-sm\\)\\)\\]:is(:where(.group)[data-variant=\"floating\"] *)","className":"in-data-[slot=sidebar-inner]:group-data-[variant=floating]:[--shell-inner:max(0px,--theme(--radius-lg)-var(--surface-pad-sm))]","owner":0},
     {"property":"border-radius","value":"var(--inner-corner, var(--radius))","important":false,"longhands":["border-top-left-radius","border-top-right-radius","border-bottom-right-radius","border-bottom-left-radius"],"source":"fuse","layer":"","selector":":where(:where([data-slot=\"sidebar-inner\"]) .in-data-\\[slot\\=sidebar-inner\\]\\:group-data-\\[variant\\=floating\\]\\:\\[\\:where\\(\\&\\)\\]\\:rounded-inner:is(:where(.group)[data-variant=\"floating\"] *))","className":"in-data-[slot=sidebar-inner]:group-data-[variant=floating]:[:where(&)]:rounded-inner","owner":0},
@@ -1352,13 +1352,13 @@
         "root": {
           "tag": "div",
           "attributes": {"data-side":"left","data-slot":"sidebar-container"},
-          "classes": ["md:flex","inset-y-0","z-10","hidden","w-(--sidebar-width)","transition-[width]","duration-200","ease-linear","data-[side=left]:left-0","data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","fixed","p-2","group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]","h-full"],
+          "classes": ["md:flex","inset-y-0","z-10","hidden","w-(--sidebar-width)","transition-[width]","duration-200","ease-linear","data-[side=left]:left-0","data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","fixed","p-2","group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]","h-full"],
           "text": "",
           "declarations": [63,64,6,65,66,67,68,208,209,210,211,212,202,214,142,143,144,145,215,218],
           "initial": [64,67,68,214,143,145],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--sidebar-width":{"_tag":"element","up":2}},
-          "unmatched": ["data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"],
+          "unmatched": ["data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"],
           "measured": {"coincidingAround":3,"basisAsDeclared":true},
           "children": [
             {
@@ -1865,14 +1865,14 @@
         "root": {
           "tag": "div",
           "attributes": {"data-side":"left","data-slot":"sidebar-container"},
-          "classes": ["md:flex","inset-y-0","z-10","hidden","w-(--sidebar-width)","transition-[width]","duration-200","ease-linear","data-[side=left]:left-0","data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","fixed","p-2","group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]","h-full"],
+          "classes": ["md:flex","inset-y-0","z-10","hidden","w-(--sidebar-width)","transition-[width]","duration-200","ease-linear","data-[side=left]:left-0","data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","fixed","p-2","group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]","h-full"],
           "text": "",
           "declarations": [63,64,6,65,66,67,68,208,209,210,211,202,214,142,143,144,145,215,230,218],
           "initial": [64,67,68,214,143,145],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--sidebar-width-icon":{"_tag":"element","up":2}},
           "unmatched": ["data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]"],
-          "measured": {"basisAsDeclared":true},
+          "measured": {"coincidingAround":3,"basisAsDeclared":true},
           "children": [
             {
               "tag": "div",
@@ -2372,13 +2372,13 @@
         "root": {
           "tag": "div",
           "attributes": {"data-side":"left","data-slot":"sidebar-container"},
-          "classes": ["md:flex","inset-y-0","z-10","hidden","w-(--sidebar-width)","transition-[width]","duration-200","ease-linear","data-[side=left]:left-0","data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","fixed","p-2","group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]","h-full"],
+          "classes": ["md:flex","inset-y-0","z-10","hidden","w-(--sidebar-width)","transition-[width]","duration-200","ease-linear","data-[side=left]:left-0","data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","fixed","p-2","group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]","h-full"],
           "text": "",
           "declarations": [63,64,6,65,66,67,68,208,209,210,211,212,202,214,142,143,144,145,215,218],
           "initial": [64,67,68,214,143,145],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--sidebar-width":{"_tag":"element","up":2}},
-          "unmatched": ["data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"],
+          "unmatched": ["data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"],
           "measured": {"coincidingAround":3,"basisAsDeclared":true},
           "children": [
             {
@@ -2885,14 +2885,14 @@
         "root": {
           "tag": "div",
           "attributes": {"data-side":"left","data-slot":"sidebar-container"},
-          "classes": ["md:flex","inset-y-0","z-10","hidden","w-(--sidebar-width)","transition-[width]","duration-200","ease-linear","data-[side=left]:left-0","data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","fixed","p-2","group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]","h-full"],
+          "classes": ["md:flex","inset-y-0","z-10","hidden","w-(--sidebar-width)","transition-[width]","duration-200","ease-linear","data-[side=left]:left-0","data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]","fixed","p-2","group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]","h-full"],
           "text": "",
           "declarations": [63,64,6,65,66,67,68,208,209,210,211,202,214,142,143,144,145,215,230,218],
           "initial": [64,67,68,214,143,145],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--sidebar-width-icon":{"_tag":"element","up":2}},
           "unmatched": ["data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]","data-[side=right]:right-0","data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]"],
-          "measured": {"basisAsDeclared":true},
+          "measured": {"coincidingAround":3,"basisAsDeclared":true},
           "children": [
             {
               "tag": "div",
