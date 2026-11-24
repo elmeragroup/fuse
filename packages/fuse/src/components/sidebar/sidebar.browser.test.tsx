@@ -426,6 +426,38 @@ describe("Sidebar in a bounded container", () => {
   });
 });
 
+describe("Sidebar.Inset beside an inset panel", () => {
+  withoutShellMotion();
+
+  function insetMargins() {
+    const style = getComputedStyle(bySlot("sidebar-inset"));
+    return {
+      top: px(style.marginTop),
+      right: px(style.marginRight),
+      bottom: px(style.marginBottom),
+      left: px(style.marginLeft),
+    };
+  }
+
+  // The card has an 8px margin on every side except the open panel's, which has none. Beside a
+  // collapsed panel it has 8px on every side.
+  it.each([
+    { side: "left", provider: {}, expanded: { top: 8, right: 8, bottom: 8, left: 0 } },
+    {
+      side: "right",
+      provider: { style: { flexDirection: "row-reverse" } },
+      expanded: { top: 8, right: 0, bottom: 8, left: 8 },
+    },
+  ] as const)("keeps the card's margins beside a $side panel", async ({ side, provider, expanded }) => {
+    renderThemed(<Frame provider={provider} root={{ variant: "inset", side }} />);
+    expect(insetMargins(), "expanded").toEqual(expanded);
+
+    await userEvent.click(roleNamed("button", "Toggle sidebar"));
+    expect(sidebarRoot().getAttribute("data-state")).toBe("collapsed");
+    expect(insetMargins(), "collapsed").toEqual({ top: 8, right: 8, bottom: 8, left: 8 });
+  });
+});
+
 describe("Sidebar controlled and uncontrolled state", () => {
   withoutShellMotion();
 
