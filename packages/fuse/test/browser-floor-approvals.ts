@@ -25,7 +25,7 @@ import type { FloorApproval, FloorEquivalence, FloorFallback } from "./browser-f
  * The above-floor selectors a forgiving `:is()` or `:where()` list may hold beside floor-safe
  * selectors that match the same elements, so a browser without the feature still matches. An
  * entry no list uses fails the gate. `:dir(ltr)` has none: left to right is the default, which no
- * `[dir="ltr"]` selector matches on a page without the attribute (#645).
+ * `[dir="ltr"]` selector matches on a page without the attribute.
  */
 export const BROWSER_FLOOR_EQUIVALENCES: readonly FloorEquivalence[] = [
   {
@@ -452,32 +452,6 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     features: ["css.selectors.-webkit-inner-spin-button"],
     fallback: { kind: "none" },
     reason: "Chromium and WebKit's own number-spinner hook; Firefox drops the rule.",
-  },
-  {
-    sheet: "styles.css",
-    where: '.ltr\\:-translate-x-1\\/2:where(:dir(ltr),[dir="ltr"],[dir="ltr"] *)',
-    features: ["css.selectors.dir"],
-    fallback: { kind: "none" },
-    reason:
-      'Below Chrome 120, on a page without dir="ltr" (the left-to-right default), the sidebar rail loses its -50% translate, so the resize handle sits half its width off the sidebar edge it should straddle. Tracked in #645.',
-  },
-  {
-    sheet: "styles.css",
-    where:
-      '.data-\\[side\\=inline-end\\]\\:ltr\\:-rotate-90[data-side="inline-end"]:where(:dir(ltr),[dir="ltr"],[dir="ltr"] *)',
-    features: ["css.selectors.dir"],
-    fallback: { kind: "none" },
-    reason:
-      'Below Chrome 120, on a page without dir="ltr" (the left-to-right default), a navigation-menu caret whose submenu opens to the inline end keeps pointing down instead of turning toward it. Tracked in #645.',
-  },
-  {
-    sheet: "styles.css",
-    where:
-      '.data-\\[side\\=inline-start\\]\\:ltr\\:rotate-90[data-side="inline-start"]:where(:dir(ltr),[dir="ltr"],[dir="ltr"] *)',
-    features: ["css.selectors.dir"],
-    fallback: { kind: "none" },
-    reason:
-      'Below Chrome 120, on a page without dir="ltr" (the left-to-right default), a navigation-menu caret whose submenu opens to the inline start keeps pointing down instead of turning toward it. Tracked in #645.',
   },
   // chart.css
   {

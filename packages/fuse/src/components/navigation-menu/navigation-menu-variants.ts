@@ -71,7 +71,7 @@ export const navigationMenuVariants = tv({
       triggerCaretClass,
       "shrink-0",
       "data-[side=bottom]:group-data-popup-open/navigation-menu-trigger:rotate-180 data-[side=left]:rotate-90 data-[side=right]:-rotate-90 data-[side=top]:rotate-180",
-      "data-[side=inline-end]:ltr:-rotate-90 data-[side=inline-start]:ltr:rotate-90 data-[side=inline-end]:rtl:rotate-90 data-[side=inline-start]:rtl:-rotate-90",
+      "data-[side=inline-end]:-rotate-90 data-[side=inline-start]:rotate-90 data-[side=inline-end]:rtl:rotate-90 data-[side=inline-start]:rtl:-rotate-90",
     ],
     positioner: [
       overlayPositionerClass,
