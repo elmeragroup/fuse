@@ -4,8 +4,12 @@ import type { ComponentProps } from "react";
 
 import { Breadcrumb } from "@elmeragroup/fuse/breadcrumb";
 
-function RouterLink({ href = "#", ...props }: ComponentProps<"a">) {
-  return <a href={href} {...props} />;
+function RouterLink({ href = "#", children, ...props }: ComponentProps<"a">) {
+  return (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  );
 }
 
 export function BreadcrumbRouterLink() {

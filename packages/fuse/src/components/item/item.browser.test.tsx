@@ -77,6 +77,7 @@ describe("Item", () => {
   });
 
   it.each([
+    // oxlint-disable-next-line jsx-a11y/anchor-has-content -- Item.Root renders its Item.Title child inside this anchor
     { role: "link", render: (key: string) => <a href={`#${key}`} /> },
     { role: "button", render: () => <button type="button" /> },
   ] as const)("keeps a grouped $role render's own role inside a listitem", ({ role, render }) => {

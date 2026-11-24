@@ -18,6 +18,7 @@ function underlinePx(element: HTMLElement): number {
 
 /** A router link stand-in that marks its anchor, as React Router's and Next's links render one. */
 function RouterLink(props: ComponentProps<"a">) {
+  // oxlint-disable-next-line jsx-a11y/anchor-has-content -- the anchor's content is the `children` this wrapper forwards in `props`
   return <a data-router-link="" {...props} />;
 }
 
@@ -83,6 +84,7 @@ describe("Link composition", () => {
 
   it("merges a Server Component render element's className, which React Flight hands over lazy", () => {
     renderThemed(
+      // oxlint-disable-next-line jsx-a11y/anchor-has-content -- Link renders its own children inside this element once it unwraps the Flight element
       <Link render={flightLazyElement(<a href="#x" className="text-brand" />)} variant="error">
         Invoice 1044
       </Link>
