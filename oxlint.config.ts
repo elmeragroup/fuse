@@ -400,7 +400,6 @@ export default defineConfig({
         "jsx-a11y/no-noninteractive-tabindex": "off",
         "jsx-a11y/no-noninteractive-element-interactions": "off",
         "jsx-a11y/no-aria-hidden-on-focusable": "off",
-        "jsx-a11y/img-redundant-alt": "off",
         "jsx-a11y/click-events-have-key-events": "off",
       },
     },
