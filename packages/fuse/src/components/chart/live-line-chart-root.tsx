@@ -22,18 +22,17 @@ import type {
   ChartInstant,
   ValueFormat,
 } from "./chart-types";
-import { CHART_STRINGS } from "./format/chart-strings";
+import { LIVE_STRINGS } from "./format/live-strings";
 import {
   ChartCompositionError,
   ChartDataError,
-  dataMessage,
   isChartDevelopment,
   issueGroups,
   issueKey,
 } from "./layout/errors";
 import { createLiveClock } from "./layout/live-clock";
 import type { LiveClockHost, LiveFeed, LiveMode } from "./layout/live-clock";
-import { parseLiveLatest, parseLiveSeries } from "./layout/live-window";
+import { liveMessage, parseLiveLatest, parseLiveSeries } from "./layout/live-window";
 import { createLiveStore, useShownFeed } from "./live-line-chart-context";
 import type { LiveLineRootContextValue } from "./live-line-chart-context";
 import { LiveSurface, useActiveFollowsFrame } from "./live-line-chart-surface";
@@ -127,9 +126,6 @@ export type LiveLineChartRootProps = ChartAccessibleName &
 /** The default window: 30 seconds. */
 const DEFAULT_WINDOW_MS = 30_000;
 
-/** A live issue names its own row, so no slot maps to one. */
-const NO_SLOT_ROWS: readonly number[] = [];
-
 /**
  * The browser's frames and the wall clock. The window ends at `Date.now()`, the clock the
  * consumer's feed stamps its readings with, so the two agree. The frame clock, `performance.now()`,
@@ -206,7 +202,7 @@ export function LiveLineChartRoot({
   const issues = useMemo(() => [...series.issues, ...valueIssues], [series.issues, valueIssues]);
   const firstIssue = issues[0];
   if (firstIssue !== undefined && isChartDevelopment()) {
-    throw new ChartDataError("LiveLineChart.Root", firstIssue.rule, dataMessage(firstIssue, NO_SLOT_ROWS));
+    throw new ChartDataError("LiveLineChart.Root", firstIssue.rule, liveMessage(firstIssue));
   }
   const warned = useRef(new Set<string>());
   useEffect(() => {
@@ -214,7 +210,7 @@ export function LiveLineChartRoot({
       const key = issueKey(rule, subject);
       if (warned.current.has(key)) continue;
       warned.current.add(key);
-      console.warn(`LiveLineChart.Root ${dataMessage(first, NO_SLOT_ROWS, count)}`);
+      console.warn(`LiveLineChart.Root ${liveMessage(first, count)}`);
     }
   }, [issues]);
 
@@ -321,7 +317,7 @@ export function LiveLineChartRoot({
             {spokenDescription}
           </p>
           <p id={`${id}-instructions`} data-slot="chart-instructions">
-            {CHART_STRINGS[locale].instructionsLive}
+            {LIVE_STRINGS[locale].instructionsLive}
           </p>
           <div data-slot="chart-frame">
             <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">

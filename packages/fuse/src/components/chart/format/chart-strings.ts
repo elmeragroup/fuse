@@ -1,7 +1,7 @@
 /**
  * The chart dictionary, in four locales. An explicit prop replaces its string verbatim. The module
- * calls no hook, so a server component reads it too. The polar and scatter families keep their own
- * words in `polar-strings.ts` and `scatter-strings.ts`.
+ * calls no hook, so a server component reads it too. The polar, scatter and live line families keep
+ * their own words in `polar-strings.ts`, `scatter-strings.ts` and `live-strings.ts`.
  */
 import type { Inflected } from "../../../intl/count-of";
 import type { SupportedLocale } from "../../../intl/locale-context";
@@ -85,12 +85,6 @@ export type ChartStrings = {
    * `POINT_WORDS`.
    */
   readonly slots: { readonly [I in Interval | "category"]: Inflected };
-  /** The keyboard instructions of a live line chart. */
-  readonly instructionsLive: string;
-  /** The value's name in a live line chart's readout when Root has no `label`. */
-  readonly liveValue: string;
-  /** A live line chart's latest reading, such as `Siste verdi 1,78 kroner kl. 12:00:05.` */
-  readonly liveLatest: (value: string, at: string) => string;
 };
 
 const NB_NO: ChartStrings = {
@@ -159,9 +153,6 @@ const NB_NO: ChartStrings = {
     year: { one: "år", other: "år" },
     category: { one: "kategori", other: "kategorier" },
   },
-  instructionsLive: "Bruk venstre og høyre pil for å gå mellom målingene, og End for å gå til den siste.",
-  liveValue: "Verdi",
-  liveLatest: (value, at) => `Siste verdi ${value} ${at}.`,
 };
 
 const SV_SE: ChartStrings = {
@@ -230,10 +221,6 @@ const SV_SE: ChartStrings = {
     year: { one: "år", other: "år" },
     category: { one: "kategori", other: "kategorier" },
   },
-  instructionsLive:
-    "Använd vänster- och högerpil för att gå mellan mätningarna, och End för att gå till den senaste.",
-  liveValue: "Värde",
-  liveLatest: (value, at) => `Senaste värde ${value} ${at}.`,
 };
 
 const FI_FI: ChartStrings = {
@@ -302,10 +289,6 @@ const FI_FI: ChartStrings = {
     year: { one: "vuosi", other: "vuotta" },
     category: { one: "luokka", other: "luokkaa" },
   },
-  instructionsLive:
-    "Siirry mittausten välillä vasemmalla ja oikealla nuolella ja viimeisimpään End-näppäimellä.",
-  liveValue: "Arvo",
-  liveLatest: (value, at) => `Viimeisin arvo ${value} ${at}.`,
 };
 
 const EN_US: ChartStrings = {
@@ -374,9 +357,6 @@ const EN_US: ChartStrings = {
     year: { one: "year", other: "years" },
     category: { one: "category", other: "categories" },
   },
-  instructionsLive: "Use the left and right arrows to move between readings, and End to go to the latest.",
-  liveValue: "Value",
-  liveLatest: (value, at) => `Latest value ${value} ${at}.`,
 };
 
 /** The chart strings of every supported locale. */

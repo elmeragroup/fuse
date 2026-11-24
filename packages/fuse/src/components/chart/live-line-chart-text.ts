@@ -10,6 +10,7 @@ import type { ValueFormat, XFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import { sentence, unitLabel } from "./format/description-words";
 import type { FormattedText, LabelRole } from "./format/formatted-text";
+import { LIVE_STRINGS } from "./format/live-strings";
 import { POINT_WORDS } from "./format/point-words";
 import { formatInstant } from "./format/time-format";
 import { formatValue } from "./format/value-format";
@@ -78,7 +79,7 @@ export function liveValueText(
  * @returns The name.
  */
 export function liveName(text: Pick<LiveText, "locale" | "label">): string {
-  return text.label ?? CHART_STRINGS[text.locale].liveValue;
+  return text.label ?? LIVE_STRINGS[text.locale].liveValue;
 }
 
 /**
@@ -160,6 +161,6 @@ export function liveDescription(
       named.value(high.value),
       time(high)
     ),
-    strings.liveLatest(named.value(latest), time(newest)),
+    LIVE_STRINGS[text.locale].liveLatest(named.value(latest), time(newest)),
   ].join(" ");
 }
