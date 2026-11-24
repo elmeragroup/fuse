@@ -35,6 +35,21 @@ jobs:
       # because `github.job` is null outside a job's steps.
       TURBO_CACHE_KEY: turbo-checks-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
+      # This step reads the PR's labels live for Changeset presence. The `opened` payload misses a
+      # label that `gh pr create --label` adds, and a rerun replays that payload. A failed lookup
+      # fails the job instead of reading as an absent label. This step holds `GH_TOKEN`, so it runs
+      # first, before any step installs or runs dependency code.
+      - name: Read the PR's labels
+        id: labels
+        if: ${{ github.event_name == 'pull_request' && env.IS_SELF_RELEASE_PR != 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          skip="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '[.labels[].name | ascii_downcase] | any(. == "no-changeset")')"
+          echo "no-changeset label: $skip"
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -96,7 +111,7 @@ jobs:
           key: ${{ env.TURBO_CACHE_KEY }}
 
       - name: Changeset presence
-        if: ${{ github.event_name == 'pull_request' && env.IS_SELF_RELEASE_PR != 'true' && !contains(github.event.pull_request.labels.*.name, 'no-changeset') }}
+        if: ${{ steps.labels.outcome == 'success' && steps.labels.outputs.skip != 'true' }}
         env:
           BASE_REF: ${{ github.base_ref }}
         run: pnpm exec changeset status --since="origin/$BASE_REF"
