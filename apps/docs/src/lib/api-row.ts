@@ -37,6 +37,6 @@ export type ApiPropView = {
   signature: ReactElement;
   /** The default as written, or `null` when there is none — the row then shows an em-dash. */
   defaultValue: string | null;
-  /** JSDoc description, or the recipe-axis stand-in. Markdown-ish: may contain code spans. */
+  /** JSDoc description, or the recipe-axis stand-in. Markdown-ish: may contain code spans and links. */
   description: string;
 };

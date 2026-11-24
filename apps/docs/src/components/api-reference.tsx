@@ -14,6 +14,7 @@ import { componentHref } from "../lib/pages";
 import { ApiPropRows } from "./api-prop-rows";
 import { DocsCodeBlock } from "./docs-code-block";
 import { DocsSectionHeading } from "./docs-section-heading";
+import { InlineMarkdown } from "./inline-markdown";
 
 type ApiReferenceProps = {
   slug: string;
@@ -203,7 +204,9 @@ function FunctionReference({
     <section className={part()} aria-labelledby={partView.anchor}>
       <PartHeader partView={partView} badge={<RscBadge partView={partView} />} />
       <DocsCodeBlock source={reference.signature} />
-      <p className={functionText()}>{reference.description}</p>
+      <p className={functionText()}>
+        <InlineMarkdown text={reference.description} />
+      </p>
       {reference.parameters.length === 0 ? null : (
         <>
           <h4 className={propGroupHeading()}>Parameters</h4>
@@ -216,7 +219,9 @@ function FunctionReference({
                     {parameter.optional ? "?" : ""}: {parameter.type}
                   </code>
                 </dt>
-                <dd>{parameter.description}</dd>
+                <dd>
+                  <InlineMarkdown text={parameter.description} />
+                </dd>
               </div>
             ))}
           </dl>
@@ -225,7 +230,12 @@ function FunctionReference({
       <h4 className={propGroupHeading()}>Returns</h4>
       <p className={functionText()}>
         <code>{reference.returns.type}</code>
-        {reference.returns.description === "" ? null : ` ${reference.returns.description}`}
+        {reference.returns.description === "" ? null : (
+          <>
+            {" "}
+            <InlineMarkdown text={reference.returns.description} />
+          </>
+        )}
       </p>
     </section>
   );
