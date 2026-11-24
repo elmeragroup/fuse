@@ -56,6 +56,20 @@ export const TEXT_GRADE_PAIRS = [
   // `text-sidebar-brand` on the sidebar, and text on a `bg-sidebar-brand` fill.
   ["sidebar-brand", "sidebar"],
   ["sidebar-brand-foreground", "sidebar-brand"],
+  // A pressed Toggle's label on its fill: foreground on muted in neutral themes, the primary pair
+  // in branded ones. The fill has no floor against the page: in neutral light themes, `muted`
+  // measures 1.09:1 against the white page.
+  ["toggle-pressed-foreground", "toggle-pressed"],
+  // A direct label on a chart mark: each on-color role on the slot it was picked for.
+  ["chart-1-foreground", "chart-1"],
+  ["chart-2-foreground", "chart-2"],
+  ["chart-3-foreground", "chart-3"],
+  ["chart-4-foreground", "chart-4"],
+  ["chart-5-foreground", "chart-5"],
+  ["chart-6-foreground", "chart-6"],
+  ["chart-7-foreground", "chart-7"],
+  ["chart-8-foreground", "chart-8"],
+  ["chart-other-foreground", "chart-other"],
 ] as const satisfies readonly (readonly [TokenName, TokenName])[];
 
 /**
@@ -87,24 +101,6 @@ export const ACCORDION_MUTED_PAIRS = [
   ["muted-foreground", "primary-soft"],
 ] as const satisfies readonly (readonly [TokenName, TokenName])[];
 
-/** A pressed Toggle's label on its fill, held at 4.5:1 in every theme and scheme. */
-export const TOGGLE_PRESSED_PAIRS = [
-  ["toggle-pressed-foreground", "toggle-pressed"],
-] as const satisfies readonly (readonly [TokenName, TokenName])[];
-
-/** A direct label on a chart mark: each on-color role on the slot it was picked for, held at 4.5:1. */
-export const CHART_ON_COLOR_PAIRS = [
-  ["chart-1-foreground", "chart-1"],
-  ["chart-2-foreground", "chart-2"],
-  ["chart-3-foreground", "chart-3"],
-  ["chart-4-foreground", "chart-4"],
-  ["chart-5-foreground", "chart-5"],
-  ["chart-6-foreground", "chart-6"],
-  ["chart-7-foreground", "chart-7"],
-  ["chart-8-foreground", "chart-8"],
-  ["chart-other-foreground", "chart-other"],
-] as const satisfies readonly (readonly [TokenName, TokenName])[];
-
 /**
  * Every role text pair outside {@link TEXT_GRADE_PAIRS} that the contrast gate holds at 4.5:1
  * in at least one scheme or identity. Each group above says where its floor applies, so a pair
@@ -114,8 +110,6 @@ export const ROLE_TEXT_PAIRS = [
   ...DARK_PANEL_TEXT_PAIRS,
   ...FEATURE_TEXT_PAIRS,
   ...ACCORDION_MUTED_PAIRS,
-  ...TOGGLE_PRESSED_PAIRS,
-  ...CHART_ON_COLOR_PAIRS,
 ] as const satisfies readonly (readonly [TokenName, TokenName])[];
 
 type TextGradePairId = `${(typeof TEXT_GRADE_PAIRS)[number][0]}/${(typeof TEXT_GRADE_PAIRS)[number][1]}`;

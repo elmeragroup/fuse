@@ -10,12 +10,11 @@ import { composeTheme } from "./compose-theme";
 import {
   ACCORDION_MUTED_PAIRS,
   buildContrastMatrix,
-  CHART_ON_COLOR_PAIRS,
   CONTROL_SURFACES,
   DARK_PANEL_TEXT_PAIRS,
   FEATURE_TEXT_PAIRS,
+  ROLE_TEXT_PAIRS,
   TEXT_GRADE_PAIRS,
-  TOGGLE_PRESSED_PAIRS,
   tokenLiteral,
 } from "./contrast";
 import { LEGAL_THEMES, themeSlug } from "./theme-input";
@@ -120,15 +119,6 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     floor: 4.5,
   },
   {
-    // A pressed Toggle's label on its fill: foreground on muted in neutral themes, the primary
-    // pair in branded ones. The fill itself has no floor against the page: neutral muted is
-    // the quiet 1.09:1 face on white by design.
-    schemes: ["light", "dark"],
-    matches: () => true,
-    pairs: TOGGLE_PRESSED_PAIRS,
-    floor: 4.5,
-  },
-  {
     // A menu row's hover tint over its popup. It is not a text pair, but a tint equal to the
     // popup hides which row is highlighted; 1.1:1 sits under the light default's 1.12:1.
     schemes: ["light", "dark"],
@@ -193,7 +183,6 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
     pairs: roleOnSurfaces(["chart-seq-1", "chart-diverging-3", "chart-diverging-5"]),
     floor: 2,
   },
-  { schemes: ["light", "dark"], matches: () => true, pairs: CHART_ON_COLOR_PAIRS, floor: 4.5 },
   {
     // Code tokens on the surfaces Code's JSDoc names. Code paints no fill, so it reads on its
     // container's. The docs paint code blocks on `card` and the API panel's type signature on
@@ -313,6 +302,29 @@ describe("contrast matrix", () => {
         }
       }
     }
+  });
+
+  it("files each role text pair by where its 4.5:1 floor holds", () => {
+    // The docs palette inspector lists TEXT_GRADE_PAIRS as held in every theme and ROLE_TEXT_PAIRS
+    // as held in some. The oracle is the policy table above: a role text pair belongs in
+    // ROLE_TEXT_PAIRS only when its 4.5:1 floors cover some theme and scheme combinations but not
+    // all of them. One covered everywhere is misfiled, and one covered nowhere has lost its floor.
+    const combinations = (["light", "dark"] as const).flatMap((scheme) =>
+      LEGAL_THEMES.map((theme) => ({ scheme, theme }))
+    );
+    const misfiled = ROLE_TEXT_PAIRS.filter(([foreground, background]) => {
+      const covered = combinations.filter(({ scheme, theme }) =>
+        CONTRAST_POLICIES.some(
+          (policy) =>
+            policy.floor >= 4.5 &&
+            policy.schemes.includes(scheme) &&
+            policy.matches(theme) &&
+            policy.pairs.some(([fg, bg]) => fg === foreground && bg === background)
+        )
+      ).length;
+      return covered === 0 || covered === combinations.length;
+    }).map(([foreground, background]) => `${foreground}/${background}`);
+    expect(misfiled).toEqual([]);
   });
 
   it("holds alert text at 4.5:1 on its 5% status tint over every surface, theme and scheme", () => {
