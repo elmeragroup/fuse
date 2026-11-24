@@ -1,13 +1,17 @@
 import { Activity, Suspense, createElement } from "react";
 import type { ReactElement } from "react";
 
+import interUrl from "@fontsource/inter/files/inter-latin-400-normal.woff2?url";
+import { flushSync } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { nextFrames } from "../../../test/animation-frames";
+import { nextFrames, pollFrames, useFakeFrames, useFakeIntervals } from "../../../test/animation-frames";
+import { holdRequest } from "../../../test/request-hold";
 import {
   InvoiceCard,
   LONG,
@@ -475,6 +479,178 @@ describe("lifecycle", () => {
         expect(seen).toEqual([{ root: 400, content: 400, overflow: "", easing: false }]);
       }
     );
+  });
+});
+
+/**
+ * Unit under test: how a skeleton follows the document's fonts. Oracles: the ghost line's own text,
+ * whose width the browser lays out in the face, which its one bone must match once the face
+ * changes; the page's pending intervals and animation frames; and the timers of a frame's next
+ * document. The line sits in a fixed-size box and does not wrap, so the face changes only the
+ * text's width, which no resize or mutation of the ghost reports.
+ */
+describe("fonts", () => {
+  const LINE_TEXT = "Faktura 4711";
+
+  /** Renders a skeleton of one line in `family`, falling back to monospace. */
+  function line(family: string): ReactElement {
+    return (
+      <SkeletonReveal data={null} sample={LINE_TEXT} label="Henter">
+        {(text) => (
+          <p
+            style={{
+              width: 320,
+              height: 20,
+              margin: 0,
+              whiteSpace: "nowrap",
+              font: `16px/20px "${family}", monospace`,
+            }}>
+            {text}
+          </p>
+        )}
+      </SkeletonReveal>
+    );
+  }
+
+  /** A face of Inter under `family`, at a URL of its own, removed from the document when the test finishes. */
+  function interFace(family: string) {
+    const url = new URL(interUrl, location.href);
+    url.searchParams.set("family", family);
+    const face = new FontFace(family, `url(${url.href})`);
+    onTestFinished(() => {
+      document.fonts.delete(face);
+    });
+    return { face, url: url.href };
+  }
+
+  /** The line's text width and its one bone's, in whole pixels. */
+  function lineWidths() {
+    const text = slot("skeleton-reveal-ghost").querySelector("p");
+    if (text === null) throw new Error("expected the ghost's line");
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    const [bone, ...others] = slot("skeleton-reveal-bones").children;
+    if (bone === undefined || others.length > 0) throw new Error("expected one bone");
+    return {
+      bone: Math.round(bone.getBoundingClientRect().width),
+      text: Math.round(range.getBoundingClientRect().width),
+    };
+  }
+
+  /** Settles at the first ResizeObserver delivery for `element`, when the browser first measures it. */
+  function firstResize(element: Element): Promise<void> {
+    return new Promise((resolve) => {
+      const observer = new ResizeObserver(() => {
+        observer.disconnect();
+        resolve();
+      });
+      observer.observe(element);
+    });
+  }
+
+  /** Settles when the bones have drawn the line's first measure, in whatever face it has then. */
+  async function firstDraw(): Promise<void> {
+    await firstResize(slot("skeleton-reveal-skeleton"));
+    // The pane's observer, created before this one, requested the measure's frame first.
+    await nextFrames(1);
+  }
+
+  it("redraws the bones when a face of the line's family loads while another request keeps the set loading", async () => {
+    useFakeIntervals();
+    await document.fonts.ready;
+    const other = interFace("Fuse Font Watch Other");
+    const title = interFace("Fuse Font Watch Load");
+    await holdRequest(other.url);
+    const releaseTitle = await holdRequest(title.url);
+    const loading = new Promise((resolve) =>
+      document.fonts.addEventListener("loading", resolve, { once: true })
+    );
+    document.fonts.add(other.face);
+    document.fonts.add(title.face);
+    void other.face.load();
+    void title.face.load();
+    renderThemed(line("Fuse Font Watch Load"));
+    await firstDraw();
+    await loading;
+    const fallback = lineWidths();
+    expect(title.face.status).toBe("loading");
+    expect(fallback.bone).toBe(fallback.text);
+
+    await releaseTitle();
+    await title.face.loaded;
+    const loaded = lineWidths().text;
+    expect(loaded).not.toBe(fallback.text);
+    // The other request keeps the set loading, so it fires no event, and the interval never runs.
+    expect(other.face.status).toBe("loading");
+    await pollFrames(() => lineWidths().bone, loaded);
+  });
+
+  it("redraws the bones at the timer's next check when a face that already loaded is added, and stops the timer at unmount", async () => {
+    useFakeIntervals();
+    const added = interFace("Fuse Font Watch Add");
+    await added.face.load();
+    const { unmount } = renderThemed(line("Fuse Font Watch Add"));
+    await firstDraw();
+    const fallback = lineWidths();
+    document.fonts.add(added.face);
+    const loaded = lineWidths().text;
+    expect(loaded).not.toBe(fallback.text);
+    // No event reports the add, so the measures already due keep the fallback width.
+    await nextFrames(3);
+    expect(lineWidths().bone).toBe(fallback.bone);
+
+    vi.advanceTimersToNextTimer();
+    await pollFrames(() => lineWidths().bone, loaded);
+    unmount();
+    expect(vi.getTimerCount(), "intervals pending").toBe(0);
+  });
+
+  it("requests no animation frame while a measured skeleton waits with nothing changing", async () => {
+    // Faked from before the mount, so every frame the skeleton asks for runs only when stepped.
+    useFakeFrames();
+    renderThemed(line("Fuse Font Watch Idle"));
+    await firstResize(slot("skeleton-reveal-skeleton"));
+    await document.fonts.ready;
+    // A stalled request: the skeleton stays up, and only the compositor's pulse moves.
+    for (let frame = 0; frame < 5; frame += 1) vi.advanceTimersToNextFrame();
+    expect(vi.getTimerCount(), "animation frames pending").toBe(0);
+  });
+
+  it("leaves the timers of a frame's next document running when a skeleton the frame showed before unmounts", async () => {
+    const frame = document.createElement("iframe");
+    document.body.append(frame);
+    onTestFinished(() => {
+      frame.remove();
+    });
+    const navigate = async (srcdoc: string): Promise<Window> => {
+      const loaded = new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
+      frame.srcdoc = srcdoc;
+      await loaded;
+      if (frame.contentWindow === null) throw new Error("expected the frame's window");
+      return frame.contentWindow;
+    };
+    const first = await navigate('<!doctype html><body data-page="first"></body>');
+    const setInterval = vi.spyOn(first, "setInterval");
+    // The outgoing document turns hidden as the frame navigates, which would stop the interval
+    // while the frame still shows it. Stopped here, the interval is still pending at the unmount.
+    first.addEventListener("visibilitychange", (event) => event.stopPropagation(), { capture: true });
+    const root = createRoot(first.document.body.appendChild(first.document.createElement("div")));
+    // A synchronous render runs its passive effects before it returns, the pane's watch among them.
+    flushSync(() => {
+      root.render(line("Fuse Font Watch Frame"));
+    });
+    expect(setInterval, "the watch's intervals").toHaveBeenCalledOnce();
+
+    const next = await navigate('<!doctype html><body data-page="next"></body>');
+    // Each document numbers its timers from the start, so the next document's first timeout takes
+    // the interval's id. Timeouts with one delay run in the order they were set, so the second runs
+    // after it, and settles the promise first only when the unmount cleared the first.
+    const { promise: ran, resolve } = Promise.withResolvers<boolean>();
+    const reused = next.setTimeout(() => resolve(true), 0);
+    next.setTimeout(() => resolve(false), 0);
+    expect(setInterval, "the interval whose id the next document reuses").toHaveReturnedWith(reused);
+    root.unmount();
+    expect(await ran).toBe(true);
   });
 });
 
