@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
 
 import { countOf } from "../../intl/count-of";
 import type { SupportedLocale } from "../../intl/locale-context";
-import type { CenterModel, PolarIssue, PolarKernel, PolarModel } from "./chart-polar-context";
+import type { CenterModel, PolarKernel, PolarModel } from "./chart-polar-context";
 import type { ChartReadout, ReadoutItem } from "./chart-readout-port";
 import type { ChartConfig, ChartQuality, ChartRow, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
@@ -26,8 +26,9 @@ import {
   DATA_MESSAGES,
   dataMessage,
   isChartDevelopment,
-  issueGroups,
+  issueRecords,
 } from "./layout/errors";
+import type { IssueRecord } from "./layout/errors";
 import { foldPie, gaugeFill, OTHER_KEY, pieAngles, sliceAt } from "./layout/pie";
 import type { PieRole, SliceAngles } from "./layout/pie";
 import { angleInSweep, pointerAngle } from "./layout/polar-angle";
@@ -112,7 +113,7 @@ export function valueOf(reading: Reading): number | null {
  * throws `negative-polar-value` in development, and production draws it as 0 and keeps its sign in
  * the texts. A category config lacks throws `unknown-category` in development.
  */
-function readRows(input: ItemInput, issues: PolarIssue[]): ItemRow[] {
+function readRows(input: ItemInput, issues: IssueRecord[]): ItemRow[] {
   const { rows, config, nameKey, valueKey, qualityKey, part } = input;
   const { readings, issues: cells } = readSeries(
     {
@@ -130,13 +131,10 @@ function readRows(input: ItemInput, issues: PolarIssue[]): ItemRow[] {
   // the fallback the rule names and warns once per rule and category, naming the first row.
   const named = cells.map((issue) => ({ ...issue, key: categoryAt(issue.slot) }));
   const rowAt = rows.map((_, index) => index);
-  const [first] = named;
-  if (first !== undefined && isChartDevelopment()) {
-    throw new ChartDataError(part, first.rule, dataMessage(first, rowAt));
-  }
-  for (const { rule, subject, first: issue, count } of issueGroups(named)) {
-    issues.push({ rule, subject, message: `${part} ${dataMessage(issue, rowAt, count)}` });
-  }
+  // A loop appends, since a spread passes every record as an argument and overflows the stack
+  // past some 100,000 broken categories.
+  for (const record of issueRecords(part, named, (issue, count) => dataMessage(issue, rowAt, count)))
+    issues.push(record);
   // Two rows for one category break `duplicate-x`: development throws, and production keeps the
   // first in data order and warns once, naming the first row it leaves out.
   const seen = new Set<string>();
@@ -150,13 +148,8 @@ function readRows(input: ItemInput, issues: PolarIssue[]): ItemRow[] {
     seen.add(category);
     return [index];
   });
-  const [duplicate] = duplicates;
-  if (duplicate !== undefined && isChartDevelopment()) {
-    throw new ChartDataError(part, "duplicate-x", dataMessage(duplicate, rowAt));
-  }
-  for (const { rule, subject, first: issue, count } of issueGroups(duplicates)) {
-    issues.push({ rule, subject, message: `${part} ${dataMessage(issue, rowAt, count)}` });
-  }
+  for (const record of issueRecords(part, duplicates, (issue, count) => dataMessage(issue, rowAt, count)))
+    issues.push(record);
   return kept.map((index) => {
     const category = categoryAt(index);
     const reading = readings[index] ?? { kind: "missing" };
@@ -342,7 +335,7 @@ export function pieModel(input: PieInput): PolarModel {
   const { config, locale, valueFormat } = input;
   const strings = CHART_STRINGS[locale];
   const polarStrings = POLAR_STRINGS[locale];
-  const issues: PolarIssue[] = [];
+  const issues: IssueRecord[] = [];
   const rows = readRows(input, issues);
   const roles = rows.map(({ category, known }): PieRole => {
     if (!known) return "unknown";
@@ -545,7 +538,7 @@ export function radialModel(input: RadialInput): PolarModel {
   const { config, locale, valueFormat, sweep } = input;
   const strings = CHART_STRINGS[locale];
   const polarStrings = POLAR_STRINGS[locale];
-  const issues: PolarIssue[] = [];
+  const issues: IssueRecord[] = [];
   const rows = readRows(input, issues);
   // Each row's own maximum follows the row it came from in `data`.
   const given = input.maxima;

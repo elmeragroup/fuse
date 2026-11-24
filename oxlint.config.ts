@@ -701,6 +701,24 @@ export default defineConfig({
       },
     },
     {
+      // A chart warns through its Root's `useIssueWarnings`, which warns once per rule and subject.
+      files: ["packages/fuse/src/components/chart/**/*.{ts,tsx}"],
+      rules: {
+        "no-console": "error",
+      },
+    },
+    {
+      // The warning owner, and Gauge, which warns each time its value turns non-finite. Through the
+      // owner it would warn once per Root, a change in how often it warns.
+      files: [
+        "packages/fuse/src/components/chart/chart-issue-warnings.ts",
+        "packages/fuse/src/components/chart/gauge-chart-root.tsx",
+      ],
+      rules: {
+        "no-console": "off",
+      },
+    },
+    {
       files: ["packages/fuse/src/components/*/index.ts"],
       rules: {
         "fuse/namespace-index-exports": "error",

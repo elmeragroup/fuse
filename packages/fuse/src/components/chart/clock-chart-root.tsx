@@ -6,7 +6,6 @@ import type { ReactElement, ReactNode } from "react";
 import { useLocale } from "../../intl/locale-context";
 import { colorFamilyError, nonFiniteThresholds } from "./chart-paint";
 import { clockModel } from "./chart-polar-clock";
-import type { PolarIssue } from "./chart-polar-context";
 import { PolarRoot } from "./chart-polar-root";
 import { sameConfig, sameShallow, useSteady } from "./chart-steady";
 import type {
@@ -37,8 +36,9 @@ import {
   DATA_MESSAGES,
   dataMessage,
   isChartDevelopment,
-  issueGroups,
+  issueRecords,
 } from "./layout/errors";
+import type { IssueRecord } from "./layout/errors";
 import { sameItems as sameList } from "./layout/same-items";
 import { instantOf } from "./layout/x-domain";
 
@@ -245,7 +245,7 @@ export function ClockChartRoot<
   const windowStart = window?.[0];
   const windowEnd = window?.[1];
   const model = useMemo(() => {
-    const issues: PolarIssue[] = [];
+    const issues: IssueRecord[] = [];
     const series = buildCartesianModel({
       rows: data,
       series: Object.entries(steadyConfig).map(
@@ -271,13 +271,11 @@ export function ClockChartRoot<
       baseline: yBaseline,
       include: include ?? [],
     });
-    const [first] = series.issues;
-    if (first !== undefined && isChartDevelopment()) {
-      throw new ChartDataError("ClockChart.Root", first.rule, dataMessage(first, series.rowAt));
-    }
-    for (const { rule, subject, first: issue, count } of issueGroups(series.issues)) {
-      issues.push({ rule, subject, message: `ClockChart.Root ${dataMessage(issue, series.rowAt, count)}` });
-    }
+    const records = issueRecords("ClockChart.Root", series.issues, (issue, count) =>
+      dataMessage(issue, series.rowAt, count)
+    );
+    // A loop appends, since a spread of many records overflows the stack.
+    for (const record of records) issues.push(record);
     for (const key of nonFiniteThresholds(steadyConfig)) {
       const message = `${DATA_MESSAGES["non-finite-threshold"]} Series ${JSON.stringify(key)}.`;
       if (isChartDevelopment()) throw new ChartDataError("ClockChart.Root", "non-finite-threshold", message);

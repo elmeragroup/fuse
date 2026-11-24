@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useInsertionEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useId, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
 import { useMergedRefs } from "../../hooks/use-merged-refs";
@@ -25,6 +16,7 @@ import { openDrawingSoon, useClientMount } from "./chart-draw-gate";
 import { useEntrance } from "./chart-entrance";
 import { createChartFollowers } from "./chart-followers";
 import type { ActiveSlot, ChartFollowers } from "./chart-followers";
+import { useIssueWarnings } from "./chart-issue-warnings";
 import { createChartLabels } from "./chart-labels";
 import { BROWSER_FRAMES, createChartMotion, createFrameOwner } from "./chart-motion";
 import type { ChartMotion, FrameOwner } from "./chart-motion";
@@ -79,10 +71,9 @@ import {
   DATA_MESSAGES,
   dataMessage,
   isChartDevelopment,
-  issueGroups,
-  issueKey,
+  issueRecords,
 } from "./layout/errors";
-import type { ChartDataRule, ChartHintRule } from "./layout/errors";
+import type { IssueRecord } from "./layout/errors";
 import { sameItems } from "./layout/same-items";
 import { numberOf, stringOf } from "./layout/scalar";
 import { linearSlots, sameSlotScale, windowLinearSlots } from "./layout/slot-scale";
@@ -550,39 +541,29 @@ export function ChartRoot<
     motion,
     bars
   );
-  const firstIssue = model.issues[0];
-  if (firstIssue !== undefined && isChartDevelopment()) {
-    throw new ChartDataError("Chart.Root", firstIssue.rule, dataMessage(firstIssue, model.rowAt));
-  }
   // An app often computes a threshold from its data, such as the average of an empty period, so a
   // non-finite one is a data rule with a fallback, not a composition error.
   const thresholdKeys = useMemo(() => nonFiniteThresholds(modelConfig), [modelConfig]);
-  const [firstThreshold] = thresholdKeys;
-  if (firstThreshold !== undefined && isChartDevelopment()) {
-    throw new ChartDataError("Chart.Root", "non-finite-threshold", thresholdMessage(firstThreshold));
-  }
-  const warned = useRef(new Set<string>());
+  // A broken cell throws before a broken threshold in development, and warns before it in production.
+  const issues = useMemo((): IssueRecord[] => {
+    const records = issueRecords("Chart.Root", model.issues, (issue, count) =>
+      dataMessage(issue, model.rowAt, count)
+    );
+    for (const key of thresholdKeys) {
+      if (isChartDevelopment()) {
+        throw new ChartDataError("Chart.Root", "non-finite-threshold", thresholdMessage(key));
+      }
+      records.push({
+        rule: "non-finite-threshold",
+        subject: key,
+        message: `Chart.Root ${thresholdMessage(key)}`,
+      });
+    }
+    return records;
+  }, [model.issues, model.rowAt, thresholdKeys]);
   // Each rule warns once per subject: a second absent column under the same rule warns too, a
   // thousand broken cells of one column warn once, and a render that repeats a problem stays quiet.
-  const warnOnce = useCallback(
-    (rule: ChartDataRule | ChartHintRule, subject: string, message: string): void => {
-      const key = issueKey(rule, subject);
-      if (warned.current.has(key)) return;
-      warned.current.add(key);
-      console.warn(message);
-    },
-    []
-  );
-  useEffect(() => {
-    for (const { rule, subject, first, count } of issueGroups(model.issues)) {
-      warnOnce(rule, subject, `Chart.Root ${dataMessage(first, model.rowAt, count)}`);
-    }
-  }, [model.issues, model.rowAt, warnOnce]);
-  useEffect(() => {
-    for (const key of thresholdKeys) {
-      warnOnce("non-finite-threshold", key, `Chart.Root ${thresholdMessage(key)}`);
-    }
-  }, [thresholdKeys, warnOnce]);
+  const warnOnce = useIssueWarnings(issues);
 
   const id = useId();
   const [store] = useState(() => {

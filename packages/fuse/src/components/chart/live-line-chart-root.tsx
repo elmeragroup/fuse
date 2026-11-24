@@ -8,6 +8,7 @@ import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { createDrawGate, openDrawingSoon, useClientMount } from "./chart-draw-gate";
+import { useIssueWarnings } from "./chart-issue-warnings";
 import { StatusRegion } from "./chart-listbox";
 import { BROWSER_FRAMES } from "./chart-motion";
 import { ChartOwnScope, useChartDepth } from "./chart-own-scope";
@@ -23,13 +24,7 @@ import type {
   ValueFormat,
 } from "./chart-types";
 import { LIVE_STRINGS } from "./format/live-strings";
-import {
-  ChartCompositionError,
-  ChartDataError,
-  isChartDevelopment,
-  issueGroups,
-  issueKey,
-} from "./layout/errors";
+import { ChartCompositionError, issueRecords } from "./layout/errors";
 import { createLiveClock } from "./layout/live-clock";
 import type { LiveClockHost, LiveFeed, LiveMode } from "./layout/live-clock";
 import { liveMessage, parseLiveLatest, parseLiveSeries } from "./layout/live-window";
@@ -199,20 +194,11 @@ export function LiveLineChartRoot({
   const series = useMemo(() => parseLiveSeries(data), [data]);
   const { points } = series;
   const { latest: tip, issues: valueIssues } = useMemo(() => parseLiveLatest(points, value), [points, value]);
-  const issues = useMemo(() => [...series.issues, ...valueIssues], [series.issues, valueIssues]);
-  const firstIssue = issues[0];
-  if (firstIssue !== undefined && isChartDevelopment()) {
-    throw new ChartDataError("LiveLineChart.Root", firstIssue.rule, liveMessage(firstIssue));
-  }
-  const warned = useRef(new Set<string>());
-  useEffect(() => {
-    for (const { rule, subject, first, count } of issueGroups(issues)) {
-      const key = issueKey(rule, subject);
-      if (warned.current.has(key)) continue;
-      warned.current.add(key);
-      console.warn(`LiveLineChart.Root ${liveMessage(first, count)}`);
-    }
-  }, [issues]);
+  const issues = useMemo(
+    () => issueRecords("LiveLineChart.Root", [...series.issues, ...valueIssues], liveMessage),
+    [series.issues, valueIssues]
+  );
+  useIssueWarnings(issues);
 
   const feed = useMemo((): LiveFeed => ({ points, tip, duration: windowMs }), [points, tip, windowMs]);
   const [clock] = useState(() => createLiveClock(LIVE_FRAMES, feed));

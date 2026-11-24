@@ -21,7 +21,7 @@ import type { TextContext } from "./chart-text";
 import type { ChartIntro, ChartRow, ChartSelectionChangeReason } from "./chart-types";
 import type { LayoutInput } from "./layout/cartesian-model";
 import { assertKnownKey, ChartCompositionError } from "./layout/errors";
-import type { ChartDataRule, ChartHintRule } from "./layout/errors";
+import type { WarnOnce } from "./layout/errors";
 import type { PathMotion } from "./layout/path-motion";
 import type { SlotScale } from "./layout/slot-scale";
 
@@ -133,7 +133,7 @@ export type ChartRootContextValue = TextContext & {
    * Warns once per Root for each rule and subject, such as a column, a stack or a pair of Bars: a
    * data rule's production fallback, or a development hint.
    */
-  readonly warnOnce: (rule: ChartDataRule | ChartHintRule, subject: string, message: string) => void;
+  readonly warnOnce: WarnOnce;
   /** Root's `data`, which the Table's extra columns read. */
   readonly rows: readonly ChartRow[];
   /** Root's `data-intro`, the entrance wipe origin. */

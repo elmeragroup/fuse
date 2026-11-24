@@ -22,7 +22,7 @@ import type { ChartSelectionChangeReason, ChartX, ValueFormat } from "./chart-ty
 import type { FormattedText } from "./format/formatted-text";
 import type { ClockSlots } from "./layout/clock-path";
 import { ChartCompositionError } from "./layout/errors";
-import type { ChartDataRule, ChartHintRule } from "./layout/errors";
+import type { IssueRecord, WarnOnce } from "./layout/errors";
 import type { SliceAngles } from "./layout/pie";
 import type { PolarPoint, Sweep, SweepBox } from "./layout/polar-angle";
 import type { RingBand } from "./layout/rings";
@@ -121,7 +121,7 @@ export type PolarModel = {
   /** Builds the family's readout over the kernel, once per model. */
   readonly readout: (kernel: PolarKernel) => ChartReadout;
   /** The data rules the rows broke, with their production fallback already applied. */
-  readonly issues: readonly PolarIssue[];
+  readonly issues: readonly IssueRecord[];
   /** What the family's marks draw. */
   readonly drawing: PolarDrawing;
 };
@@ -337,13 +337,6 @@ export type PieDrawing = {
   readonly folds: (category: string) => boolean;
 };
 
-/** One data rule a polar Root's rows broke, which production warns once per subject. */
-export type PolarIssue = {
-  readonly rule: ChartDataRule;
-  readonly subject: string;
-  readonly message: string;
-};
-
 /** What the kernel hands a family's readout: the Root's own state and actions. */
 export type PolarKernel = {
   readonly id: string;
@@ -363,7 +356,7 @@ export type PolarKernel = {
   readonly registerToggleGroup: () => () => void;
   readonly hasToggles: () => boolean;
   readonly highlight: (key: string | null) => void;
-  readonly warnOnce: (rule: ChartDataRule | ChartHintRule, subject: string, message: string) => void;
+  readonly warnOnce: WarnOnce;
   /**
    * The pick a pointer makes over the cell, a hook with the same calls for the Root's life. Given
    * the option and series the pointer holds, it keeps them across a pick's edge.
