@@ -115,7 +115,7 @@ describe("PhoneEditor without countryCode, against the base editor", () => {
     let heard: string | null = null;
     const compare = (label: string) => {
       expect(observed(PhoneEditor.view(live)), label).toEqual(observed(BaseEditor.view(base)));
-      expect(PhoneEditor.steeredValue(live), `no steering without countryCode, ${label}`).toBeNull();
+      expect(PhoneEditor.steeredNotice(live), `no steering without countryCode, ${label}`).toBeNull();
     };
     const render = (next: Props, label: string) => {
       props = next;

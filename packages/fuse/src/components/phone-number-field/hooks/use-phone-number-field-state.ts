@@ -91,12 +91,17 @@ export function usePhoneNumberFieldState({
     if (heldValue.current !== undefined && value === heldValue.current) return;
     onChange?.(value);
   };
-  const [deliveredValues] = useState(() => new WeakSet<PhoneEditor.ValueNotice>());
-  const steered = PhoneEditor.steeredValue(state);
+  // A notice reaches `onChange` in the form `steeredNotice` gives for the commit that delivers it.
+  // Only a notice calls it, and a notice exists only where a visible field would have called
+  // `onChange` for the same props, so a format change alone calls nothing on reveal. The effect
+  // marks a notice handled in the first commit that reads it, even when its output is `null`, so a
+  // later commit cannot send it again in another form.
+  const [handledNotices] = useState(() => new WeakSet<PhoneEditor.ValueNotice>());
+  const steered = PhoneEditor.steeredNotice(state);
   useEffect(() => {
-    if (!steered || deliveredValues.has(steered)) return;
-    deliveredValues.add(steered);
-    tell(steered.value);
+    if (!steered || handledNotices.has(steered.notice)) return;
+    handledNotices.add(steered.notice);
+    if (steered.output !== null) tell(steered.output);
   });
 
   // An edit whose display the editor rewrites, as formatOnType does, would leave the caret at

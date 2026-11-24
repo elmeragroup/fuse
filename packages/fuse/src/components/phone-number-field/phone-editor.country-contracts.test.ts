@@ -249,7 +249,7 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
     let controlSeen = initial.countryCode !== undefined;
     const announcer = createCountryAnnouncer(PhoneEditor.observeCountry(state));
     // Steered notices reach `onChange` once per notice, as in the hook.
-    const delivered = new WeakSet<object>();
+    const delivered = new WeakSet<PhoneEditor.ValueNotice>();
     let proposalChanges: string[] = [];
     // Whether the latest user proposal and the parent's answers to it are all that happened
     // since: a props change of the parent's own ends that, and (ix) waits for the next proposal.
@@ -407,10 +407,10 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
         }
       }
       const events: Event[] = [];
-      const steered = PhoneEditor.steeredValue(state);
-      if (steered !== null && !delivered.has(steered)) {
-        delivered.add(steered);
-        tell(steered.value, events);
+      const steered = PhoneEditor.steeredNotice(state);
+      if (steered !== null && !delivered.has(steered.notice)) {
+        delivered.add(steered.notice);
+        if (steered.output !== null) tell(steered.output, events);
       }
       const committed = announcer.commit(PhoneEditor.observeCountry(state));
       if (committed) events.push({ kind: "country", code: committed.code });
@@ -1056,7 +1056,7 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
    * waiting under a controlled `countryCode`, and the props it was stored with. For new props P,
    * `reconcile(state, P)` equals `reconcile(reconcile(state, P'), P)`, where P' is P with the stored
    * `value` and `countryCode`, a change of configuration alone. Both paths agree in what the field
-   * shows, the output `steeredValue` holds and the proposal that still waits. `answerScenario` in
+   * shows, the output `steeredNotice` gives `onChange` and the proposal that still waits. `answerScenario` in
    * `test/phone-country-trace-model.ts` generates the scenario, and `prepareAnswer` plays it up to
    * the answer.
    *
@@ -1066,7 +1066,7 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
   it("gives an answer the same outcome after a no-steer change of its configuration", () => {
     const outcome = (state: PhoneEditor.PhoneEditorState) => ({
       ...shown(state),
-      steered: PhoneEditor.steeredValue(state)?.value ?? null,
+      steered: PhoneEditor.steeredNotice(state)?.output,
       waiting: PhoneEditor.observeCountry(state).proposed?.code ?? null,
     });
     fc.assert(

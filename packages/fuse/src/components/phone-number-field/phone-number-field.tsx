@@ -64,9 +64,16 @@ export type PhoneNumberFieldProps = {
    * such as national digits, hears every proposal. While a country the user picked, pasted or typed
    * waits for the parent and the picker still offers it, a new `countryCode` that accepts it or
    * moves the field to another country makes an uncontrolled field compare with the output from
-   * before that proposal, even if the shown output changed during the wait. It is also called once
-   * as hydration commits, with a number typed or autofilled before the client scripts ran, under
-   * the same rule. A controlled parent accepts or rejects it like any other proposal.
+   * before that proposal, even if the shown output changed during the wait. Inside a hidden
+   * `<Activity>`, a props change that would call it, such as a new `countryCode`, queues the call
+   * until the field shows again. An uncontrolled field then sends the number it submits, and
+   * nothing when that number is the output from before the proposal. A controlled field sends the
+   * number the change proposed. A later change that would call it replaces the queued call, so
+   * `countryCode` moved from `NO` to `SE` to `DK` while hidden, with `outputFormat="e164"` and
+   * `preserveOnCountryChange`, sends only `+4541234567` for `41234567`. A new `value` cancels a
+   * call queued before it. It is also called once as hydration commits, with a number typed or
+   * autofilled before the client scripts ran, under the same rule. A controlled parent accepts or
+   * rejects it like any other proposal.
    */
   onChange?: (value: string) => void;
   /**
@@ -93,7 +100,9 @@ export type PhoneNumberFieldProps = {
    * A pick, or a country detected while typing or pasting, is a proposal. The field shows it once
    * the parent sets `countryCode` to it, and a parent that keeps its code returns the field to it.
    * An uncontrolled number reports a pick's number only once the field shows it, so a rejected pick
-   * reports nothing. Each proposal reaches `onChange` once, whatever order the parent answers in.
+   * reports nothing. Each proposal reaches `onChange` at most once, whatever order the parent
+   * answers in. `onChange` describes when a call is replaced, canceled or skipped, as inside a
+   * hidden `<Activity>`.
    *
    * A proposal the parent has not answered yet keeps waiting through a render with the same props,
    * and through a change to `defaultValue`, `defaultCountryCode` or `preserveOnCountryChange`

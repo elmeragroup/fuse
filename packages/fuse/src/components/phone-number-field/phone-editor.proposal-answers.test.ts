@@ -81,7 +81,7 @@ describe("PhoneEditor proposal answers: an answer's outcome does not depend on a
       expect(PhoneEditor.observeCountry(accepted).proposed).toBeNull();
       // The pick keeps its digits as typed, so the display leaves out the trunk 0 the user never typed.
       expect(shown(accepted)).toEqual({ display: "401234567", output, country: "FI" });
-      expect(PhoneEditor.steeredValue(accepted)).toBeNull();
+      expect(PhoneEditor.steeredNotice(accepted)).toBeNull();
     }
   );
 
@@ -121,7 +121,7 @@ describe("PhoneEditor proposal answers: an answer's outcome does not depend on a
       expect(PhoneEditor.observeCountry(accepted).proposed).toBeNull();
       // The pick keeps its digits as the value had them, so the display leaves out the national trunk 0.
       expect(shown(accepted)).toEqual({ display: "401234567", output: "+358401234567", country: "FI" });
-      expect(PhoneEditor.steeredValue(accepted)).toBeNull();
+      expect(PhoneEditor.steeredNotice(accepted)).toBeNull();
     }
   );
 
@@ -172,7 +172,7 @@ describe("PhoneEditor proposal answers: an answer's outcome does not depend on a
       });
       expect(PhoneEditor.observeCountry(accepted).proposed).toBeNull();
       expect(shown(accepted)).toEqual({ display: "41234567", output: "+4741234567", country: "NO" });
-      expect(PhoneEditor.steeredValue(accepted)).toBeNull();
+      expect(PhoneEditor.steeredNotice(accepted)).toBeNull();
     }
   );
 
@@ -262,7 +262,7 @@ describe("PhoneEditor proposal answers: a carried output is no answer the parent
           // Equal props keep the pick waiting: the held value still answers nothing.
           expect(PhoneEditor.reconcile(answered, answer), order).toBe(answered);
         }
-        expect(PhoneEditor.steeredValue(answered), order).toBeNull();
+        expect(PhoneEditor.steeredNotice(answered), order).toBeNull();
         const accepted = PhoneEditor.reconcile(answered, { ...props, ...echoAnswer });
         expect(PhoneEditor.observeCountry(accepted).proposed, order).toBeNull();
         expect(shown(accepted), order).toEqual({ ...adopted, country: code });
@@ -317,7 +317,7 @@ describe("PhoneEditor proposal answers: a carried output is no answer the parent
     // and written as the parent wrote it, never the paste's own display.
     expect(PhoneEditor.observeCountry(answered).proposed).toBeNull();
     expect(shown(answered)).toEqual({ display: "41234567", output: "41 23 45 67", country: "SJ" });
-    expect(PhoneEditor.steeredValue(answered)).toBeNull();
+    expect(PhoneEditor.steeredNotice(answered)).toBeNull();
   });
 
   it.each<[string, Steps]>([
@@ -442,7 +442,7 @@ describe("PhoneEditor proposal answers: a carried output is no answer the parent
     // for its country.
     expect(PhoneEditor.observeCountry(answered).proposed?.code).toBe("SE");
     expect(shown(answered)).toEqual({ display: "701234567", output: "70 123 45 67", country: "NO" });
-    expect(PhoneEditor.steeredValue(answered)).toBeNull();
+    expect(PhoneEditor.steeredNotice(answered)).toBeNull();
   });
 });
 
@@ -528,7 +528,7 @@ describe("PhoneEditor proposal answers: the notices the editor returns for an un
       });
       expect(PhoneEditor.observeCountry(accepted).proposed).toBeNull();
       expect(shown(accepted).output).toBe(output);
-      expect(PhoneEditor.steeredValue(accepted)?.value ?? null).toBe(steered);
+      expect(PhoneEditor.steeredNotice(accepted)?.output).toBe(steered ?? undefined);
     }
   );
 
@@ -592,7 +592,7 @@ describe("PhoneEditor proposal answers: the notices the editor returns for an un
     expect(PhoneEditor.observeCountry(moved).proposed).toBeNull();
     expect(shown(moved).country).toBe(country);
     expect(shown(moved).output).toBe(output);
-    expect(PhoneEditor.steeredValue(moved)?.value ?? null).toBe(steered);
+    expect(PhoneEditor.steeredNotice(moved)?.output).toBe(steered ?? undefined);
   });
 
   // Releasing `countryCode` answers nothing about the waiting pick, so the notice compares with the
@@ -619,7 +619,7 @@ describe("PhoneEditor proposal answers: the notices the editor returns for an un
     });
     expect(PhoneEditor.observeCountry(released).proposed).toBeNull();
     expect(shown(released)).toEqual({ display: "41234567", output: "41234567", country: "SE" });
-    expect(PhoneEditor.steeredValue(released)?.value ?? null).toBe(steered);
+    expect(PhoneEditor.steeredNotice(released)?.output).toBe(steered ?? undefined);
   });
 
   // #712, case 2. Before #710 the accepted pick showed "+4402012345678" with the output
@@ -637,6 +637,6 @@ describe("PhoneEditor proposal answers: the notices the editor returns for an un
     const accepted = PhoneEditor.reconcile(carried, { ...props, metadata: maxMetadata, countryCode: "SJ" });
     expect(PhoneEditor.observeCountry(accepted).proposed).toBeNull();
     expect(shown(accepted)).toEqual({ display: "+442012345678", output: "+442012345678", country: "SJ" });
-    expect(PhoneEditor.steeredValue(accepted)?.value).toBe("+442012345678");
+    expect(PhoneEditor.steeredNotice(accepted)?.output).toBe("+442012345678");
   });
 });
