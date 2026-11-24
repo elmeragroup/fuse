@@ -29,6 +29,18 @@ export function useFakeTimeouts(): void {
 }
 
 /**
+ * Fakes the page's intervals for the rest of the current test, so an interval runs only when the
+ * test moves the clock, and restores the real ones when the test finishes. Animation frames and
+ * timeouts stay real. Call it in a test or a `beforeEach`.
+ */
+export function useFakeIntervals(): void {
+  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+  onTestFinished(() => {
+    vi.useRealTimers();
+  });
+}
+
+/**
  * Fakes the page's animation frames and its `performance` clock for the rest of the current test,
  * so a rAF loop runs frame by frame only as the test moves the clock, and restores the real ones
  * when the test finishes. Call it in a test or a `beforeEach`.

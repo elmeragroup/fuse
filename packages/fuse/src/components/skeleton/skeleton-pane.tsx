@@ -132,15 +132,15 @@ export function SkeletonPane({
     mutations.observe(ghost, { subtree: true, childList: true, characterData: true, attributes: true });
     mutationsRef.current = mutations;
     skeleton.addEventListener("load", schedule, true);
-    // A font-set event misses a face added once loaded, so the set's own state is watched.
     const unwatchFonts = watchFontSet(skeleton, schedule);
     return () => {
+      // First, since `view.cancelAnimationFrame` throws once the frame navigates cross-origin.
+      unwatchFonts();
       view.cancelAnimationFrame(frame);
       resize.disconnect();
       mutations.disconnect();
       mutationsRef.current = null;
       skeleton.removeEventListener("load", schedule, true);
-      unwatchFonts();
     };
     // Mount only: `measure` reads refs, and the layout effect above covers each commit.
   }, []);
