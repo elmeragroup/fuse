@@ -119,11 +119,14 @@ export type ClockChartRootProps<
      */
     radiusScale?: "radial" | "linear";
     /**
-     * The slot that is active before any pointer or key moves. While the slot is active by default,
-     * `ClockChart.Tooltip` opens only while at least half of the plot's box is in view. Width and
-     * height are checked separately, and on an axis where the plot is larger than the viewport,
-     * half of the viewport's extent is enough. The rule ends when a reader takes over: a pointer
-     * pick, keyboard focus on the plot, even with the same slot still active, or a pin.
+     * The slot that is active before any pointer or key moves. Root reads the x once, at mount. If
+     * the dial has no slot at that x yet, the slot turns active when the dial first has one, unless
+     * a reader has already moved the active slot. A dial with `now` or `period` can have the slot
+     * while its rows are still empty. While the slot is active by default, `ClockChart.Tooltip`
+     * opens only while at least half of the plot's box is in view. Width and height are checked
+     * separately, and on an axis where the plot is larger than the viewport, half of the viewport's
+     * extent is enough. The rule ends when a reader takes over: a pointer pick, keyboard focus on
+     * the plot, even with the same slot still active, or a pin.
      */
     defaultActiveX?: ChartXValue<TRow[TXKey]>;
     /**
@@ -322,16 +325,16 @@ export function ClockChartRoot<
     steadyFormat,
     name,
   ]);
-  const defaultSlot =
-    defaultActiveX === undefined || model.drawing.kind !== "clock"
-      ? -1
-      : // SAFETY: defaultActiveX is a ChartXValue of the instant column, a Date or epoch milliseconds.
-        model.drawing.clock.slotOf(defaultActiveX as ChartInstant);
   return (
     <PolarRoot
       model={model}
       figure={figure}
-      defaultActive={defaultSlot === -1 ? null : defaultSlot}
+      resolveDefault={(current) =>
+        defaultActiveX === undefined || current.drawing.kind !== "clock"
+          ? -1
+          : // SAFETY: defaultActiveX is a ChartXValue of the instant column, a Date or epoch milliseconds.
+            current.drawing.clock.slotOf(defaultActiveX as ChartInstant)
+      }
       selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectedKeyChange={onSelectedKeyChange}

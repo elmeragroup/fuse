@@ -8,9 +8,10 @@
 // pixel floor, one device pixel along the radius, and the stack's floor on its outer segment alone;
 // the 25-hour 26 October 2025, where "06" sits at 100.8°; the seam where the arrows wrap; Now at
 // 11:30, 172.5°; the clock key map, where PageDown moves six hours; and the Tooltip under
-// `defaultActiveX`, shown in its lane at rest and on the first pointer pass, and painted only while
-// at least half of the dial is in view, in the bottom or top lane that `laneRest` documents; and a
-// side lane, which rests clear of a reference line's label past the rim.
+// `defaultActiveX`, shown in its lane at rest and on the first pointer pass, painted only while
+// at least half of the dial is in view, in the bottom or top lane that `laneRest` documents, and
+// applied when rows that hold its hour first arrive after mount; and a side lane, which rests clear
+// of a reference line's label past the rim.
 import type { ReactNode } from "react";
 
 import { flushSync } from "react-dom";
@@ -515,6 +516,37 @@ describe("the tooltip under defaultActiveX", () => {
     await expect.poll(() => getComputedStyle(open).opacity).toBe("1");
     expect(visible(open)).toBe(true);
     expect(laneMiss(shown(host))).toBeNull();
+  });
+
+  it("opens the default hour's popup once rows that hold it arrive after mount, and lands the first Tab on it", async () => {
+    // A loading page mounts the dial with no rows. The day's rows hold 17:00, the 18th hour, so its
+    // hour turns active, its popup opens, and focus enters on its option.
+    const { host, rerender } = renderThemed(
+      <>
+        <button type="button">før</button>
+        <Dial data={[]} defaultActiveX={DAY + 17 * HOUR}>
+          <ClockChart.Column dataKey="kwh" />
+          <ClockChart.Tooltip />
+        </Dial>
+      </>
+    );
+    rerender(
+      <>
+        <button type="button">før</button>
+        <Dial defaultActiveX={DAY + 17 * HOUR}>
+          <ClockChart.Column dataKey="kwh" />
+          <ClockChart.Tooltip />
+        </Dial>
+      </>
+    );
+    await expect.poll(label).toBe("17–18");
+    host.querySelector("button")?.focus();
+    await userEvent.keyboard("{Tab}");
+    expect(document.activeElement?.getAttribute("aria-posinset")).toBe("18");
+    // The option speaks the hour as a range, with no-break spaces, and the hour's reading, 1 kWh in
+    // `VALUES`.
+    expect(document.activeElement?.getAttribute("aria-label")).toBe("kl.\u00a017\u00a0til\u00a018: kWh 1");
+    expect(label()).toBe("17–18");
   });
 });
 

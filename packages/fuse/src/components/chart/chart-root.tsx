@@ -39,8 +39,8 @@ import {
 import { PlotLoader } from "./chart-skeleton";
 import { discardStackFloors, flushStackFloors } from "./chart-stack-floors";
 import { sameConfig, sameShallow, useSteady } from "./chart-steady";
-import { createChartStore } from "./chart-store";
-import type { ChartSnapshot, EmphasisEntry } from "./chart-store";
+import { applyDefault, createChartStore } from "./chart-store";
+import type { ChartSnapshot, EmphasisEntry, PaintedStep } from "./chart-store";
 import { ChartStatus, ChartSurface } from "./chart-surface";
 import { chartDescription } from "./chart-text";
 import type { LinearXText, TextContext } from "./chart-text";
@@ -313,6 +313,20 @@ function activeSlot(snapshot: ChartSnapshot, model: CartesianModel): ActiveSlot 
 }
 
 /**
+ * The slot at `x` inside the model's window, or null while the window holds none. The window rule
+ * applies to the default's first activation alone. A pending default outside the window stays
+ * pending until a window or data update holds it, so the carry-over never moves a hidden default
+ * onto the window's first slot. Once the default is active, a window that narrows past it carries
+ * the active slot as it carries any other.
+ */
+function windowSlot(model: CartesianModel, x: ChartScalar): number | null {
+  const window = model.window;
+  if (x === undefined || window === null) return null;
+  const slot = slotOf(model.domain, x);
+  return slot >= window.first && slot <= window.last ? slot : null;
+}
+
+/**
  * Writes the active state onto Root, where the dim rules read it. Only these attributes change on
  * enter and leave, so a pointer move restyles no mark.
  */
@@ -565,10 +579,11 @@ export function ChartRoot<
   const warnOnce = useIssueWarnings(issues);
 
   const id = useId();
-  const [store] = useState(() => {
-    const slot = defaultActiveX === undefined ? -1 : slotOf(model.domain, defaultActiveX);
-    return createChartStore(slot === -1 ? null : slot);
-  });
+  // Root reads `defaultActiveX` at mount alone, as `defaultValue` works, and finds its slot in each
+  // model after.
+  const [requestedX] = useState(defaultActiveX);
+  const defaultSlot = windowSlot(model, requestedX);
+  const [store] = useState(() => createChartStore(defaultSlot));
   const rootRef = useRef<HTMLElement>(null);
   // Root reads its own figure for the active state and the entrance, and a consumer ref gets it too.
   const figureRef = useMergedRefs(rootRef, ref);
@@ -596,27 +611,32 @@ export function ChartRoot<
   const [owner] = useState(() => createFrameOwner("root"));
   // The active slot, series and source last painted, so a store change that moves none of them
   // paints nothing. A key that takes over the slot a pointer glides to still paints, and lands it.
-  const paintedRef = useRef<readonly [number | null, number | null, ChartSnapshot["source"]]>([
-    null,
-    null,
-    null,
-  ]);
+  const paintedRef = useRef<PaintedStep>([null, null, null]);
+  // The store's count of `active` writes when a new model reaches the DOM. Insertion effects run
+  // before any ref or layout effect of the commit, so a write after this mark, such as a focus from
+  // a ref or a child's layout effect, names a slot of the new model, and the carry-over below
+  // leaves it as it is.
+  const writesAtModel = useRef(0);
+  useInsertionEffect(() => {
+    writesAtModel.current = store.activeWrites();
+  }, [model, store]);
   useLayoutEffect(() => {
     const previous = modelRef.current;
     modelRef.current = model;
     const { active } = store.get();
-    if (previous !== model && active !== null) {
+    if (previous !== model && active !== null && store.activeWrites() === writesAtModel.current) {
       // The active slot keeps its x across new data, or gives way to the window's first slot.
       const window = model.window;
       const kept = window === null ? null : keepSlot(model.domain, window, slotX(previous.domain, active));
       paintedRef.current = [kept, store.get().near, store.get().source];
       store.set({ active: kept });
     }
+    applyDefault(store, paintedRef, defaultSlot, "pending");
     const slot = activeSlot(store.get(), model);
     if (rootRef.current) markActive(rootRef.current, store.get(), slot);
     // Each follower asks its own commit classifier how to reach the carried-over slot.
     followers.paint(slot, "commit");
-  }, [model, store, followers, commit.update, plot, orientation]);
+  }, [model, store, followers, commit.update, plot, orientation, defaultSlot]);
   // Root notes each data update to its loop before any mark's layout effect places for it, as
   // insertion effects all run first, so a slide paced to its feed reads the gap since the `data`
   // before, even one that moved no mark.
@@ -829,6 +849,7 @@ export function ChartRoot<
       stackOffset,
       baseline: yBaseline,
       store,
+      defaultSlot,
       id,
       name,
       select,
@@ -884,6 +905,7 @@ export function ChartRoot<
       stackOffset,
       yBaseline,
       store,
+      defaultSlot,
       id,
       name,
       select,

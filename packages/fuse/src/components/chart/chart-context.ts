@@ -115,6 +115,12 @@ export type ChartRootContextValue = TextContext & {
   readonly stackOffset: "diverging" | "expand";
   readonly baseline: "zero" | "none";
   readonly store: ChartStore;
+  /**
+   * The slot `defaultActiveX` names inside the current window, or null while the window holds
+   * none. The listbox's option follows it in the render for a new model while the default is
+   * pending.
+   */
+  readonly defaultSlot: number | null;
   /** The id prefix every generated id of this Root starts with. */
   readonly id: string;
   /** Root's `aria-label`, or undefined when `aria-labelledby` names the chart. */

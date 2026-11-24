@@ -99,11 +99,13 @@ export type PieChartRootProps<
     otherLabel?: string;
     /**
      * The slice that is active before any pointer or key moves. A folded category activates Other.
-     * While the slice is active by default, `PieChart.Tooltip` opens only while at least half of
-     * the plot's box is in view. Width and height are checked separately, and on an axis where the
-     * plot is larger than the viewport, half of the viewport's extent is enough. The rule ends when
-     * a reader takes over: a pointer pick, keyboard focus on the plot, even with the same slice
-     * still active, or a pin.
+     * Root reads the key once, at mount. If no row holds the category yet, its slice turns active
+     * when a row first does, unless a reader has already moved the active slice. A late default
+     * whose row folds into Other activates Other. While the slice is active by default,
+     * `PieChart.Tooltip` opens only while at least half of the plot's box is in view. Width and
+     * height are checked separately, and on an axis where the plot is larger than the viewport,
+     * half of the viewport's extent is enough. The rule ends when a reader takes over: a pointer
+     * pick, keyboard focus on the plot, even with the same slice still active, or a pin.
      */
     defaultActiveKey?: keyof TConfig & string;
     /**
@@ -205,21 +207,19 @@ export function PieChartRoot<
       otherLabel,
     ]
   );
-  // A default that names a folded category activates Other, the item that stands for its row. One
-  // with no row stands for nothing, so nothing starts active.
-  const own = defaultActiveKey === undefined ? -1 : model.keys.indexOf(defaultActiveKey);
-  const folds =
-    own === -1 &&
-    defaultActiveKey !== undefined &&
-    model.drawing.kind === "pie" &&
-    model.drawing.pie.folds(defaultActiveKey);
-  const folded = folds ? model.keys.indexOf(OTHER_KEY) : -1;
-  const defaultActive = own !== -1 ? own : folded;
   return (
     <PolarRoot
       model={model}
       figure={figure}
-      defaultActive={defaultActive === -1 ? null : defaultActive}
+      // A default that names a folded category activates Other, the item that stands for its row.
+      // One with no row stands for nothing, so nothing turns active.
+      resolveDefault={(current) => {
+        if (defaultActiveKey === undefined) return -1;
+        const own = current.keys.indexOf(defaultActiveKey);
+        const folds =
+          own === -1 && current.drawing.kind === "pie" && current.drawing.pie.folds(defaultActiveKey);
+        return folds ? current.keys.indexOf(OTHER_KEY) : own;
+      }}
       selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectedKeyChange={onSelectedKeyChange}

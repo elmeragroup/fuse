@@ -73,11 +73,13 @@ export type RadarChartRootProps<
      */
     max?: number;
     /**
-     * The spoke that is active before any pointer or key moves. While the spoke is active by
-     * default, `RadarChart.Tooltip` opens only while at least half of the plot's box is in view.
-     * Width and height are checked separately, and on an axis where the plot is larger than the
-     * viewport, half of the viewport's extent is enough. The rule ends when a reader takes over: a
-     * pointer pick, keyboard focus on the plot, even with the same spoke still active, or a pin.
+     * The spoke that is active before any pointer or key moves. Root reads the name once, at mount.
+     * If no row names the spoke yet, it turns active when a row first does, unless a reader has
+     * already moved the active spoke. While the spoke is active by default, `RadarChart.Tooltip`
+     * opens only while at least half of the plot's box is in view. Width and height are checked
+     * separately, and on an axis where the plot is larger than the viewport, half of the viewport's
+     * extent is enough. The rule ends when a reader takes over: a pointer pick, keyboard focus on
+     * the plot, even with the same spoke still active, or a pin.
      */
     defaultActiveName?: TRow[TNameKey];
     /**
@@ -161,12 +163,13 @@ export function RadarChartRoot<
       issues,
     });
   }, [data, steadyConfig, nameKey, max, locale, name]);
-  const defaultActive = defaultActiveName === undefined ? -1 : model.keys.indexOf(String(defaultActiveName));
   return (
     <PolarRoot
       model={model}
       figure={figure}
-      defaultActive={defaultActive === -1 ? null : defaultActive}
+      resolveDefault={(current) =>
+        defaultActiveName === undefined ? -1 : current.keys.indexOf(String(defaultActiveName))
+      }
       selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectedKeyChange={onSelectedKeyChange}

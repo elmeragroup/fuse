@@ -56,6 +56,13 @@ export type ChartSnapshot = {
   /** The active slot, or null when nothing shows. */
   readonly active: number | null;
   readonly source: ActiveSource | null;
+  /**
+   * Whether a default slot may still turn active. It holds while the store started with nothing
+   * active and no write has changed `source` since. A reader's pointer, key or dismissal changes
+   * `source`, and so does Root when it makes the default active. Root's own writes for new data
+   * leave it alone. The store derives it, so no write sets it, and `defaultApplies` reads it.
+   */
+  readonly defaultPending: boolean;
   /** The key nearest the pointer, or the focused key of the series cycle, by config order. */
   readonly near: number | null;
   /** Whether the tooltip and crosshair are pinned. */
@@ -82,12 +89,21 @@ export type ChartSnapshot = {
   readonly input: string | null;
 };
 
+/** A write to the store. The store derives `defaultPending` itself. */
+export type ChartPatch = Partial<Omit<ChartSnapshot, "defaultPending">>;
+
 /** The store of one Root. */
 export type ChartStore = {
   /** The state the store started with, which the server and a hydrating part read. */
   readonly initial: ChartSnapshot;
   readonly get: () => ChartSnapshot;
-  readonly set: (patch: Partial<ChartSnapshot>) => void;
+  readonly set: (patch: ChartPatch) => void;
+  /**
+   * How many writes have named `active`, counted whether or not they changed it. A Root compares
+   * the count across a commit to tell an active slot written for the new model, as a focus from a
+   * ref or a child's layout effect writes it, from one written for the model before.
+   */
+  readonly activeWrites: () => number;
   /**
    * The one dismissal transition: an outside press, a second tap on the pinned slot, Escape and
    * Base UI's own dismissal all close the tooltip, unpin it and hide the crosshair at once.
@@ -113,6 +129,7 @@ const INITIAL: ChartSnapshot = {
   phase: "waiting",
   active: null,
   source: null,
+  defaultPending: true,
   near: null,
   pinned: false,
   dismissed: null,
@@ -130,14 +147,18 @@ const INITIAL: ChartSnapshot = {
  */
 export function createChartStore(defaultActive: number | null = null): ChartStore {
   const initial: ChartSnapshot =
-    defaultActive === null ? INITIAL : { ...INITIAL, active: defaultActive, source: "default" };
+    defaultActive === null
+      ? INITIAL
+      : { ...INITIAL, active: defaultActive, source: "default", defaultPending: false };
   let state = initial;
+  let activeWrites = 0;
   const listeners = new Set<() => void>();
   // SAFETY: `Object.keys` reads a literal object that has exactly the `ChartSnapshot` fields.
   const keys = Object.keys(INITIAL) as (keyof ChartSnapshot)[];
   let last: TrackedPointer | null = null;
   return {
     initial,
+    activeWrites: () => activeWrites,
     drawing: createDrawGate(),
     pointer: () => last,
     track(x, y, type, time) {
@@ -150,9 +171,12 @@ export function createChartStore(defaultActive: number | null = null): ChartStor
       const reopened =
         patch.source === "keyboard" ||
         (patch.active !== undefined && patch.active !== null && patch.active !== state.dismissed);
+      if (patch.active !== undefined) activeWrites += 1;
+      const source = patch.source !== undefined ? patch.source : state.source;
       const next: ChartSnapshot = {
         ...state,
         ...patch,
+        defaultPending: state.defaultPending && source === state.source,
         dismissed: patch.dismissed !== undefined ? patch.dismissed : reopened ? null : state.dismissed,
       };
       if (keys.every((key) => Object.is(next[key], state[key]))) return;
@@ -180,6 +204,55 @@ export function createChartStore(defaultActive: number | null = null): ChartStor
       };
     },
   };
+}
+
+/** The active slot, series and source a Root last painted, which its store subscriber compares. */
+export type PaintedStep = readonly [
+  active: number | null,
+  near: number | null,
+  source: ChartSnapshot["source"],
+];
+
+/**
+ * Whether a Root's default slot should be the active one in a new model that holds it. The default
+ * applies while it is pending, and with `follow`, also while it is active. A cartesian Root keeps
+ * its active slot by x, so it needs no `follow`. A polar Root keeps its active option by index, and
+ * `follow` keeps the default on its item when new data moves the item's index.
+ *
+ * A surface selects this boolean through `useChartStore` and finds the slot in its model after.
+ * Selecting the slot would hide a reader's move from React: while the committed model lacks the
+ * default, the slot reads null before and after the move, so a render held for a new model that
+ * holds it would commit the stale default.
+ *
+ * @param snapshot - The Root's store state.
+ * @param follow - Whether an active default follows its item into each new model.
+ * @returns Whether the default applies.
+ */
+export function defaultApplies(snapshot: ChartSnapshot, follow: "follow" | "pending"): boolean {
+  return snapshot.defaultPending || (follow === "follow" && snapshot.source === "default");
+}
+
+/**
+ * Makes a Root's default slot active while `defaultApplies` holds and the model holds the slot.
+ * Each Root finds the slot in its own model and calls this from its model effect. It records the step as painted before the
+ * write notifies the store's subscribers. Root's subscriber then paints no reader step for it,
+ * which would glide the followers as a pointer does, and Root paints the slot as part of the
+ * commit right after.
+ *
+ * @param store - The Root's store.
+ * @param painted - The Root's last painted step.
+ * @param slot - The default slot in the current model, or null while the model does not hold it.
+ * @param follow - Whether an active default follows its item into each new model.
+ */
+export function applyDefault(
+  store: ChartStore,
+  painted: { current: PaintedStep },
+  slot: number | null,
+  follow: "follow" | "pending"
+): void {
+  if (slot === null || !defaultApplies(store.get(), follow)) return;
+  painted.current = [slot, store.get().near, "default"];
+  store.set({ active: slot, source: "default" });
 }
 
 /**
