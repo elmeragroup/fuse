@@ -48,12 +48,17 @@ type PaneBox = {
 
 /** The attribute on a pane that is leaving. */
 export const EXITING_ATTRIBUTE = "data-exiting";
-/** The bones layer's slot, which a leaving skeleton fades out of. */
-const BONES_SLOT = "skeleton-reveal-bones";
-/** The ghost's slot, the content rendered unseen that the skeleton is measured from. */
-const GHOST_SLOT = "skeleton-reveal-ghost";
-/** One bone's slot. */
-const BONE_SLOT = "skeleton-reveal-bone";
+// SkeletonPane renders the ghost and the bones layer itself and creates every bone, so the motion
+// finds them by these private markers, not by `data-slot`.
+/** The attribute on a skeleton's bones layer, which a leaving skeleton fades out of. */
+export const BONES_ATTRIBUTE = "data-skeleton-bones";
+/**
+ * The attribute on a skeleton's ghost, the wrapper whose layout the bones are measured from and which
+ * the reveal hides at the swap.
+ */
+export const GHOST_ATTRIBUTE = "data-skeleton-ghost";
+/** The attribute on one bone. */
+export const BONE_ATTRIBUTE = "data-skeleton-bone";
 /** The attribute on a bone holding the computed font size of the text it stands for, in pixels. */
 export const BONE_FONT_SIZE_ATTRIBUTE = "data-font-size";
 
@@ -634,16 +639,16 @@ export class RevealMotion {
     durationMs: number,
     timing: SequenceTiming | null
   ): Promise<MotionOutcome> {
-    for (const ghost of skeleton.querySelectorAll<HTMLElement>(`:scope > [data-slot="${GHOST_SLOT}"]`)) {
+    for (const ghost of skeleton.querySelectorAll<HTMLElement>(`:scope > [${GHOST_ATTRIBUTE}]`)) {
       ghost.style.visibility = "hidden";
     }
-    const layers = [...skeleton.querySelectorAll<HTMLElement>(`:scope > [data-slot="${BONES_SLOT}"]`)];
+    const layers = [...skeleton.querySelectorAll<HTMLElement>(`:scope > [${BONES_ATTRIBUTE}]`)];
     if (timing === null) return allCompleted(layers.map((layer) => this.#vanish(layer, 0, durationMs)));
     // Each bone leaves from what its pulse shows at the swap, held there through its delay, so a
     // bone caught dim never brightens before it fades. Every bone is read before any fade starts,
     // so starting one never makes the next read lay the page out again.
     const bones = layers
-      .flatMap((layer) => [...layer.querySelectorAll<HTMLElement>(`[data-slot="${BONE_SLOT}"]`)])
+      .flatMap((layer) => [...layer.querySelectorAll<HTMLElement>(`[${BONE_ATTRIBUTE}]`)])
       .map((bone) => ({
         bone,
         delay: timing.bone(

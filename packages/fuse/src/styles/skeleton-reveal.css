@@ -1,8 +1,7 @@
 /* SkeletonReveal's ghost and first paint, private to `fuse.css`, which imports this file. The
-   ghost's slots and the `data-skeleton` hints it reads are spelled in
-   `components/skeleton/skeleton-pane.tsx`, `skeleton-reveal-motion.ts` and
-   `theme/tokens/skeleton-roles.ts`, and the measuring in `skeleton-measure.ts` skips the same
-   ignored subtrees these rules hide. */
+   ghost's slots are spelled in `components/skeleton/skeleton-pane.tsx` and the `data-skeleton`
+   hints it reads in `theme/tokens/skeleton-roles.ts`, and the measuring in `skeleton-measure.ts`
+   skips the same ignored subtrees these rules hide. */
 
 /* SkeletonReveal's ghost: the real content rendered unseen with sample data, so the skeleton takes
    exactly its space. Containers keep their own surface (a card's fill, border and shadow); text is

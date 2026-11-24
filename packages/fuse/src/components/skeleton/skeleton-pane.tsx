@@ -11,7 +11,13 @@ import { watchFontSet } from "./skeleton-font-watch";
 import { measureGhost } from "./skeleton-measure";
 import type { Bone } from "./skeleton-measure";
 import { PaneExclusion } from "./skeleton-reveal-exclusion";
-import { BONE_FONT_SIZE_ATTRIBUTE, EXITING_ATTRIBUTE } from "./skeleton-reveal-motion";
+import {
+  BONE_ATTRIBUTE,
+  BONE_FONT_SIZE_ATTRIBUTE,
+  BONES_ATTRIBUTE,
+  EXITING_ATTRIBUTE,
+  GHOST_ATTRIBUTE,
+} from "./skeleton-reveal-motion";
 
 /**
  * The bar radius, which is the theme's medium corner capped at half the bar so a thin bar stays a
@@ -34,6 +40,7 @@ function drawBones(layer: HTMLElement, bones: readonly Bone[]): void {
       span = layer.ownerDocument.createElement("span");
       // Written as a `slot:` property with a string literal, which the `writtenSlots` scanner reads.
       Object.assign(span.dataset, { slot: "skeleton-reveal-bone" });
+      span.setAttribute(BONE_ATTRIBUTE, "");
       // Each bone is a Skeleton: the pulse and the `muted` surface, its corner set inline.
       span.className = cn(skeletonClass, "absolute");
       layer.append(span);
@@ -49,6 +56,9 @@ function drawBones(layer: HTMLElement, bones: readonly Bone[]): void {
     span.setAttribute(BONE_FONT_SIZE_ATTRIBUTE, String(bone.fontSize));
   });
 }
+
+const GHOST_MARKER = { [GHOST_ATTRIBUTE]: "" } as const;
+const BONES_MARKER = { [BONES_ATTRIBUTE]: "" } as const;
 
 /** The attribute on a skeleton whose bones are drawn, which turns off the strike-through fallback. */
 const MEASURED_ATTRIBUTE = "data-measured";
@@ -160,10 +170,10 @@ export function SkeletonPane({
       className="pointer-events-none relative select-none [overflow-anchor:none]">
       {/* Layout-transparent, so the content lays out right in the pane as it does in the content
           pane: a percentage height or width resolves against the same boxes in both. */}
-      <div ref={ghostRef} data-slot="skeleton-reveal-ghost" className="contents">
+      <div ref={ghostRef} data-slot="skeleton-reveal-ghost" {...GHOST_MARKER} className="contents">
         <PaneExclusion excluded="ghost">{standIn}</PaneExclusion>
       </div>
-      <div ref={layerRef} data-slot="skeleton-reveal-bones" className="absolute inset-0" />
+      <div ref={layerRef} data-slot="skeleton-reveal-bones" {...BONES_MARKER} className="absolute inset-0" />
     </div>
   );
 }

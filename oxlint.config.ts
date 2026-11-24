@@ -691,10 +691,8 @@ export default defineConfig({
         "packages/fuse/src/components/chart/pie-chart-labels.tsx",
         "packages/fuse/src/components/chart/scatter-chart-surface.tsx",
         "packages/fuse/src/components/chart/sparkline-hover.tsx",
-        "packages/fuse/src/components/data-table-filter/data-table-filter.tsx",
         "packages/fuse/src/components/input-group/input-group.tsx",
         "packages/fuse/src/components/selection-item/selection-item.tsx",
-        "packages/fuse/src/components/skeleton/skeleton-reveal-motion.ts",
         "packages/fuse/src/internal/own-click.ts",
       ],
       rules: {
