@@ -272,6 +272,11 @@ describe("Live code", () => {
 
     // The outline holds while the row's submenu is open, and the edit lands on the site.
     await page.keyboard.press("Enter");
+    // The submenu focuses its checked option, `sm`, a frame after it opens. A test that focuses
+    // `default` before that frame loses focus to `sm`, and Enter commits `sm`.
+    await expect
+      .poll(async () => page.evaluate(() => document.activeElement?.getAttribute("aria-checked")))
+      .toBe("true");
     await page.getByRole("menuitemradio", { name: "default", exact: true }).focus();
     expect(await outline.evaluate((element) => getComputedStyle(element).opacity)).toBe("1");
     await page.keyboard.press("Enter");
