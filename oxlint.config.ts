@@ -438,6 +438,7 @@ export default defineConfig({
         ],
         "fuse/motion-safe-transform": "error",
         "fuse/no-base-ui-preview-menu": "error",
+        "fuse/no-data-slot-selector": "error",
         "fuse/overlay-root-override-last": "error",
         "fuse/owned-class-tokens": [
           "error",
@@ -645,6 +646,7 @@ export default defineConfig({
       // packages/fuse/scripts/entries.ts). The overrides below restate their lists for them too.
       files: ["packages/fuse/src/**/*.{js,jsx}"],
       rules: {
+        "fuse/no-data-slot-selector": "error",
         "fuse/restricted-imports": restrictModules([TEMPORAL_POLYFILL, EFFECT_IN_PUBLISHED]),
       },
     },
@@ -676,6 +678,35 @@ export default defineConfig({
       files: ["packages/fuse/src/components/data-table-filter/searchable-menu.ts"],
       rules: {
         "fuse/no-base-ui-preview-menu": "off",
+      },
+    },
+    {
+      // These modules still find elements through `data-slot` selectors. #1021 moves them to refs,
+      // registration or library-owned markers; drop each path as its module moves.
+      files: [
+        "packages/fuse/src/components/chart/chart-active-value.tsx",
+        "packages/fuse/src/components/chart/chart-attached.ts",
+        "packages/fuse/src/components/chart/chart-bar-paths.tsx",
+        "packages/fuse/src/components/chart/chart-bar-series.tsx",
+        "packages/fuse/src/components/chart/chart-dots.tsx",
+        "packages/fuse/src/components/chart/chart-polar-anchor.ts",
+        "packages/fuse/src/components/chart/chart-polar-surface.tsx",
+        "packages/fuse/src/components/chart/chart-reference.tsx",
+        "packages/fuse/src/components/chart/chart-root.tsx",
+        "packages/fuse/src/components/chart/chart-slot-label.tsx",
+        "packages/fuse/src/components/chart/chart-surface.tsx",
+        "packages/fuse/src/components/chart/chart-tooltip-roof.ts",
+        "packages/fuse/src/components/chart/pie-chart-labels.tsx",
+        "packages/fuse/src/components/chart/scatter-chart-surface.tsx",
+        "packages/fuse/src/components/chart/sparkline-hover.tsx",
+        "packages/fuse/src/components/data-table-filter/data-table-filter.tsx",
+        "packages/fuse/src/components/input-group/input-group.tsx",
+        "packages/fuse/src/components/selection-item/selection-item.tsx",
+        "packages/fuse/src/components/skeleton/skeleton-reveal-motion.ts",
+        "packages/fuse/src/internal/own-click.ts",
+      ],
+      rules: {
+        "fuse/no-data-slot-selector": "off",
       },
     },
     {

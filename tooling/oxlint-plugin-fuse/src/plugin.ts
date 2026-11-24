@@ -9,6 +9,7 @@ import { motionSafeTransform } from "./rules/motion-safe-transform.ts";
 import { namespaceIndexExports } from "./rules/namespace-index-exports.ts";
 import { noBaseUiPreviewMenu } from "./rules/no-base-ui-preview-menu.ts";
 import { noColorLiteral } from "./rules/no-color-literal.ts";
+import { noDataSlotSelector } from "./rules/no-data-slot-selector.ts";
 import { noDisplayNameAssignment } from "./rules/no-display-name-assignment.ts";
 import { noHookCalls } from "./rules/no-hook-calls.ts";
 import { noRingShadowRead } from "./rules/no-ring-shadow-read.ts";
@@ -40,6 +41,7 @@ const plugin: Plugin = {
     "namespace-index-exports": namespaceIndexExports,
     "no-base-ui-preview-menu": noBaseUiPreviewMenu,
     "no-color-literal": noColorLiteral,
+    "no-data-slot-selector": noDataSlotSelector,
     "no-display-name-assignment": noDisplayNameAssignment,
     "no-hook-calls": noHookCalls,
     "no-ring-shadow-read": noRingShadowRead,
