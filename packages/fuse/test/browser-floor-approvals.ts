@@ -38,8 +38,11 @@ export const BROWSER_FLOOR_EQUIVALENCES: readonly FloorEquivalence[] = [
 
 const PREFIXED =
   "The prefixed declaration before it carries the feature in the engines below its unprefixed release.";
-const PRINT =
-  "Print only: Chrome before 136 reads only -webkit-print-color-adjust, so it may print the mark in economy colors until #634 adds the prefix.";
+const WEBKIT_PRINT_EXACT: FloorFallback = {
+  kind: "declaration",
+  property: "-webkit-print-color-adjust",
+  value: "exact",
+};
 const FORCED_COLORS = "Forced colors only: Safari has no forced-colors mode to opt out of.";
 const TEXT_WRAP = "Below the floor the text wraps greedily, as text-wrap: wrap does.";
 const OVERSCROLL =
@@ -48,9 +51,10 @@ const SUBGRID =
   "Degrades below Chrome 117: the row lays its cells out on its own implicit columns instead of its parent's, until #635 lands a fallback.";
 const SVG_MASK =
   "The value is url(#…) to an SVG <mask> on an SVG element, which engines at the floor apply; MDN's partial rows cover CSS masks on HTML.";
-const MASK_RESET = "Resets a mask an earlier rule sets; where mask does nothing there is none to reset.";
-const CROSSHAIR_FADE =
-  "Below Chrome 120 the crosshair draws without its faded ends, until #634 adds a -webkit-mask-image fallback.";
+const WEBKIT_MASK_COMPOSITE =
+  "Chrome and Safari's legacy operator, source-in for intersect, which composites the -webkit-mask layers below Chrome 120; Firefox drops it and reads the mask-composite after it.";
+const MASK_COMPOSITE =
+  "Chrome 111 to 119 use the -webkit-mask-composite: source-in before it to intersect the two -webkit-mask layers.";
 const LIGHT_DARK_DECORATION =
   "Below the floor each of the rule's light-dark() declarations drops, and the underline keeps its initial currentColor.";
 const ENTRY = "Below the floor the element appears without its entry transition.";
@@ -478,8 +482,8 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "print-color-adjust",
     value: "exact",
     features: ["css.properties.print-color-adjust", "css.properties.print-color-adjust.exact"],
-    fallback: { kind: "none" },
-    reason: PRINT,
+    fallback: WEBKIT_PRINT_EXACT,
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -507,8 +511,8 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "print-color-adjust",
     value: "exact",
     features: ["css.properties.print-color-adjust", "css.properties.print-color-adjust.exact"],
-    fallback: { kind: "none" },
-    reason: PRINT,
+    fallback: WEBKIT_PRINT_EXACT,
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -526,8 +530,8 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "mask",
     value: "none",
     features: ["css.properties.mask"],
-    fallback: { kind: "none" },
-    reason: MASK_RESET,
+    fallback: { kind: "declaration", property: "-webkit-mask", value: "none" },
+    reason: "The -webkit-mask: none before it resets the prefixed mask, as mask: none resets this one.",
   },
   {
     sheet: "chart.css",
@@ -544,8 +548,8 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "print-color-adjust",
     value: "exact",
     features: ["css.properties.print-color-adjust", "css.properties.print-color-adjust.exact"],
-    fallback: { kind: "none" },
-    reason: PRINT,
+    fallback: WEBKIT_PRINT_EXACT,
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -563,8 +567,8 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "print-color-adjust",
     value: "exact",
     features: ["css.properties.print-color-adjust", "css.properties.print-color-adjust.exact"],
-    fallback: { kind: "none" },
-    reason: PRINT,
+    fallback: WEBKIT_PRINT_EXACT,
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -588,11 +592,15 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
       '[data-slot="chart-skeleton"]:is([data-variant="pie"],[data-variant="radial"],[data-variant="radar"],[data-variant="clock"]) [data-slot="chart-skeleton-mark"]',
     property: "mask",
     value:
-      "radial-gradient(circle,transparent calc(var(--chart-skeleton-hole,0)*50%),#000 calc(var(--chart-skeleton-hole,0)*50% + 0.5px))",
+      "radial-gradient(circle,transparent calc(var(--chart-skeleton-hole,0)*50%),#000 calc(var(--chart-skeleton-hole,0)*50% + .5px))",
     features: ["css.properties.mask"],
-    fallback: { kind: "none" },
-    reason:
-      "Below Chrome 120 the pie, radial and clock skeletons draw a full disc without their hole, until #634 adds a -webkit-mask fallback.",
+    fallback: {
+      kind: "declaration",
+      property: "-webkit-mask",
+      value:
+        "radial-gradient(circle,transparent calc(var(--chart-skeleton-hole,0)*50%),#000 calc(var(--chart-skeleton-hole,0)*50% + .5px))",
+    },
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -625,22 +633,23 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "-webkit-mask-composite",
     value: "source-in",
     features: ["css.properties.-webkit-mask-composite"],
+    // The source declares it, and Lightning CSS writes a second one from mask-composite: intersect.
+    count: 2,
     fallback: { kind: "none" },
-    reason:
-      "Chrome and Safari's legacy operator, source-in for intersect, which composites the -webkit-mask layers below Chrome 120; Firefox drops it and reads the mask-composite after it.",
+    reason: WEBKIT_MASK_COMPOSITE,
   },
   {
     sheet: "chart.css",
     where: '[data-slot="gauge-chart-sector"]',
     property: "mask",
     value:
-      "conic-gradient(from var(--_sector-from) at var(--_at),#000 0 var(--_sector-span),transparent 0),radial-gradient(var(--_reach-x) var(--_reach-y) at var(--_at),transparent calc(var(--_hole)*100% - 0.5px),#000 calc(var(--_hole)*100%) calc(100% - 0.5px),transparent 100%)",
+      "conic-gradient(from var(--_sector-from) at var(--_at),#000 0 var(--_sector-span),transparent 0),radial-gradient(var(--_reach-x) var(--_reach-y) at var(--_at),transparent calc(var(--_hole)*100% - .5px),#000 calc(var(--_hole)*100%) calc(100% - .5px),transparent 100%)",
     features: ["css.properties.mask"],
     fallback: {
       kind: "declaration",
       property: "-webkit-mask",
       value:
-        "conic-gradient(from var(--_sector-from) at var(--_at),#000 0 var(--_sector-span),transparent 0),radial-gradient(var(--_reach-x) var(--_reach-y) at var(--_at),transparent calc(var(--_hole)*100% - 0.5px),#000 calc(var(--_hole)*100%) calc(100% - 0.5px),transparent 100%)",
+        "conic-gradient(from var(--_sector-from) at var(--_at),#000 0 var(--_sector-span),transparent 0),radial-gradient(var(--_reach-x) var(--_reach-y) at var(--_at),transparent calc(var(--_hole)*100% - .5px),#000 calc(var(--_hole)*100%) calc(100% - .5px),transparent 100%)",
     },
     reason: PREFIXED,
   },
@@ -651,19 +660,31 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     value: "intersect",
     features: ["css.properties.mask-composite", "css.properties.mask-composite.intersect"],
     fallback: { kind: "none" },
-    reason:
-      "Below Chrome 120 the -webkit-mask-composite: source-in before it intersects the prefixed masks, the same operation.",
+    reason: MASK_COMPOSITE,
   },
   {
     sheet: "chart.css",
     where: '[data-slot="chart-skeleton"][data-variant="gauge"] [data-slot="chart-skeleton-mark"]',
     property: "mask",
     value:
-      "radial-gradient(closest-side circle,transparent calc(var(--chart-skeleton-hole)*100%),#000 calc(var(--chart-skeleton-hole)*100% + 0.5px) calc(100% - 0.5px),transparent 100%),conic-gradient(from var(--_from),#000 0 var(--_sweep),transparent 0)",
+      "radial-gradient(closest-side circle,transparent calc(var(--chart-skeleton-hole)*100%),#000 calc(var(--chart-skeleton-hole)*100% + .5px) calc(100% - .5px),transparent 100%),conic-gradient(from var(--_from),#000 0 var(--_sweep),transparent 0)",
     features: ["css.properties.mask"],
+    fallback: {
+      kind: "declaration",
+      property: "-webkit-mask",
+      value:
+        "radial-gradient(closest-side circle,transparent calc(var(--chart-skeleton-hole)*100%),#000 calc(var(--chart-skeleton-hole)*100% + .5px) calc(100% - .5px),transparent 100%),conic-gradient(from var(--_from),#000 0 var(--_sweep),transparent 0)",
+    },
+    reason: PREFIXED,
+  },
+  {
+    sheet: "chart.css",
+    where: '[data-slot="chart-skeleton"][data-variant="gauge"] [data-slot="chart-skeleton-mark"]',
+    property: "-webkit-mask-composite",
+    value: "source-in",
+    features: ["css.properties.-webkit-mask-composite"],
     fallback: { kind: "none" },
-    reason:
-      "Below Chrome 120 the gauge skeleton draws the dial's whole disc, cut to the sweep's box, instead of the track's band, until #634 adds a -webkit-mask fallback.",
+    reason: WEBKIT_MASK_COMPOSITE,
   },
   {
     sheet: "chart.css",
@@ -672,7 +693,7 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     value: "intersect",
     features: ["css.properties.mask-composite", "css.properties.mask-composite.intersect"],
     fallback: { kind: "none" },
-    reason: "Composites the mask before it, which does nothing below Chrome 120 either, until #634.",
+    reason: MASK_COMPOSITE,
   },
   {
     sheet: "chart.css",
@@ -680,8 +701,9 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "mask",
     value: "none",
     features: ["css.properties.mask"],
-    fallback: { kind: "none" },
-    reason: MASK_RESET,
+    fallback: { kind: "declaration", property: "-webkit-mask", value: "none" },
+    reason:
+      "Chrome 111 to 119 read the -webkit-mask: none before it, which clears the hole the round skeletons' -webkit-mask cuts, so the radar skeleton fills its hexagon.",
   },
   {
     sheet: "chart.css",
@@ -689,8 +711,12 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "mask-image",
     value: "linear-gradient(var(--_fade-to),transparent,#000 10%,#000 90%,transparent)",
     features: ["css.properties.mask-image"],
-    fallback: { kind: "none" },
-    reason: CROSSHAIR_FADE,
+    fallback: {
+      kind: "declaration",
+      property: "-webkit-mask-image",
+      value: "linear-gradient(var(--_fade-to),transparent,#000 10%,#000 90%,transparent)",
+    },
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -698,8 +724,12 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "mask-image",
     value: "linear-gradient(var(--_fade-to),transparent,#000 10%)",
     features: ["css.properties.mask-image"],
-    fallback: { kind: "none" },
-    reason: CROSSHAIR_FADE,
+    fallback: {
+      kind: "declaration",
+      property: "-webkit-mask-image",
+      value: "linear-gradient(var(--_fade-to),transparent,#000 10%)",
+    },
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -707,8 +737,12 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "mask-image",
     value: "linear-gradient(var(--_fade-to),#000 90%,transparent)",
     features: ["css.properties.mask-image"],
-    fallback: { kind: "none" },
-    reason: CROSSHAIR_FADE,
+    fallback: {
+      kind: "declaration",
+      property: "-webkit-mask-image",
+      value: "linear-gradient(var(--_fade-to),#000 90%,transparent)",
+    },
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -734,8 +768,8 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "print-color-adjust",
     value: "exact",
     features: ["css.properties.print-color-adjust", "css.properties.print-color-adjust.exact"],
-    fallback: { kind: "none" },
-    reason: PRINT,
+    fallback: WEBKIT_PRINT_EXACT,
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -753,8 +787,8 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "print-color-adjust",
     value: "exact",
     features: ["css.properties.print-color-adjust", "css.properties.print-color-adjust.exact"],
-    fallback: { kind: "none" },
-    reason: PRINT,
+    fallback: WEBKIT_PRINT_EXACT,
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -762,8 +796,8 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "print-color-adjust",
     value: "exact",
     features: ["css.properties.print-color-adjust", "css.properties.print-color-adjust.exact"],
-    fallback: { kind: "none" },
-    reason: PRINT,
+    fallback: WEBKIT_PRINT_EXACT,
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -773,9 +807,13 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     value:
       "linear-gradient(var(--_root-reveal-to),#000 var(--chart-active-x,100%),rgb(0 0 0/var(--chart-hover-dim)) var(--chart-active-x,100%))",
     features: ["css.properties.mask-image"],
-    fallback: { kind: "none" },
-    reason:
-      "Below Chrome 120 the series past the active point keep full strength instead of dimming, until #634 adds a -webkit-mask-image fallback.",
+    fallback: {
+      kind: "declaration",
+      property: "-webkit-mask-image",
+      value:
+        "linear-gradient(var(--_root-reveal-to),#000 var(--chart-active-x,100%),rgb(0 0 0/var(--chart-hover-dim)) var(--chart-active-x,100%))",
+    },
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -783,8 +821,8 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "print-color-adjust",
     value: "exact",
     features: ["css.properties.print-color-adjust", "css.properties.print-color-adjust.exact"],
-    fallback: { kind: "none" },
-    reason: PRINT,
+    fallback: WEBKIT_PRINT_EXACT,
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -881,12 +919,12 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     sheet: "chart.css",
     where: ':is([data-slot="live-line-chart-line"],[data-slot="live-line-chart-area"])',
     property: "mask-image",
-    value: "linear-gradient(to right,transparent,black 2rem)",
+    value: "linear-gradient(to right,#0000,#000 2rem)",
     features: ["css.properties.mask-image"],
     fallback: {
       kind: "declaration",
       property: "-webkit-mask-image",
-      value: "linear-gradient(to right,transparent,black 2rem)",
+      value: "linear-gradient(to right,#0000,#000 2rem)",
     },
     reason: PREFIXED,
   },
@@ -896,8 +934,8 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "print-color-adjust",
     value: "exact",
     features: ["css.properties.print-color-adjust", "css.properties.print-color-adjust.exact"],
-    fallback: { kind: "none" },
-    reason: PRINT,
+    fallback: WEBKIT_PRINT_EXACT,
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -905,8 +943,8 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "print-color-adjust",
     value: "exact",
     features: ["css.properties.print-color-adjust", "css.properties.print-color-adjust.exact"],
-    fallback: { kind: "none" },
-    reason: PRINT,
+    fallback: WEBKIT_PRINT_EXACT,
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
@@ -914,8 +952,8 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "print-color-adjust",
     value: "exact",
     features: ["css.properties.print-color-adjust", "css.properties.print-color-adjust.exact"],
-    fallback: { kind: "none" },
-    reason: PRINT,
+    fallback: WEBKIT_PRINT_EXACT,
+    reason: PREFIXED,
   },
   {
     sheet: "chart.css",
