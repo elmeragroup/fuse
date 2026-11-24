@@ -9,7 +9,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { S06Chart } from "../../../test/chart/bar-charts";
-import { bars as drawnBars, label, pointerAt, popup, surfaceBox } from "../../../test/chart/marks";
+import { bars as drawnBars, label, pointerAt, popup, surfaceBox, visible } from "../../../test/chart/marks";
 import { renderIn, restoreDocumentThemeAroundEach, srgb, surfaceAt } from "../../../test/surface-paint";
 import { fkasBranded } from "../../../test/theme-fixtures";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
@@ -29,14 +29,6 @@ async function settle(): Promise<void> {
   // The popup portals to the theme scope container, outside the render host.
   const open = document.querySelector('[data-slot="chart-tooltip"]');
   await Promise.all(open?.getAnimations({ subtree: true }).map((animation) => animation.finished) ?? []);
-}
-
-/**
- * Whether a popup shows on screen: rendered, not hidden and not faded out. A closed popup stays
- * mounted once it has opened, so closing must take it out of view, not out of the document.
- */
-function visible(element: HTMLElement): boolean {
-  return element.checkVisibility({ opacityProperty: true, visibilityProperty: true });
 }
 
 /** The open popup, which the test keeps to follow through its close and its reopening. */
@@ -326,19 +318,17 @@ describe("a shut tooltip lets go of its point", () => {
     if (open === null) throw new Error("no popup");
     expectOpen(open);
     const shown = fingerprint(open);
-    const visible = () =>
-      open.isConnected && open.checkVisibility({ opacityProperty: true, visibilityProperty: true });
     const recorded = recordFrames(
       () => ({
         print: fingerprint(open),
-        shown: visible(),
-        closing: visible() && !open.hasAttribute("data-open"),
+        shown: visible(open),
+        closing: visible(open) && !open.hasAttribute("data-open"),
       }),
-      () => !visible()
+      () => !visible(open)
     );
     await userEvent.keyboard("{Escape}");
     const frames = await recorded;
-    expect(visible()).toBe(false);
+    expect(visible(open)).toBe(false);
     expect(frames.some(({ closing }) => closing)).toBe(true);
     return {
       shown,

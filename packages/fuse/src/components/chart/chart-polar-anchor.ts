@@ -413,9 +413,25 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   // the popup changes size.
   useLayoutEffect(() => {
     if (!open) return undefined;
+    // A default active item opens the tooltip before React attaches the figure ref, so the figure is
+    // the dial's figure ancestor. While a chart's container is detached, the document lookup finds no
+    // dial, and a later measure finds the figure once the container is attached.
+    let figure: HTMLElement | null = null;
+    // The observer reports each target once as it starts; the figure's later reports are resizes.
+    let figureSized = false;
+    const sizes = new ResizeObserver((entries) => {
+      if (entries.some((entry) => entry.target === figure)) {
+        if (figureSized) keyPlacement.current = null;
+        figureSized = true;
+      }
+      measure();
+    });
     const measure = (): void => {
+      if (figure === null) {
+        figure = surfaceOf()?.closest("figure") ?? null;
+        if (figure !== null) sizes.observe(figure);
+      }
       const dial = dialOf();
-      const figure = kernel.root();
       const node = positioner.current;
       if (dial === null || figure === null) return;
       const { x, y } = dial.center;
@@ -462,19 +478,8 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
         content,
       });
     };
-    measure();
-    const figure = kernel.root();
-    // The observer reports each target once as it starts; the figure's later reports are resizes.
-    let figureSized = false;
-    const sizes = new ResizeObserver((entries) => {
-      if (entries.some((entry) => entry.target === figure)) {
-        if (figureSized) keyPlacement.current = null;
-        figureSized = true;
-      }
-      measure();
-    });
-    if (figure !== null) sizes.observe(figure);
     if (positioner.current !== null) sizes.observe(positioner.current);
+    measure();
     // A scroll of any ancestor and a resize of the viewport move the chart against the viewport
     // without resizing it, so they measure again too, once per frame however many arrive. One
     // captured listener on the document hears every scroll container's scroll, and a scroll of an
@@ -502,7 +507,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       window.visualViewport?.removeEventListener("scroll", soon);
       if (pending !== null) cancelAnimationFrame(pending);
     };
-  }, [open, measures, dialOf, kernel, positioner, readout, model, labelledBy]);
+  }, [open, measures, dialOf, surfaceOf, positioner, readout, model, labelledBy]);
   // The lane the popup is in, kept across steps until the ray turns 20° into the other half.
   // A radial chart's ray is a ring's value end, which jumps between unrelated angles as the pointer
   // crosses rings, so its popup keeps the lane it opened in until it closes. A pie's or a radial
