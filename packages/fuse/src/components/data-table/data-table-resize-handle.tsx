@@ -7,6 +7,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 
 import { useLocalizedStrings } from "../../hooks/use-localized-strings";
 import { definedProps } from "../../internal/defined-props";
+import { isComposing } from "../../internal/is-composing";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
 import { formatNumberCell } from "./data-table-format";
@@ -30,10 +31,11 @@ const KEYBOARD_STEP = 10;
 const DEFAULT_MAX_SIZE = Number.MAX_SAFE_INTEGER;
 
 /**
- * The narrowest width the handle takes a column to. The handle is at least 24px wide and stands
- * 2px inside the header cell's end, so a narrower column would push it past the cell's start, into
- * the neighbor's handle or out of the table. 32px holds that footprint up to a 20px host root,
- * where the handle is 1.5rem, 30px, wide. TanStack's default `minSize` of 20 is below it.
+ * The handle's floor for a column's lower bound. The handle is at least 24px wide and stands 2px
+ * inside the header cell's end, so a narrower column would push it past the cell's start, into the
+ * neighbor's handle or out of the table. 32px holds that footprint up to a 20px host root, where the
+ * handle is 1.5rem, 30px, wide. TanStack's default `minSize` of 20 is below it. A column already
+ * narrower than 32px takes its current width as its lower bound instead; see `boundsOf`.
  */
 const HANDLE_MIN_SIZE = 32;
 
@@ -96,12 +98,20 @@ function clearPreview(session: DragSession): void {
 }
 
 /**
- * The width a key moves the column to, or `undefined` for a key the handle does not handle. End
- * moves only to a maximum the column sets, since TanStack's default is out of reach. Without one it
- * keeps the width, and the key stays with the handle instead of scrolling the page.
+ * The width a key moves the column to, `"reset"` for Enter, or `undefined` for a key the handle does
+ * not handle. Enter resets the column to its default width, as a double-click does. End moves only
+ * to a maximum the column sets, since TanStack's default is out of reach. Without one it keeps the
+ * width, and the key stays with the handle instead of scrolling the page.
  */
-function keyTarget(key: string, size: number, bounds: Bounds, direction: 1 | -1): number | undefined {
+function keyTarget(
+  key: string,
+  size: number,
+  bounds: Bounds,
+  direction: 1 | -1
+): number | "reset" | undefined {
   switch (key) {
+    case "Enter":
+      return "reset";
     case "ArrowRight":
       return clampSize(size + KEYBOARD_STEP * direction, bounds);
     case "ArrowLeft":
@@ -275,16 +285,30 @@ function ResizeHandleControl({
         endDrag(event, "cancel");
       }}
       onKeyDown={(event) => {
-        // A chord with Alt, Control or Meta is a browser or system shortcut, such as Alt+Arrow Left for Back.
-        if (event.altKey || event.ctrlKey || event.metaKey) {
+        // A chord with Alt, Control or Meta is a browser or system shortcut, such as Alt+Arrow Left for
+        // Back. An input method that is composing owns its keys, Enter included.
+        if (event.altKey || event.ctrlKey || event.metaKey || isComposing(event)) {
           return;
         }
         const next = keyTarget(event.key, size, bounds, directionOf(event.currentTarget));
         if (next === undefined) {
           return;
         }
+        // Without a chord or a composition, a key that `keyTarget` handles stops here, so an
+        // enclosing React `onKeyDown` handler, such as a form's Enter-to-submit or a header's sort
+        // key, does not also act on it. A native listener on an element between the handle and the
+        // React root has already run.
         event.preventDefault();
-        commit(next, size);
+        event.stopPropagation();
+        // A drag's release commits its preview, which would overwrite a width the key commits.
+        if (drag.current !== undefined) {
+          return;
+        }
+        if (next === "reset") {
+          column.resetSize();
+        } else {
+          commit(next, size);
+        }
       }}
       {...mergeProps<"div">(
         {
@@ -303,11 +327,17 @@ function ResizeHandleControl({
 /**
  * A column header's resize handle, a focusable vertical `separator` at the header cell's
  * inline-end edge. Dragging it previews the width on the page and commits it to `columnSizing` once,
- * on release, so no row renders during the drag. The arrow keys change the width by 10px, and
- * Home and End move it to the column's `minSize` and `maxSize`. The handle does not narrow a column
- * below 32px, which its own 24px target needs. A double-click resets the column to
- * its default width. Its clicks do not reach the header around it. A column that cannot resize
- * renders nothing.
+ * on release, so no row renders during the drag. A drag, Left Arrow and Right Arrow keep the width
+ * within the column's bounds. The lower bound is the larger of `minSize` and 32px, which the handle's
+ * own 24px target needs, or the current width when the column is narrower. Each Left Arrow or Right
+ * Arrow press adds or takes 10px, rounds to a whole pixel and stops at a bound. Home moves it to the
+ * lower bound.
+ * End moves it to `maxSize` when `maxSize` is below `Number.MAX_SAFE_INTEGER`, TanStack's default,
+ * and leaves it unchanged otherwise. Enter and a double-click reset the column to its default width,
+ * which may be narrower than 32px. Enter, Left Arrow, Right Arrow, Home and End do nothing during a
+ * drag, and do not reach enclosing React `onKeyDown` handlers. A chord with Alt, Control or Meta,
+ * or a key that an input method is composing, leaves the width alone and reaches those handlers. Its
+ * clicks do not reach the header around it. A column that cannot resize renders nothing.
  */
 export function DataTableResizeHandle({ header, ...props }: DataTableResizeHandleProps): ReactElement | null {
   if (header.subHeaders.length > 0 || !header.column.getCanResize()) {
