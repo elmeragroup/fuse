@@ -6,6 +6,7 @@ import type { FocusEvent, KeyboardEvent, MouseEvent, PointerEvent, ReactElement 
 import { useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { listboxProps, StatusRegion, SurfaceName, useGestureEnd, useOptionHandoff } from "./chart-listbox";
+import { partSelector } from "./chart-part-marker";
 import { pointerSlot } from "./chart-pick";
 import { useRootFrame } from "./chart-plot";
 import { ChartSelectionContext } from "./chart-readout-port";
@@ -318,7 +319,7 @@ export function ChartSurface({
         // A pointer that moves into the tooltip keeps the slot, so the popup stays hoverable.
         const intoPopup =
           event.relatedTarget instanceof Element &&
-          event.relatedTarget.closest('[data-slot="chart-tooltip"]') !== null;
+          event.relatedTarget.closest(partSelector("tooltip")) !== null;
         if (
           !intoPopup &&
           event.pointerType === "mouse" &&

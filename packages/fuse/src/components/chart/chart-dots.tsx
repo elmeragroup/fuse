@@ -24,6 +24,7 @@ import { useChartFollower } from "./chart-followers";
 import type { MarkValues, ValueAxis } from "./chart-motion";
 import { readingPaint, seriesPaintOf } from "./chart-paint";
 import type { SeriesPaint } from "./chart-paint";
+import { chartPart, partSelector } from "./chart-part-marker";
 import { pathAnchor, routeRestIndex } from "./chart-paths";
 import { useChartFrame } from "./chart-plot";
 import { ChartDatumContext } from "./chart-scope-contexts";
@@ -153,7 +154,7 @@ const Dot = memo(function Dot({
   const [first] = useState({ intro, cx, cy });
   return (
     <circle
-      data-slot="chart-dot"
+      {...chartPart("dot")}
       data-series={series}
       data-intro={first.intro}
       r={radius}
@@ -341,7 +342,7 @@ function pointPaint(
 }
 
 /** The active dot's circles, its ping ring first if any, found once per commit of its mark. */
-const activeDots = partsCache((svg) => [...svg.querySelectorAll(":scope > [data-slot=chart-dot]")]);
+const activeDots = partsCache((svg) => [...svg.querySelectorAll(`:scope > ${partSelector("dot")}`)]);
 
 /**
  * How an active dot keeps its last drawing: a deep copy at each commit, whose circles take the live
@@ -682,8 +683,8 @@ export function ChartActiveDot({
         }}>
         {frame === null ? null : (
           <>
-            {variant === "ping" ? <circle data-slot="chart-dot" data-part="ping" r={radius} /> : null}
-            <circle data-slot="chart-dot" data-series={series?.seriesIndex} r={radius} />
+            {variant === "ping" ? <circle {...chartPart("dot")} data-part="ping" r={radius} /> : null}
+            <circle {...chartPart("dot")} data-series={series?.seriesIndex} r={radius} />
           </>
         )}
       </svg>
@@ -708,9 +709,7 @@ function markerSlots(
 
 /** A Marker's dots and its pills' anchors, found once per commit of its mark. */
 const markerParts = partsCache((box) => ({
-  dots: [...(box.querySelector(":scope > svg")?.children ?? [])].filter(
-    (child) => child.getAttribute("data-slot") === "chart-dot"
-  ),
+  dots: [...box.querySelectorAll(`:scope > svg > ${partSelector("dot")}`)],
   anchors: [...box.querySelectorAll<HTMLElement>(":scope > [data-part=anchor]")],
 }));
 
@@ -824,7 +823,7 @@ export function ChartMarker({
                   ? [
                       <circle
                         key={`${String(slot)}-ping`}
-                        data-slot="chart-dot"
+                        {...chartPart("dot")}
                         data-part="ping"
                         r={radius}
                         cx={cx}
@@ -879,7 +878,7 @@ export function ChartValueLabel({ format, className, style }: ChartValueLabelPro
     noteShownText(ref.current, text ?? "", context.update);
   });
   return (
-    <span ref={ref} data-slot="chart-value-label" aria-hidden="true" className={className} style={style}>
+    <span ref={ref} {...chartPart("value-label")} aria-hidden="true" className={className} style={style}>
       {text}
     </span>
   );

@@ -11,6 +11,7 @@ import {
   useGestureEnd,
   useOptionHandoff,
 } from "./chart-listbox";
+import { partSelector } from "./chart-part-marker";
 import { useTapLift } from "./chart-tap-lift";
 import type { ScatterDomains } from "./layout/domain-glide";
 import { buildPointIndex, nearestPoint } from "./layout/point-index";
@@ -289,7 +290,7 @@ export function ScatterSurface({
         // A pointer that moves into the tooltip keeps the point, so the popup stays hoverable.
         const intoPopup =
           event.relatedTarget instanceof Element &&
-          event.relatedTarget.closest('[data-slot="chart-tooltip"]') !== null;
+          event.relatedTarget.closest(partSelector("tooltip")) !== null;
         if (intoPopup || event.pointerType !== "mouse") return;
         store.leave();
       }}

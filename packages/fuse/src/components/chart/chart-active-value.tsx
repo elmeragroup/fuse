@@ -19,6 +19,7 @@ import { partsCache, writeAttribute, writeAttributes, writeStyle } from "./chart
 import { useChartFollower } from "./chart-followers";
 import type { JoinLead, MarkValues } from "./chart-motion";
 import { useFirstDraw } from "./chart-motion-mark";
+import { chartPart, partSelector } from "./chart-part-marker";
 import { useChartFrame } from "./chart-plot";
 import { ChartDatumContext, ChartHeadlineContext } from "./chart-scope-contexts";
 import { fallbackSlot, readingAt } from "./chart-series-readout";
@@ -168,7 +169,7 @@ function drawValue(span: HTMLSpanElement, look: FollowerLook, values: MarkValues
 
 /** The active value line's rule, found once per commit of its mark. */
 const valueRule = partsCache((box) =>
-  box.querySelector<SVGLineElement>(':scope > svg > [data-slot="chart-active-value-rule"]')
+  box.querySelector<SVGLineElement>(`:scope > svg > ${partSelector("active-value-rule")}`)
 );
 
 /** Draws the active value line at the loop's number, the tip, across the whole plot. */
@@ -331,7 +332,7 @@ export function ChartActiveValueLine({
         className={className}
         style={style}>
         <svg aria-hidden="true">
-          {drawn === null ? null : <line data-slot="chart-active-value-rule" x1="0" y1="0" x2="0" y2="0" />}
+          {drawn === null ? null : <line {...chartPart("active-value-rule")} x1="0" y1="0" x2="0" y2="0" />}
         </svg>
         <ChartDatumContext value={{ key: dataKey, slot: null }}>{children}</ChartDatumContext>
       </div>

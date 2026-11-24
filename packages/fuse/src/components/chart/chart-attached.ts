@@ -16,6 +16,7 @@ import type { FollowerCause } from "./chart-followers";
 import type { ChartMotion, JoinLead, MarkValues, Placement, ValueAxis } from "./chart-motion";
 import { useFollowerPlacement, useMotionMark } from "./chart-motion-mark";
 import type { MarkTuple, MotionWriter, WriterLook } from "./chart-motion-mark";
+import { partSelector } from "./chart-part-marker";
 import { joinPath } from "./chart-paths";
 import type { PathKind } from "./chart-paths";
 import type { ChartFrame } from "./chart-plot";
@@ -236,7 +237,7 @@ export function noteShownText(node: Element | null, text: string, update: ChartU
  */
 export function copyBefore(live: Element, update: ChartUpdate): Element {
   const copy = deepCopy(live);
-  const selector = '[data-slot="chart-value-label"]';
+  const selector = partSelector("value-label");
   const labels = [...copy.querySelectorAll(selector)];
   live.querySelectorAll(selector).forEach((label, index) => {
     const shown = shownTexts.get(label);

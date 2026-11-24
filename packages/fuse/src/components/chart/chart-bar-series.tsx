@@ -33,6 +33,7 @@ import {
 } from "./chart-motion-mark";
 import type { SeriesPaint } from "./chart-paint";
 import { readingPaint } from "./chart-paint";
+import { chartPart, partSelector } from "./chart-part-marker";
 import { pathAnchor, routeIndex } from "./chart-paths";
 import type { ChartPlot } from "./chart-plot-measure";
 import { stackFloorsOf, useStackSeat } from "./chart-stack-floors";
@@ -94,14 +95,14 @@ type BarElements = { readonly body: Element | null; readonly details: readonly E
 /**
  * A bar's elements, found once per commit of its mark. A plain bar is its polygon alone, whatever
  * it holds, such as a title. A look with details renders a group, whose body and details carry
- * their slots.
+ * their part markers.
  */
 const barElements = partsCache((node): BarElements =>
   node.tagName === "polygon"
     ? { body: node, details: [] }
     : {
-        body: node.querySelector(':scope > [data-slot="chart-bar"]'),
-        details: [...node.querySelectorAll(':scope > [data-slot="chart-bar-detail"]')],
+        body: node.querySelector(`:scope > ${partSelector("bar")}`),
+        details: [...node.querySelectorAll(`:scope > ${partSelector("bar-detail")}`)],
       }
 );
 
@@ -280,7 +281,7 @@ const BarMark = memo(function BarMark({
   const body = (
     <polygon
       ref={plain ? barRef : undefined}
-      data-slot="chart-bar"
+      {...chartPart("bar")}
       data-series={series}
       data-stack-top={bar.cell.stackTop ? "" : undefined}
       data-negative={negative ? "" : undefined}
@@ -298,7 +299,7 @@ const BarMark = memo(function BarMark({
       {look.variant === "blocks" ? (
         // An inner segment keeps an empty track, which fades in should the segment become the top.
         <path
-          data-slot="chart-bar-detail"
+          {...chartPart("bar-detail")}
           data-part="track"
           {...shared}
           d={rectsPath(parts.track ?? [])}
@@ -307,16 +308,16 @@ const BarMark = memo(function BarMark({
       ) : null}
       {body}
       {parts.cap === undefined ? null : (
-        <polygon data-slot="chart-bar-detail" data-part="cap" {...shared} points={boxPoints(parts.cap)} />
+        <polygon {...chartPart("bar-detail")} data-part="cap" {...shared} points={boxPoints(parts.cap)} />
       )}
       {parts.top === undefined ? null : (
-        <polygon data-slot="chart-bar-detail" data-part="top" {...shared} points={parts.top} />
+        <polygon {...chartPart("bar-detail")} data-part="top" {...shared} points={parts.top} />
       )}
       {parts.side === undefined ? null : (
-        <polygon data-slot="chart-bar-detail" data-part="side" {...shared} points={parts.side} />
+        <polygon {...chartPart("bar-detail")} data-part="side" {...shared} points={parts.side} />
       )}
       {parts.blocks === undefined ? null : (
-        <path data-slot="chart-bar-detail" data-part="blocks" {...shared} d={rectsPath(parts.blocks)} />
+        <path {...chartPart("bar-detail")} data-part="blocks" {...shared} d={rectsPath(parts.blocks)} />
       )}
     </g>
   );

@@ -14,6 +14,7 @@ import { flushSync } from "react-dom";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import { useActivePoint } from "./chart-active-point";
 import { useChartFollower } from "./chart-followers";
+import { chartPart } from "./chart-part-marker";
 import { useChartReadout } from "./chart-readout";
 import type { TooltipPlacer } from "./chart-readout-port";
 import { ChartHeldPointContext, ChartLiveContext } from "./chart-scope-contexts";
@@ -230,7 +231,7 @@ export function ChartTooltipBody({
           }}
           ref={watchPositioner}>
           <TooltipPrimitive.Popup
-            data-slot="chart-tooltip"
+            {...chartPart("tooltip")}
             data-variant={variant}
             data-input={input}
             aria-hidden="true"

@@ -676,20 +676,10 @@ export default defineConfig({
       // These modules still find elements through `data-slot` selectors. #1021 moves them to refs,
       // registration or library-owned markers; drop each path as its module moves.
       files: [
-        "packages/fuse/src/components/chart/chart-active-value.tsx",
-        "packages/fuse/src/components/chart/chart-attached.ts",
-        "packages/fuse/src/components/chart/chart-bar-paths.tsx",
-        "packages/fuse/src/components/chart/chart-bar-series.tsx",
-        "packages/fuse/src/components/chart/chart-dots.tsx",
         "packages/fuse/src/components/chart/chart-polar-anchor.ts",
         "packages/fuse/src/components/chart/chart-polar-surface.tsx",
-        "packages/fuse/src/components/chart/chart-reference.tsx",
-        "packages/fuse/src/components/chart/chart-root.tsx",
-        "packages/fuse/src/components/chart/chart-slot-label.tsx",
-        "packages/fuse/src/components/chart/chart-surface.tsx",
         "packages/fuse/src/components/chart/chart-tooltip-roof.ts",
         "packages/fuse/src/components/chart/pie-chart-labels.tsx",
-        "packages/fuse/src/components/chart/scatter-chart-surface.tsx",
       ],
       rules: {
         "fuse/no-data-slot-selector": "off",

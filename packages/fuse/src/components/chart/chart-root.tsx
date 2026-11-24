@@ -22,6 +22,7 @@ import { BROWSER_FRAMES, createChartMotion, createFrameOwner } from "./chart-mot
 import type { ChartMotion, FrameOwner } from "./chart-motion";
 import { ChartOwnScope, useChartDepth } from "./chart-own-scope";
 import { colorFamilyError, nonFiniteThresholds } from "./chart-paint";
+import { chartPart, partSelector } from "./chart-part-marker";
 import { createChartPaths } from "./chart-paths";
 import { usePanelSpan } from "./chart-plot";
 import { useMeasuredPlot } from "./chart-plot-measure";
@@ -809,9 +810,7 @@ export function ChartRoot<
     if (registry.size === 0) return;
     const [stray] = rootParts.values();
     if (stray !== undefined) throw partOutsidePanel(stray);
-    const onPage =
-      rootRef.current?.querySelectorAll(':scope > [data-slot="chart-frame"] > [data-slot="chart-panel"]')
-        .length ?? 0;
+    const onPage = frameRef.current?.querySelectorAll(`:scope > ${partSelector("panel")}`).length ?? 0;
     if (onPage > registry.size) return;
     const error = panelsError(modelConfig, [...registry]);
     if (error !== null) throw error;
@@ -934,7 +933,7 @@ export function ChartRoot<
                 <p id={`${id}-instructions`} data-slot="chart-instructions">
                   {strings.instructionsCartesian}
                 </p>
-                <div ref={frameRef} data-slot="chart-frame" style={{ "--chart-slots": slots }}>
+                <div ref={frameRef} {...chartPart("frame")} style={{ "--chart-slots": slots }}>
                   <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
                     {probe}
                     {plot === null && !model.empty ? <PlotLoader /> : null}

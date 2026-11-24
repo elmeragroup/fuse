@@ -25,6 +25,7 @@ import type { SeriesDraw } from "./chart-bar-series";
 import { partsCache, writeAttribute, writeAttributes } from "./chart-dom";
 import type { MarkValues } from "./chart-motion";
 import { placementOf, useCommitMotion, useFirstDraw, useMotionMark } from "./chart-motion-mark";
+import { chartPart, partSelector } from "./chart-part-marker";
 import { topologyAt } from "./chart-path-draw";
 import { usePathMark } from "./chart-series-path";
 import { useStackSeat } from "./chart-stack-floors";
@@ -69,13 +70,13 @@ const STEP_PARTS: readonly ColumnPart[] = ["fill", "projected", "estimated"];
 
 /** The columns' paths, each with what it draws, and the emphasis boxes, in order. */
 const columnParts = partsCache((group) => ({
-  paths: [...group.querySelectorAll('[data-slot="chart-bar-path"]')].map((path) => ({
+  paths: [...group.querySelectorAll(partSelector("bar-path"))].map((path) => ({
     path,
     // The missing ticks' path names no step part.
     part: STEP_PARTS.find((part) => part === path.getAttribute("data-part")),
     fill: Number(path.getAttribute("data-fill") ?? "-1"),
   })),
-  boxes: [...group.querySelectorAll('[data-slot="chart-bar-emphasis"]')],
+  boxes: [...group.querySelectorAll(partSelector("bar-emphasis"))],
 }));
 
 /**
@@ -176,7 +177,7 @@ function StepPaths({
       {fills.map((fill, index) => (
         <path
           key={index}
-          data-slot="chart-bar-path"
+          {...chartPart("bar-path")}
           data-part={part}
           data-fill={index}
           data-series={seriesIndex}
@@ -347,7 +348,7 @@ export function SeriesPaths({
         </g>
         <StepPaths part="estimated" {...steps} />
         <path
-          data-slot="chart-bar-path"
+          {...chartPart("bar-path")}
           data-part="missing"
           data-series={series.seriesIndex}
           data-quality="missing"
@@ -357,7 +358,7 @@ export function SeriesPaths({
         {columns.emphasis.map(({ key, paint: own }, index) => (
           <rect
             key={key}
-            data-slot="chart-bar-emphasis"
+            {...chartPart("bar-emphasis")}
             data-series={series.seriesIndex}
             {...resting.emphasis[index]}
             style={own === undefined ? undefined : { "--chart-bar-paint": own }}
