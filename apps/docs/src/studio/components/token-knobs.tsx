@@ -247,6 +247,7 @@ export function ColorKnob({ name, css, color, parse, onCommit }: ColorKnobProps)
     COLOR_TOKENS.filter((token) => token !== name).map((token) => [token, `--${token}`])
   );
   const swatch = color === undefined ? undefined : hexOf(color);
+  const value = shortColor(css, color);
 
   return (
     <Popover.Root
@@ -265,13 +266,13 @@ export function ColorKnob({ name, css, color, parse, onCommit }: ColorKnobProps)
                   variant="outline"
                   size="sm"
                   className={styles.trigger()}
-                  aria-label={`Edit --${name}`}
+                  aria-label={`Edit --${name}, ${value}`}
                 />
               }
             />
           }>
           <span aria-hidden className={styles.swatch()} style={{ "--swatch": swatch }} />
-          <span className={styles.value()}>{shortColor(css, color)}</span>
+          <span className={styles.value()}>{value}</span>
         </Tooltip.Trigger>
         {css === undefined ? null : <Tooltip.Content className={styles.tooltip()}>{css}</Tooltip.Content>}
       </Tooltip.Root>

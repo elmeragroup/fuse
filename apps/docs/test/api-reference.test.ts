@@ -111,7 +111,7 @@ describe("reference row presentation", () => {
     expect(partView("card", "Card.Root").rscLabel).toBe("server-safe");
   });
 
-  it("composes one label per row so a summary is not announced cell by cell", () => {
+  it("anchors a compound part's prop and describes a recipe axis that has no JSDoc", () => {
     const part: ApiPart = {
       name: "Dialog.Root",
       rsc: "client",
@@ -142,10 +142,11 @@ describe("reference row presentation", () => {
 
     const view = toPartView(part);
     const props = view.propGroups.flatMap((group) => group.props);
-    expect(props.at(0)?.label).toBe("Prop: open, required, type: boolean");
-    expect(props.at(1)?.label).toBe('Prop: size, type: Union (default: "md")');
+    const prop = (name: string) => props.find((candidate) => candidate.name === name);
+    // A compound part's prop anchor carries the part's name, so two parts' `open` rows get
+    // different ids.
+    expect(prop("open")?.id).toBe("api-dialog-root-open");
     // A recipe axis has no JSDoc to show; its printed union is the documentation.
-    expect(props.at(1)?.description).toBe("Recipe axis.");
-    expect(props.at(0)?.id).toBe("api-dialog-root-open");
+    expect(prop("size")?.description).toBe("Recipe axis.");
   });
 });

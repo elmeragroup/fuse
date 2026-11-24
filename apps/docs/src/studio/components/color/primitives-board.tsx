@@ -64,7 +64,7 @@ export function PrimitivesBoard(): ReactElement {
                 key={primitive.name}
                 variant="ghost"
                 className={styles.button()}
-                aria-label={`Copy var(--${primitive.name})`}
+                aria-label={`Copy --${primitive.name}`}
                 onClick={() => {
                   void copyReference(primitive.name);
                 }}>

@@ -52,7 +52,6 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
       }}>
       <ApiRows.Summary
         id={prop.id}
-        aria-label={prop.label}
         onClick={(event: MouseEvent<HTMLElement>) => {
           // Selecting a type across a row ends in a click on the summary; toggling then
           // would throw away the selection the reader just made.
@@ -66,8 +65,9 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
             event.preventDefault();
           }
         }}>
+        {/* The cells are the summary's name, so a speech user can say what the row shows. */}
         <ApiRows.Cell column="name" code={prop.name}>
-          {prop.required ? <ApiRows.Required title="Required">*</ApiRows.Required> : null}
+          {prop.required ? <ApiRows.Required /> : null}
         </ApiRows.Cell>
         <ApiRows.Cell column="type" code={prop.closedType} />
         <ApiRows.Cell column="default" code={prop.defaultValue}>
@@ -161,9 +161,9 @@ export function ApiPropRows({ partName, props }: ApiPropRowsProps): ReactElement
       // skipped reference blocks do not collapse the scrollbar (`content-visibility: auto`).
       style={{ "--api-rows": props.length }}>
       <ApiRows.Header aria-hidden>
-        <ApiRows.HeaderCell column="prop">Prop</ApiRows.HeaderCell>
-        <ApiRows.HeaderCell column="type">Type</ApiRows.HeaderCell>
-        <ApiRows.HeaderCell column="default">Default</ApiRows.HeaderCell>
+        <ApiRows.HeaderCell column="name" />
+        <ApiRows.HeaderCell column="type" />
+        <ApiRows.HeaderCell column="default" />
         <ApiRows.ChevronCell />
       </ApiRows.Header>
       {props.map((prop) => (

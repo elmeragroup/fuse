@@ -18,8 +18,6 @@ const EXPECTED_MISSING = ["/this-avatar-does-not-exist.png"];
 
 /** Rules the sweep leaves off, open until #554. */
 const DEFERRED_RULES = [
-  // Experimental in axe-core.
-  "label-content-name-mismatch",
   // Syntax-highlighted code under the contrast minimum.
   "color-contrast",
   // A few docs controls under the 24px target.

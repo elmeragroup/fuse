@@ -15,7 +15,7 @@ const apiRows = tv({
       "flex min-h-[2.5rem] cursor-pointer scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)] list-none items-center hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center [&::-webkit-details-marker]:hidden",
     // A long value ends in an ellipsis rather than scrolling. A scrolling cell would need a tab stop
     // of its own, nested in the summary's, and the open row's panel prints the full value.
-    cell: "min-w-0 truncate px-3 py-2",
+    cell: "block min-w-0 truncate px-3 py-2",
     code: "text-xs",
     panel:
       "border-t border-dashed border-border bg-card min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center",
@@ -31,39 +31,54 @@ const apiRows = tv({
     chevron: "transition-transform duration-120 group-open:rotate-180 motion-reduce:transition-none",
     required: "text-xs relative top-[-0.3em] text-error",
     noDefault: "text-xs font-mono text-muted-foreground",
+    // Words only a screen reader hears, in place of the header and the marks a sighted reader
+    // sees. `select-none` keeps them out of text a reader copies from a row.
+    spoken: "sr-only select-none",
   },
   variants: {
-    headerColumn: {
-      prop: {},
-      type: { headerCell: "hidden min-[34rem]:block" },
-      default: { headerCell: "hidden min-[52rem]:block" },
+    // A narrow viewport drops columns from view. The header hides its cell, which nothing
+    // reads; a row keeps its cell for screen readers, since the summary takes its name from
+    // the cells and two rows that differ only in a hidden column would sound the same.
+    column: {
+      name: { code: "font-medium text-foreground" },
+      type: {
+        headerCell: "hidden min-[34rem]:block",
+        cell: "max-[34rem]:sr-only",
+        code: "text-muted-foreground",
+      },
+      default: {
+        headerCell: "hidden min-[52rem]:block",
+        cell: "max-[52rem]:sr-only",
+        code: "text-muted-foreground",
+      },
     },
-    cellColumn: {
-      name: { cell: "block", code: "font-medium text-foreground" },
-      type: { cell: "hidden min-[34rem]:block", code: "text-muted-foreground" },
-      default: { cell: "hidden min-[52rem]:block", code: "text-muted-foreground" },
-    },
-  },
-  defaultVariants: {
-    headerColumn: "prop",
-    cellColumn: "name",
   },
 });
 
 const apiRowSlots = apiRows();
 
-/** The data column a summary `Cell` renders; header cells carry a different axis. */
+/** A data column: the header names it, and a summary `Cell` renders its value. */
 type ApiRowsColumn = "name" | "type" | "default";
+
+/**
+ * Each column's heading. A screen reader hears the type and default headings before their
+ * values, so a closed row reads as "size, type Union, default ...".
+ */
+const COLUMN_HEADINGS = {
+  name: "Prop",
+  type: "Type",
+  default: "Default",
+} as const satisfies Record<ApiRowsColumn, string>;
 
 type ApiRowsRootProps = ComponentProps<"div">;
 type ApiRowsHeaderProps = ComponentProps<"div">;
-type ApiRowsHeaderCellProps = ComponentProps<"span"> & {
-  column?: "prop" | "type" | "default";
+type ApiRowsHeaderCellProps = Omit<ComponentProps<"span">, "children"> & {
+  column: ApiRowsColumn;
 };
 type ApiRowsRowProps = ComponentProps<"details">;
 type ApiRowsSummaryProps = ComponentProps<"summary">;
 type ApiRowsCellProps = ComponentProps<"span"> & {
-  column?: ApiRowsColumn;
+  column: ApiRowsColumn;
   /** The cell's code literal, or `null` when the cell renders no code element. */
   code: string | null;
 };
@@ -74,7 +89,7 @@ type ApiRowsTermProps = ComponentProps<"dt">;
 type ApiRowsDefinitionProps = ComponentProps<"dd">;
 type ApiRowsChevronCellProps = ComponentProps<"span">;
 type ApiRowsChevronProps = SVGProps<SVGSVGElement>;
-type ApiRowsRequiredProps = ComponentProps<"sup">;
+type ApiRowsRequiredProps = Omit<ComponentProps<"sup">, "children">;
 type ApiRowsNoDefaultProps = Omit<ComponentProps<"span">, "children">;
 
 function ApiRowsRoot({ className, ...props }: ApiRowsRootProps): ReactElement {
@@ -85,9 +100,13 @@ function ApiRowsHeader({ className, ...props }: ApiRowsHeaderProps): ReactElemen
   return <div className={apiRowSlots.header({ className })} data-api-rows-header {...props} />;
 }
 
-function ApiRowsHeaderCell({ className, column = "prop", ...props }: ApiRowsHeaderCellProps): ReactElement {
-  const { headerCell } = apiRows({ headerColumn: column });
-  return <span className={headerCell({ className })} {...props} />;
+function ApiRowsHeaderCell({ className, column, ...props }: ApiRowsHeaderCellProps): ReactElement {
+  const { headerCell } = apiRows({ column });
+  return (
+    <span className={headerCell({ className })} {...props}>
+      {COLUMN_HEADINGS[column]}
+    </span>
+  );
 }
 
 function ApiRowsRow({ className, ...props }: ApiRowsRowProps): ReactElement {
@@ -98,16 +117,13 @@ function ApiRowsSummary({ className, ...props }: ApiRowsSummaryProps): ReactElem
   return <summary className={apiRowSlots.summary({ className })} {...props} />;
 }
 
-function ApiRowsCell({
-  className,
-  column = "name",
-  code,
-  children,
-  ...props
-}: ApiRowsCellProps): ReactElement {
-  const { cell, code: codeClass } = apiRows({ cellColumn: column });
+function ApiRowsCell({ className, column, code, children, ...props }: ApiRowsCellProps): ReactElement {
+  const { cell, code: codeClass } = apiRows({ column });
   return (
     <span className={cell({ className })} {...props}>
+      {column === "name" ? null : (
+        <span className={apiRowSlots.spoken()}>{`, ${COLUMN_HEADINGS[column].toLowerCase()} `}</span>
+      )}
       {code === null ? null : <code className={codeClass()}>{code}</code>}
       {children}
     </span>
@@ -152,16 +168,33 @@ function ApiRowsChevron({ className, ...props }: ApiRowsChevronProps): ReactElem
   );
 }
 
+/**
+ * The mark after a required prop's name. A sighted reader sees an asterisk with a "Required"
+ * tooltip, and a screen reader hears "required".
+ */
 function ApiRowsRequired({ className, ...props }: ApiRowsRequiredProps): ReactElement {
-  return <sup className={apiRowSlots.required({ className })} {...props} />;
+  return (
+    <>
+      <sup className={apiRowSlots.required({ className })} title="Required" aria-hidden {...props}>
+        *
+      </sup>
+      <span className={apiRowSlots.spoken()}>, required</span>
+    </>
+  );
 }
 
-/** The glyph a row shows in place of a default; it is the same mark wherever a default is absent. */
+/**
+ * What a row shows in place of a default, in the closed row and the open panel alike. A sighted
+ * reader sees a dash, and a screen reader hears "none".
+ */
 function ApiRowsNoDefault({ className, ...props }: ApiRowsNoDefaultProps): ReactElement {
   return (
-    <span className={apiRowSlots.noDefault({ className })} {...props}>
-      {NO_DEFAULT}
-    </span>
+    <>
+      <span className={apiRowSlots.noDefault({ className })} aria-hidden {...props}>
+        {NO_DEFAULT}
+      </span>
+      <span className={apiRowSlots.spoken()}>none</span>
+    </>
   );
 }
 

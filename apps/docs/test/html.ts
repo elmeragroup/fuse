@@ -49,6 +49,11 @@ export function decodeHtml(text: string): string {
     .replaceAll("&amp;", "&");
 }
 
+/** The text of an HTML fragment, with its tags stripped and its entities decoded. */
+export function markupText(fragment: string): string {
+  return decodeHtml(fragment.replaceAll(/<[^>]*>/g, ""));
+}
+
 export function tagAttribute(open: string, name: string): string | null {
   const match = new RegExp(`\\s${name}="([^"]*)"`, "i").exec(open);
   return match?.[1] ?? null;

@@ -39,6 +39,4 @@ export type ApiPropView = {
   defaultValue: string | null;
   /** JSDoc description, or the recipe-axis stand-in. Markdown-ish: may contain code spans. */
   description: string;
-  /** The composed label a screen reader hears instead of the row's four cells. */
-  label: string;
 };

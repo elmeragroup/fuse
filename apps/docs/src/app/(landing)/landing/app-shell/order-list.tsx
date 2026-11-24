@@ -91,7 +91,6 @@ function OrderRow({ order, audience }: { order: Order; audience: Audience }): Re
         data-order-id={order.id}
         data-customer={order.customer}
         aria-current={current ? "true" : "false"}
-        aria-label={`${order.customer}, order ${String(order.id)}, ${ORDER_STATUSES[order.status].label}`}
         className={styles.row()}
         onClick={() => {
           openOrder(order.id);
@@ -115,6 +114,8 @@ function OrderRow({ order, audience }: { order: Order; audience: Audience }): Re
         <time dateTime={order.created} className={styles.date()}>
           {relativeDate(order.created)}
         </time>
+        {/* The icon shows the status; the row's name comes from its cells, so it says it too. */}
+        <span className="sr-only">{`, ${ORDER_STATUSES[order.status].label}`}</span>
       </button>
     </li>
   );

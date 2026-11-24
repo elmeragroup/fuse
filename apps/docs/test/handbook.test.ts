@@ -7,7 +7,7 @@ import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 
 import { fuseSrc } from "../scripts/lib/paths.ts";
 import { fetchText } from "./docs-server";
-import { decodeHtml } from "./html";
+import { decodeHtml, markupText } from "./html";
 
 /** The four permutations the pin table forbids; none may reach the DOM. */
 const ILLEGAL_SLUGS = [
@@ -74,11 +74,6 @@ function codeBlockText(html: string): string {
   return [...html.matchAll(/<pre\b[^>]*>([^]*?)<\/pre>/g)]
     .map((match) => markupText(match[1] ?? ""))
     .join("\n");
-}
-
-/** The text of an HTML fragment, with its tags stripped and its entities decoded. */
-function markupText(fragment: string): string {
-  return decodeHtml(fragment.replaceAll(/<[^>]*>/g, ""));
 }
 
 describe("tokens page", () => {

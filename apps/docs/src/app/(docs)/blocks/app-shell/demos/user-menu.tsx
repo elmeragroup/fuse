@@ -33,7 +33,13 @@ export function UserMenu(): ReactElement {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger
-        render={<Button variant="ghost" size="icon-sm" aria-label={`Account menu for ${SIGNED_IN.name}`} />}>
+        render={
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`${SIGNED_IN.initials}, account menu for ${SIGNED_IN.name}`}
+          />
+        }>
         <Avatar.Root className="size-7">
           <Avatar.Fallback>{SIGNED_IN.initials}</Avatar.Fallback>
         </Avatar.Root>
