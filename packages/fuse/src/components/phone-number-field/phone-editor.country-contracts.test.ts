@@ -287,8 +287,9 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
      * announced when it began, so notices that never announce, or never end a disagreement and so
      * never announce it again, fail. Without one, only a commit that shows another country than
      * the last commit announces, and only that country.
-     * `current` is the decoder's proposed country at a publish, and the editor's observation, a
-     * proposal waiting for the parent or else the shown country, at a commit.
+     * `current` is the decoder's proposed country at a publish. At a commit it is the editor's
+     * observation: the country of a proposal waiting for the parent, else the shown country, and
+     * the shown country too while the waiting proposal is one the field already showed.
      */
     const checkNotices = (moment: "publish" | "commit", events: Event[], current: string, label: string) => {
       const announced = events.filter((event) => event.kind === "country").map((event) => event.code);
@@ -473,11 +474,12 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
         ).not.toContain(next.countryCode);
       }
       // The field's current country, as the editor reports it to the hook: the country of a
-      // proposal that waits for the parent, else the shown one. Whether a proposal still waits
-      // is the editor's acceptance rule, which (iii), (ix) and the unit tests check; (v) checks
-      // what the notices announce from it.
-      const observed = PhoneEditor.observeCountry(state);
-      checkNotices("commit", events, observed.proposed?.code ?? observed.shown.code, label);
+      // proposal that waits for the parent, else the shown one, and the shown one too while the
+      // waiting proposal is one the field already showed. Whether a proposal still waits, and
+      // whether the field showed it, is the editor's to decide, which (iii), (ix) and the literal
+      // traces in `phone-country-notices.test.ts` check; (v) checks what the notices announce from it.
+      const { proposed: waiting, shown: shownNow, alreadyShown } = PhoneEditor.observeCountry(state);
+      checkNotices("commit", events, waiting === null || alreadyShown ? shownNow.code : waiting.code, label);
       checkShown(label);
       checkOnce(label);
     };
@@ -1075,7 +1077,7 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
         const { countryCode } = scenario.initial;
         // The proposal must wait, which the field shows by not showing it. An uncontrolled value's
         // proposal waits while it is in another country. A controlled one waits until the parent
-        // holds the output it heard in the proposal's country; #1006 tracks the state where it then
+        // holds the output it heard in the proposal's country; #1081 tracks the state where it then
         // still waits, which this skips.
         fc.pre(
           proposal !== PhoneEditor.view(state).country.code ||

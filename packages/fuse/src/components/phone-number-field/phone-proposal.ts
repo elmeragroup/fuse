@@ -58,6 +58,12 @@ export type ProposalReading = {
   readonly numberAnswer: string;
   /** The output the field showed before the proposal. */
   readonly outputBefore: string;
+  /**
+   * Whether the field already showed the proposal's number in the proposal's country when the
+   * proposal was made, under a controlled `value` and a `countryCode` other than that country. It
+   * stays the same while the proposal waits on. The country notices then follow the shown country.
+   */
+  readonly alreadyShown: boolean;
 };
 
 /** A proposal waiting for the parent. */
@@ -375,16 +381,17 @@ function waitingIn(reading: ProposalReading): WaitingProposal {
  *
  * @param proposal - The proposal.
  * @param configuration - The configuration it was read in.
- * @param outputBefore - The output the field showed before the proposal.
+ * @param start - The field as the proposal found it: `outputBefore` and `alreadyShown`, as
+ *   {@link ProposalReading} describes them.
  * @returns The waiting proposal.
  */
 export function waitingFor(
   proposal: Snapshot,
   configuration: Configuration,
-  outputBefore: string
+  { outputBefore, alreadyShown }: Pick<ProposalReading, "outputBefore" | "alreadyShown">
 ): WaitingProposal {
   const output = proposal.values.outputValue;
-  return waitingIn({ proposal, configuration, output, numberAnswer: output, outputBefore });
+  return waitingIn({ proposal, configuration, output, numberAnswer: output, outputBefore, alreadyShown });
 }
 
 /**
