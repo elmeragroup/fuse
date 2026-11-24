@@ -64,11 +64,19 @@ export const traceFormat: fc.Arbitrary<TraceFormat> = fc.constantFrom(
   "national"
 );
 
+/** A pick of any trace country. */
+export const tracePick: fc.Arbitrary<Extract<TraceUserAction, { readonly kind: "pick" }>> = traceCode.map(
+  (country) => ({ kind: "pick" as const, country })
+);
+
+/** A paste of any trace country's number, in any form. */
+export const tracePaste: fc.Arbitrary<Extract<TraceUserAction, { readonly kind: "paste" }>> = fc
+  .tuple(traceCode, fc.constantFrom<PasteForm>("plain", "trunk", "national"))
+  .map(([country, form]) => ({ kind: "paste" as const, country, form }));
+
 /** A pick, a paste in any form, or an edit to empty or to a national number. */
 export const traceUserAction: fc.Arbitrary<TraceUserAction> = fc.oneof(
-  traceCode.map((country) => ({ kind: "pick" as const, country })),
-  fc
-    .tuple(traceCode, fc.constantFrom<PasteForm>("plain", "trunk", "national"))
-    .map(([country, form]) => ({ kind: "paste" as const, country, form })),
+  tracePick,
+  tracePaste,
   fc.constantFrom("", ...Object.values(NATIONAL_NUMBERS)).map((digits) => ({ kind: "edit" as const, digits }))
 );

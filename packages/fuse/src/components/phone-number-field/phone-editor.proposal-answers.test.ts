@@ -6,8 +6,24 @@ import { phoneEditorFixtures } from "../../../test/phone-editor-fixtures";
 import * as PhoneEditor from "./phone-editor";
 import type { PhoneEditorProps, PhoneEditorState } from "./phone-editor";
 import { defaultMetadata } from "./phone-engine";
+import type { PhoneCountryCode, PhoneNumberFormat } from "./phone-engine";
 
 const { shown, proposedValue, echo } = phoneEditorFixtures(PhoneEditor);
+
+// A catalog without NO, so SJ is the only country for +47. It reads the same digits and number as
+// the default catalog but formats the national output differently.
+const { NO: _norway, ...countriesWithoutNorway } = defaultMetadata.countries;
+const withoutNorway: MetadataJson = {
+  ...defaultMetadata,
+  countries: countriesWithoutNorway,
+  country_calling_codes: { ...defaultMetadata.country_calling_codes, "47": ["SJ"] },
+};
+
+// The default catalog with SE's national trunk prefix removed.
+const seWithoutTrunkPrefix: MetadataJson = {
+  ...defaultMetadata,
+  countries: { ...defaultMetadata.countries, SE: defaultMetadata.countries.SE?.slice(0, 5) },
+};
 
 /** Prop changes that arrive before the answer, each applied over the answer's base props. */
 type Steps = readonly Partial<PhoneEditorProps>[];
@@ -72,6 +88,12 @@ describe("PhoneEditor proposal answers: an answer's outcome does not depend on a
   it.each<[string, Steps]>([
     ["directly", []],
     ["after a format change and a metadata replacement", [{ outputFormat: "e164", metadata: maxMetadata }]],
+    // #710: the output the parent holds answers the number half, whatever carry comes before the country.
+    ["after the parent holds the output it heard", [{ value: "040 1234567" }]],
+    [
+      "after the parent holds the output it heard, then a format change and a metadata replacement",
+      [{ value: "040 1234567" }, { value: "040 1234567", outputFormat: "e164", metadata: maxMetadata }],
+    ],
   ])(
     "shows a preserved pick's own display when the parent answers it with its output and a metadata replacement %s",
     (_name, between) => {
@@ -99,6 +121,7 @@ describe("PhoneEditor proposal answers: an answer's outcome does not depend on a
       expect(PhoneEditor.observeCountry(accepted).proposed).toBeNull();
       // The pick keeps its digits as the value had them, so the display leaves out the national trunk 0.
       expect(shown(accepted)).toEqual({ display: "401234567", output: "+358401234567", country: "FI" });
+      expect(PhoneEditor.steeredValue(accepted)).toBeNull();
     }
   );
 
@@ -165,13 +188,6 @@ describe("PhoneEditor proposal answers: an answer's outcome does not depend on a
     const picked = PhoneEditor.selectCountry(PhoneEditor.create(props), "DK");
     const value = proposedValue(picked);
     expect(value).toBe("79 12 34 56");
-    // A catalog without NO reads the same digits and number but formats the national output differently.
-    const { NO: _norway, ...countries } = defaultMetadata.countries;
-    const withoutNorway: MetadataJson = {
-      ...defaultMetadata,
-      countries,
-      country_calling_codes: { ...defaultMetadata.country_calling_codes, "47": ["SJ"] },
-    };
     const accepted = PhoneEditor.reconcile(picked, {
       ...props,
       value: value ?? "",
@@ -179,5 +195,253 @@ describe("PhoneEditor proposal answers: an answer's outcome does not depend on a
       metadata: withoutNorway,
     });
     expect(shown(accepted).output).toBe("79 12 34 56");
+  });
+});
+
+// #710: an answer judged against an output that a no-steer carry gave the proposal. Each row reaches
+// the same final props directly or after the configuration change alone, and both paths must show
+// the outcome the answer itself decides.
+describe("PhoneEditor proposal answers: a carried output is no answer the parent gave", () => {
+  // The rule from #710: a carried output is no answer the parent gave. A format change carries the
+  // pick into an output equal to the value the parent held before the pick: under raw output the
+  // old value as written, under international output "+46 7". That answers nothing, so the pick
+  // waits for its number whether the format change comes before the country answer, with it, or
+  // only with the echo, and the echo of the output the parent heard adopts it in each order.
+  it.each<{
+    format: PhoneNumberFormat;
+    start: PhoneEditorProps;
+    code: PhoneCountryCode;
+    heard: string;
+    waiting: { display: string; output: string; country: string };
+    adopted: { display: string; output: string };
+  }>([
+    {
+      format: "raw",
+      start: { value: "+4600701234567", countryCode: "SE", countries: ["FI", "SE"], international: true },
+      code: "FI",
+      heard: "+460701234567",
+      // With detection on, the held value names SE, so the field shows SE while FI waits.
+      waiting: { display: "+4600701234567", output: "+4600701234567", country: "SE" },
+      adopted: { display: "+4600701234567", output: "+4600701234567" },
+    },
+    {
+      format: "international",
+      start: { value: "+46 7", countryCode: "FI", countries: ["FI", "SE"], autoDetectCountry: false },
+      code: "SE",
+      heard: "+467",
+      waiting: { display: "7", output: "+46 7", country: "SE" },
+      adopted: { display: "7", output: "+46 7" },
+    },
+  ])(
+    "keeps a preserved pick waiting under $format output when the parent answers only its country, in every order",
+    ({ format, start, code, heard, waiting, adopted }) => {
+      const props = { ...start, outputFormat: "e164", preserveOnCountryChange: true } as const;
+      const picked = PhoneEditor.selectCountry(PhoneEditor.create(props), code);
+      // The parent hears the pick's e164 output, which is not the value it keeps.
+      expect(proposedValue(picked)).toBe(heard);
+      const formatted = { ...props, outputFormat: format };
+      // The format change alone carries the pick into the held value, and it still waits.
+      const carried = PhoneEditor.reconcile(picked, formatted);
+      expect(PhoneEditor.observeCountry(carried).proposed?.code).toBe(code);
+      const echoAnswer = {
+        value: heard,
+        countryCode: code,
+        autoDetectCountry: false,
+        outputFormat: format,
+      } as const;
+      const orders: [string, PhoneEditorState, PhoneEditorProps][] = [
+        ["format with the country answer", picked, { ...formatted, countryCode: code }],
+        ["format before the country answer", carried, { ...formatted, countryCode: code }],
+        ["format with the echo", picked, { ...props, countryCode: code }],
+      ];
+      for (const [order, from, answer] of orders) {
+        const answered = PhoneEditor.reconcile(from, answer);
+        expect(PhoneEditor.observeCountry(answered).proposed?.code, order).toBe(code);
+        if (answer.outputFormat === format) {
+          expect(shown(answered), order).toEqual(waiting);
+          // Equal props keep the pick waiting: the held value still answers nothing.
+          expect(PhoneEditor.reconcile(answered, answer), order).toBe(answered);
+        }
+        expect(PhoneEditor.steeredValue(answered), order).toBeNull();
+        const accepted = PhoneEditor.reconcile(answered, { ...props, ...echoAnswer });
+        expect(PhoneEditor.observeCountry(accepted).proposed, order).toBeNull();
+        expect(shown(accepted), order).toEqual({ ...adopted, country: code });
+      }
+    }
+  );
+
+  it("shows a value the parent stores after a countryless answer as its own, not as the pick it heard", () => {
+    const props = {
+      value: "0701234567",
+      countryCode: "NO",
+      outputFormat: "e164",
+      preserveOnCountryChange: true,
+      autoDetectCountry: false,
+    } as const;
+    const picked = PhoneEditor.selectCountry(PhoneEditor.create(props), "SE");
+    expect(proposedValue(picked)).toBe("+46701234567");
+    // A countryless answer reads the pick again, from the parent's value.
+    const halved = PhoneEditor.reconcile(picked, { ...props, value: "070 123 45 67", outputFormat: "raw" });
+    expect(PhoneEditor.observeCountry(halved).proposed?.code).toBe("SE");
+    const answered = PhoneEditor.reconcile(halved, { ...props, value: "+46701234567", countryCode: "SE" });
+    // The parent's answer replaced what the field heard, so the output it heard first is a new value
+    // read in SE, with no trunk 0. The pick, read as the countryless answer wrote it, would show
+    // "0701234567".
+    expect(PhoneEditor.observeCountry(answered).proposed).toBeNull();
+    expect(shown(answered)).toEqual({ display: "701234567", output: "+46701234567", country: "SE" });
+  });
+
+  it.each<[string, Steps]>([
+    ["directly", []],
+    ["after the format change alone", [{ outputFormat: "national" }]],
+  ])("reads national digits the parent never heard as a new value %s", (_name, between) => {
+    // FI is not offered, so the controlled country resolves to SJ, and the paste waits in SJ.
+    const props = {
+      value: "",
+      countryCode: "FI",
+      countries: ["SJ"],
+      outputFormat: "e164",
+      autoDetectCountry: false,
+    } as const;
+    const pasted = PhoneEditor.paste(PhoneEditor.create(props), "+4741234567");
+    expect(proposedValue(pasted)).toBe("+4741234567");
+    // A national format carries the paste into "41 23 45 67", an output the parent never heard.
+    const carried = carryThrough(pasted, props, between);
+    expect(PhoneEditor.observeCountry(carried).proposed?.code).toBe("SJ");
+    const answered = PhoneEditor.reconcile(carried, {
+      ...props,
+      value: "41 23 45 67",
+      outputFormat: "national",
+    });
+    // The parent heard "+4741234567". The national form is a new value, read in the shown country
+    // and written as the parent wrote it, never the paste's own display.
+    expect(PhoneEditor.observeCountry(answered).proposed).toBeNull();
+    expect(shown(answered)).toEqual({ display: "41234567", output: "41 23 45 67", country: "SJ" });
+    expect(PhoneEditor.steeredValue(answered)).toBeNull();
+  });
+
+  it.each<[string, Steps]>([
+    ["after the metadata replacement", [{ metadata: withoutNorway }]],
+    [
+      "after the metadata replacement and then the format change alone",
+      [{ metadata: withoutNorway }, { metadata: withoutNorway, outputFormat: "e164" }],
+    ],
+  ])(
+    "adopts a pick the parent echoes after a catalog that drops NO and keeps the controlled SJ, %s",
+    (_name, between) => {
+      const props = {
+        value: "+47 79 12 34 56",
+        countryCode: "SJ",
+        countries: ["NO", "SJ", "DK"],
+        outputFormat: "national",
+        preserveOnCountryChange: true,
+        autoDetectCountry: false,
+      } as const;
+      const picked = PhoneEditor.selectCountry(PhoneEditor.create(props), "DK");
+      const heard = "79 12 34 56";
+      expect(proposedValue(picked)).toBe(heard);
+      const carried = carryThrough(picked, props, between);
+      expect(PhoneEditor.observeCountry(carried).proposed?.code).toBe("DK");
+      const accepted = PhoneEditor.reconcile(carried, {
+        ...props,
+        value: heard,
+        countryCode: "DK",
+        outputFormat: "e164",
+        metadata: withoutNorway,
+      });
+      // The pick keeps the +47 number it was read as, whichever catalog carried it first.
+      expect(PhoneEditor.observeCountry(accepted).proposed).toBeNull();
+      expect(shown(accepted)).toEqual({ display: "+4779123456", output: "+4779123456", country: "DK" });
+    }
+  );
+
+  it.each<[string, Steps]>([
+    ["with the metadata restored in the same render", [{ outputFormat: "e164", metadata: maxMetadata }]],
+    [
+      "after the metadata was restored one render earlier",
+      [{ outputFormat: "e164", metadata: maxMetadata }, { outputFormat: "e164" }],
+    ],
+  ])("adopts a raw paste the parent echoes after a metadata replacement, %s", (_name, between) => {
+    const props = {
+      value: "",
+      countryCode: "AU",
+      countries: ["AU"],
+      outputFormat: "raw",
+      autoDetectCountry: false,
+    } as const;
+    const pasted = PhoneEditor.paste(PhoneEditor.create(props), "0 0401234567");
+    const heard = "0 0401234567";
+    expect(proposedValue(pasted)).toBe(heard);
+    const carried = carryThrough(pasted, props, between);
+    expect(PhoneEditor.observeCountry(carried).proposed?.code).toBe("AU");
+    const accepted = PhoneEditor.reconcile(carried, { ...props, value: heard, outputFormat: "e164" });
+    // The echo adopts the paste as it was read in the default metadata, with its trunk 0 kept.
+    expect(PhoneEditor.observeCountry(accepted).proposed).toBeNull();
+    expect(shown(accepted)).toEqual({ display: "00401234567", output: "+610401234567", country: "AU" });
+  });
+
+  it.each<[string, Steps]>([
+    ["after max metadata and E.164 output in one render", [{ metadata: maxMetadata, outputFormat: "e164" }]],
+    [
+      "after max metadata, then E.164 output in a separate render",
+      [{ metadata: maxMetadata }, { metadata: maxMetadata, outputFormat: "e164" }],
+    ],
+  ])("reads a first controlled value in the country it comes with, %s", (_name, between) => {
+    const props = {
+      defaultValue: "011 52 323 555 0130",
+      countryCode: "CA",
+      countries: ["CA", "US", "MX"],
+      outputFormat: "national",
+      preserveOnCountryChange: true,
+      autoDetectCountry: false,
+    } as const;
+    // An uncontrolled pick against the controlled CA waits, and tells `onChange` nothing.
+    const picked = PhoneEditor.selectCountry(PhoneEditor.create(props), "US");
+    expect(proposedValue(picked)).toBeNull();
+    const carried = carryThrough(picked, props, between);
+    expect(PhoneEditor.observeCountry(carried).proposed?.code).toBe("US");
+    const answered = PhoneEditor.reconcile(carried, {
+      ...props,
+      value: "323 555 0130",
+      countryCode: "US",
+      metadata: maxMetadata,
+      outputFormat: "e164",
+    });
+    expect(PhoneEditor.observeCountry(answered).proposed).toBeNull();
+    expect(shown(answered)).toEqual({ display: "3235550130", output: "+13235550130", country: "US" });
+  });
+
+  it.each<[string, Steps]>([
+    [
+      "after the format change, the countryless answer and a metadata replacement in one render",
+      [{ outputFormat: "raw", value: "701234567", metadata: seWithoutTrunkPrefix }],
+    ],
+    [
+      "after the format change, then the countryless answer with a metadata replacement",
+      [{ outputFormat: "raw" }, { outputFormat: "raw", value: "701234567", metadata: seWithoutTrunkPrefix }],
+    ],
+  ])("keeps a pick waiting when the parent restates its countryless answer, %s", (_name, between) => {
+    const props = {
+      value: "+460701234567",
+      countryCode: "NO",
+      outputFormat: "e164",
+      preserveOnCountryChange: true,
+      autoDetectCountry: false,
+    } as const;
+    const picked = PhoneEditor.selectCountry(PhoneEditor.create(props), "SE");
+    expect(proposedValue(picked)).toBe("+46701234567");
+    const carried = carryThrough(picked, props, between);
+    expect(PhoneEditor.observeCountry(carried).proposed?.code).toBe("SE");
+    const answered = PhoneEditor.reconcile(carried, {
+      ...props,
+      value: "70 123 45 67",
+      outputFormat: "raw",
+      metadata: seWithoutTrunkPrefix,
+    });
+    // A new countryless form of the same number answers the number half again, so the pick waits
+    // for its country.
+    expect(PhoneEditor.observeCountry(answered).proposed?.code).toBe("SE");
+    expect(shown(answered)).toEqual({ display: "701234567", output: "70 123 45 67", country: "NO" });
+    expect(PhoneEditor.steeredValue(answered)).toBeNull();
   });
 });

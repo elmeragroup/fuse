@@ -1,7 +1,15 @@
 import fc from "fast-check";
 
+import { CALLING_CODES, decodeNumber } from "./phone-number-oracle";
 import type { TraceCode } from "./phone-number-oracle";
-import { traceCatalog, traceCode, traceFormat, traceUserAction } from "./phone-trace-arbitraries";
+import {
+  traceCatalog,
+  traceCode,
+  traceFormat,
+  tracePaste,
+  tracePick,
+  traceUserAction,
+} from "./phone-trace-arbitraries";
 import type { TraceFormat, TraceUserAction } from "./phone-trace-arbitraries";
 
 /**
@@ -48,6 +56,26 @@ export type TraceAnswer = {
    */
   readonly order: "together" | "country first" | "value first";
 };
+
+/** A form a parent stores the output it heard in: as heard, as national digits, or as written nationally. */
+export type StoredForm = Exclude<TraceAnswer["value"], "reject">;
+
+/**
+ * The value a parent stores for an output it heard, in `form`. SE and FI write a trunk zero before
+ * national numbers; NO and SJ write none. A national number that starts with a zero of its own is
+ * written as it is, since another zero would make it a `00` international prefix.
+ *
+ * @param heard - The output the parent heard.
+ * @param form - The form the parent stores it in.
+ * @returns The stored value.
+ */
+export function storedForm(heard: string, form: StoredForm): string {
+  if (form === "echo") return heard;
+  const { cc, nsn } = decodeNumber(heard);
+  if (form === "countryless") return nsn;
+  const trunked = (cc === CALLING_CODES.SE || cc === CALLING_CODES.FI) && !nsn.startsWith("0");
+  return trunked ? `0${nsn}` : nsn;
+}
 
 /** A props change a parent makes of its own, with the releases and catalog it may carry. */
 export type TracePropsChange = Partial<CountryTraceProps> & {
@@ -113,6 +141,25 @@ export const initialTraceProps: fc.Arbitrary<CountryTraceProps> = fc.record({
   autoDetectCountry: fc.boolean(),
   metadata: metadataKind,
 });
+
+/** The props that set how the field reads and shows a number, apart from `value` and `countryCode`. */
+type TraceConfiguration = Pick<
+  CountryTraceProps,
+  "countries" | "outputFormat" | "international" | "formatOnType" | "autoDetectCountry" | "metadata"
+>;
+
+/** Any change of the configuration alone, which keeps `value` and `countryCode`. */
+const configurationChange: fc.Arbitrary<Partial<TraceConfiguration>> = fc.record(
+  {
+    countries: traceCatalog,
+    outputFormat: traceFormat,
+    international: fc.boolean(),
+    formatOnType: fc.boolean(),
+    autoDetectCountry: fc.boolean(),
+    metadata: metadataKind,
+  },
+  { requiredKeys: [] }
+);
 
 /**
  * Any subset of the props a render can change at once, `countryCode` included: several reach
@@ -215,3 +262,61 @@ export const traceStep: fc.Arbitrary<TraceStep> = fc.oneof(
     traceNumber.map((value) => propsStep({ value }))
   )
 );
+
+/** How the parent answers a waiting proposal, and what comes before the answer. */
+type AnswerReply = {
+  /** The number half the parent answers before the country, in the form it stores, or none. */
+  readonly half: StoredForm | null;
+  /** Configuration changes that carry the proposal before the answer. */
+  readonly carries: readonly Partial<TraceConfiguration>[];
+  /** The configuration change that arrives with the answer. */
+  readonly change: Partial<TraceConfiguration>;
+  /**
+   * The answer's value: `"stored"` for the stored one, a {@link StoredForm} of the output the parent
+   * heard, or any other number as written.
+   */
+  readonly value: string;
+  /** The answer's code: the first one, the proposal's, or any. */
+  readonly code: "stored" | "proposal" | TraceCode;
+};
+
+/**
+ * A scenario for contract (xii), the no-steer answer property in
+ * `phone-editor.country-contracts.test.ts`: a proposal waiting under a controlled `countryCode`,
+ * the props that answer it, and the configuration changes that may come before the answer.
+ */
+export type AnswerScenario = {
+  /** The props the field starts with, under a controlled country. */
+  readonly initial: CountryTraceProps & { readonly countryCode: TraceCode };
+  /** The pick or paste that makes the proposal. */
+  readonly action: Extract<TraceUserAction, { readonly kind: "pick" | "paste" }>;
+  /** How the parent answers. */
+  readonly reply: AnswerReply;
+};
+
+/** Scenarios with any start under country control, a pick or paste, and any reply. */
+export const answerScenario: fc.Arbitrary<AnswerScenario> = fc.record({
+  initial: fc.record({
+    value: fc.option(traceNumber, { nil: undefined }),
+    defaultValue: traceNumber,
+    countryCode: traceCode,
+    countries: traceCatalog,
+    outputFormat: traceFormat,
+    preserveOnCountryChange: fc.boolean(),
+    international: fc.boolean(),
+    formatOnType: fc.boolean(),
+    autoDetectCountry: fc.boolean(),
+    metadata: metadataKind,
+  }),
+  action: fc.oneof(tracePick, tracePaste),
+  reply: fc.record({
+    half: fc.option(fc.constantFrom<StoredForm>("echo", "countryless", "national"), { nil: null }),
+    carries: fc.array(configurationChange, { maxLength: 2 }),
+    change: configurationChange,
+    value: fc.oneof(
+      fc.constantFrom<"stored" | StoredForm>("stored", "echo", "countryless", "national"),
+      traceNumber
+    ),
+    code: fc.oneof(fc.constantFrom("stored" as const, "proposal" as const), traceCode),
+  }),
+});
