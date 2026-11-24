@@ -7,7 +7,8 @@
 // `@elmeragroup/color`, and whose line gradient turns hard at the threshold's own radius; the
 // pixel floor, one device pixel along the radius, and the stack's floor on its outer segment alone;
 // the 25-hour 26 October 2025, where "06" sits at 100.8°; the seam where the arrows wrap; Now at
-// 11:30, 172.5°; and the clock key map, where PageDown moves six hours.
+// 11:30, 172.5°; the clock key map, where PageDown moves six hours; and the Tooltip under
+// `defaultActiveX`, shown in its lane at rest and on the first pointer pass.
 import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
@@ -15,7 +16,8 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { clockLayer, clockPath, dotPoints, wedgeRadii } from "../../../test/chart/clock";
-import { clientPoint, hoverAt, polarFigure } from "../../../test/chart/pie";
+import { label, popup, visible } from "../../../test/chart/marks";
+import { clientPoint, dialPoint, hoverAt, polarFigure } from "../../../test/chart/pie";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { ChartConfig } from "./chart-types";
@@ -44,6 +46,7 @@ function Dial({
   scale,
   inner,
   now,
+  defaultActiveX,
   size,
   children,
 }: {
@@ -53,6 +56,7 @@ function Dial({
   /** The hole's radius as a share of the outer radius, 0.3 by default. */
   readonly inner?: number;
   readonly now?: number;
+  readonly defaultActiveX?: number;
   /** The dial's `--chart-polar-size`, as a consumer sets it. */
   readonly size?: string;
   readonly children: React.ReactNode;
@@ -69,6 +73,7 @@ function Dial({
           radiusScale={scale}
           innerRadius={inner}
           now={now}
+          defaultActiveX={defaultActiveX}
           data-intro="none"
           style={size === undefined ? undefined : { "--chart-polar-size": size }}
           aria-label="Døgn">
@@ -381,6 +386,63 @@ describe("the default tooltip over a stack", () => {
     // The popup portals out of the host, and its total row carries its slot.
     await expect.poll(() => document.querySelectorAll('[data-slot="chart-tooltip-total"]').length).toBe(1);
     expect(document.querySelector('[data-slot="chart-tooltip-total"]')?.textContent).toContain("3");
+  });
+});
+
+describe("the tooltip under defaultActiveX", () => {
+  /** Whether a box lies clear of the dial and inside the viewport, the Tooltip's placement rule. */
+  function inLane(placed: DOMRect): boolean {
+    const dial = page.getByRole("listbox").element().getBoundingClientRect();
+    const overlaps =
+      placed.left < dial.right &&
+      placed.right > dial.left &&
+      placed.top < dial.bottom &&
+      placed.bottom > dial.top;
+    return (
+      !overlaps &&
+      placed.left >= 0 &&
+      placed.top >= 0 &&
+      placed.right <= window.innerWidth &&
+      placed.bottom <= window.innerHeight
+    );
+  }
+
+  /** The open popup and its positioner. */
+  function opened() {
+    const open = popup();
+    const positioner = open?.parentElement;
+    if (open == null || positioner == null) throw new Error("no open popup");
+    return { open, positioner };
+  }
+
+  it("shows the default item's popup in its lane and updates it on the first pointer pass", async () => {
+    // 17:00 is active before any pointer, so its popup opens in the Root's first commit. The pass
+    // moves the active hour to 04:00, slot 4 at 67.5°. The oracle is the slot labels and the
+    // Tooltip's own placement rule: the popup paints, fully opaque, in a lane that covers no part of
+    // the dial and stays inside the viewport, at rest and after the pass.
+    const { host } = renderThemed(
+      <Dial defaultActiveX={DAY + 17 * HOUR}>
+        <ClockChart.Column dataKey="kwh" />
+        <ClockChart.Tooltip />
+      </Dial>
+    );
+    await expect.poll(label).toBe("17–18");
+    await expect
+      .poll(() => {
+        const { open, positioner } = opened();
+        return visible(open) && inLane(positioner.getBoundingClientRect());
+      })
+      .toBe(true);
+    const column = clockLayer(host, "clock-chart-column");
+    for (const angle of [37.5, 52.5, 67.5]) {
+      const { x, y } = dialPoint(angle, 0.6);
+      await hoverAt(...clientPoint(column, x, y));
+    }
+    await expect.poll(label).toBe("04–05");
+    const { open, positioner } = opened();
+    await expect.poll(() => getComputedStyle(open).opacity).toBe("1");
+    expect(visible(open)).toBe(true);
+    expect(inLane(positioner.getBoundingClientRect())).toBe(true);
   });
 });
 

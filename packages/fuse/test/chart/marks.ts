@@ -52,6 +52,18 @@ export function popup(): HTMLElement | null {
 }
 
 /**
+ * Whether a popup paints: it has a layout box, its CSS visibility is visible, and neither it nor an
+ * ancestor has opacity 0. It does not check that the popup lies inside the viewport. A closed popup
+ * stays mounted once it has opened, so closing must take it out of view, not out of the document.
+ *
+ * @param element - The popup.
+ * @returns Whether it paints.
+ */
+export function visible(element: HTMLElement): boolean {
+  return element.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+}
+
+/**
  * The open popup's slot label.
  *
  * @returns The label's text, or null while no popup is open.
@@ -192,10 +204,7 @@ export async function keyOpen(action: () => Promise<void>): Promise<KeyOpen> {
                   ? `animation ${animation.animationName}`
                   : "script animation"
             ) ?? [],
-        opacity:
-          open?.checkVisibility({ opacityProperty: true, visibilityProperty: true }) === true
-            ? Number(getComputedStyle(open).opacity)
-            : null,
+        opacity: open != null && visible(open) ? Number(getComputedStyle(open).opacity) : null,
       };
     },
     () => popupOpen() && (left -= 1) <= 0
