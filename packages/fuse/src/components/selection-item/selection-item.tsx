@@ -41,16 +41,21 @@ const connectedStackClass = cn(
 // through to the target. Once the band holds a footer that shows, the target shrinks to the
 // label row and the band takes its own clicks again, unless `isSubSectionSelectable` keeps the
 // whole box. Child combinators keep a selection row nested in a SubSection from counting.
+// Both checks read markers a consumer cannot replace: Fuse renders the band with no consumer
+// props or `render`, and `Item.Footer`, which takes consumer props, writes `data-item-footer`
+// after spreading them. The band checks its own children, so it still takes clicks when a
+// Shell `render` wraps the label and the band in another element. The label's check needs the
+// row as its parent, and `:where()` keeps that row selector from raising its specificity.
 const labelClass = cn(
   "contents cursor-pointer before:absolute before:inset-0 before:-z-1",
   "selection-row-disabled-part:cursor-not-allowed"
 );
 const labelRowTargetClass = cn(
-  "[[data-selection-item]:has(>[data-slot=selection-item-sub-sections]>div>[data-slot=item-footer]:not([data-mode=hidden]))>&]:before:row-[1/2]"
+  "[:where([data-selection-item]:has(>[data-selection-item-band]>div>[data-item-footer]:not([data-item-footer=hidden])))>&]:before:row-[1/2]"
 );
 const subSectionBandClass = cn(
   "pointer-events-none col-span-full grid grid-cols-subgrid pb-3.5",
-  "has-[>div>[data-slot=item-footer]:not([data-mode=hidden])]:pointer-events-auto"
+  "has-[>div>[data-item-footer]:not([data-item-footer=hidden])]:pointer-events-auto"
 );
 // With `isSubSectionSelectable`, the band shows the label row's cursor, and the not-allowed one
 // while the row is disabled.
@@ -105,7 +110,7 @@ function selectFromSubSection(event: MouseEvent<HTMLDivElement>): void {
   }
   // React bubbles clicks from portals and from rows nested in a SubSection; only a click
   // in this row's own band toggles it.
-  const band = event.target.closest("[data-slot=selection-item-sub-sections]");
+  const band = event.target.closest("[data-selection-item-band]");
   if (band?.parentElement !== event.currentTarget) {
     return;
   }
@@ -458,6 +463,7 @@ export function SelectionItemShell({
       {hasSubSection ? (
         <div
           data-slot="selection-item-sub-sections"
+          data-selection-item-band=""
           className={cn(subSectionBandClass, isSubSectionSelectable ? selectableBandClass : null)}>
           {controlAtEnd ? (
             <>

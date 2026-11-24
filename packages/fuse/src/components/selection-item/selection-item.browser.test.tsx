@@ -55,6 +55,67 @@ describe("SelectionItem", () => {
       expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("false");
     });
 
+    it.each([
+      ["data-slot", { "data-slot": "my-footer" }],
+      ["data-mode", { "data-mode": "hidden" }],
+    ])(
+      "keeps the padding around the SubSection outside the click target when the SubSection takes its own %s",
+      async (_, attributes) => {
+        renderThemed(
+          <CheckboxItemGroup label="Plans">
+            <CheckboxItem value="fixed">
+              <RowTitle>Fixed price</RowTitle>
+              <CheckboxItem.SubSection {...attributes}>Locked for twelve months.</CheckboxItem.SubSection>
+            </CheckboxItem>
+          </CheckboxItemGroup>
+        );
+
+        const shell = shellFrom("Fixed price");
+        await clickBottomInset(shell);
+        expect(checkboxNamed("Fixed price").getAttribute("aria-checked"), "bottom padding").toBe("false");
+        const text = textNamed("Locked for twelve months.").getBoundingClientRect();
+        await clickShellAt(shell, () => 4, text.top + text.height / 2);
+        expect(checkboxNamed("Fixed price").getAttribute("aria-checked"), "side padding").toBe("false");
+      }
+    );
+
+    it("keeps the band's bottom inset outside the click target for an Item.Footer passed through subSections", async () => {
+      renderThemed(
+        <Field.Root>
+          <SelectionItem.Shell
+            dataSlot="checkbox-item"
+            control={<Checkbox.Root />}
+            subSections={<Item.Footer data-slot="my-footer">Locked for twelve months.</Item.Footer>}>
+            <RowTitle>Fixed price</RowTitle>
+          </SelectionItem.Shell>
+        </Field.Root>
+      );
+
+      await clickBottomInset(shellFrom("Fixed price"));
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("false");
+    });
+
+    it("keeps the band's bottom inset outside the click target when a Shell render wraps its parts", async () => {
+      renderThemed(
+        <Field.Root>
+          <SelectionItem.Shell
+            dataSlot="checkbox-item"
+            control={<Checkbox.Root />}
+            render={({ children, ...props }) => (
+              <div {...props}>
+                <div className="contents">{children}</div>
+              </div>
+            )}>
+            <RowTitle>Fixed price</RowTitle>
+            <SelectionItem.SubSection>Locked for twelve months.</SelectionItem.SubSection>
+          </SelectionItem.Shell>
+        </Field.Root>
+      );
+
+      await clickBottomInset(shellFrom("Fixed price"));
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("false");
+    });
+
     it("does not toggle on a click that ends a text selection", () => {
       renderThemed(<SelectablePlan isSubSectionSelectable />);
 
@@ -195,7 +256,7 @@ describe("SelectionItem", () => {
         if (clicks.length === 1) {
           event.preventDefault();
         }
-        if (clicks.length === 2) {
+        if (clicks.length === 2 || clicks.length === 3) {
           event.preventBaseUIHandler();
         }
       }
@@ -207,7 +268,9 @@ describe("SelectionItem", () => {
             isSubSectionSelectable
             onClick={onClick}>
             <RowTitle>Fixed price</RowTitle>
-            <SelectionItem.SubSection>Locked for twelve months.</SelectionItem.SubSection>
+            <SelectionItem.SubSection data-slot="my-sub-section">
+              Locked for twelve months.
+            </SelectionItem.SubSection>
           </SelectionItem.Shell>
         </Field.Root>
       );
@@ -218,6 +281,10 @@ describe("SelectionItem", () => {
       await userEvent.click(textNamed("Locked for twelve months."));
       expect(clicks).toEqual([true, true]);
       expect(checkboxNamed("Fixed price").getAttribute("aria-checked"), "preventBaseUIHandler").toBe("false");
+      // The band's bottom inset is the band's too, so the same handler cancels a click there.
+      await clickBottomInset(shellFrom("Fixed price"));
+      expect(clicks).toEqual([true, true, true]);
+      expect(checkboxNamed("Fixed price").getAttribute("aria-checked"), "bottom inset").toBe("false");
       await userEvent.click(textNamed("Locked for twelve months."));
       expect(checkboxNamed("Fixed price").getAttribute("aria-checked")).toBe("true");
     });
@@ -558,6 +625,15 @@ function SubSectionTree({ mode }: { mode: "hidden" | "visible" | "default" }) {
 async function clickShellAt(shell: HTMLElement, x: (width: number) => number, y: number): Promise<void> {
   const top = shell.getBoundingClientRect().top + shell.clientTop;
   await userEvent.click(shell, { position: { x: x(shell.clientWidth), y: y - top } });
+}
+
+/**
+ * Clicks the shell at the center of its padding box's width, 4px above the inner edge of its
+ * bottom border. In a row with a SubSection band, that point is in the band's bottom inset.
+ */
+async function clickBottomInset(shell: HTMLElement): Promise<void> {
+  const bottom = shell.getBoundingClientRect().bottom - shell.clientTop;
+  await clickShellAt(shell, (width) => width / 2, bottom - 4);
 }
 
 function PressCounter() {

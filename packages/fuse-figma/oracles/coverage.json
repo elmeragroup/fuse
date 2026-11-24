@@ -4191,7 +4191,7 @@
       },
       {
         "part": "label",
-        "className": "[[data-selection-item]:has(>[data-slot=selection-item-sub-sections]>div>[data-slot=item-footer]:not([data-mode=hidden]))>&]:before:row-[1/2]"
+        "className": "[:where([data-selection-item]:has(>[data-selection-item-band]>div>[data-item-footer]:not([data-item-footer=hidden])))>&]:before:row-[1/2]"
       },
       {
         "part": "selection-item-control",
