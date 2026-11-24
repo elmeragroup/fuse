@@ -10,6 +10,7 @@ import { userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames, pollFrames } from "../../../test/animation-frames";
+import { axFocused, axNodes, axProperty } from "../../../test/ax-tree";
 import { S06Chart } from "../../../test/chart/bar-charts";
 import {
   animatedWhile,
@@ -218,12 +219,22 @@ describe("the Escape rule and key safety", () => {
     expect(keys).toEqual(["ArrowRight handled", "PageDown handled", "Home handled"]);
   });
 
-  it("toggles the pin with Enter while no LegendToggleGroup is mounted", async () => {
-    const { host } = renderThemed(<S06Chart />);
+  it("toggles the pin with Enter while no LegendToggleGroup is mounted, and the pinned tooltip's option stays unselected", async () => {
+    const { host } = renderThemed(
+      <S06Chart>
+        <Chart.Bar dataKey="household" />
+        <Chart.Tooltip />
+      </S06Chart>
+    );
     await enterChart(host);
     await userEvent.keyboard("{Enter}");
     // Root's data-pinned attribute is its public paint contract.
     expect(host.querySelector('[data-slot="chart"]')?.hasAttribute("data-pinned")).toBe(true);
+    await expect.poll(popupOpen).toBe(true);
+    // A pin holds the tooltip and selects nothing, as Chromium's accessibility tree reports.
+    const focusedNode = axFocused(await axNodes());
+    expect(focusedNode?.role?.value).toBe("option");
+    expect(axProperty(focusedNode ?? { nodeId: "" }, "selected")).toBe(false);
     await userEvent.keyboard("{Enter}");
     expect(host.querySelector('[data-slot="chart"]')?.hasAttribute("data-pinned")).toBe(false);
   });

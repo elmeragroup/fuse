@@ -9,6 +9,7 @@ import { userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames, useFakeFrames } from "../../../test/animation-frames";
+import { axFocused, axNodes, axProperty } from "../../../test/ax-tree";
 import { animatedWhile, keyOpen, popup, popupFade, popupOpen } from "../../../test/chart/marks";
 import { BILL, BILL_CONFIG, SPOKE_CONFIG, SPOKES } from "../../../test/chart/polar-fixtures";
 import { phrasesAfter, startReader as start } from "../../../test/chart/spoken";
@@ -131,7 +132,7 @@ describe("a screen reader's key sequence through each family", () => {
   ];
 
   it.each(families)(
-    "speaks the $family chart's options through Tab, arrows, Home, End and Escape",
+    "speaks the $family chart's options through Tab, arrows, Home, End and Escape, and leaves the focused one unselected",
     async ({ chart, keys, first, then }) => {
       const { host } = renderThemed(
         <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
@@ -145,6 +146,10 @@ describe("a screen reader's key sequence through each family", () => {
       // Escape leaves focus on it with nothing new to say.
       expect(heard[0]).toMatch(first);
       expect(heard.slice(1)).toEqual(then);
+      // vsr defaults a missing aria-selected to false, so only Chromium's tree shows the state.
+      const focused = axFocused(await axNodes());
+      expect(focused?.role?.value).toBe("option");
+      expect(axProperty(focused ?? { nodeId: "" }, "selected")).toBe(false);
     }
   );
 });

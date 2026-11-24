@@ -60,3 +60,14 @@ export async function axNodes(): Promise<readonly AxNode[]> {
 export function axProperty(node: AxNode, name: string): string | number | boolean | undefined {
   return node.properties?.find((entry) => entry.name === name)?.value.value;
 }
+
+/**
+ * The node that holds focus among nodes that {@link axNodes} read. Each document's web area reports
+ * focus too, so this skips those.
+ *
+ * @param nodes - The accessibility tree's nodes.
+ * @returns The focused node, or `undefined` when no element in the page holds focus.
+ */
+export function axFocused(nodes: readonly AxNode[]): AxNode | undefined {
+  return nodes.find((node) => axProperty(node, "focused") === true && node.role?.value !== "RootWebArea");
+}

@@ -15,6 +15,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames, useFakeFramesAt } from "../../../test/animation-frames";
+import { axFocused, axNodes, axProperty } from "../../../test/ax-tree";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import { pointerAt } from "../../../test/chart/marks";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
@@ -657,7 +658,7 @@ describe("the readout", () => {
     await userEvent.keyboard("{Tab}");
   }
 
-  it("walks the window's readings from the latest, with the tooltip on the walked one", async () => {
+  it("walks the window's readings from the latest, with the tooltip on the walked one, and Escape leaves the option focused and unselected", async () => {
     const { host } = renderThemed(<Live />);
     await enterChart();
     expect(roleNamed("listbox", "Spotpris nå, datapunkter")).not.toBeNull();
@@ -675,8 +676,13 @@ describe("the readout", () => {
     await userEvent.keyboard("{End}");
     expect(focused()[1]).toBe("3");
     expect(page.getByRole("option").all()).toHaveLength(1);
+    await expect.poll(() => tooltipText(host)).toBe("14:00:20Pris100");
     await userEvent.keyboard("{Escape}");
     await expect.poll(() => tooltipText(host)).toBeNull();
+    // Chromium's accessibility tree reports the focused option as unselected.
+    const focusedNode = axFocused(await axNodes());
+    expect(focusedNode?.role?.value).toBe("option");
+    expect(axProperty(focusedNode ?? { nodeId: "" }, "selected")).toBe(false);
   });
 
   it("counts only the readings the window shows in the option's position and set size", async () => {
