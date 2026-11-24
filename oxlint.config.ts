@@ -403,7 +403,6 @@ export default defineConfig({
         "jsx-a11y/no-aria-hidden-on-focusable": "off",
         "jsx-a11y/img-redundant-alt": "off",
         "jsx-a11y/click-events-have-key-events": "off",
-        "jsx-a11y/aria-role": "off",
         "jsx-a11y/anchor-is-valid": "off",
       },
     },
