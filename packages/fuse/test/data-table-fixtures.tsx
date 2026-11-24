@@ -297,7 +297,7 @@ const plainTicketColumns = createColumnHelper<typeof plainResizeFeatures, Ticket
 const plainResizableColumns = plainTicketColumns.columns([
   plainTicketColumns.accessor("subject", {
     header: ({ header }) => (
-      // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- a click-to-sort header region, the shape a handle's clicks must not reach
+      // oxlint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- a click-to-sort header around the resize handle, so the tests can check the handle's clicks and double-clicks never reach it
       <div onClick={header.column.getToggleSortingHandler()}>
         Subject
         <DataTable.ResizeHandle header={header} columnName="Subject" />

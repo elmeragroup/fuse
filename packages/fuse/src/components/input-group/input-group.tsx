@@ -132,7 +132,7 @@ export function InputGroupAddon({
   ...props
 }: InputGroupAddonProps): ReactElement {
   return (
-    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- the click only widens the pointer hit area of the Root's own control, which keyboard users reach directly; a role here would expose a container that does nothing (#568)
+    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- the addon's own click only widens the pointer hit area of the Root's control, which keyboard users focus directly; a role or key handler here would duplicate that control (#568)
     <div
       data-slot="input-group-addon"
       data-align={align}
