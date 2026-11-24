@@ -10,13 +10,12 @@
  *   section is an instance that fills the rail, and the content takes the height the header and
  *   footer leave.
  * - Its widths are the Provider's `--sidebar-width` (16rem, 256px) and `--sidebar-width-icon` (3rem,
- *   48px). An inset rail adds its 8px padding on each side and 2px that nothing fills, 66px, 2px
- *   wider than its gap (#759).
+ *   48px). An inset or floating rail adds its 8px padding on each side, 64px, as wide as its gap.
  * - The `sidebar` variant draws its 1px edge border on the end side, so its sections draw 255px
  *   wide, or 47px in the rail. The `inset` variant pads 8px instead, on the `sidebar` fill the
- *   Provider's wrapper paints behind it, so its sections draw 240px wide, or 50px in the rail.
- * - The `floating` variant pads 8px as `inset` does, with the same 66px rail, and its surface rounds
- *   `radius-lg` inside a 1px `sidebar-border` ring and `shadow-sm`. Its sections are the section
+ *   Provider's wrapper paints behind it, so its sections draw 240px wide, or 48px in the rail.
+ * - The `floating` variant pads 8px as `inset` does, and its surface rounds `radius-lg` inside a
+ *   1px `sidebar-border` ring and `shadow-sm`. Its sections are the section
  *   sets' `floating=true` variants, which pad `surface-pad-sm` and round their rows inside the
  *   surface's corner.
  * - The separator is inset 8px from each side of the content.

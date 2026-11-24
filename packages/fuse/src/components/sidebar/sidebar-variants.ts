@@ -141,6 +141,15 @@ export const sidebarWrapperVariants = tv({
 });
 
 /**
+ * The collapsed width of a `floating` or `inset` icon rail: `--sidebar-width-icon` plus the
+ * container's 8px padding on each side. Floating's ring takes no room. The gap and the container
+ * share this width, so the rail fills its gap exactly.
+ */
+const sidebarPaddedRailWidthClass = cn(
+  "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
+);
+
+/**
  * The desktop panel's parts. They are package-private, and the workspace-only recipe catalog
  * re-exports them for the Figma component sync.
  * - `root`: the `group peer` anchor that carries `data-state`, `data-collapsible`, `data-variant`
@@ -150,7 +159,7 @@ export const sidebarWrapperVariants = tv({
  * - `container`: the rail box, viewport-tall and `fixed` at `bounds="page"`, and container-tall
  *   and `absolute` against the Provider's wrapper at `bounds="container"`. A flush `sidebar` draws
  *   its edge border; a `floating` or `inset` one pads its surface by 8px, so its icon rail is the
- *   icon width plus that padding and the 2px the ring takes.
+ *   icon width plus that padding.
  * - `inner`: the surface. Floating's shadow and ring stay as `group-data-[variant=floating]:`
  *   selectors, so the panel's markup is the same for every variant.
  *
@@ -191,8 +200,8 @@ export const sidebarPanelVariants = tv({
     {
       variant: ["floating", "inset"],
       class: {
-        gap: "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]",
-        container: "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]",
+        gap: sidebarPaddedRailWidthClass,
+        container: cn("p-2", sidebarPaddedRailWidthClass),
       },
     },
   ],

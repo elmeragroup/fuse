@@ -458,6 +458,25 @@ describe("Sidebar.Inset beside an inset panel", () => {
   });
 });
 
+describe("Sidebar collapsed to the icon rail", () => {
+  withoutShellMotion();
+
+  // The collapsed rail is exactly as wide as its 64px gap, a 48px surface (`3rem`) with 8px each side.
+  it.each(["inset", "floating"] as const)("sizes the collapsed %s icon rail to its gap", (variant) => {
+    renderThemed(<Frame provider={{ defaultOpen: false }} root={{ variant, collapsible: "icon" }} />);
+    const gap = bySlot("sidebar-gap").getBoundingClientRect();
+    const container = bySlot("sidebar-container").getBoundingClientRect();
+    const inner = bySlot("sidebar-inner").getBoundingClientRect();
+    expect({
+      gap: gap.width,
+      container: container.width,
+      surface: inner.width,
+      start: inner.left - container.left,
+      end: container.right - inner.right,
+    }).toEqual({ gap: 64, container: 64, surface: 48, start: 8, end: 8 });
+  });
+});
+
 describe("Sidebar controlled and uncontrolled state", () => {
   withoutShellMotion();
 
