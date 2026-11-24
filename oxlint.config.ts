@@ -392,6 +392,8 @@ export default defineConfig({
         "react-hooks/exhaustive-deps": "error",
         "react/no-unstable-nested-components": "error",
         "jsx-a11y/prefer-tag-over-role": "off",
+        // The rule checks the element passed to `render` on its own, but the part names it
+        // with its children or `aria-label`. Browser role/name tests and the docs axe sweep check names.
         "jsx-a11y/control-has-associated-label": "off",
       },
     },
