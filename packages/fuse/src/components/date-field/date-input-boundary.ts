@@ -7,8 +7,16 @@
 // The control knows when focus lands outside the input and the rest of the boundary. It then calls
 // the input's `leave`, which runs the blur the input deferred. The control dispatches no event for
 // it, so nothing outside sees a blur that never happened.
+//
+// The boundary also joins the inputs one control renders, such as a range picker's start and end,
+// into one run of segments. React Aria moves focus across both of a range's fields with one focus
+// manager: typing the start's last segment moves on to the end's first, an empty segment's
+// Backspace and the left and right arrows cross back and forth. A DateInput moves focus among its
+// own segments and, past its first or last, asks the boundary for the segment to cross to.
 
 import { createContext } from "react";
+
+import type { DateInputFocusDirection } from "./date-input-session";
 
 /** A DateInput as it registers with the control that widens its focus boundary. */
 export type DateInputBoundaryMember = {
@@ -39,6 +47,15 @@ export type DateInputBoundary = {
    * @returns The unregistration, called when the input unmounts or the boundary changes.
    */
   readonly register: (member: DateInputBoundaryMember) => () => void;
+  /**
+   * Returns the segment focus crosses to past an input's first or last segment: the nearest
+   * segment of the registered input beside it in document order.
+   *
+   * @param root - The asking input's Root element.
+   * @param direction - Which way focus moves.
+   * @returns The segment, or `null` at either end of the run.
+   */
+  readonly neighborSegment: (root: HTMLElement, direction: DateInputFocusDirection) => HTMLElement | null;
 };
 
 /** The boundary of the control around a DateInput, or `undefined` outside such a control. */

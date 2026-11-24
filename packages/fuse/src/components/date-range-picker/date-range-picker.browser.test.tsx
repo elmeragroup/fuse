@@ -25,6 +25,7 @@ import { popupFocusRestored } from "../../../test/popup-focus";
 import { waitForPopupFocus, waitForPopupSettled } from "../../../test/popup-settled";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { segmentWithCustomSlot } from "../../../test/wrapped-date-segment";
 import { definedProps } from "../../internal/defined-props";
 import "../../temporal-polyfill";
 import type { DateInputValue } from "../date-field/date-input";
@@ -150,6 +151,36 @@ function LoggedRange({
 }
 
 describe("DateRangePicker wiring", () => {
+  it("focuses the start's first segment on a label press, and crosses to the end, under the consumer's data-slots", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateRangePicker.Root data-slot="booking-range" defaultValue={range("2026-10-05", "2026-10-09")}>
+          <DateRangePicker.Label>Period</DateRangePicker.Label>
+          <DateRangePicker.Group>
+            <DateRangePicker.StartInput>{segmentWithCustomSlot}</DateRangePicker.StartInput>
+            <DateRangePicker.Separator />
+            <DateRangePicker.EndInput>{segmentWithCustomSlot}</DateRangePicker.EndInput>
+            <DateRangePicker.Trigger />
+          </DateRangePicker.Group>
+          <DateRangePicker.Popup>
+            <DateRangePicker.Calendar />
+          </DateRangePicker.Popup>
+        </DateRangePicker.Root>
+      )
+    );
+    await userEvent.click(page.getByText("Period", { exact: true }));
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start Date, Period", exact: true }))
+      .toHaveFocus();
+
+    await userEvent.click(page.getByRole("spinbutton", { name: "year, Start Date, Period", exact: true }));
+    await userEvent.keyboard("{ArrowRight}");
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, End Date, Period", exact: true }))
+      .toHaveFocus();
+  });
+
   it("names the group and both inputs by the shared label and describes them by the description", () => {
     renderThemed(
       withLocale(

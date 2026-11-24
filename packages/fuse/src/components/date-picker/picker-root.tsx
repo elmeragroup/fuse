@@ -226,8 +226,9 @@ export type PickerRoot = {
   readonly shell: PickerShellContextValue;
   /** The state the Root shares with its `render` callback. */
   readonly state: PickerState;
-  /** The Root element's focus and blur handlers: the focus boundary. */
+  /** The Root element's ref and its focus and blur handlers: the focus boundary. */
   readonly boundary: {
+    readonly ref: RefObject<HTMLDivElement | null>;
     readonly onFocus: (event: FocusEvent<HTMLElement>) => void;
     readonly onBlur: (event: FocusEvent<HTMLElement>) => void;
   };
@@ -254,9 +255,9 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
 
   const { open, resetOwner } = session;
   const triggerId = useId();
-  const popupRef = useRef<HTMLDivElement>(null);
-  const focus = usePickerFocusBoundary(popupRef, props.onFocusLeave);
-  const { inputBoundary, containsInput, adjacentInput } = focus;
+  const elementRef = useRef<HTMLDivElement>(null);
+  const focus = usePickerFocusBoundary(elementRef, props.onFocusLeave);
+  const { inputBoundary, containsInput, focusFirstSegment, attachPopup } = focus;
   const { withOpener, openerRef } = usePickerOpener(containsInput, open);
   const requestOpen = useMemo(() => withOpener(session.requestOpen), [withOpener, session.requestOpen]);
 
@@ -327,13 +328,13 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
       readOnly,
       invalid,
       size,
-      popupRef,
       registerPresets,
       readPreset,
       range,
       inputBoundary,
       containsInput,
-      adjacentInput,
+      focusFirstSegment,
+      attachPopup,
       openerRef,
       kind: kind.kind,
       resetOwner,
@@ -354,7 +355,8 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
       range,
       inputBoundary,
       containsInput,
-      adjacentInput,
+      focusFirstSegment,
+      attachPopup,
       openerRef,
       kind.kind,
       resetOwner,
@@ -372,7 +374,7 @@ export function usePickerRoot(options: PickerRootOptions): PickerRoot {
     calendarSettings,
     shell,
     state,
-    boundary: { onFocus: focus.onFocus, onBlur: focus.onBlur },
+    boundary: { ref: elementRef, onFocus: focus.onFocus, onBlur: focus.onBlur },
   };
 }
 
@@ -411,6 +413,7 @@ export function usePickerRootElement(options: PickerRootElementOptions): ReactEl
   const element = useRender({
     defaultTagName: "div",
     render,
+    ref: root.boundary.ref,
     state: root.state,
     stateAttributesMapping: PICKER_STATE_ATTRIBUTES,
     props: {

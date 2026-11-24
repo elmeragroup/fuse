@@ -310,7 +310,7 @@
               "children": [
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"month","enterkeyhint":"next","id":"_R_ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"month","enterkeyhint":"next","id":"_R_ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "mm",
                   "textIndex": 0,
@@ -338,7 +338,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"day","enterkeyhint":"next","id":"_R_1ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"day","enterkeyhint":"next","id":"_R_1ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "dd",
                   "textIndex": 0,
@@ -366,7 +366,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"year","enterkeyhint":"next","id":"_R_2ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"year","enterkeyhint":"next","id":"_R_2ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "yyyy",
                   "textIndex": 0,
@@ -481,7 +481,7 @@
               "children": [
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"month","enterkeyhint":"next","id":"_R_ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"month","enterkeyhint":"next","id":"_R_ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "mm",
                   "textIndex": 0,
@@ -509,7 +509,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"day","enterkeyhint":"next","id":"_R_1ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"day","enterkeyhint":"next","id":"_R_1ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "dd",
                   "textIndex": 0,
@@ -537,7 +537,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"year","enterkeyhint":"next","id":"_R_2ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"year","enterkeyhint":"next","id":"_R_2ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "yyyy",
                   "textIndex": 0,
@@ -652,7 +652,7 @@
               "children": [
                 {
                   "tag": "span",
-                  "attributes": {"aria-disabled":"true","aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuetext":"Empty","contenteditable":"false","data-disabled":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"month","id":"_R_ml_","role":"spinbutton"},
+                  "attributes": {"aria-disabled":"true","aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuetext":"Empty","contenteditable":"false","data-date-segment":"","data-disabled":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"month","id":"_R_ml_","role":"spinbutton"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "mm",
                   "textIndex": 0,
@@ -680,7 +680,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-disabled":"true","aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuetext":"Empty","contenteditable":"false","data-disabled":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"day","id":"_R_1ml_","role":"spinbutton"},
+                  "attributes": {"aria-disabled":"true","aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuetext":"Empty","contenteditable":"false","data-date-segment":"","data-disabled":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"day","id":"_R_1ml_","role":"spinbutton"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "dd",
                   "textIndex": 0,
@@ -708,7 +708,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-disabled":"true","aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuetext":"Empty","contenteditable":"false","data-disabled":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"year","id":"_R_2ml_","role":"spinbutton"},
+                  "attributes": {"aria-disabled":"true","aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuetext":"Empty","contenteditable":"false","data-date-segment":"","data-disabled":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-slot":"date-input-segment","data-type":"year","id":"_R_2ml_","role":"spinbutton"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "yyyy",
                   "textIndex": 0,
@@ -823,7 +823,7 @@
               "children": [
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"month","aria-readonly":"true","aria-valuemax":"12","aria-valuemin":"1","aria-valuetext":"Empty","contenteditable":"false","data-focus-ring-control":"date-segment","data-placeholder":"","data-readonly":"","data-slot":"date-input-segment","data-type":"month","id":"_R_ml_","role":"spinbutton","tabindex":"0"},
+                  "attributes": {"aria-label":"month","aria-readonly":"true","aria-valuemax":"12","aria-valuemin":"1","aria-valuetext":"Empty","contenteditable":"false","data-date-segment":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-readonly":"","data-slot":"date-input-segment","data-type":"month","id":"_R_ml_","role":"spinbutton","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "mm",
                   "textIndex": 0,
@@ -851,7 +851,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"day","aria-readonly":"true","aria-valuemax":"31","aria-valuemin":"1","aria-valuetext":"Empty","contenteditable":"false","data-focus-ring-control":"date-segment","data-placeholder":"","data-readonly":"","data-slot":"date-input-segment","data-type":"day","id":"_R_1ml_","role":"spinbutton","tabindex":"0"},
+                  "attributes": {"aria-label":"day","aria-readonly":"true","aria-valuemax":"31","aria-valuemin":"1","aria-valuetext":"Empty","contenteditable":"false","data-date-segment":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-readonly":"","data-slot":"date-input-segment","data-type":"day","id":"_R_1ml_","role":"spinbutton","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "dd",
                   "textIndex": 0,
@@ -879,7 +879,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"year","aria-readonly":"true","aria-valuemax":"9999","aria-valuemin":"1","aria-valuetext":"Empty","contenteditable":"false","data-focus-ring-control":"date-segment","data-placeholder":"","data-readonly":"","data-slot":"date-input-segment","data-type":"year","id":"_R_2ml_","role":"spinbutton","tabindex":"0"},
+                  "attributes": {"aria-label":"year","aria-readonly":"true","aria-valuemax":"9999","aria-valuemin":"1","aria-valuetext":"Empty","contenteditable":"false","data-date-segment":"","data-focus-ring-control":"date-segment","data-placeholder":"","data-readonly":"","data-slot":"date-input-segment","data-type":"year","id":"_R_2ml_","role":"spinbutton","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "yyyy",
                   "textIndex": 0,
@@ -994,7 +994,7 @@
               "children": [
                 {
                   "tag": "span",
-                  "attributes": {"aria-invalid":"true","aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-invalid":"true","data-placeholder":"","data-slot":"date-input-segment","data-type":"month","enterkeyhint":"next","id":"_R_ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-invalid":"true","aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-invalid":"true","data-placeholder":"","data-slot":"date-input-segment","data-type":"month","enterkeyhint":"next","id":"_R_ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "mm",
                   "textIndex": 0,
@@ -1022,7 +1022,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-invalid":"true","aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-invalid":"true","data-placeholder":"","data-slot":"date-input-segment","data-type":"day","enterkeyhint":"next","id":"_R_1ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-invalid":"true","aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-invalid":"true","data-placeholder":"","data-slot":"date-input-segment","data-type":"day","enterkeyhint":"next","id":"_R_1ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "dd",
                   "textIndex": 0,
@@ -1050,7 +1050,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-invalid":"true","aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-invalid":"true","data-placeholder":"","data-slot":"date-input-segment","data-type":"year","enterkeyhint":"next","id":"_R_2ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-invalid":"true","aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuetext":"Empty","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-invalid":"true","data-placeholder":"","data-slot":"date-input-segment","data-type":"year","enterkeyhint":"next","id":"_R_2ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "yyyy",
                   "textIndex": 0,
@@ -1178,7 +1178,7 @@
               "children": [
                 {
                   "tag": "span",
-                  "attributes": {"aria-describedby":"_R_l_-description","aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuenow":"10","aria-valuetext":"10 – October","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"month","enterkeyhint":"next","id":"_R_ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-describedby":"_R_l_-description","aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuenow":"10","aria-valuetext":"10 – October","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"month","enterkeyhint":"next","id":"_R_ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "10",
                   "textIndex": 0,
@@ -1206,7 +1206,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuenow":"5","aria-valuetext":"05","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"day","enterkeyhint":"next","id":"_R_1ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuenow":"5","aria-valuetext":"05","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"day","enterkeyhint":"next","id":"_R_1ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "05",
                   "textIndex": 0,
@@ -1234,7 +1234,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuenow":"2026","aria-valuetext":"2026","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"year","enterkeyhint":"next","id":"_R_2ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuenow":"2026","aria-valuetext":"2026","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"year","enterkeyhint":"next","id":"_R_2ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "2026",
                   "textIndex": 0,
@@ -1362,7 +1362,7 @@
               "children": [
                 {
                   "tag": "span",
-                  "attributes": {"aria-describedby":"_R_l_-description","aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuenow":"10","aria-valuetext":"10 – October","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"month","enterkeyhint":"next","id":"_R_ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-describedby":"_R_l_-description","aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuenow":"10","aria-valuetext":"10 – October","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"month","enterkeyhint":"next","id":"_R_ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "10",
                   "textIndex": 0,
@@ -1390,7 +1390,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuenow":"5","aria-valuetext":"05","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"day","enterkeyhint":"next","id":"_R_1ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuenow":"5","aria-valuetext":"05","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"day","enterkeyhint":"next","id":"_R_1ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "05",
                   "textIndex": 0,
@@ -1418,7 +1418,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuenow":"2026","aria-valuetext":"2026","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"year","enterkeyhint":"next","id":"_R_2ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuenow":"2026","aria-valuetext":"2026","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"year","enterkeyhint":"next","id":"_R_2ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "2026",
                   "textIndex": 0,
@@ -1546,7 +1546,7 @@
               "children": [
                 {
                   "tag": "span",
-                  "attributes": {"aria-describedby":"_R_l_-description","aria-disabled":"true","aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuenow":"10","aria-valuetext":"10 – October","contenteditable":"false","data-disabled":"","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"month","id":"_R_ml_","role":"spinbutton"},
+                  "attributes": {"aria-describedby":"_R_l_-description","aria-disabled":"true","aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuenow":"10","aria-valuetext":"10 – October","contenteditable":"false","data-date-segment":"","data-disabled":"","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"month","id":"_R_ml_","role":"spinbutton"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "10",
                   "textIndex": 0,
@@ -1574,7 +1574,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-disabled":"true","aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuenow":"5","aria-valuetext":"05","contenteditable":"false","data-disabled":"","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"day","id":"_R_1ml_","role":"spinbutton"},
+                  "attributes": {"aria-disabled":"true","aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuenow":"5","aria-valuetext":"05","contenteditable":"false","data-date-segment":"","data-disabled":"","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"day","id":"_R_1ml_","role":"spinbutton"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "05",
                   "textIndex": 0,
@@ -1602,7 +1602,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-disabled":"true","aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuenow":"2026","aria-valuetext":"2026","contenteditable":"false","data-disabled":"","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"year","id":"_R_2ml_","role":"spinbutton"},
+                  "attributes": {"aria-disabled":"true","aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuenow":"2026","aria-valuetext":"2026","contenteditable":"false","data-date-segment":"","data-disabled":"","data-focus-ring-control":"date-segment","data-slot":"date-input-segment","data-type":"year","id":"_R_2ml_","role":"spinbutton"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "2026",
                   "textIndex": 0,
@@ -1730,7 +1730,7 @@
               "children": [
                 {
                   "tag": "span",
-                  "attributes": {"aria-describedby":"_R_l_-description","aria-label":"month","aria-readonly":"true","aria-valuemax":"12","aria-valuemin":"1","aria-valuenow":"10","aria-valuetext":"10 – October","contenteditable":"false","data-focus-ring-control":"date-segment","data-readonly":"","data-slot":"date-input-segment","data-type":"month","id":"_R_ml_","role":"spinbutton","tabindex":"0"},
+                  "attributes": {"aria-describedby":"_R_l_-description","aria-label":"month","aria-readonly":"true","aria-valuemax":"12","aria-valuemin":"1","aria-valuenow":"10","aria-valuetext":"10 – October","contenteditable":"false","data-date-segment":"","data-focus-ring-control":"date-segment","data-readonly":"","data-slot":"date-input-segment","data-type":"month","id":"_R_ml_","role":"spinbutton","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "10",
                   "textIndex": 0,
@@ -1758,7 +1758,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"day","aria-readonly":"true","aria-valuemax":"31","aria-valuemin":"1","aria-valuenow":"5","aria-valuetext":"05","contenteditable":"false","data-focus-ring-control":"date-segment","data-readonly":"","data-slot":"date-input-segment","data-type":"day","id":"_R_1ml_","role":"spinbutton","tabindex":"0"},
+                  "attributes": {"aria-label":"day","aria-readonly":"true","aria-valuemax":"31","aria-valuemin":"1","aria-valuenow":"5","aria-valuetext":"05","contenteditable":"false","data-date-segment":"","data-focus-ring-control":"date-segment","data-readonly":"","data-slot":"date-input-segment","data-type":"day","id":"_R_1ml_","role":"spinbutton","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "05",
                   "textIndex": 0,
@@ -1786,7 +1786,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-label":"year","aria-readonly":"true","aria-valuemax":"9999","aria-valuemin":"1","aria-valuenow":"2026","aria-valuetext":"2026","contenteditable":"false","data-focus-ring-control":"date-segment","data-readonly":"","data-slot":"date-input-segment","data-type":"year","id":"_R_2ml_","role":"spinbutton","tabindex":"0"},
+                  "attributes": {"aria-label":"year","aria-readonly":"true","aria-valuemax":"9999","aria-valuemin":"1","aria-valuenow":"2026","aria-valuetext":"2026","contenteditable":"false","data-date-segment":"","data-focus-ring-control":"date-segment","data-readonly":"","data-slot":"date-input-segment","data-type":"year","id":"_R_2ml_","role":"spinbutton","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "2026",
                   "textIndex": 0,
@@ -1914,7 +1914,7 @@
               "children": [
                 {
                   "tag": "span",
-                  "attributes": {"aria-describedby":"_R_l_-description","aria-invalid":"true","aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuenow":"10","aria-valuetext":"10 – October","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-invalid":"true","data-slot":"date-input-segment","data-type":"month","enterkeyhint":"next","id":"_R_ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-describedby":"_R_l_-description","aria-invalid":"true","aria-label":"month","aria-valuemax":"12","aria-valuemin":"1","aria-valuenow":"10","aria-valuetext":"10 – October","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-invalid":"true","data-slot":"date-input-segment","data-type":"month","enterkeyhint":"next","id":"_R_ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "10",
                   "textIndex": 0,
@@ -1942,7 +1942,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-describedby":"_R_l_-description","aria-invalid":"true","aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuenow":"5","aria-valuetext":"05","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-invalid":"true","data-slot":"date-input-segment","data-type":"day","enterkeyhint":"next","id":"_R_1ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-describedby":"_R_l_-description","aria-invalid":"true","aria-label":"day","aria-valuemax":"31","aria-valuemin":"1","aria-valuenow":"5","aria-valuetext":"05","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-invalid":"true","data-slot":"date-input-segment","data-type":"day","enterkeyhint":"next","id":"_R_1ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "05",
                   "textIndex": 0,
@@ -1970,7 +1970,7 @@
                 },
                 {
                   "tag": "span",
-                  "attributes": {"aria-describedby":"_R_l_-description","aria-invalid":"true","aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuenow":"2026","aria-valuetext":"2026","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-focus-ring-control":"date-segment","data-invalid":"true","data-slot":"date-input-segment","data-type":"year","enterkeyhint":"next","id":"_R_2ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
+                  "attributes": {"aria-describedby":"_R_l_-description","aria-invalid":"true","aria-label":"year","aria-valuemax":"9999","aria-valuemin":"1","aria-valuenow":"2026","aria-valuetext":"2026","autocapitalize":"off","autocorrect":"off","contenteditable":"true","data-date-segment":"","data-focus-ring-control":"date-segment","data-invalid":"true","data-slot":"date-input-segment","data-type":"year","enterkeyhint":"next","id":"_R_2ml_","inputmode":"numeric","role":"spinbutton","spellcheck":"false","tabindex":"0"},
                   "classes": ["inline","rounded-inner","p-0.5","text-foreground","tabular-nums","caret-transparent","forced-color-adjust-none","focus-visible:ring-0","focus-visible:outline-none","aria-invalid:focus-visible:ring-0","aria-invalid:focus-visible:ring-offset-0","data-[type=literal]:px-0","data-[type=literal]:whitespace-pre","data-placeholder:text-muted-foreground","data-placeholder:italic","data-disabled:text-muted-foreground","forced-colors:data-disabled:text-[GrayText]","focus:bg-primary","focus:text-primary-foreground","forced-colors:focus:bg-[Highlight]","forced-colors:focus:text-[HighlightText]"],
                   "text": "2026",
                   "textIndex": 0,

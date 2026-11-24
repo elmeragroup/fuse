@@ -30,7 +30,6 @@ import {
 import type { DateDraft, EditableSegmentType, HourCycle } from "./date-draft";
 import type { FieldText } from "./date-field-text";
 import type { DateInputValueChangeReason } from "./date-input-change-details";
-import type { DateInputFocusDirection } from "./date-input-neighbors";
 import { pastedTime, pastedValue } from "./date-input-paste";
 import type { DateInputUnits } from "./date-input-scope";
 import type { DateInputEntry } from "./date-input-validation";
@@ -83,6 +82,9 @@ type SessionCommit = {
   readonly value: TemporalValue | null;
   readonly reason: DateInputValueChangeReason;
 };
+
+/** Which way focus moves among the segments. */
+export type DateInputFocusDirection = "next" | "previous";
 
 /** A transition's outcome. */
 export type SessionTransition = {

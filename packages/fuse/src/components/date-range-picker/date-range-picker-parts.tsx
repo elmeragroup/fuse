@@ -6,7 +6,7 @@
 // private context (`date-range-picker-context.ts`).
 
 import { useCallback, useLayoutEffect, useRef } from "react";
-import type { MouseEvent, ReactElement } from "react";
+import type { ReactElement } from "react";
 
 import { Field as FieldPrimitive } from "@base-ui/react/field";
 import { useFieldRootContext } from "@base-ui/react/internals/field-root-context";
@@ -19,13 +19,12 @@ import { definedProps } from "../../internal/defined-props";
 import { isRenderableNode } from "../../internal/is-renderable-node";
 import { cn } from "../../styles/cn";
 import { CalendarViewFollowContext } from "../calendar/use-view-follows-value";
-import { SEGMENT_SELECTOR } from "../date-field/date-input-context";
 import { datePickerVariants } from "../date-picker/date-picker-variants";
 import { datePickerStrings } from "../date-picker/intl";
 import { stateClassName } from "../date-picker/picker-class-name";
 import { PickerDateInput } from "../date-picker/picker-input";
 import type { PickerInputPartProps, PickerOwnedCalendarProp } from "../date-picker/picker-root";
-import { DefaultCalendarChildren, NO_STATE } from "../date-picker/picker-shell";
+import { DefaultCalendarChildren, NO_STATE, usePickerShellContext } from "../date-picker/picker-shell";
 import { PickerTimeInput } from "../date-picker/picker-time-input";
 import { fieldVariants } from "../field/field-variants";
 import { RangeCalendarRoot } from "../range-calendar/range-calendar";
@@ -60,6 +59,7 @@ export function DateRangePickerLabel({
   ...props
 }: DateRangePickerLabelProps): ReactElement {
   const root = useRangeRootContext("DateRangePicker.Label");
+  const { focusFirstSegment } = usePickerShellContext("DateRangePicker.Label");
   const { registerPart } = root;
   useLayoutEffect(() => registerPart("label"), [registerPart]);
   return useRender({
@@ -71,10 +71,7 @@ export function DateRangePickerLabel({
         {
           className: stateClassName(className, NO_STATE, fieldSlots.label()),
           children: <span id={root.labelId}>{children}</span>,
-          onClick(event: MouseEvent<HTMLSpanElement>) {
-            const picker = event.currentTarget.closest('[data-slot="date-range-picker"]');
-            picker?.querySelector<HTMLElement>(SEGMENT_SELECTOR)?.focus();
-          },
+          onClick: focusFirstSegment,
         },
         definedProps(props)
       ),

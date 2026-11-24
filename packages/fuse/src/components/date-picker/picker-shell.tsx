@@ -5,7 +5,15 @@
 // its own module) provides `PickerShellContext`; these parts read only it.
 
 import { createContext, use, useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent, KeyboardEvent, MouseEvent, ReactElement, ReactNode, RefObject } from "react";
+import type {
+  ChangeEvent,
+  KeyboardEvent,
+  MouseEvent,
+  ReactElement,
+  ReactNode,
+  RefCallback,
+  RefObject,
+} from "react";
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
@@ -34,7 +42,6 @@ import {
   CalendarVisibleRangeHeading,
 } from "../calendar/calendar-parts";
 import type { DateInputBoundary } from "../date-field/date-input-boundary";
-import type { DateInputNeighbor } from "../date-field/date-input-neighbors";
 import type { DateInputResetOwner } from "../date-field/date-input-reset";
 import { PopoverContent, PopoverRoot, PopoverTrigger } from "../popover/popover";
 import type { PopoverContentProps } from "../popover/popover";
@@ -74,8 +81,6 @@ export type PickerShellContextValue = {
   readonly invalid: boolean;
   /** The field box's size. */
   readonly size: "default" | "sm";
-  /** The popup element, which focus may move into without leaving the picker. */
-  readonly popupRef: RefObject<HTMLDivElement | null>;
   /**
    * A preset pane announces itself, so a range calendar can drop rather than commit a half range,
    * with what to call when the picker's value is committed by anything but a preset press.
@@ -89,8 +94,10 @@ export type PickerShellContextValue = {
   readonly inputBoundary: DateInputBoundary;
   /** Whether a node is inside one of this picker's inputs. */
   readonly containsInput: (node: Node) => boolean;
-  /** The input beside one of this picker's inputs, which focus crosses to: a range's other end. */
-  readonly adjacentInput: DateInputNeighbor;
+  /** Focuses the picker's first segment, which a range label press does; see `usePickerFocusBoundary`. */
+  readonly focusFirstSegment: () => void;
+  /** The popup element's ref, which marks the popup's blurs; see `usePickerFocusBoundary`. */
+  readonly attachPopup: RefCallback<HTMLElement>;
   /** The segment focus was on when the popup opened, which takes focus back when it closes. */
   readonly openerRef: RefObject<HTMLElement | null>;
   /**
@@ -354,12 +361,12 @@ export function DatePickerPopup({
   ...props
 }: DatePickerPopupProps): ReactElement {
   const shell = usePickerShellContext("DatePicker.Popup");
-  const { triggerId, labelledBy, popupRef, openerRef } = shell;
-  const mergedRef = useMergedRefs<HTMLDivElement>(popupRef, ref ?? null);
+  const { triggerId, labelledBy, inputBoundary, attachPopup, openerRef } = shell;
+  const mergedRef = useMergedRefs<HTMLDivElement>(attachPopup, ref ?? null);
   // Every calendar's days register here. On open, the first day whose rendered `tabIndex` is 0 takes
-  // focus. That is the tab stop, or a day that a consumer's props made one. `contains` checks only
-  // the popup's own tree, which `documentOrder` ranks. This lookup does not support day buttons
-  // inside shadow roots; see #713.
+  // focus. That is the tab stop, or a day that a consumer's props made one. `inputBoundary.contains`
+  // checks only the popup's own tree, which `documentOrder` ranks. This lookup does not support day
+  // buttons inside shadow roots; see #713.
   const days = useRef(new Set<HTMLElement>());
   const registerDay = useCallback<CalendarDayRegistration>((button) => {
     days.current.add(button);
@@ -369,7 +376,7 @@ export function DatePickerPopup({
   }, []);
   const firstTabStop = (): HTMLElement | undefined =>
     [...days.current]
-      .filter((day) => day.tabIndex === 0 && popupRef.current?.contains(day) === true)
+      .filter((day) => day.tabIndex === 0 && inputBoundary.contains(day))
       .sort(documentOrder)[0];
   // The provider renders outside the Popover content, so the calendars inside a `render` element
   // with its own children, which replace the content's, still register.

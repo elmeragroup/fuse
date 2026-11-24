@@ -29,7 +29,6 @@ import type { DateInputValueChangeEventDetails } from "./date-input-change-detai
 import type { DateInputActions } from "./date-input-context";
 import type { DateInputField } from "./date-input-field";
 import { focusAroundRemoved, focusSibling } from "./date-input-focus";
-import type { DateInputNeighbor } from "./date-input-neighbors";
 import type { DateInputResetOwner } from "./date-input-reset";
 import {
   canceled,
@@ -116,9 +115,10 @@ export type SessionActionsOptions<T extends DateInputValue> = {
   readonly rules: DateInputRules;
   /** Called when the input proposes a value change; the input's `onValueChange`. */
   readonly onValueChange: ((value: T | null, details: DateInputValueChangeEventDetails) => void) | undefined;
-  /** Returns the surrounding control's adjacent input, for focus past the first or last segment. */
-  readonly neighbor: DateInputNeighbor | undefined;
-  /** The surrounding control's widened focus boundary, if any; see `date-input-boundary.ts`. */
+  /**
+   * The surrounding control's widened focus boundary, which focus past the first or last segment
+   * crosses through, if any; see `date-input-boundary.ts`.
+   */
   readonly boundary: DateInputBoundary | undefined;
   /** The surrounding control that runs the input's form reset, if any; see `date-input-reset.ts`. */
   readonly resetOwner: DateInputResetOwner | undefined;
@@ -207,7 +207,7 @@ export function useSessionActions<T extends DateInputValue>(
       }
       store.set(transition.state);
       if (transition.focus !== undefined && trigger !== undefined) {
-        focusSibling(rootRef.current, trigger, transition.focus, eventProps.current.neighbor);
+        focusSibling(rootRef.current, trigger, transition.focus, eventProps.current.boundary);
       }
     },
     [store, rootRef]
@@ -229,7 +229,7 @@ export function useSessionActions<T extends DateInputValue>(
             rootRef.current,
             currentTarget,
             event.key === "ArrowRight" ? "next" : "previous",
-            eventProps.current.neighbor
+            eventProps.current.boundary
           );
           return;
         }

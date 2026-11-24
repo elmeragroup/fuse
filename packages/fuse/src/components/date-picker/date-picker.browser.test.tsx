@@ -6,8 +6,9 @@
  * Expectations are literals: ISO values, accessible names, reasons.
  */
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
-import type { ReactElement } from "react";
+import type { FocusEvent, ReactElement } from "react";
 
+import type { BaseUIEvent } from "@base-ui/react/types";
 import { renderToString } from "react-dom/server";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -1911,6 +1912,46 @@ describe("DatePicker focus boundary", () => {
     // Every blur the wrapper sees is of the element that last took focus inside it.
     expect(focused[0]).toBe(month);
     expect(blurred).toEqual(focused);
+  });
+
+  it("does not report focus leaving when focus in the popup under the consumer's data-slot and blur handler drops to nowhere", async () => {
+    let leaves = 0;
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DatePicker.Root aria-label="Delivery" onFocusLeave={() => (leaves += 1)}>
+          <DatePicker.Group>
+            <DatePicker.Input />
+            <DatePicker.Trigger />
+          </DatePicker.Group>
+          <DatePicker.Popup
+            data-slot="booking-popup"
+            render={
+              <div
+                onBlurCapture={(event: BaseUIEvent<FocusEvent<HTMLDivElement>>) =>
+                  event.preventBaseUIHandler()
+                }
+              />
+            }>
+            <DatePicker.Calendar />
+            {/* A popup child that keeps its focus from the picker Root. */}
+            <button type="button" onFocus={(event) => event.stopPropagation()}>
+              Note
+            </button>
+          </DatePicker.Popup>
+        </DatePicker.Root>
+      )
+    );
+    await userEvent.click(roleNamed("button", "Calendar Delivery"));
+    await waitForPopupFocus(await waitForPopupSettled());
+
+    // A blur with no next target, as a browser that blurs a removed element sends when the popup
+    // closes with focus in it, from a child the Root saw no focus on.
+    const note = roleNamed("button", "Note");
+    note.focus();
+    note.blur();
+    expect(document.activeElement).toBe(document.body);
+    expect(leaves).toBe(0);
   });
 });
 

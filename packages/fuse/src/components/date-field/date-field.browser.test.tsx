@@ -22,7 +22,7 @@ import { expectInvalidFocusRing } from "../../../test/assert-invalid-ring";
 import { expectRenderTypeError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
-import { wrappedSegment } from "../../../test/wrapped-date-segment";
+import { segmentWithCustomSlot, wrappedSegment } from "../../../test/wrapped-date-segment";
 import type { SupportedLocale } from "../../intl/locale-context";
 import "../../temporal-polyfill";
 import { Field } from "../field";
@@ -74,6 +74,24 @@ function Harness<T extends DateInputValue>({ locale = "en-US", ...props }: Harne
       <button type="button">After</button>
       <output aria-label="Committed value">{value}</output>
     </>
+  );
+}
+
+/**
+ * A DateInput showing October 5, 2026, by default through segments with a custom `data-slot`.
+ * `children` renders the segments in place of that default.
+ */
+function CustomSlotField({
+  children = segmentWithCustomSlot,
+}: {
+  readonly children?: DateInputRootProps<Temporal.PlainDate>["children"];
+}): ReactElement {
+  return withLocale(
+    "en-US",
+    <Field.Root name="start">
+      <Field.Label>Start date</Field.Label>
+      <DateInput.Root defaultValue={Temporal.PlainDate.from("2026-10-05")}>{children}</DateInput.Root>
+    </Field.Root>
   );
 }
 
@@ -150,23 +168,32 @@ describe("DateField keys", () => {
     await expect.element(committed()).toHaveTextContent(UNCHANGED);
   });
 
-  it("moves between segments with the left and right arrows", async () => {
-    renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />);
-    await userEvent.click(spin("month, Start date"));
+  it.each([
+    [
+      "its own",
+      <Harness key="own" label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />,
+    ],
+    ["a custom", <CustomSlotField key="custom" />],
+  ] as const)(
+    "moves between segments with the left and right arrows under %s data-slot",
+    async (_slot, field) => {
+      renderThemed(field);
+      await userEvent.click(spin("month, Start date"));
 
-    await userEvent.keyboard("{ArrowRight}");
-    await expect
-      .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
-      .toHaveFocus();
-    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
-    await expect
-      .element(page.getByRole("spinbutton", { name: "year, Start date", exact: true }))
-      .toHaveFocus();
-    await userEvent.keyboard("{ArrowLeft}");
-    await expect
-      .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
-      .toHaveFocus();
-  });
+      await userEvent.keyboard("{ArrowRight}");
+      await expect
+        .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
+        .toHaveFocus();
+      await userEvent.keyboard("{ArrowRight}{ArrowRight}");
+      await expect
+        .element(page.getByRole("spinbutton", { name: "year, Start date", exact: true }))
+        .toHaveFocus();
+      await userEvent.keyboard("{ArrowLeft}");
+      await expect
+        .element(page.getByRole("spinbutton", { name: "day, Start date", exact: true }))
+        .toHaveFocus();
+    }
+  );
 
   it("pages days by 7 and years to the next multiple of 5, and jumps to the ends with Home and End", async () => {
     renderThemed(<Harness label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-28")} />);
@@ -633,14 +660,14 @@ describe("DateField in forms", () => {
     await expect.element(page.getByText("Fully booked", { exact: true })).not.toBeInTheDocument();
   });
 
-  it("works bare inside a consumer's Field: its label names the group and its error shows the validity", async () => {
+  it("works bare inside a consumer's Field under the consumer's segment data-slot: its label names the group and its error shows the validity", async () => {
     renderThemed(
       withLocale(
         "en-US",
         <Form aria-label="Booking" onFormSubmit={() => undefined}>
           <Field.Root name="start">
             <Field.Label>Start date</Field.Label>
-            <DateInput.Root required />
+            <DateInput.Root required>{segmentWithCustomSlot}</DateInput.Root>
             <Field.Error />
           </Field.Root>
           <button type="submit">Save</button>
@@ -1294,25 +1321,57 @@ describe("DateField granularity change mid-draft", () => {
   });
 });
 
+/** A DateInput with custom-slot segments, showing minutes until a press on Switch sets `granularity`. */
+function CustomSlotGranularitySwitch({
+  granularity,
+}: {
+  readonly granularity: "hour" | "day";
+}): ReactElement {
+  const [switched, setSwitched] = useState(false);
+  return withLocale(
+    "en-US",
+    <>
+      <Field.Root name="starts">
+        <Field.Label>Starts</Field.Label>
+        <DateInput.Root
+          hourCycle={12}
+          granularity={switched ? granularity : "minute"}
+          defaultValue={Temporal.PlainDateTime.from("2026-10-05T09:30")}>
+          {segmentWithCustomSlot}
+        </DateInput.Root>
+      </Field.Root>
+      <button type="button" onClick={() => setSwitched(true)}>
+        Switch
+      </button>
+    </>
+  );
+}
+
+/** A DateField showing minutes until a press on Switch sets `granularity`. */
+function DateFieldGranularitySwitch({ granularity }: { readonly granularity: "hour" | "day" }): ReactElement {
+  return (
+    <SwitchHarness<Temporal.PlainDateTime>
+      label="Starts"
+      hourCycle={12}
+      granularity="minute"
+      defaultValue={Temporal.PlainDateTime.from("2026-10-05T09:30")}
+      switched={{ granularity }}
+    />
+  );
+}
+
 describe("DateField granularity change under focus", () => {
   // React Aria's `useDateSegment`: a focused segment that a granularity change removes hands focus
   // to the segment before it. `click()` switches without moving focus, as a parent's own state
   // change would.
   it.each([
-    ["hour", "hour, Starts"],
-    ["day", "year, Starts"],
+    ["hour", "its own", "hour, Starts", DateFieldGranularitySwitch],
+    ["day", "its own", "year, Starts", DateFieldGranularitySwitch],
+    ["day", "a custom", "year, Starts", CustomSlotGranularitySwitch],
   ] as const)(
-    "moves focus from a removed minute to the segment before it at %s granularity",
-    async (granularity, target) => {
-      renderThemed(
-        <SwitchHarness<Temporal.PlainDateTime>
-          label="Starts"
-          hourCycle={12}
-          granularity="minute"
-          defaultValue={Temporal.PlainDateTime.from("2026-10-05T09:30")}
-          switched={{ granularity }}
-        />
-      );
+    "moves focus from a removed minute to the segment before it at %s granularity, under %s data-slot",
+    async (granularity, _slot, target, GranularitySwitch) => {
+      renderThemed(<GranularitySwitch granularity={granularity} />);
       await userEvent.click(spin("minute, Starts"));
 
       roleNamed("button", "Switch").click();
@@ -1417,6 +1476,38 @@ describe("DateField kind across prop changes", () => {
     await userEvent.click(spin("month, Starts"));
     await userEvent.keyboard("110320261445");
     await expect.element(committed()).toHaveTextContent("2026-11-03T14:45:00+01:00[Europe/Oslo]");
+  });
+});
+
+describe("DateInput segments under the consumer's data-slot", () => {
+  it("focuses the last segment on a press on the box past the segments", async () => {
+    renderThemed(<CustomSlotField />);
+    const group = roleNamed("group", "Start date");
+    const box = group.getBoundingClientRect();
+
+    await userEvent.click(group, { position: { x: box.width - 2, y: box.height / 2 } });
+    await expect
+      .element(page.getByRole("spinbutton", { name: "year, Start date", exact: true }))
+      .toHaveFocus();
+  });
+
+  it("leaves focus on a segment under the consumer's data-slot that a touch releases on", async () => {
+    renderThemed(
+      <CustomSlotField>
+        {(segment) =>
+          segment.type === "day" ? (
+            segmentWithCustomSlot(segment)
+          ) : (
+            <DateInput.Segment key={segment.index} segment={segment} />
+          )
+        }
+      </CustomSlotField>
+    );
+    const day = spin("day, Start date");
+    await userEvent.click(day);
+
+    day.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerType: "touch" }));
+    expect(document.activeElement).toBe(day);
   });
 });
 

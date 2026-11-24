@@ -66,6 +66,3 @@ export function useDateInputRootContext(): DateInputRootContextValue {
   }
   return context;
 }
-
-/** The selector that finds a Root's focusable segments, in document order. */
-export const SEGMENT_SELECTOR = '[data-slot="date-input-segment"][tabindex]';
