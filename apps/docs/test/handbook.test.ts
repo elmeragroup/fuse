@@ -62,9 +62,23 @@ function rowCells(html: string, hook: string): string[] {
   const start = html.indexOf(hook);
   expect(start, hook).toBeGreaterThan(-1);
   const row = html.slice(start, html.indexOf("</tr>", start));
-  return [...row.matchAll(/<td[^>]*>([^]*?)<\/td>/g)].map((match) =>
-    decodeHtml((match[1] ?? "").replaceAll(/<[^>]*>/g, ""))
-  );
+  return [...row.matchAll(/<td[^>]*>([^]*?)<\/td>/g)].map((match) => markupText(match[1] ?? ""));
+}
+
+/**
+ * The source text of the page's code blocks, with the highlighter's spans stripped and entities
+ * decoded, so an assertion reads a snippet as its author wrote it. Reading only `<pre>` bodies
+ * keeps the flight payload in the page's scripts from satisfying a snippet check.
+ */
+function codeBlockText(html: string): string {
+  return [...html.matchAll(/<pre\b[^>]*>([^]*?)<\/pre>/g)]
+    .map((match) => markupText(match[1] ?? ""))
+    .join("\n");
+}
+
+/** The text of an HTML fragment, with its tags stripped and its entities decoded. */
+function markupText(fragment: string): string {
+  return decodeHtml(fragment.replaceAll(/<[^>]*>/g, ""));
 }
 
 describe("tokens page", () => {
@@ -125,16 +139,17 @@ describe("density page", () => {
     for (const id of ["per-document", "route-groups", "pitfalls", "branded-dashboard"]) {
       expect(html, id).toContain(`id="${id}"`);
     }
+    const code = codeBlockText(html);
     // One root layout per density, each stamping its own document.
-    expect(html).toContain("app/(dashboard)/layout.tsx");
-    expect(html).toContain("app/(promo)/layout.tsx");
-    expect(html).toContain("density: &quot;dense&quot;");
-    expect(html).toContain("density: &quot;comfortable&quot;");
+    expect(code).toContain("app/(dashboard)/layout.tsx");
+    expect(code).toContain("app/(promo)/layout.tsx");
+    expect(code).toContain('density: "dense"');
+    expect(code).toContain('density: "comfortable"');
     for (const pitfall of ["global-not-found", "global-error", "@modal"]) {
       expect(html, pitfall).toContain(pitfall);
     }
     // The branded dashboard pairs the branded identity with dense density.
-    expect(html).toContain("identity: &quot;branded&quot;");
+    expect(code).toContain('identity: "branded"');
   });
 });
 
@@ -154,7 +169,7 @@ describe("localization page", () => {
   it("names the market's zone as the time zone owner and shows the market time zone demo", async () => {
     const html = await fetchText("/handbook/localization");
     expect(html).toContain('id="time-zone"');
-    expect(html).toContain("timeZone=&quot;Europe/Oslo&quot;");
+    expect(codeBlockText(html)).toContain('timeZone="Europe/Oslo"');
     expect(html).toContain('id="market-time-zone"');
   });
 });
@@ -163,28 +178,25 @@ describe("quick start page", () => {
   it("shows the app page scaffold once — landmarks, skip link and lang", async () => {
     const html = await fetchText("/quick-start");
     expect(html).toContain('id="page-scaffold"');
-    expect(html).toContain("documentAttributes");
-    expect(html).toContain("ColorSchemeScript");
-    expect(html).toContain("lang=");
-    expect(html).toContain("Hopp til innholdet");
+    const code = codeBlockText(html);
+    expect(code).toContain("documentAttributes");
+    expect(code).toContain("ColorSchemeScript");
+    expect(code).toContain('lang="nb-NO"');
+    expect(code).toContain("Hopp til innholdet");
   });
 
   it("offers both CSS modes and a snippet that uses a real Button variant", async () => {
-    const html = await fetchText("/quick-start");
-    // React escapes quotes and angle brackets in text children, so snippet code renders as entities.
-    // The prose also names `@source`, so the Tailwind and Button checks match snippet-only strings.
-    expect(html, "the Tailwind-source snippet must import the Fuse CSS entry").toContain(
-      "@import &quot;@elmeragroup/fuse/css&quot;"
+    const code = codeBlockText(await fetchText("/quick-start"));
+    expect(code, "the Tailwind-source snippet must import the Fuse CSS entry").toContain(
+      '@import "@elmeragroup/fuse/css"'
     );
-    expect(html, "the Tailwind-source snippet must point @source at the package").toContain(
-      "@source &quot;../node_modules/@elmeragroup/fuse&quot;"
+    expect(code, "the Tailwind-source snippet must point @source at the package").toContain(
+      '@source "../node_modules/@elmeragroup/fuse"'
     );
-    expect(html, "standalone mode must be shown").toContain("@elmeragroup/fuse/styles.css");
-    expect(html, "the quick-start Button snippet must be shown").toContain(
-      "&lt;Button&gt;Lagre&lt;/Button&gt;"
-    );
-    expect(html, "the quick-start Button snippet must not use a variant Button lacks").not.toContain(
-      "variant=&quot;primary&quot;"
+    expect(code, "standalone mode must be shown").toContain("@elmeragroup/fuse/styles.css");
+    expect(code, "the quick-start Button snippet must be shown").toContain("<Button>Lagre</Button>");
+    expect(code, "the quick-start Button snippet must not use a variant Button lacks").not.toContain(
+      'variant="primary"'
     );
   });
 });

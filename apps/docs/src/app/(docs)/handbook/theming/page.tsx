@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 
 import { DemoFrame } from "../../../../components/demo-frame";
+import { DocsCodeBlock, DocsPlainCodeBlock } from "../../../../components/docs-code-block";
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 import { InnerCornerMenu } from "./demos/inner-corner-menu";
 
@@ -249,9 +250,7 @@ export default function ThemingPage(): ReactElement {
         computing one. A selected sidebar row in the brand colour, for example, takes a mid step and a light
         step rather than mixing <code>--primary</code> toward black:
       </p>
-      <pre>
-        <code>{PALETTE_STEP}</code>
-      </pre>
+      <DocsPlainCodeBlock text={PALETTE_STEP} />
       <p>
         In every branded theme and both schemes, step 50 on step 600 measures at least 5.61:1, and the
         selected fill stands out from the sidebar by at least 5.59:1 in light and 2.11:1 in dark. A darker
@@ -428,9 +427,7 @@ export default function ThemingPage(): ReactElement {
         rule needs two selectors, one for a theme element under a dark ancestor and one for an element that is
         dark itself, such as a themed <code>&lt;html&gt;</code>.
       </p>
-      <pre>
-        <code>{SIDEBAR_BRAND_OVERRIDE}</code>
-      </pre>
+      <DocsPlainCodeBlock text={SIDEBAR_BRAND_OVERRIDE} />
 
       <h2 id="inner-corners">Inner corners</h2>
       <p>
@@ -485,9 +482,7 @@ export default function ThemingPage(): ReactElement {
         with the same theme. The provider is fully controlled: there is no <code>setTheme</code> for identity,
         brand or segment. A host changes brand by passing a new <code>theme</code> prop.
       </p>
-      <pre>
-        <code>{DOCUMENT_THEME}</code>
-      </pre>
+      <DocsCodeBlock source={DOCUMENT_THEME} />
       <p>
         Density is stamped here too, and is not a theme axis. <code>documentAttributes</code> takes the theme
         and a required density, because no identity implies one: the document resolves one density for the
@@ -500,9 +495,7 @@ export default function ThemingPage(): ReactElement {
         <code>ThemeScope</code> re-themes a subtree. It is never a document writer: it does not stamp{" "}
         <code>&lt;html&gt;</code>, does not fork colour-scheme state, and has no density prop.
       </p>
-      <pre>
-        <code>{SCOPE}</code>
-      </pre>
+      <DocsCodeBlock source={SCOPE} />
       <p>
         The containment problem a scope creates is solved at the component layer. <code>ThemeScope</code>{" "}
         publishes its rendered element through context, and every overlay resolves its portal target as:
@@ -533,12 +526,12 @@ export default function ThemingPage(): ReactElement {
         <code>forcedColorScheme</code> identical on the bootstrap and provider. ThemeProvider supplies context
         and runtime updates; the host places the classic bootstrap before paintable content.
       </p>
-      <pre>
-        <code>{`html, body {
+      <DocsPlainCodeBlock
+        text={`html, body {
   background: var(--background);
   color: var(--foreground);
-}`}</code>
-      </pre>
+}`}
+      />
       <p>
         Import <code>themes.css</code> alongside your chosen CSS mode. The token-backed canvas prevents a
         default browser background flash. Put <code>suppressHydrationWarning</code> on the React-owned html
@@ -577,9 +570,7 @@ export default function ThemingPage(): ReactElement {
         colour-scheme options through an app-owned module. Put the script in Head or before Main. A route
         force must be known to the document and the app provider.
       </p>
-      <pre>
-        <code>{NEXT_PAGES}</code>
-      </pre>
+      <DocsCodeBlock source={NEXT_PAGES} />
 
       <h2 id="tanstack-start">TanStack Start</h2>
       <p>
@@ -587,9 +578,7 @@ export default function ThemingPage(): ReactElement {
         ScriptOnce before children and module scripts. A route-specific force goes into both that call and
         ThemeProvider.
       </p>
-      <pre>
-        <code>{TANSTACK_START}</code>
-      </pre>
+      <DocsCodeBlock source={TANSTACK_START} />
 
       <h2 id="react-router">React Router 7 framework mode</h2>
       <p>
@@ -597,9 +586,7 @@ export default function ThemingPage(): ReactElement {
         depends on the marker. A route force must reach both the head script and provider while rendering the
         document.
       </p>
-      <pre>
-        <code>{REACT_ROUTER}</code>
-      </pre>
+      <DocsCodeBlock source={REACT_ROUTER} />
 
       <h2 id="vite">Vite and client-rendered apps</h2>
       <p>
@@ -640,9 +627,7 @@ export default function ThemingPage(): ReactElement {
         variants and control metrics. Import it before your own <code>@theme</code> block, so your values win
         where both define a theme variable, then map the role tokens the components you use read.
       </p>
-      <pre>
-        <code>{OWN_TOKENS}</code>
-      </pre>
+      <DocsPlainCodeBlock text={OWN_TOKENS} />
       <p>
         Each component page lists those tokens under &quot;Tokens consumed&quot;; map that list, and add the
         next component&apos;s when you adopt it. Role tokens are whole colours in any notation, never channel

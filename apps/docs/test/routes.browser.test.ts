@@ -16,17 +16,14 @@ import { launchSuiteBrowser } from "./suite-browser";
 /** Resources a demo requests on purpose to show its fallback, such as Avatar's broken image. */
 const EXPECTED_MISSING = ["/this-avatar-does-not-exist.png"];
 
-/**
- * Rules the sweep leaves off, open until #554. `label-content-name-mismatch` is experimental in
- * axe-core. The others are known site-wide gaps: syntax-highlighted code under the contrast
- * minimum, a few docs controls under the 24px target, and scrollable code blocks with no keyboard
- * stop.
- */
+/** Rules the sweep leaves off, open until #554. */
 const DEFERRED_RULES = [
+  // Experimental in axe-core.
   "label-content-name-mismatch",
+  // Syntax-highlighted code under the contrast minimum.
   "color-contrast",
+  // A few docs controls under the 24px target.
   "target-size",
-  "scrollable-region-focusable",
 ];
 
 const ROUTES = prerenderedRoutes(true);

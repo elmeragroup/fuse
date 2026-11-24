@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 import Link from "next/link";
 
 import { DemoFrame } from "../../../../components/demo-frame";
+import { DocsCodeBlock } from "../../../../components/docs-code-block";
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 import { DocsTable } from "../../../../components/docs-table";
 import { MarketTimeZone } from "./demos/market-time-zone";
@@ -130,9 +131,7 @@ export default function LocalizationPage(): ReactElement {
         One place: <code>LocaleProvider</code>, whose <code>locale</code> prop is <strong>required</strong>.
         Apps never pass a locale to an individual component.
       </p>
-      <pre>
-        <code>{PROVIDER}</code>
-      </pre>
+      <DocsCodeBlock source={PROVIDER} />
       <p>
         A single-country app sets it once. A multilingual whitelabel app re-renders the provider with the
         user&apos;s selection. The provider is plain data — no <code>navigator</code> sniffing, no hydration
@@ -148,9 +147,7 @@ export default function LocalizationPage(): ReactElement {
         <code>LocaleProvider</code> also takes an optional <code>timeZone</code>, an IANA name such as{" "}
         <code>Europe/Oslo</code>. Pass the zone of the market your data describes, not the viewer&apos;s.
       </p>
-      <pre>
-        <code>{TIME_ZONE}</code>
-      </pre>
+      <DocsCodeBlock source={TIME_ZONE} />
       <p>
         With a zone, the server and the browser write the same dates and hours, so the page hydrates cleanly.
         Without one, <code>Intl</code> uses the runtime&apos;s zone. A server and a browser in different zones
@@ -180,9 +177,7 @@ export default function LocalizationPage(): ReactElement {
         the dictionary guarantees a correct-language default, and the prop exists so you can control the copy
         — not so you have to supply translations.
       </p>
-      <pre>
-        <code>{OVERRIDE}</code>
-      </pre>
+      <DocsCodeBlock source={OVERRIDE} />
       <p>
         Note what stays yours. The library does not translate visible consumer content: preset item labels
         come from the visible children you wrote, loader labels stay consumer-supplied because the surrounding
@@ -194,9 +189,7 @@ export default function LocalizationPage(): ReactElement {
         Because locale is a provider prop and nothing more, a switcher is just state above the provider. No
         library API is involved beyond re-rendering it.
       </p>
-      <pre>
-        <code>{SWITCHER}</code>
-      </pre>
+      <DocsCodeBlock source={SWITCHER} />
       <p>
         Update the document&apos;s <code>lang</code> alongside this, and persist the choice wherever you keep
         the rest of your user preferences.

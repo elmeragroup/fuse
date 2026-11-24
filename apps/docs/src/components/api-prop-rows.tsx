@@ -83,7 +83,8 @@ function ApiPropRow({ prop, open, onClose }: ApiPropRowProps): ReactElement {
             <ApiRows.Term>Name</ApiRows.Term>
             <ApiRows.Definition>
               <a href={`#${prop.id}`}>
-                <DocsInlineCode>{prop.name}</DocsInlineCode>
+                {/* The closed row truncates a long name, so the open row wraps it to print it whole. */}
+                <DocsInlineCode className="wrap-anywhere">{prop.name}</DocsInlineCode>
               </a>
               {prop.required ? " · required" : null}
             </ApiRows.Definition>

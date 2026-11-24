@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 
+import { DocsCodeBlock } from "../../../../components/docs-code-block";
 import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 import { IconRoster } from "./demos/icon-roster";
 
@@ -95,9 +96,7 @@ export default function IconsPage(): ReactElement {
         An icon-only button is a separate concern: the button needs the label, not the glyph, and the types
         enforce that.
       </p>
-      <pre>
-        <code>{IMPORT}</code>
-      </pre>
+      <DocsCodeBlock source={IMPORT} />
 
       <h2 id="sizing-and-colour">Sizing and colour</h2>
       <p>
@@ -123,9 +122,7 @@ export default function IconsPage(): ReactElement {
         in its own logo, and only &quot;Energi&quot; takes the text colour. On a brand-coloured tile, set the
         text colour with the background, for example <code>bg-brand text-brand-foreground</code>.
       </p>
-      <pre>
-        <code>{BRAND_LOGO}</code>
-      </pre>
+      <DocsCodeBlock source={BRAND_LOGO} />
       <p>
         TrøndelagKraft&apos;s own lockups draw the lamp&apos;s ring and base in an ink apart from the name.
         Set <code>--logo-mark-ink</code> on the logo or an ancestor to do the same:{" "}

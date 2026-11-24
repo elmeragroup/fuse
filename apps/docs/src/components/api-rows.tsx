@@ -13,7 +13,9 @@ const apiRows = tv({
     row: "group col-span-full border-b border-border last:border-b-0 min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center min-[34rem]:[&::details-content]:col-span-full min-[34rem]:[&::details-content]:grid min-[34rem]:[&::details-content]:grid-cols-subgrid min-[34rem]:[&::details-content]:items-center",
     summary:
       "flex min-h-[2.5rem] cursor-pointer scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)] list-none items-center hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center [&::-webkit-details-marker]:hidden",
-    cell: "min-w-0 overflow-x-auto px-3 py-2 whitespace-nowrap",
+    // A long value ends in an ellipsis rather than scrolling. A scrolling cell would need a tab stop
+    // of its own, nested in the summary's, and the open row's panel prints the full value.
+    cell: "min-w-0 truncate px-3 py-2",
     code: "text-xs",
     panel:
       "border-t border-dashed border-border bg-card min-[34rem]:col-span-full min-[34rem]:grid min-[34rem]:grid-cols-subgrid min-[34rem]:items-center",

@@ -45,6 +45,7 @@ export function decodeHtml(text: string): string {
     .replaceAll("&lt;", "<")
     .replaceAll("&quot;", '"')
     .replaceAll("&#x27;", "'")
+    .replaceAll("&#039;", "'")
     .replaceAll("&amp;", "&");
 }
 
