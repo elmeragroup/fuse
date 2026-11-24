@@ -6,6 +6,7 @@ import type { ReactElement, ReactNode } from "react";
 import { useChartRoot, usePlotLayout } from "./chart-context";
 import { writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
+import { partSelector } from "./chart-part-marker";
 import { useChartFrame } from "./chart-plot";
 import { glideLength, snapGlide, stepSpring } from "./chart-spring";
 import type { ChartLayerProps } from "./chart-types";
@@ -47,12 +48,12 @@ export function ChartGlow({ className, style, children }: ChartGlowProps): React
 }
 
 /** The series a Reveal masks, which each take the active slot's place. */
-const MASKED: ReadonlySet<string> = new Set(["chart-line-series", "chart-area-series", "chart-dots"]);
+const MASKED = partSelector("line-series", "area-series", "dots");
 
 /** The series a Reveal's wrapper holds that its mask dims. */
 function masked(element: Element): SVGElement[] {
   return [...element.children].flatMap((series) =>
-    series instanceof SVGElement && MASKED.has(series.getAttribute("data-slot") ?? "") ? [series] : []
+    series instanceof SVGElement && series.matches(MASKED) ? [series] : []
   );
 }
 

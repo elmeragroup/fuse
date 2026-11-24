@@ -18,6 +18,7 @@ import type { ReactElement, ReactNode } from "react";
 import { useLocale } from "../../intl/locale-context";
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { ChartLegendShare } from "./chart-legend";
+import { chartPart, partSelector } from "./chart-part-marker";
 import { pieFrameOf } from "./chart-pie-frame";
 import { pieDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { PieDrawing } from "./chart-polar-context";
@@ -204,7 +205,7 @@ export function PieChartLabels({
     let sizes: readonly LabelSize[] = [];
     let scale = 0;
     const write = (measured: readonly Placed[], hidden: (index: number) => boolean, rest: boolean): void => {
-      for (const label of node.querySelectorAll<HTMLElement>('[data-slot="pie-chart-label"]')) {
+      for (const label of node.querySelectorAll<HTMLElement>(partSelector("pie-label"))) {
         const index = Number(label.dataset.index);
         writeAttribute(label, "data-empty", hidden(index) ? "" : null);
         const at = measured[index];
@@ -215,7 +216,7 @@ export function PieChartLabels({
         writeAttribute(label, "data-placement", at.placement);
         writeAttribute(label, "data-side", at.placement === "outside" ? at.side : null);
       }
-      for (const leader of node.querySelectorAll<SVGPolylineElement>('[data-slot="pie-chart-leader"]')) {
+      for (const leader of node.querySelectorAll<SVGPolylineElement>(partSelector("pie-leader"))) {
         const index = Number(leader.dataset.index);
         const at = measured[index];
         leader.setAttribute("points", at?.placement === "outside" && !hidden(index) ? at.leader : "");
@@ -228,7 +229,7 @@ export function PieChartLabels({
     const place = (): void => {
       scale = node.getBoundingClientRect().width / width;
       if (!(scale > 0)) return;
-      const labels = [...node.querySelectorAll<HTMLElement>('[data-slot="pie-chart-label"]')];
+      const labels = [...node.querySelectorAll<HTMLElement>(partSelector("pie-label"))];
       sizes = pie.slices.map((_, index) => {
         const label = labels.find((element) => element.dataset.index === String(index));
         return label === undefined
@@ -242,7 +243,7 @@ export function PieChartLabels({
     // in after the first paint. A label's box never depends on its place, since it never wraps.
     const observer = new ResizeObserver(place);
     observer.observe(node);
-    for (const label of node.querySelectorAll('[data-slot="pie-chart-label"]')) observer.observe(label);
+    for (const label of node.querySelectorAll(partSelector("pie-label"))) observer.observe(label);
     const leave = frame.listen((angles) => {
       if (!(scale > 0)) return;
       const drawn = pie.slices.map((slice) =>
@@ -271,7 +272,7 @@ export function PieChartLabels({
           return (
             <polyline
               key={slice.key}
-              data-slot="pie-chart-leader"
+              {...chartPart("pie-leader")}
               data-index={index}
               points={at?.placement === "outside" ? at.leader : ""}
             />
@@ -285,7 +286,7 @@ export function PieChartLabels({
         return (
           <ChartRowContext key={slice.key} value={slice.key}>
             <span
-              data-slot="pie-chart-label"
+              {...chartPart("pie-label")}
               data-index={index}
               data-placement={at.placement}
               data-side={at.placement === "outside" ? at.side : undefined}

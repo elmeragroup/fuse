@@ -5,6 +5,7 @@ import type { ReactElement } from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
+import { chartPart } from "./chart-part-marker";
 import { ChartHeadlineContext } from "./chart-scope-contexts";
 import type { ChartDomProps } from "./chart-types";
 
@@ -38,7 +39,7 @@ export function ChartHeadline({ render, className, children, ...props }: ChartHe
   const element = useRender({
     defaultTagName: "div",
     render,
-    props: { "data-slot": "chart-headline", ...mergeProps<"div">({ className, children }, props) },
+    props: chartPart("headline", mergeProps<"div">({ className, children }, props)),
   });
   return <ChartHeadlineContext value={true}>{element}</ChartHeadlineContext>;
 }

@@ -4,6 +4,7 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import type { ReactElement } from "react";
 
 import { writeAttribute, writeStyle } from "./chart-dom";
+import { chartPart } from "./chart-part-marker";
 import { useIntro } from "./chart-store";
 import type { ChartLayerProps } from "./chart-types";
 import { assertKnownKey } from "./layout/errors";
@@ -179,7 +180,7 @@ export function ScatterChartLine({
   );
   return (
     <svg
-      data-slot="chart-line-series"
+      {...chartPart("line-series")}
       data-series={index}
       data-variant={variant}
       data-intro={intro}
@@ -243,7 +244,7 @@ export function ScatterChartActiveDot({
   return (
     <svg
       ref={layer}
-      data-slot="chart-active-dot"
+      {...chartPart("active-dot")}
       data-variant={variant}
       aria-hidden="true"
       className={className}

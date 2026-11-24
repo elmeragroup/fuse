@@ -9,6 +9,7 @@ import type { ReactElement } from "react";
 import { useLocale } from "../../intl/locale-context";
 import { writeAttribute } from "./chart-dom";
 import { ClockMarkerContext } from "./chart-marker-context";
+import { chartPart } from "./chart-part-marker";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ChartLayerProps, ValueFormat } from "./chart-types";
 import { formatValue } from "./format/value-format";
@@ -75,7 +76,7 @@ export function ClockChartValueLabel({ format, className, style }: ClockChartVal
         return [
           <span
             key={slot}
-            data-slot="clock-chart-value-label"
+            {...chartPart("clock-value-label")}
             style={{
               "--_x": `${left.toFixed(3)}%`,
               "--_y": `${top.toFixed(3)}%`,

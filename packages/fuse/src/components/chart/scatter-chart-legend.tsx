@@ -6,6 +6,7 @@ import type { ReactElement } from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
+import { chartPart } from "./chart-part-marker";
 import type { ChartDomProps } from "./chart-types";
 import { seriesLabel } from "./format/series-label";
 import { assertKnownKey } from "./layout/errors";
@@ -51,11 +52,10 @@ export function ScatterChartLegend({
   return useRender({
     defaultTagName: "ul",
     render,
-    props: {
-      "data-slot": "chart-legend",
+    props: chartPart("legend", {
       "data-side": side,
       ...mergeProps<"ul">({ className, children: items }, props),
-    },
+    }),
   });
 }
 

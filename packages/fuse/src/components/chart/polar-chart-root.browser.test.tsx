@@ -8,7 +8,9 @@ import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { label, pointerAt, popup } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
+import type { ChartConfig } from "./chart-types";
 import "./chart.css";
+import { ClockChart } from "./clock-chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
@@ -52,24 +54,20 @@ function Pie({
   children,
   width = 400,
   data = BILL,
+  config = BILL_CONFIG,
   ...props
 }: {
   readonly children?: ReactNode;
   readonly width?: number;
   readonly data?: readonly { readonly name: string; readonly v: number }[];
+  readonly config?: ChartConfig;
   readonly startAngle?: number;
   readonly endAngle?: number;
 }) {
   return (
     <LocaleProvider locale="nb-NO">
       <div style={{ width }}>
-        <PieChart.Root
-          data={data}
-          config={BILL_CONFIG}
-          nameKey="name"
-          valueKey="v"
-          aria-label="Kake"
-          {...props}>
+        <PieChart.Root data={data} config={config} nameKey="name" valueKey="v" aria-label="Kake" {...props}>
           {children}
         </PieChart.Root>
       </div>
@@ -112,6 +110,68 @@ function pointAt(host: HTMLElement, angle: number, share: number): readonly [num
  */
 async function hover(x: number, y: number): Promise<void> {
   await pointerAt(x, y);
+}
+
+/** The popup's lane, as Base UI marks the side its positioner sits on. */
+function side(): string | null {
+  // The popup portals out of the host, and its positioner is its parent.
+  return popup()?.parentElement?.getAttribute("data-side") ?? null;
+}
+
+/** The open popup's computed opacity, or NaN while none is open. */
+function opacity(): number {
+  const open = popup();
+  return open === null ? Number.NaN : Number(getComputedStyle(open).opacity);
+}
+
+/** Tabs from the button before the chart onto the chart. */
+async function tabIn(host: HTMLElement): Promise<void> {
+  host.querySelector("button")?.focus();
+  await userEvent.keyboard("{Tab}");
+}
+
+/** Tabs onto the chart, which opens Strøm's popup, and waits until it shows. */
+async function enter(host: HTMLElement): Promise<void> {
+  await tabIn(host);
+  await expect.poll(label).toBe("Strøm");
+  await expect.poll(opacity).toBe(1);
+}
+
+/**
+ * Sets the viewport and waits until the browser has delivered the resize, so no late resize lands
+ * during the test. The next test gets the default viewport back.
+ */
+async function viewport(width: number, height: number): Promise<void> {
+  await page.viewport(width, height);
+  onTestFinished(() => page.viewport(414, 896));
+  await expect.poll(() => [window.innerWidth, window.innerHeight]).toEqual([width, height]);
+  await nextFrames(2);
+}
+
+/** How many lines an element's text wraps to, or 0 when there is no element. */
+function lineCount(element: Element | null): number {
+  if (element === null) return 0;
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  // A range's client rects hold one box per line of each text run, so equal tops share a line.
+  return new Set([...range.getClientRects()].map((box) => Math.round(box.top))).size;
+}
+
+/** The width `text` takes on one line in the font `like` computes, measured outside any popup. */
+function unwrappedWidth(like: Element, text: string): number {
+  const style = getComputedStyle(like);
+  const probe = document.createElement("span");
+  probe.textContent = text;
+  Object.assign(probe.style, {
+    position: "absolute",
+    whiteSpace: "nowrap",
+    font: style.font,
+    letterSpacing: style.letterSpacing,
+  });
+  document.body.append(probe);
+  const { width } = probe.getBoundingClientRect();
+  probe.remove();
+  return width;
 }
 
 describe("the polar Root's structure", () => {
@@ -391,28 +451,8 @@ describe("a key step that changes the tooltip's lane", () => {
     { name: "avgifter", v: 99_999 },
   ];
 
-  /**
-   * Widens the viewport so the side lanes have room, and waits until the browser has delivered the
-   * resize, so no late resize lands during the test. The next test gets the default viewport back.
-   */
-  async function wideViewport(): Promise<void> {
-    await page.viewport(1024, 768);
-    onTestFinished(() => page.viewport(414, 896));
-    await expect.poll(() => window.innerWidth).toBe(1024);
-    await nextFrames(2);
-  }
-
-  /** The popup's lane, as Base UI marks the side its positioner sits on. */
-  function side(): string | null {
-    // The popup portals out of the host, and its positioner is its parent.
-    return popup()?.parentElement?.getAttribute("data-side") ?? null;
-  }
-
-  /** The open popup's computed opacity, or NaN while none is open. */
-  function opacity(): number {
-    const open = popup();
-    return open === null ? Number.NaN : Number(getComputedStyle(open).opacity);
-  }
+  /** Widens the viewport so the side lanes have room. */
+  const wideViewport = (): Promise<void> => viewport(1024, 768);
 
   /**
    * The popup's lane and opacity on every frame from the next one until it shows `name` on a
@@ -450,14 +490,6 @@ describe("a key step that changes the tooltip's lane", () => {
         </Pie>
       </>
     );
-  }
-
-  /** Tabs onto the chart, which opens Strøm's popup, and waits until it shows. */
-  async function enter(host: HTMLElement): Promise<void> {
-    host.querySelector("button")?.focus();
-    await userEvent.keyboard("{Tab}");
-    await expect.poll(label).toBe("Strøm");
-    await expect.poll(opacity).toBe(1);
   }
 
   it("moves the popup to the lane a key step's content needs at once, with no fade", async () => {
@@ -658,5 +690,295 @@ describe("Table, Empty and Skeleton", () => {
     expect(placeholder?.getAttribute("data-variant")).toBe(variant);
     expect(placeholder?.querySelectorAll('[data-slot="chart-skeleton-mark"]')).toHaveLength(1);
     expect(page.getByRole("status", { name: "Laster diagram" }).elements()).toHaveLength(1);
+  });
+});
+
+describe("the tooltip's lane around parts that take a consumer's data-slot", () => {
+  it("keeps the popup clear of a Legend that takes its own data-slot", async () => {
+    // The consumer's slot drops Fuse's legend rules, and the consumer places the legend just below
+    // the dial, where the lane below would rest the popup if it missed the legend.
+    const { host } = renderThemed(
+      <>
+        <button type="button">før</button>
+        <div style={{ position: "relative" }}>
+          <Pie width={300}>
+            <PieChart.Legend data-slot="bill-legend" style={{ position: "absolute", top: 225, left: 0 }} />
+            <PieChart.Tooltip />
+          </Pie>
+        </div>
+      </>
+    );
+    await enter(host);
+    const legend = host.querySelector('[data-slot="bill-legend"]');
+    const open = popup();
+    if (legend === null || open === null) throw new Error("no legend or popup");
+    const a = open.getBoundingClientRect();
+    const b = legend.getBoundingClientRect();
+    const dial = page.getByRole("listbox").element().getBoundingClientRect();
+    // The legend sits below the dial and across the popup's column, where the lane below starts.
+    expect(b.top).toBeGreaterThanOrEqual(dial.bottom);
+    expect(a.left < b.right && b.left < a.right).toBe(true);
+    expect(side()).toBe("bottom");
+    expect(a.top).toBeGreaterThanOrEqual(b.bottom);
+  });
+
+  it("rests the top lane above a Headline that takes its own data-slot", async () => {
+    // The chart sits at the viewport's bottom, so the lane below has no room and the popup takes
+    // the lane above. Root's aria-label names it, so only the Headline marks the title.
+    const { host } = renderThemed(
+      <>
+        <button type="button">før</button>
+        <div style={{ position: "fixed", bottom: 0, left: 0 }}>
+          <Pie width={300}>
+            <PieChart.Headline data-slot="bill-headline">Strømregning</PieChart.Headline>
+            <PieChart.Tooltip />
+          </Pie>
+        </div>
+      </>
+    );
+    await enter(host);
+    const headline = host.querySelector('[data-slot="bill-headline"]');
+    if (headline === null) throw new Error("no headline");
+    await expect.poll(side).toBe("top");
+    await expect
+      .poll(
+        () => (popup()?.getBoundingClientRect().bottom ?? Infinity) <= headline.getBoundingClientRect().top
+      )
+      .toBe(true);
+  });
+
+  it("opens at the widest label's width under a TooltipLabel that takes its own data-slot", async () => {
+    const config = {
+      ...BILL_CONFIG,
+      avgifter: { label: "Offentlige avgifter og gebyrer", color: "chart-3" },
+    } as const;
+    const { host } = renderThemed(
+      <>
+        <button type="button">før</button>
+        <Pie width={300} config={config}>
+          <PieChart.Tooltip>
+            <PieChart.TooltipLabel data-slot="bill-label" />
+          </PieChart.Tooltip>
+        </Pie>
+      </>
+    );
+    // The label takes the consumer's slot, so its own slot finds it.
+    const labelOf = (): HTMLElement | null =>
+      popup()?.querySelector<HTMLElement>('[data-slot="bill-label"]') ?? null;
+    const shown = (): string | null => labelOf()?.textContent ?? null;
+    await tabIn(host);
+    await expect.poll(shown).toBe("Strøm");
+    const width = (): number => popup()?.getBoundingClientRect().width ?? 0;
+    await expect.poll(opacity).toBe(1);
+    const first = width();
+    const longest = labelOf();
+    if (longest === null) throw new Error("no label");
+    // The longest label's width on one line, measured apart from the popup in the label's font.
+    expect(first).toBeGreaterThanOrEqual(unwrappedWidth(longest, "Offentlige avgifter og gebyrer"));
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
+    await expect.poll(shown).toBe("Offentlige avgifter og gebyrer");
+    // The step has laid the longest label out once it reads as one line.
+    await expect.poll(() => lineCount(labelOf())).toBe(1);
+    // The popup opened as wide as the longest label, so the step changes no width.
+    expect(Math.abs(width() - first)).toBeLessThanOrEqual(0.5);
+  });
+});
+
+describe("the popup's width under a TooltipLabel that prints its own text", () => {
+  /** The open popup's label line. */
+  const labelLine = (): HTMLElement | null =>
+    popup()?.querySelector<HTMLElement>('[data-slot="chart-tooltip-label"]') ?? null;
+
+  /**
+   * Expects the open popup to hold its label, once it reads as `text` matches, on one line, as wide
+   * as the label's text set apart from the popup in the label's font.
+   */
+  async function expectOneLine(text: string | RegExp): Promise<void> {
+    await expect.poll(() => labelLine()?.textContent ?? "").toMatch(text);
+    await expect.poll(opacity).toBe(1);
+    const line = labelLine();
+    if (line === null) throw new Error("no label");
+    expect(lineCount(line)).toBe(1);
+    expect(popup()?.getBoundingClientRect().width ?? 0).toBeGreaterThanOrEqual(
+      unwrappedWidth(line, line.textContent)
+    );
+  }
+
+  it("opens a pie's popup as wide as a label whose render element brings its own text", async () => {
+    // The text is wider than any slice's name, which the popup's estimate prints.
+    const text = "Andel av månedens strømregning";
+    const { host } = renderThemed(
+      <>
+        <button type="button">før</button>
+        <Pie width={300}>
+          <PieChart.Tooltip>
+            <PieChart.TooltipLabel render={<span>{text}</span>} />
+          </PieChart.Tooltip>
+        </Pie>
+      </>
+    );
+    await tabIn(host);
+    await expectOneLine(text);
+  });
+
+  /** A bill whose last part's name is wider than a side lane holds. */
+  const LONG_CONFIG = {
+    ...BILL_CONFIG,
+    avgifter: { label: "Offentlige avgifter, gebyrer og merverdiavgift på strøm", color: "chart-3" },
+  } as const;
+
+  /** A pie of `width` whose TooltipLabel prints `text` in place of the slice's name. */
+  function detailPie(width: number, text = "Detaljer"): ReactNode {
+    return (
+      <>
+        <button type="button">før</button>
+        <Pie width={width} config={LONG_CONFIG}>
+          <PieChart.Tooltip>
+            <PieChart.TooltipLabel render={<span>{text}</span>} />
+          </PieChart.Tooltip>
+        </Pie>
+      </>
+    );
+  }
+
+  it("rests a short label of its own in a side lane, whatever the slices' names", async () => {
+    // A side lane is capped below the long name's width, so a popup sized for that name would
+    // take the lane below the dial.
+    await viewport(1024, 768);
+    const { host } = renderThemed(detailPie(650));
+    await tabIn(host);
+    await expectOneLine("Detaljer");
+    expect(["left", "right"]).toContain(side());
+  });
+
+  it("keeps a short label of its own in a side lane inside a short viewport", async () => {
+    // The viewport has no room below or above the dial, so only a side lane keeps the popup in view.
+    await viewport(1024, 220);
+    const { host } = renderThemed(detailPie(495));
+    await tabIn(host);
+    await expectOneLine("Detaljer");
+    expect(["left", "right"]).toContain(side());
+    const box = popup()?.getBoundingClientRect();
+    expect(box?.top).toBeGreaterThanOrEqual(0);
+    expect(box?.bottom).toBeLessThanOrEqual(window.innerHeight);
+  });
+
+  // Each function spreads the props it gets. One replaces their string children with its own
+  // text, and one uppercases them. The row below still prints the slice's name. Sized for the long
+  // last name in that row, the popup would need the lane below or above the dial, which the
+  // viewport has no room for.
+  it.each([
+    { prints: "its own text", text: "Detaljer", print: (): string => "Detaljer" },
+    {
+      prints: "the label uppercased",
+      text: "STRØM",
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- the consumer contract under test: a render function receives the label as string children
+      print: (children: ReactNode): string => (typeof children === "string" ? children.toUpperCase() : ""),
+    },
+  ])(
+    "keeps a render function that prints $prints in a side lane inside a short viewport",
+    async ({ text, print }) => {
+      await viewport(1024, 220);
+      const { host } = renderThemed(
+        <>
+          <button type="button">før</button>
+          <Pie width={495} config={LONG_CONFIG}>
+            <PieChart.Tooltip>
+              <PieChart.TooltipLabel render={(props) => <span {...props}>{print(props.children)}</span>} />
+              <PieChart.TooltipItems>
+                <PieChart.SeriesLabel />
+              </PieChart.TooltipItems>
+            </PieChart.Tooltip>
+          </Pie>
+        </>
+      );
+      await tabIn(host);
+      await expectOneLine(text);
+      expect(["left", "right"]).toContain(side());
+      const box = popup()?.getBoundingClientRect();
+      expect(box?.top).toBeGreaterThanOrEqual(0);
+      expect(box?.bottom).toBeLessThanOrEqual(window.innerHeight);
+    }
+  );
+
+  it("opens at the widest name's width under a format the pie does not use", async () => {
+    // A pie prints its slices' names whatever the format, so the label reads as Root's labels do.
+    const longest = "Offentlige avgifter og gebyrer";
+    const config = { ...BILL_CONFIG, avgifter: { label: longest, color: "chart-3" } } as const;
+    const { host } = renderThemed(
+      <>
+        <button type="button">før</button>
+        <Pie width={300} config={config}>
+          <PieChart.Tooltip>
+            <PieChart.TooltipLabel format="date" />
+          </PieChart.Tooltip>
+        </Pie>
+      </>
+    );
+    await tabIn(host);
+    await expect.poll(() => labelLine()?.textContent).toBe("Strøm");
+    await expect.poll(opacity).toBe(1);
+    const width = (): number => popup()?.getBoundingClientRect().width ?? 0;
+    const first = width();
+    const line = labelLine();
+    if (line === null) throw new Error("no label");
+    // The longest name's width on one line, measured apart from the popup in the label's font.
+    expect(first).toBeGreaterThanOrEqual(unwrappedWidth(line, longest));
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
+    await expect.poll(() => labelLine()?.textContent).toBe(longest);
+    await expect.poll(() => lineCount(labelLine())).toBe(1);
+    // The popup opened as wide as the longest name, so the step changes no width.
+    expect(Math.abs(width() - first)).toBeLessThanOrEqual(0.5);
+  });
+
+  it("keeps a label of its own that reads as a slice's name in view inside a short viewport", async () => {
+    // The label prints "Strøm", the first slice's name, on every step. Sized for the long last
+    // name, the popup would need the lane below or above the dial, which the viewport has no room
+    // for.
+    await viewport(1024, 220);
+    const { host } = renderThemed(detailPie(495, "Strøm"));
+    await tabIn(host);
+    await expectOneLine("Strøm");
+    expect(["left", "right"]).toContain(side());
+    const box = popup()?.getBoundingClientRect();
+    expect(box?.top).toBeGreaterThanOrEqual(0);
+    expect(box?.bottom).toBeLessThanOrEqual(window.innerHeight);
+  });
+
+  it("opens a clock's popup as wide as a label in its own format", async () => {
+    // The label's own format prints a long date and time, wider than the "00–01" range in Root's
+    // format, which the popup's estimate prints.
+    const day = Date.parse("2025-10-24T22:00:00Z");
+    const format = {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+    } as const;
+    const data = Array.from({ length: 24 }, (_, hour) => ({ start: day + hour * 3_600_000, kwh: 1 }));
+    const { host } = renderThemed(
+      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
+        <button type="button">før</button>
+        <div style={{ width: 320 }}>
+          <ClockChart.Root
+            data={data}
+            config={{ kwh: { label: "kWh", color: "chart-1" } }}
+            xKey="start"
+            cycle="day"
+            interval="hour"
+            data-intro="none"
+            aria-label="Døgn">
+            <ClockChart.Column dataKey="kwh" />
+            <ClockChart.Tooltip>
+              <ClockChart.TooltipLabel format={format} />
+            </ClockChart.Tooltip>
+          </ClockChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+    await tabIn(host);
+    // Intl may print a no-break space between the parts, which `\s` matches.
+    await expectOneLine(/^lørdag\s25\.\soktober\skl\.\s00:00$/u);
   });
 });

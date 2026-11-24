@@ -7,6 +7,7 @@
 import type { ReactElement } from "react";
 
 import { useLabelWidths } from "./chart-label-widths";
+import { chartPart } from "./chart-part-marker";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ChartLayerProps, ChartTone } from "./chart-types";
 import { rayPlace, spokePath } from "./clock-chart-dial";
@@ -63,7 +64,7 @@ export function ClockChartNow({
   return (
     <div
       ref={measured}
-      data-slot="clock-chart-now"
+      {...chartPart("clock-now")}
       data-tone={tone}
       data-polar-layer=""
       aria-hidden="true"

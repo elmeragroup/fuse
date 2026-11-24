@@ -6,6 +6,7 @@
  */
 import type { ReactElement } from "react";
 
+import { chartPart } from "./chart-part-marker";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import { referenceSentence } from "./chart-reference-text";
 import { slotLabel } from "./chart-text";
@@ -130,7 +131,7 @@ export function ClockChartReferenceLine({
   const text = referenceSentence(label, value, CHART_STRINGS[kernel.locale].referenceLine);
   return (
     <div
-      data-slot="clock-chart-reference-line"
+      {...chartPart("clock-reference-line")}
       data-variant={variant}
       data-tone={tone}
       data-polar-layer=""

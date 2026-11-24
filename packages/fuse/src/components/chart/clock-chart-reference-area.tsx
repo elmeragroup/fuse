@@ -7,6 +7,7 @@
  */
 import type { ReactElement } from "react";
 
+import { chartPart } from "./chart-part-marker";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import { referenceSentence } from "./chart-reference-text";
 import { joinRange, rangeText, slotRangeLabel } from "./chart-text";
@@ -162,7 +163,7 @@ export function ClockChartReferenceArea({
   const text = referenceSentence(label, value, strings.referenceArea);
   return (
     <div
-      data-slot="clock-chart-reference-area"
+      {...chartPart("clock-reference-area")}
       data-tone={tone}
       data-polar-layer=""
       className={className}

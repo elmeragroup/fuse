@@ -292,7 +292,7 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
   const radius = DOT_RADIUS[variant];
   return (
     <svg
-      data-slot="chart-dots"
+      {...chartPart("dots")}
       data-variant={variant}
       data-series={series?.seriesIndex}
       data-intro={layerIntro}
@@ -669,7 +669,7 @@ export function ChartActiveDot({
     <>
       <svg
         ref={markRef}
-        data-slot="chart-active-dot"
+        {...chartPart("active-dot")}
         data-variant={variant}
         data-series={series?.seriesIndex}
         data-follow=""
@@ -792,7 +792,7 @@ export function ChartMarker({
     <>
       <div
         ref={markRef}
-        data-slot="chart-marker"
+        {...chartPart("marker")}
         data-variant={variant}
         data-series={series?.seriesIndex}
         aria-hidden="true"

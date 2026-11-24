@@ -21,6 +21,7 @@ import { use, useCallback, useLayoutEffect, useMemo, useRef, useState } from "re
 
 import { writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
+import { defaultLabelText, partSelector } from "./chart-part-marker";
 import { PolarContext } from "./chart-polar-context";
 import { useChartReadout } from "./chart-readout";
 import type {
@@ -70,15 +71,27 @@ function measuredAnchor(measure: () => AnchorMeasure, contextElement: () => HTML
  * The labels a lane stays outside of, past the rim: angle, outside pie, Now, reference, value and
  * ring-value labels, such as a radar's "200" hanging below the rim at 6 o'clock.
  */
-const LABELS =
-  '[data-slot$="angle-label"], [data-slot="pie-chart-label"], [data-slot="clock-chart-now"] [data-part="label"], [data-slot$="value-label"], [data-slot$="reference-label"], [data-slot$="radius-label"]';
+const LABELS = [
+  partSelector(
+    "clock-angle-label",
+    "radar-angle-label",
+    "pie-label",
+    "value-label",
+    "clock-value-label",
+    "reference-label",
+    "clock-radius-label",
+    "radar-radius-label"
+  ),
+  `${partSelector("clock-now")} [data-part="label"]`,
+  `${partSelector("clock-reference-line")} [data-part="label"]`,
+  `${partSelector("clock-reference-area")} [data-part="label"]`,
+].join(", ");
 
 /**
  * The Root's own controls, which the bottom lane rests below and a side lane above, so the popup
  * never covers the control a pointer reaches for next.
  */
-const CONTROLS =
-  '[data-slot="chart-legend"], [data-slot="chart-legend-toggle-group"], [data-slot="chart-table-toggle"]';
+const CONTROLS = partSelector("legend", "legend-toggle-group", "table-toggle");
 
 /** How a lane switch fades the popup in. */
 const LANE_FADE = { duration: 120, easing: "cubic-bezier(0.23, 1, 0.32, 1)" } as const;
@@ -94,7 +107,7 @@ const PLACE_FRAMES = 6;
 
 /** The popup inside a positioner. */
 function popupOf(positioner: HTMLElement | null): HTMLElement | null {
-  return positioner?.querySelector<HTMLElement>('[data-slot="chart-tooltip"]') ?? null;
+  return positioner?.querySelector<HTMLElement>(partSelector("tooltip")) ?? null;
 }
 
 /** The item a key step moved the popup to: its slot and its focused series. */
@@ -140,18 +153,22 @@ function handOver(fade: Animation, popup: HTMLElement | null): void {
 /** One canvas the label measures share, made on first use. */
 let measuring: CanvasRenderingContext2D | null | undefined;
 
-/** The widest item label a readout prints in one font, measured once. */
-type WidestLabel = { readonly readout: ChartReadout; readonly font: string; readonly text: string };
+/** The widest label a readout prints in Root's format in one font, measured once. */
+type WidestLabel = {
+  readonly readout: ChartReadout;
+  readonly font: string;
+  readonly text: string;
+};
 
 /**
- * The label any item prints that is widest in the popup's label font, measured once per readout and
- * font, or null for a popup with no label line.
+ * The widest label the items print in Root's format in the popup's label font, measured once per
+ * readout and font, or null for a readout with no window or a page with no canvas.
  */
 function widestLabel(
   label: HTMLElement,
   readout: ChartReadout,
   cache: { current: WidestLabel | null }
-): string | null {
+): WidestLabel | null {
   if (readout.window === null) return null;
   if (measuring === undefined) measuring = document.createElement("canvas").getContext("2d");
   if (measuring === null) return null;
@@ -171,7 +188,7 @@ function widestLabel(
     }
     cache.current = { readout, font, text };
   }
-  return cache.current.text;
+  return cache.current;
 }
 
 /**
@@ -180,11 +197,14 @@ function widestLabel(
  * that name the item, each in its own font. A popup's lines are its item's label and rows that name
  * it, so its width follows the label, and a lane chosen for the widest label never has to change
  * for a longer one later. The text goes back before the measure returns, in the same task, so
- * nothing paints it and React's text nodes end as they were.
+ * nothing paints it and React's text nodes end as they were. The estimate applies only while the
+ * label line carries the TooltipLabel's marker and reads as the label the marker holds, the active
+ * item's in Root's format. A line whose `format` changes the text, whose `children` or `render`
+ * element replace it, or whose `render` function prints other text, is measured as it reads.
  *
  * @param popup - The popup.
  * @param readout - The Root's readout, whose items' labels the popup prints.
- * @param cache - The widest label measured last.
+ * @param cache - The labels measured last.
  * @returns The width in CSS pixels.
  */
 function widestContent(
@@ -192,16 +212,17 @@ function widestContent(
   readout: ChartReadout,
   cache: { current: WidestLabel | null }
 ): number {
-  const label = popup?.querySelector<HTMLElement>('[data-slot="chart-tooltip-label"]');
-  if (popup == null || label == null) return contentWidth(popup ?? null);
-  const now = label.textContent;
+  const label = popup?.querySelector<HTMLElement>(partSelector("tooltip-label"));
+  const now = label == null ? null : defaultLabelText(label);
+  if (popup == null || label == null || now === null || label.textContent !== now)
+    return contentWidth(popup ?? null);
   const widest = widestLabel(label, readout, cache);
-  if (widest === null || widest === now || now === "") return contentWidth(popup);
+  if (widest === null || now === "" || widest.text === now) return contentWidth(popup);
   const swapped: Text[] = [];
   const walker = document.createTreeWalker(popup, NodeFilter.SHOW_TEXT);
   for (let node = walker.nextNode(); node !== null; node = walker.nextNode())
     if (node instanceof Text && node.data === now) swapped.push(node);
-  for (const node of swapped) node.data = widest;
+  for (const node of swapped) node.data = widest.text;
   const width = contentWidth(popup);
   for (const node of swapped) node.data = now;
   return width;
@@ -448,7 +469,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       const title = unionOf(
         [
           ...named.map((id) => document.getElementById(id)),
-          ...figure.querySelectorAll('[data-slot="chart-headline"]'),
+          ...figure.querySelectorAll(partSelector("headline")),
         ],
         -x,
         -y

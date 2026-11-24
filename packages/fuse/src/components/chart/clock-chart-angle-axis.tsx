@@ -62,7 +62,7 @@ export function ClockChartAngleAxis({ format, className, style }: ClockChartAngl
       {clock.labels.map((label, index) => (
         <PlacedLabel
           key={label.start}
-          dataSlot="clock-chart-angle-label"
+          part="clock-angle-label"
           min={minOf(visibility[index] ?? "none")}
           hidden={(visibility[index] ?? "none") === "none"}
           place={rayPlace(box, label.angle, labelWidth(text(label)), "outside")}>

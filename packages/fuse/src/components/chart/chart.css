@@ -4040,34 +4040,38 @@
     display: contents;
   }
 
-  /* Reveal paints its marks at full strength up to the active slot and dims them past it. */
+  /*
+    Reveal paints its marks at full strength up to the active slot and dims them past it. The rule
+    finds its series by the private chart-part marker, so a consumer's drawing that takes a series'
+    data-slot keeps its own mask.
+  */
   [data-slot="chart"][data-chart-depth="0"][data-active]
     [data-slot="chart-reveal"]:not([data-chart-depth="0"] :is([data-slot="chart"], [data-polar]) *)
     > [data-variant]:is(
-      [data-slot="chart-line-series"],
-      [data-slot="chart-area-series"],
-      [data-slot="chart-dots"]
+      [data-chart-part="line-series"],
+      [data-chart-part="area-series"],
+      [data-chart-part="dots"]
     ),
   [data-slot="chart"][data-chart-depth="1"][data-active]
     [data-slot="chart-reveal"]:not([data-chart-depth="1"] :is([data-slot="chart"], [data-polar]) *)
     > [data-variant]:is(
-      [data-slot="chart-line-series"],
-      [data-slot="chart-area-series"],
-      [data-slot="chart-dots"]
+      [data-chart-part="line-series"],
+      [data-chart-part="area-series"],
+      [data-chart-part="dots"]
     ),
   [data-slot="chart"][data-chart-depth="2"][data-active]
     [data-slot="chart-reveal"]:not([data-chart-depth="2"] :is([data-slot="chart"], [data-polar]) *)
     > [data-variant]:is(
-      [data-slot="chart-line-series"],
-      [data-slot="chart-area-series"],
-      [data-slot="chart-dots"]
+      [data-chart-part="line-series"],
+      [data-chart-part="area-series"],
+      [data-chart-part="dots"]
     ),
   [data-slot="chart"][data-chart-depth="3"][data-active]
     [data-slot="chart-reveal"]:not([data-chart-depth="3"] :is([data-slot="chart"], [data-polar]) *)
     > [data-variant]:is(
-      [data-slot="chart-line-series"],
-      [data-slot="chart-area-series"],
-      [data-slot="chart-dots"]
+      [data-chart-part="line-series"],
+      [data-chart-part="area-series"],
+      [data-chart-part="dots"]
     ) {
     mask-image: linear-gradient(
       var(--_root-reveal-to),

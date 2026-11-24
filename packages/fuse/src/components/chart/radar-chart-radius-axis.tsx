@@ -9,6 +9,7 @@
 import type { ReactElement } from "react";
 
 import { useLocale } from "../../intl/locale-context";
+import { chartPart } from "./chart-part-marker";
 import { radarDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { RadarDrawing } from "./chart-polar-context";
 import type { ChartLayerProps, ValueFormat } from "./chart-types";
@@ -105,7 +106,7 @@ export function RadarChartRadiusAxis({ format, className, style }: RadarChartRad
         return (
           <span
             key={tick}
-            data-slot="radar-chart-radius-label"
+            {...chartPart("radar-radius-label")}
             data-min={min === "none" ? undefined : min}
             data-hidden={min === "none" ? "" : undefined}
             style={{ "--_x": left, "--_y": top, "--chart-slot": index }}>

@@ -11,6 +11,7 @@ import { datumSlots } from "./chart-datum";
 import { useSvgIdPrefix } from "./chart-dom";
 import { BAR_GLOW, plotGlowRegion, valueGlow } from "./chart-glow-filter";
 import { seriesPaintOf } from "./chart-paint";
+import { chartPart } from "./chart-part-marker";
 import { useBarMetrics, useChartFrame } from "./chart-plot";
 import { useSeriesOwner } from "./chart-series-path";
 import { sameShallow, useSteady } from "./chart-steady";
@@ -223,7 +224,7 @@ export function ChartBar({
   return (
     <div
       ref={element}
-      data-slot="chart-bar-series"
+      {...chartPart("bar-series")}
       data-orientation={context.orientation}
       data-variant={drawnVariant}
       data-list={stops === undefined ? undefined : ""}

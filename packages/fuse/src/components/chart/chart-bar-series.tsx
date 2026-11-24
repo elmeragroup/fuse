@@ -592,7 +592,7 @@ export function ActiveBar({
   return (
     <polygon
       ref={activeRef}
-      data-slot="chart-bar-active"
+      {...chartPart("bar-active")}
       data-series={series.seriesIndex}
       visibility="hidden"
     />

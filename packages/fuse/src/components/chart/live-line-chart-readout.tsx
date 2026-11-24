@@ -4,6 +4,7 @@ import { useRef } from "react";
 import type { ReactElement } from "react";
 
 import { writeAttribute, writeStyle } from "./chart-dom";
+import { chartPart } from "./chart-part-marker";
 import { tooltipPopupClass, useTooltipOpenedBy } from "./chart-tooltip-popup";
 import type { ChartLayerProps } from "./chart-types";
 import { indexAt, livePixel } from "./layout/live-window";
@@ -125,7 +126,7 @@ export function LiveLineChartTooltip({
       {point === undefined || plot === null ? null : (
         <div
           ref={popup}
-          data-slot="chart-tooltip"
+          {...chartPart("tooltip")}
           data-variant={variant}
           // A pointer opens it the way an anchored popup below its anchor opens, fading in and dropping
           // into place on `data-open`. A key opens it at once, because keyboard actions never animate.
@@ -133,7 +134,7 @@ export function LiveLineChartTooltip({
           data-side="bottom"
           className={tooltipPopupClass(variant, openedBy === "keyboard" ? "none" : "entrance", className)}
           style={style}>
-          <div data-slot="chart-tooltip-label">{liveTimeText(text, point.time, "full").text}</div>
+          <div {...chartPart("tooltip-label")}>{liveTimeText(text, point.time, "full").text}</div>
           <div data-slot="chart-tooltip-items">
             <div data-slot="chart-tooltip-item">
               <span>{liveName(text)}</span>
