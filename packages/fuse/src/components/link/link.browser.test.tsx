@@ -16,11 +16,39 @@ import {
   roleNamed,
 } from "../../../test/themed-browser-render";
 import { Link } from "./link";
+import type { LinkProps } from "./link";
 
 /** The underline thickness in px, or 0 while the link draws no underline. */
 function underlinePx(element: HTMLElement): number {
   const style = getComputedStyle(element);
   return style.textDecorationLine.includes("underline") ? px(style.textDecorationThickness) : 0;
+}
+
+type LinkVariant = NonNullable<LinkProps["variant"]>;
+
+/** Every Link color variant, keyed by itself so a variant added to the recipe fails the type check here. */
+const LINK_VARIANTS = {
+  default: "default",
+  foreground: "foreground",
+  primary: "primary",
+  brand: "brand",
+  muted: "muted",
+  error: "error",
+} as const satisfies { readonly [V in LinkVariant]: V };
+
+/** The contrast of a link's text on the page's `--background`. */
+function pageContrast(link: HTMLElement): number {
+  return computedContrast(getComputedStyle(link).color, cssVarColor(link, "--background"));
+}
+
+/** The computed styles that tell a hovered `none` link from a resting one. */
+function drawnLook(link: HTMLElement) {
+  const style = getComputedStyle(link);
+  return {
+    color: style.color,
+    opacity: style.opacity,
+    textDecorationLine: style.textDecorationLine,
+  };
 }
 
 /** A router link stand-in that marks its anchor, as React Router's and Next's links render one. */
@@ -61,24 +89,28 @@ describe("Link underline", () => {
     expect(getComputedStyle(link).textDecorationLine).toBe("underline");
   });
 
-  it("keeps a brand link with no underline at 4.5:1 under the pointer, and underlines it there", async () => {
-    // Fjordkraft's neutral light `--brand-ink` reads 4.66:1 on the page. The test checks that the
-    // hovered link keeps full opacity, reaches 4.5:1 there and underlines.
-    renderThemed(
-      <Link href="#brand" variant="brand" underline="none">
-        Brand
-      </Link>
-    );
-    const link = roleNamed("link", "Brand");
-    expect(getComputedStyle(link).textDecorationLine).toBe("none");
-    await userEvent.hover(link);
-    await Promise.all(link.getAnimations().map((animation) => animation.finished));
-    expect(effectiveOpacity(link)).toBe(1);
-    expect(
-      computedContrast(getComputedStyle(link).color, cssVarColor(link, "--background"))
-    ).toBeGreaterThanOrEqual(4.5);
-    expect(getComputedStyle(link).textDecorationLine).toBe("underline");
-  });
+  it.each(Object.values(LINK_VARIANTS))(
+    "draws the %s variant with no underline at full opacity and 4.5:1, and the same on hover",
+    async (variant) => {
+      // An 80% fade on hover would take neutral Fjordkraft light text under the floor:
+      // `--muted-foreground` reads 4.98:1 on the page and `--brand-ink` 4.66:1.
+      renderThemed(
+        <div className="bg-background text-foreground">
+          <Link href={`#${variant}`} variant={variant} underline="none">
+            Account
+          </Link>
+        </div>
+      );
+      const link = roleNamed("link", "Account");
+      expect(effectiveOpacity(link)).toBe(1);
+      expect(getComputedStyle(link).textDecorationLine).toBe("none");
+      expect(pageContrast(link)).toBeGreaterThanOrEqual(4.5);
+      const rest = drawnLook(link);
+      await userEvent.hover(link);
+      await Promise.all(link.getAnimations().map((animation) => animation.finished));
+      expect(drawnLook(link)).toEqual(rest);
+    }
+  );
 });
 
 describe("Link composition", () => {

@@ -289,8 +289,8 @@ export const KIT_PAGES: readonly InventoryPage[] = [
   // Actions on.
   { slug: "empty", name: "Empty", sets: [{ key: "empty", name: "Empty", variants: 3, previewed: 6 }] },
   // 6 variants at 3 underlines (always, hover and none) and 2 weights (normal and bold), in 3 states
-  // (rest, hover and focus): 108 variants.
-  { slug: "link", name: "Link", sets: [{ key: "link", name: "Link", variants: 108, previewed: 108 }] },
+  // (rest, hover and focus), less the 12 hover cells of a `none` link: 96 variants.
+  { slug: "link", name: "Link", sets: [{ key: "link", name: "Link", variants: 96, previewed: 96 }] },
   {
     slug: "item",
     name: "Item",

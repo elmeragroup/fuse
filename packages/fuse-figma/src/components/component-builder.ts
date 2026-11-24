@@ -94,7 +94,8 @@ export function buildSetsInOrder(
 }
 
 /**
- * Build the component set for every cell of the definition's matrix the component can show.
+ * Build the component set for every cell of the definition's matrix outside its `impossible`
+ * combinations.
  *
  * @param definition - The component.
  * @param context - The compiled utilities and the synced variables.

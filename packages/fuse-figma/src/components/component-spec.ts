@@ -330,9 +330,8 @@ export type ComponentDefinition = BoxDefinition & {
   readonly rootOverflow?: "visible";
   readonly axes: readonly AxisSpec[];
   /**
-   * The axis values the component cannot show together, each with the fact that rules it out. The
-   * set holds no cell with all of one combination's values. Undefined for a set that holds its whole
-   * matrix.
+   * The axis values the set leaves out together, each with the fact behind it. The set holds no cell
+   * with all of one combination's values. Undefined for a set that holds its whole matrix.
    */
   readonly impossible?: readonly ImpossibleCells[];
   /**
@@ -414,9 +413,10 @@ function matrixCells(axes: readonly AxisSpec[]): readonly Cell[] {
 }
 
 /**
- * Axis values no state of the component can show together, and the Fuse or Base UI fact that rules
- * them out, as Base UI's Select opens on no press while it is disabled. Every cell that holds each
- * value `where` names is left out of the set.
+ * Axis values a set leaves out together, and the Fuse or Base UI fact behind it. Either no state of
+ * the component shows the values together, as Base UI's Select opens on no press while it is
+ * disabled, or the component draws them as another cell, as a hovered `none` link draws as it
+ * rests. Every cell that holds each value `where` names is left out of the set.
  */
 export type ImpossibleCells = {
   readonly where: Cell;
@@ -430,7 +430,8 @@ type SparseMatrix = {
 };
 
 /**
- * Whether the component can show a cell: whether the cell holds no combination the set rules out.
+ * Whether the set holds a cell, which it does where the cell matches none of its `impossible`
+ * combinations.
  *
  * @param set - The set's axes, and the combinations it rules out.
  * @param cell - The cell.
@@ -466,8 +467,8 @@ function checkImpossible(set: SparseMatrix): void {
 }
 
 /**
- * Every cell of a set's matrix that the component can show, the first axis varying slowest: the
- * matrix without the cells its `impossible` combinations name.
+ * Every cell of a set's matrix outside its `impossible` combinations, the first axis varying
+ * slowest.
  *
  * @param set - The set's axes, and the combinations it rules out.
  * @returns The cells.

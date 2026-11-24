@@ -36,10 +36,10 @@ const {
  *   the full color.
  * - `hover` underlines only under the pointer, for a link whose place already reads as a link,
  *   such as a row of footer links.
- * - `none` drops the underline and fades the text under the pointer, for a link a container
- *   already marks, such as a card's title. A `brand` link underlines under the pointer and keeps
- *   its opacity instead. `--brand-ink` sits near the 4.5:1 floor in some themes, and the 80% fade
- *   takes it under: Fjordkraft's neutral light brand text drops from 4.66:1 to 3.47:1.
+ * - `none` draws no underline at rest or under the pointer, for a link its place already marks,
+ *   such as a card's title or a nav item. The text keeps full opacity under the pointer. `muted`
+ *   and `brand` text sit near the 4.5:1 floor in some themes, and an 80% fade would take
+ *   Fjordkraft's neutral light muted text from 4.98:1 to 3.35:1.
  *
  * The keyboard ring paints the shared self focus ring. `box-decoration-clone` gives each line
  * of a wrapped link its own whole ring, where the default slicing leaves the line ends open.
@@ -51,7 +51,7 @@ const {
  */
 export const linkVariants = tv({
   base: cn(
-    "cursor-pointer box-decoration-clone decoration-[max(1px,0.0625em)] underline-offset-[0.2em] transition-[opacity,text-decoration-color] has-[>[data-icon]]:whitespace-nowrap [&_svg]:inline [&_svg]:align-[-0.125em] [&_svg:not([class*='size-'])]:size-[1em] [&>[data-icon=inline-end]]:ms-[0.25em] [&>[data-icon=inline-start]]:me-[0.25em]",
+    "cursor-pointer box-decoration-clone decoration-[max(1px,0.0625em)] underline-offset-[0.2em] transition-[text-decoration-color] has-[>[data-icon]]:whitespace-nowrap [&_svg]:inline [&_svg]:align-[-0.125em] [&_svg:not([class*='size-'])]:size-[1em] [&>[data-icon=inline-end]]:ms-[0.25em] [&>[data-icon=inline-start]]:me-[0.25em]",
     selfFocusRingClass
   ),
   variants: {
@@ -63,7 +63,7 @@ export const linkVariants = tv({
       always:
         "underline decoration-[color:light-dark(color-mix(in_oklab,currentcolor_35%,transparent),color-mix(in_oklab,currentcolor_65%,transparent))] enabled-hover:decoration-current",
       hover: "no-underline enabled-hover:underline",
-      none: "no-underline enabled-hover:opacity-80",
+      none: "no-underline",
     },
     weight: {
       normal: "font-normal",
@@ -73,13 +73,6 @@ export const linkVariants = tv({
       true: "inline-block max-w-full truncate align-bottom",
     },
   },
-  compoundVariants: [
-    {
-      variant: "brand",
-      underline: "none",
-      class: "enabled-hover:underline enabled-hover:opacity-100",
-    },
-  ],
   defaultVariants: {
     variant: "default",
     underline: "always",
