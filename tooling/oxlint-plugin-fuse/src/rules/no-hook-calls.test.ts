@@ -24,6 +24,12 @@ ruleTester.run("no-hook-calls", noHookCalls, {
       code: 'import * as React from "react";\nexport function Mark() {\n  return React.useId();\n}',
       errors: [{ messageId: "hook", data: { name: "useId" } }],
     },
+    // A module path read only in part is one unknown module, so it cannot push the hook past the
+    // evaluator's cap, and a hook read off it is still a hook.
+    {
+      code: 'import * as React from "react";\nexport async function Mark(base: string, a: boolean) {\n  const pick = (flag: boolean) => (flag ? "x" : "y");\n  const local = `./${base}`.concat(pick(a), pick(a), pick(a), pick(a), pick(a), pick(a));\n  const hooks = a ? React : await import(local);\n  const makeId = hooks.useId;\n  return makeId();\n}',
+      errors: [{ messageId: "hook", data: { name: "useId" } }],
+    },
     {
       code: 'import { use } from "react";\nexport const read = (p) => use(p);',
       errors: [{ messageId: "hook", data: { name: "use" } }],

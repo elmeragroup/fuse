@@ -27,6 +27,18 @@ const writer = [
 
 const BUILD = "/repo/packages/fuse/scripts/build.ts";
 
+/**
+ * A condition chain on `flag` that holds one of `values`: as many alternatives as there are values.
+ *
+ * @param flag - The condition's name.
+ * @param values - The strings, at least one.
+ * @returns The chain's source.
+ */
+const oneOf = (flag: string, values: ReadonlyArray<string>): string =>
+  values
+    .map((value, index) => (index < values.length - 1 ? `${flag} ? "${value}" : ` : `"${value}"`))
+    .join("");
+
 ruleTester.run("restricted-imports: named exports", restrictedImports, {
   valid: [
     // Another export of the writer's module stays allowed, by any access.
@@ -84,6 +96,33 @@ ruleTester.run("restricted-imports: named exports", restrictedImports, {
     },
     {
       code: 'const exportsScript = await import("./generate-exports");\nexportsScript.writeSourceExports(root);',
+      options: writer,
+      filename: BUILD,
+      errors: [{ messageId: "restricted" }],
+    },
+    // A specifier read only in part is one unknown specifier, however many ways its parts may
+    // spell, so it cannot push the writer's module past the evaluator's cap.
+    {
+      code: 'async function load(base: string, a: boolean) {\n  const pick = (flag: boolean) => (flag ? "x" : "y");\n  const local = `./${base}`.concat(pick(a), pick(a), pick(a), pick(a), pick(a), pick(a));\n  const exportsScript = await import(a ? "./generate-exports" : local);\n  exportsScript.writeSourceExports(root);\n}',
+      options: writer,
+      filename: BUILD,
+      errors: [{ messageId: "restricted" }],
+    },
+    {
+      code: 'async function load(base: string, a: boolean) {\n  const pick = (flag: boolean) => (flag ? "x" : "y");\n  const local = `./${base}`.concat(pick(a), pick(a), pick(a), pick(a), pick(a), pick(a));\n  const exportsScript = a ? await import("./generate-exports") : await import(local);\n  exportsScript.writeSourceExports(root);\n}',
+      options: writer,
+      filename: BUILD,
+      errors: [{ messageId: "restricted" }],
+    },
+    // Two prefixes and 32 suffixes make exactly the evaluator's 64 combinations.
+    {
+      code: `async function load(base: string, a: boolean) {\n  const prefix = a ? "./generate" : \`./\${base}\`.concat(a ? "a" : "b");\n  const exportsScript = await import(prefix + (${oneOf("a", ["-exports", ...Array.from({ length: 31 }, (_, index) => `-${index}`)])}));\n  exportsScript.writeSourceExports(root);\n}`,
+      options: writer,
+      filename: BUILD,
+      errors: [{ messageId: "restricted" }],
+    },
+    {
+      code: 'async function load(parts: string[], a: boolean, b: boolean) {\n  const local = [...parts, a ? "a" : "b", a ? "a" : "b", a ? "a" : "b", a ? "a" : "b", a ? "a" : "b"].join("/");\n  const exportsScript = await import((b ? "./generate-exports" : local) + (a ? ".ts" : ""));\n  exportsScript.writeSourceExports(root);\n}',
       options: writer,
       filename: BUILD,
       errors: [{ messageId: "restricted" }],

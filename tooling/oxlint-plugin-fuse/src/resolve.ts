@@ -7,8 +7,8 @@ import { staticText } from "./static-text.ts";
 /**
  * An abstract evaluator: every value an expression may hold, read off the file alone. Rules reach
  * every value they judge (a hook's callee, an imported module) through `evaluate`, a callee's name
- * through `calleeName`, every key through `memberName` or `propertyKeyName`, and judge the
- * alternatives through `quantify.ts`.
+ * through `calleeName`, every key through `memberName` or `propertyKeyName`, the text a string may
+ * hold through `textParts`, and judge the alternatives through `quantify.ts`.
  *
  * `evaluate` returns alternatives (`Alt`), at most 64; more is `unknown`. Every compound operation
  * maps over the cartesian product of its operands' alternatives through `product`, the one way
@@ -44,8 +44,19 @@ import { staticText } from "./static-text.ts";
  *     side is a string, numeric addition otherwise), `-`, `*`, `/`, `%`, unary `-`; and the string
  *     methods `concat`, `trim`, `trimStart`, `trimEnd`, `toLowerCase`, `toUpperCase`, and an array
  *     literal's `join` (elements converted as `join` does: `null` and `undefined` are empty).
- *     An operation on an alternative that is no typed primitive keeps the expression (`opaque`);
- *     any other method call on a string is `opaque` too.
+ *     An operation on an alternative that is no typed primitive keeps the expression (`opaque`),
+ *     and so does a `join` on an array with an unopened spread; any other method call on a string
+ *     is `opaque` too.
+ * 11. Only when the caller asks for `strings: "partial"`, a string with parts the evaluator cannot
+ *     read is a `text` instead of `opaque`: its known text in order, with a gap for each part that
+ *     is no typed primitive, and adjacent gaps as one. Template literals, `+` with a string or
+ *     `text` side, `concat` and an array literal's `join` build one. A `join` with a known
+ *     separator keeps every element it can read, on both sides of an unopened spread, and puts one
+ *     gap where the spread goes. A `text` with no gap is a `string`. A `text` of more than 64 runs
+ *     and gaps is `unknown`, so a string doubled through aliases stays small. Every other step 10
+ *     operation needs an exact value and is `opaque` on a `text`; a member read off one is a
+ *     `member` as for any other value (step 4). By default no `text` exists, so a rule that judges
+ *     exact values sees the same alternatives, and as many, as it would without step 11.
  *
  * Every walk carries its active path, the bindings and nodes it is inside right now. A step back
  * onto that path is `unknown`, so a self-referencing binding stops, and a call back into a function
@@ -63,6 +74,9 @@ const EVALUATES: ReadonlySet<string> = new Set(["evaluate", "evaluateHandle", "$
 
 /** How many alternatives one evaluation keeps before it gives up as `unknown`. */
 const MAX_ALTERNATIVES = 64;
+
+/** How many runs and gaps one `text` keeps before it gives up as `unknown` (step 11). */
+const MAX_FRAGMENTS = 64;
 
 /** The methods that change an array or object in place. */
 const MUTATORS = new Set([
@@ -93,22 +107,31 @@ const STRING_METHODS = new Map<string, (text: string) => string>([
 /** A property an object literal alternative sets: its key and its value. */
 type PropertyEntry = { readonly _tag: "property"; readonly key: string; readonly value: ESTree.Node };
 
+/** An object or array spread the evaluator cannot open. */
+type UnopenedSpread = { readonly _tag: "unopened-spread" };
+
+/** The one unopened spread every object and array alternative shares. */
+const UNOPENED_SPREAD: UnopenedSpread = { _tag: "unopened-spread" };
+
 /** One entry of an object literal alternative, in source order. */
-type Entry = PropertyEntry | { readonly _tag: "unopened-spread" };
+type Entry = PropertyEntry | UnopenedSpread;
+
+/** One element of an array literal alternative, in source order: a node (`null` for a hole), or a spread it cannot open. */
+type Element = { readonly _tag: "element"; readonly node: ESTree.Node | null } | UnopenedSpread;
+
+/** One run of a `text`: characters the evaluator read, or a gap for a part it could not. */
+export type TextPart = { readonly _tag: "known"; readonly text: string } | { readonly _tag: "gap" };
 
 /** One value an expression may hold. */
 export type Alt =
   | { readonly kind: "string"; readonly value: string }
+  | { readonly kind: "text"; readonly parts: ReadonlyArray<TextPart> }
   | { readonly kind: "number"; readonly value: number }
   | { readonly kind: "boolean"; readonly value: boolean }
   | { readonly kind: "null" }
   | { readonly kind: "undefined" }
   | { readonly kind: "object"; readonly entries: ReadonlyArray<Entry> }
-  | {
-      readonly kind: "array";
-      readonly elements: ReadonlyArray<ESTree.Node | null>;
-      readonly complete: boolean;
-    }
+  | { readonly kind: "array"; readonly elements: ReadonlyArray<Element> }
   | { readonly kind: "function"; readonly fn: ESTree.Node }
   | { readonly kind: "global"; readonly name: string }
   | { readonly kind: "import"; readonly source: string; readonly imported: string }
@@ -124,8 +147,14 @@ type Memo = {
   cuts: number;
 };
 
-/** Each file's memo, keyed by its program. */
-const MEMOS = new WeakMap<ESTree.Node, Memo>();
+/**
+ * Each file's memo, keyed by its program, one per `strings` mode: a node read with partial strings
+ * holds `text`s that a default read must not see.
+ */
+const MEMOS = {
+  exact: new WeakMap<ESTree.Node, Memo>(),
+  partial: new WeakMap<ESTree.Node, Memo>(),
+} as const satisfies Record<Strings, WeakMap<ESTree.Node, Memo>>;
 
 /** Each function's returned expressions, which depend on its syntax alone. */
 const RETURNS = new WeakMap<ESTree.Node, ESTree.Node[]>();
@@ -158,36 +187,24 @@ function alternatives(...lists: ReadonlyArray<ReadonlyArray<Alt>>): Alt[] {
 }
 
 /**
- * The one way operands combine: `combine` runs on every combination of one alternative per
- * operand, and the results are the operation's alternatives. Past `MAX_ALTERNATIVES`
- * combinations or results, the result is `overflow` alone: `unknown` for the evaluator's own
- * operations.
+ * The one way operands combine: `operation` runs on every combination of one alternative per
+ * operand, and the results are the operation's alternatives. Past `MAX_ALTERNATIVES` combinations
+ * or results, the result is `unknown`.
  *
  * @param operands - Each operand's alternatives, in order.
  * @param operation - The operation on one combination.
- * @param overflow - The result past the cap.
  * @returns The operation's alternatives.
  */
-function product<T, R>(
-  operands: ReadonlyArray<ReadonlyArray<T>>,
-  operation: (combination: ReadonlyArray<T>) => ReadonlyArray<R>,
-  overflow: R
-): R[] {
-  let combinations: T[][] = [[]];
-  for (const operand of operands) {
-    combinations = combinations.flatMap((before) => operand.map((choice) => [...before, choice]));
-    if (combinations.length > MAX_ALTERNATIVES) return [overflow];
-  }
-  const results = combinations.flatMap((combination) => operation(combination));
-  return results.length > MAX_ALTERNATIVES ? [overflow] : results;
-}
-
-/** The evaluator's product: past the cap, `unknown`. */
-function combine(
+function product(
   operands: ReadonlyArray<ReadonlyArray<Alt>>,
   operation: (combination: ReadonlyArray<Alt>) => ReadonlyArray<Alt>
 ): Alt[] {
-  return product(operands, operation, UNKNOWN);
+  let combinations: Alt[][] = [[]];
+  for (const operand of operands) {
+    combinations = combinations.flatMap((before) => operand.map((choice) => [...before, choice]));
+    if (combinations.length > MAX_ALTERNATIVES) return [UNKNOWN];
+  }
+  return alternatives(...combinations.map((combination) => operation(combination)));
 }
 
 /**
@@ -300,14 +317,64 @@ function fromPrimitive(value: Primitive): Alt {
   return { kind: "boolean", value };
 }
 
+/** A gap in a `text`. */
+const GAP: TextPart = { _tag: "gap" };
+
+/**
+ * The text one part of a string spells (step 11): a typed primitive's string conversion, a
+ * `text`'s parts, and a gap for anything else.
+ *
+ * @param alternative - One part's alternative.
+ * @returns Its parts, in order.
+ */
+function partsOf(alternative: Alt): ReadonlyArray<TextPart> {
+  if (alternative.kind === "text") return alternative.parts;
+  const [primitive] = primitiveOf(alternative);
+  return primitive === undefined ? [GAP] : [{ _tag: "known", text: String(primitive.value) }];
+}
+
+/**
+ * The string parts spell (steps 10 and 11): a `string` when no part is a gap. With a gap, an
+ * `exact` read is `opaque`, as step 10 has it, and a `partial` read is a `text` with adjacent known
+ * runs merged and adjacent gaps as one.
+ *
+ * @param parts - The parts, in order.
+ * @param strings - How the read takes a string with a gap.
+ * @returns A `string`; with a gap, `opaque` for an `exact` read, and otherwise a `text`, or
+ *   `unknown` past `MAX_FRAGMENTS`.
+ */
+function fromParts(parts: ReadonlyArray<TextPart>, strings: Strings): Alt {
+  if (parts.every((part) => part._tag === "known"))
+    return fromPrimitive(parts.map((part) => part.text).join(""));
+  if (strings === "exact") return OPAQUE;
+  const merged: TextPart[] = [];
+  for (const part of parts) {
+    const last = merged.at(-1);
+    if (part._tag === "known" && last?._tag === "known") {
+      merged[merged.length - 1] = { _tag: "known", text: last.text + part.text };
+    } else if (part._tag === "gap" ? last?._tag !== "gap" : part.text !== "") {
+      merged.push(part);
+    }
+  }
+  return merged.length > MAX_FRAGMENTS ? UNKNOWN : { kind: "text", parts: merged };
+}
+
+/** Whether an alternative is a string, known in full or in parts. */
+function isText(alternative: Alt): boolean {
+  return alternative.kind === "string" || alternative.kind === "text";
+}
+
 /** The values of a combination when every alternative in it is a typed primitive. */
 function primitives(combination: ReadonlyArray<Alt>): Primitive[] | undefined {
   const values = combination.flatMap((alternative) => primitiveOf(alternative).map((boxed) => boxed.value));
   return values.length === combination.length ? values : undefined;
 }
 
-/** The evaluator for one walk: the rule context fixed, the file's memo shared, its own active path. */
-function evaluator(context: Context, memo: Memo) {
+/**
+ * The evaluator for one walk: the rule context and string mode fixed, the file's memo for that mode
+ * shared, its own active path.
+ */
+function evaluator(context: Context, strings: Strings, memo: Memo) {
   const active = new Set<ESTree.Node | Variable>();
 
   /** Run one step with it on the active path; a step already on it is a cycle, cut to `unknown`. */
@@ -330,20 +397,17 @@ function evaluator(context: Context, memo: Memo) {
       return [
         {
           kind: "object",
-          entries:
-            key === undefined
-              ? [{ _tag: "unopened-spread" }]
-              : [{ _tag: "property", key, value: property.value }],
+          entries: key === undefined ? [UNOPENED_SPREAD] : [{ _tag: "property", key, value: property.value }],
         },
       ];
     });
-    return combine(parts, (combination) => [
+    return product(parts, (combination) => [
       {
         kind: "object",
         entries: combination.flatMap((part): Entry[] => {
           if (part.kind === "object") return [...part.entries];
           // Spreading `null` or `undefined` sets nothing.
-          return part.kind === "null" || part.kind === "undefined" ? [] : [{ _tag: "unopened-spread" }];
+          return part.kind === "null" || part.kind === "undefined" ? [] : [UNOPENED_SPREAD];
         }),
       },
     ]);
@@ -354,17 +418,14 @@ function evaluator(context: Context, memo: Memo) {
     const parts: Array<ReadonlyArray<Alt>> = node.elements.map((element): ReadonlyArray<Alt> =>
       element?.type === "SpreadElement"
         ? evaluateNode(element.argument)
-        : [{ kind: "array", elements: [element], complete: true }]
+        : [{ kind: "array", elements: [{ _tag: "element", node: element }] }]
     );
-    return combine(parts, (combination) => {
-      const elements: Array<ESTree.Node | null> = [];
-      for (const part of combination) {
-        if (part.kind !== "array") return [{ kind: "array", elements, complete: false }];
-        elements.push(...part.elements);
-        if (!part.complete) return [{ kind: "array", elements, complete: false }];
-      }
-      return [{ kind: "array", elements, complete: true }];
-    });
+    return product(parts, (combination) => [
+      {
+        kind: "array",
+        elements: combination.flatMap((part) => (part.kind === "array" ? part.elements : [UNOPENED_SPREAD])),
+      },
+    ]);
   };
 
   /** What one alternative holds under a key (step 4). */
@@ -378,10 +439,13 @@ function evaluator(context: Context, memo: Memo) {
       case "array": {
         const index = Number(key);
         if (!Number.isInteger(index)) return [{ kind: "member", object: container, key }];
-        if (index >= container.elements.length)
-          return container.complete ? [{ kind: "undefined" }] : [UNKNOWN];
-        const element = container.elements[index];
-        return element === null || element === undefined ? [{ kind: "undefined" }] : evaluateNode(element);
+        if (index < 0) return [{ kind: "undefined" }];
+        const before = container.elements.slice(0, index + 1);
+        if (before.some((element) => element._tag === "unopened-spread")) return [UNKNOWN];
+        const element = before[index];
+        return element?._tag !== "element" || element.node === null
+          ? [{ kind: "undefined" }]
+          : evaluateNode(element.node);
       }
       case "import":
         return container.imported === "*"
@@ -411,7 +475,7 @@ function evaluator(context: Context, memo: Memo) {
     if (callee.kind !== "member") return [OPAQUE];
     const receiver = callee.object;
     if (EVALUATES.has(callee.key)) {
-      const callbacks = combine(
+      const callbacks = product(
         call.arguments.map((argument) => evaluateNode(argument)),
         (combination) => combination.filter((argument) => argument.kind === "function")
       );
@@ -424,34 +488,40 @@ function evaluator(context: Context, memo: Memo) {
     }
     const map = STRING_METHODS.get(callee.key);
     if (map !== undefined && receiver.kind === "string") return [fromPrimitive(map(receiver.value))];
-    if (callee.key === "concat" && receiver.kind === "string") {
-      return combine(
+    if (callee.key === "concat" && isText(receiver)) {
+      return product(
         call.arguments.map((argument) => evaluateNode(argument)),
-        (combination) => {
-          const values = primitives(combination);
-          return values === undefined
-            ? [OPAQUE]
-            : [fromPrimitive(receiver.value.concat(...values.map(String)))];
-        }
+        (combination) => [fromParts([...partsOf(receiver), ...combination.flatMap(partsOf)], strings)]
       );
     }
     if (callee.key === "join" && receiver.kind === "array") {
-      if (!receiver.complete) return [OPAQUE];
-      const [separator] = call.arguments;
-      return combine(
+      const spread = receiver.elements.some((element) => element._tag === "unopened-spread");
+      if (spread && strings === "exact") return [OPAQUE];
+      const [separatorArgument] = call.arguments;
+      // An element is followed by the separator exactly when an element comes later, since an
+      // item then follows it whatever the spreads between hold. A spread's gap stands for its
+      // items and each separator that depends on whether it is empty: the one after each item,
+      // or, past the last element, the one before each.
+      const lastElement = receiver.elements.findLastIndex((element) => element._tag === "element");
+      return product(
         [
-          separator === undefined ? [fromPrimitive(",")] : evaluateNode(separator),
-          ...receiver.elements.map((element) =>
-            element === null ? [fromPrimitive(undefined)] : evaluateNode(element)
-          ),
+          separatorArgument === undefined ? [fromPrimitive(",")] : evaluateNode(separatorArgument),
+          ...receiver.elements.map((element): ReadonlyArray<Alt> => {
+            if (element._tag === "unopened-spread") return [OPAQUE];
+            return element.node === null ? [fromPrimitive(undefined)] : evaluateNode(element.node);
+          }),
         ],
         ([glue, ...items]) => {
-          const values = primitives(items);
-          if (glue?.kind !== "string" || values === undefined) return [OPAQUE];
-          const text = values
-            .map((value) => (value === null || value === undefined ? "" : String(value)))
-            .join(glue.value);
-          return [fromPrimitive(text)];
+          if (glue?.kind !== "string") return [OPAQUE];
+          const separator: TextPart = { _tag: "known", text: glue.value };
+          const parts = receiver.elements.flatMap((element, index): ReadonlyArray<TextPart> => {
+            if (element._tag === "unopened-spread") return [GAP];
+            const item = items[index];
+            const text =
+              item === undefined || item.kind === "null" || item.kind === "undefined" ? [] : partsOf(item);
+            return index < lastElement ? [...text, separator] : text;
+          });
+          return [fromParts(parts, strings)];
         }
       );
     }
@@ -460,33 +530,36 @@ function evaluator(context: Context, memo: Memo) {
 
   /** A template literal's values (step 10). */
   const templateOf = (node: ESTree.TemplateLiteral): Alt[] =>
-    combine(
+    product(
       node.expressions.map((part) => evaluateNode(part)),
-      (combination) => {
-        const values = primitives(combination);
-        if (values === undefined) return [OPAQUE];
-        let text = "";
-        node.quasis.forEach((quasi, index) => {
-          text += staticText(quasi);
-          if (index < values.length) text += String(values[index]);
-        });
-        return [fromPrimitive(text)];
-      }
+      (combination) => [
+        fromParts(
+          node.quasis.flatMap((quasi, index): TextPart[] => {
+            const substitution = combination[index];
+            return [
+              { _tag: "known", text: staticText(quasi) },
+              ...(substitution === undefined ? [] : partsOf(substitution)),
+            ];
+          }),
+          strings
+        ),
+      ]
     );
 
   /** A binary operation's values (step 10). */
   const binaryOf = (node: ESTree.BinaryExpression | ESTree.PrivateInExpression): Alt[] => {
     const arithmetic = ARITHMETIC.get(node.operator);
     if (node.left.type === "PrivateIdentifier" || arithmetic === undefined) return [OPAQUE];
-    return combine([evaluateNode(node.left), evaluateNode(node.right)], (combination) => {
+    return product([evaluateNode(node.left), evaluateNode(node.right)], (combination) => {
+      const [left, right] = combination;
+      if (left === undefined || right === undefined) return [UNKNOWN];
+      // `+` converts both sides to strings exactly when a side is a string.
+      if (node.operator === "+" && (isText(left) || isText(right)))
+        return [fromParts([...partsOf(left), ...partsOf(right)], strings)];
       const values = primitives(combination);
       if (values === undefined) return [OPAQUE];
-      const [left, right] = values;
-      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- step 10's `+` converts to strings exactly when a side is a string
-      if (node.operator === "+" && (typeof left === "string" || typeof right === "string")) {
-        return [fromPrimitive(String(left) + String(right))];
-      }
-      return [fromPrimitive(arithmetic(Number(left), Number(right)))];
+      const [leftValue, rightValue] = values;
+      return [fromPrimitive(arithmetic(Number(leftValue), Number(rightValue)))];
     });
   };
 
@@ -523,8 +596,8 @@ function evaluator(context: Context, memo: Memo) {
       if (!isMutated(variable)) return values;
       // A mutated literal keeps its identity, but nothing it holds is known.
       return values.map((value): Alt => {
-        if (value.kind === "array") return { ...value, elements: [], complete: false };
-        if (value.kind === "object") return { ...value, entries: [{ _tag: "unopened-spread" }] };
+        if (value.kind === "array") return { ...value, elements: [UNOPENED_SPREAD] };
+        if (value.kind === "object") return { ...value, entries: [UNOPENED_SPREAD] };
         return value;
       });
     }
@@ -536,7 +609,7 @@ function evaluator(context: Context, memo: Memo) {
       if (target !== def.name) continue;
       const key = propertyKeyName(property);
       if (key === undefined) return [UNKNOWN];
-      return combine([evaluateNode(init)], ([container]) =>
+      return product([evaluateNode(init)], ([container]) =>
         container === undefined ? [UNKNOWN] : memberOf(container, key)
       );
     }
@@ -569,12 +642,12 @@ function evaluator(context: Context, memo: Memo) {
       case "MemberExpression": {
         const key = memberName(expression);
         if (key === undefined) return [OPAQUE];
-        return combine([evaluateNode(expression.object)], ([container]) =>
+        return product([evaluateNode(expression.object)], ([container]) =>
           container === undefined ? [UNKNOWN] : memberOf(container, key)
         );
       }
       case "CallExpression":
-        return combine([evaluateNode(expression.callee)], ([callee]) =>
+        return product([evaluateNode(expression.callee)], ([callee]) =>
           callee === undefined ? [UNKNOWN] : callOne(expression, callee)
         );
       case "ConditionalExpression":
@@ -582,7 +655,7 @@ function evaluator(context: Context, memo: Memo) {
       case "LogicalExpression":
         return alternatives(evaluateNode(expression.left), evaluateNode(expression.right));
       case "ImportExpression":
-        return combine([evaluateNode(expression.source)], ([source]) =>
+        return product([evaluateNode(expression.source)], ([source]) =>
           source?.kind === "string" ? [{ kind: "import", source: source.value, imported: "*" }] : [OPAQUE]
         );
       case "ObjectExpression":
@@ -595,7 +668,7 @@ function evaluator(context: Context, memo: Memo) {
         return binaryOf(expression);
       case "UnaryExpression":
         if (expression.operator !== "-") return [OPAQUE];
-        return combine([evaluateNode(expression.argument)], ([operand]) =>
+        return product([evaluateNode(expression.argument)], ([operand]) =>
           operand?.kind === "number" ? [fromPrimitive(-operand.value)] : [OPAQUE]
         );
       default:
@@ -621,19 +694,47 @@ function evaluator(context: Context, memo: Memo) {
   return evaluateNode;
 }
 
+/** How `evaluate` reads. */
+export type EvaluateOptions = {
+  /**
+   * How a string with parts the evaluator cannot read comes back: `"exact"` (the default) makes it
+   * `opaque`, and `"partial"` makes it a `text` of its known runs and gaps (step 11).
+   */
+  readonly strings: "exact" | "partial";
+};
+
+/** How a read takes a string with parts it cannot read. */
+type Strings = EvaluateOptions["strings"];
+
+/** The default read: exact strings only. */
+const EXACT: EvaluateOptions = { strings: "exact" };
+
 /**
  * Every value an expression may hold, by the steps in this module's contract.
  *
  * @param context - The rule context.
  * @param node - Any expression.
+ * @param options - How to read strings; by default, exact strings only.
  * @returns The alternatives, never empty, at most 64.
  */
-export function evaluate(context: Context, node: ESTree.Node): Alt[] {
+export function evaluate(context: Context, node: ESTree.Node, options: EvaluateOptions = EXACT): Alt[] {
   const program = context.sourceCode.ast;
-  const memo = MEMOS.get(program) ?? { values: new WeakMap(), cuts: 0 };
-  MEMOS.set(program, memo);
-  const values = evaluator(context, memo)(node);
+  const memos = MEMOS[options.strings];
+  const memo = memos.get(program) ?? { values: new WeakMap(), cuts: 0 };
+  memos.set(program, memo);
+  const values = evaluator(context, options.strings, memo)(node);
   return values.length === 0 ? [UNKNOWN] : [...values];
+}
+
+/**
+ * The text a string alternative may hold, in order: a `string` as one known run, a `text` as its
+ * runs and gaps (step 11).
+ *
+ * @param alternative - Any alternative.
+ * @returns The parts, or `undefined` for an alternative that is no string.
+ */
+export function textParts(alternative: Alt): ReadonlyArray<TextPart> | undefined {
+  return isText(alternative) ? partsOf(alternative) : undefined;
 }
 
 /**
