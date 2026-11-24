@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import type { ReactElement } from "react";
 
 import { writeAttribute, writeStyle } from "./chart-dom";
-import { tooltipPopupClass } from "./chart-tooltip-popup";
+import { tooltipPopupClass, useTooltipOpenedBy } from "./chart-tooltip-popup";
 import type { ChartLayerProps } from "./chart-types";
 import { indexAt, livePixel } from "./layout/live-window";
 import {
@@ -14,7 +14,6 @@ import {
   useLiveRoot,
   useShownFeed,
 } from "./live-line-chart-context";
-import type { LiveActive } from "./live-line-chart-context";
 import { readoutOf } from "./live-line-chart-surface";
 import { liveName, liveTimeText, liveValueText } from "./live-line-chart-text";
 
@@ -81,17 +80,6 @@ export function LiveLineChartCrosshair({ className, style }: LiveLineChartCrossh
 }
 
 /**
- * What opened the tooltip, kept while it stays open. A key opens it at once, with no entrance, and
- * a pointer opens it with the popup's fade and zoom.
- */
-function useOpenedBy(active: LiveActive | null, open: boolean): LiveActive["source"] | null {
-  const [opened, setOpened] = useState<LiveActive["source"] | null>(null);
-  const next = open ? (opened ?? active?.source ?? null) : null;
-  if (next !== opened) setOpened(next);
-  return next;
-}
-
-/**
  * The active reading's time and value in a popup at the top of the plot, above the crosshair, which
  * moves with it in the same frame and stays inside the plot at either edge. A pointer opens it with
  * a fade and a zoom from the crosshair, and a key opens it at once. It is hidden from screen
@@ -130,7 +118,8 @@ export function LiveLineChartTooltip({
   const { points } = useShownFeed(context);
   const point = active === null ? undefined : points[indexAt(points, active.time)];
   const open = point !== undefined && plot !== null;
-  const openedBy = useOpenedBy(active, open);
+  // A key opens the popup at once, with no entrance, and a pointer opens it with a fade and a zoom.
+  const openedBy = useTooltipOpenedBy(open, active?.source ?? null);
   return (
     <div data-slot="live-line-chart-tooltip" aria-hidden="true">
       {point === undefined || plot === null ? null : (
@@ -140,9 +129,9 @@ export function LiveLineChartTooltip({
           data-variant={variant}
           // A pointer opens it the way an anchored popup below its anchor opens, fading in and dropping
           // into place on `data-open`. A key opens it at once, because keyboard actions never animate.
-          data-open={openedBy === "keyboard" ? undefined : ""}
+          data-open=""
           data-side="bottom"
-          className={tooltipPopupClass(variant, "entrance", className)}
+          className={tooltipPopupClass(variant, openedBy === "keyboard" ? "none" : "entrance", className)}
           style={style}>
           <div data-slot="chart-tooltip-label">{liveTimeText(text, point.time, "full").text}</div>
           <div data-slot="chart-tooltip-items">

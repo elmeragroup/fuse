@@ -4,6 +4,8 @@
  * What every chart family's tooltip shares around its own anchor: the positioner's placement rules,
  * the dismissal filter, the popup's look and its overflow watch. It reads no Root context.
  */
+import { useState } from "react";
+
 import { cn } from "../../styles/cn";
 import { tooltipShellClass } from "../../styles/inner-corner/tooltip";
 import { tv } from "../../styles/tv";
@@ -65,6 +67,28 @@ export function tooltipInput(input: string | null): "touch" | undefined {
   return input === "touch" || input === "pen" ? "touch" : undefined;
 }
 
+/** How a chart popup opens: as an overlay, as the live readout's entrance, or at once. */
+export type TooltipMotion = "overlay" | "entrance" | "none";
+
+/**
+ * What opened a popup, kept while it stays open, so a step by another input while it shows
+ * changes nothing.
+ *
+ * @template TSource - The sources of the family's store.
+ * @param open - Whether the popup is open.
+ * @param source - What moved the active item last, or null.
+ * @returns What opened the popup, or `null` while it is closed.
+ */
+export function useTooltipOpenedBy<TSource extends string>(
+  open: boolean,
+  source: TSource | null
+): TSource | null {
+  const [opened, setOpened] = useState<TSource | null>(null);
+  const next = open ? (opened ?? source) : null;
+  if (next !== opened) setOpened(next);
+  return next;
+}
+
 /**
  * The popup's classes: Fuse's overlay surface and shell, then the chart popup's own look in the
  * variant and its motion, then the consumer's.
@@ -76,7 +100,7 @@ export function tooltipInput(input: string | null): "touch" | undefined {
  */
 export function tooltipPopupClass(
   variant: "default" | "frosted",
-  motion: "overlay" | "entrance",
+  motion: TooltipMotion,
   className: string | undefined
 ): string {
   return cn(overlayPopupSurfaceClass, tooltipShellClass, tooltipPopup({ variant, motion }), className);
@@ -105,6 +129,9 @@ export function viewportSize(): PlaceSize {
  *   interrupt. It fades, zooms and drops in on mount, on `data-open`, as a keyframe animation. The
  *   readout writes its own `translate` and `transform-origin` every frame and the keyframes move
  *   `transform`, so the readout keeps pace with the crosshair while it enters.
+ * - `"none"` is for a popup a key opened, which shows at once with no transition. A Base UI popup
+ *   takes `"overlay"` again once it closes, so its exit still fades. The live readout unmounts at
+ *   once when it closes, so it has no exit.
  */
 const tooltipPopup = tv({
   // The chart popup has an 8 px radius and 8 px of block padding. It is never taller than the room
@@ -117,6 +144,7 @@ const tooltipPopup = tv({
         "supports-backdrop-filter:backdrop-blur-md bg-popover/70 [--surface-muted-foreground:inherit] [--surface:inherit]",
     },
     motion: {
+      none: "",
       overlay: overlayPopupMotionClass,
       entrance:
         "data-[side=bottom]:slide-in-from-top-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",

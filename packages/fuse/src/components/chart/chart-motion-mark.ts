@@ -290,7 +290,7 @@ export function useFollowerPlacement(
   const commit = useCommitMotion(update, plot, space, frame);
   return (cause, join) => {
     // The classifier sees every commit, whichever placement the follower takes.
-    const placement: Placement = cause === "step" ? { kind: "snap" } : placementOf(commit());
+    const placement: Placement = cause !== "commit" ? { kind: "snap" } : placementOf(commit());
     return join === undefined ? placement : { kind: "join", leads: join.leads };
   };
 }

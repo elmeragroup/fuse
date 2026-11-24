@@ -12,7 +12,7 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { CaughtError, caughtError } from "../../../test/caught-error";
-import { popup } from "../../../test/chart/marks";
+import { animatedWhile, keyOpen, popup, popupFade, popupOpen } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { ChartConfig, ChartStyle } from "./chart-types";
@@ -366,6 +366,31 @@ describe("interaction", () => {
       expect(tooltipText()).toBe("Forbruk 2025Temperatur2Forbruk100\u00a0000");
       await userEvent.click(surface, { position: { x: 40, y: 59 } });
       await expect.poll(tooltipText).toBeNull();
+    });
+  });
+
+  describe("the tooltip's entrance", () => {
+    it("opens at once on focus, fades in on a pointer, and fades out after a key opened it", async () => {
+      renderThemed(<InteractiveScatter />);
+      expect(await keyOpen(enterChart)).toEqual({ motion: [], firstOpacity: 1 });
+      // The exit fades whatever opened the popup.
+      expect(
+        await animatedWhile(
+          () => popupFade(document.querySelector('[data-slot="chart-tooltip"]')),
+          () => userEvent.keyboard("{Escape}"),
+          () => !popupOpen()
+        )
+      ).toEqual(["fade"]);
+      await userEvent.keyboard("{Tab}");
+      // 6 px right of now(2, 90\u00a0000) at (40, 70).
+      const surface = page.getByRole("listbox");
+      expect(
+        await animatedWhile(
+          () => popupFade(popup()),
+          () => userEvent.hover(surface, { position: { x: 46, y: 70 } }),
+          popupOpen
+        )
+      ).toEqual(["fade"]);
     });
   });
 

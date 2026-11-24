@@ -30,11 +30,12 @@ export type ChartTooltipProps = ChartLayerProps & {
    * keeps its height. "top" pins it to the plot top and tracks x only, as a chart with Panels
    * always does. A horizontal chart places it over or under the active row either way.
    *
-   * A step to another slot glides the popup there over `--chart-glide`, 924 ms on a spring that
-   * never overshoots. It moves at once when it opens, flips side, or follows a scroll, a resize or a
-   * data update, when its path would leave the viewport, and under reduced motion. The popup stays
-   * open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second
-   * tap dismisses it.
+   * On a cartesian chart, a pointer or touch step to another slot glides the popup there over
+   * `--chart-glide`, 924 ms on a spring that never overshoots. It moves at once on a key step, when
+   * it opens, flips side, or follows a scroll, a resize or a data update, when its path would leave
+   * the viewport, and under reduced motion. A key opens it with no fade. The popup stays open while
+   * the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap
+   * dismisses it.
    */
   anchor?: "point" | "top";
   /**
@@ -56,10 +57,11 @@ const CARTESIAN_PLACER: TooltipPlacer = { useAnchor: useCartesianTooltipAnchor }
  * 16 px or less keeps its height. It flips below the plot when the viewport has no room above. On
  * a horizontal chart it sits above or below the active row. When neither side has room, it sits
  * beside the column, and when no side has room, it overlays the plot. It touches its anchor and
- * stays inside the viewport, scrolling when its content is taller. A pointer, key or touch step to
+ * stays inside the viewport, scrolling when its content is taller. A pointer or touch step to
  * another slot glides it there over `--chart-glide` on a spring that never overshoots, unless the
- * reader prefers reduced motion. Opening, scrolling, resizing, a data update, a change of side and
- * a path over the marks that would leave the viewport move it at once. Touch passes through the
+ * reader prefers reduced motion. A key step, opening, scrolling, resizing, a data update, a change
+ * of side and a path over the marks that would leave the viewport move it at once, and a key opens
+ * it with no fade. Touch passes through the
  * popup to the plot, except on a popup that scrolls, where a drag scrolls it and a tap dismisses
  * it. It may leave the chart. A pointer that moves straight up or down stays on the slot,
  * so it reaches the popup with the content unchanged. The popup stays while the pointer is on the

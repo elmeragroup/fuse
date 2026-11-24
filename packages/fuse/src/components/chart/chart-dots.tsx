@@ -68,8 +68,8 @@ export type ChartDotsProps = ChartLayerProps & {
 export type ChartActiveDotProps = ChartLayerProps & {
   /**
    * The series the dot follows. It glides with the crosshair along the series' Line, Area or Bar,
-   * on a straight track through the bar tops. It moves at once across a gap or a missing reading,
-   * and under reduced motion.
+   * on a straight track through the bar tops. It moves at once on a key step, across a gap or a
+   * missing reading, and under reduced motion.
    */
   dataKey: string;
   /** The dot's look. "ping" sends a ring out from the dot once a second. */
@@ -281,7 +281,7 @@ export function ChartDots({ dataKey, variant = "default", className, style }: Ch
   );
   useChartFollower("Chart.Dots", (_active, cause) => {
     // The dots rest on their readings, so a pointer or key step moves none of them.
-    if (cause === "step" || series === undefined || frame === null) return;
+    if (cause !== "commit" || series === undefined || frame === null) return;
     // The dots crossfade with their path: the old dots fade out where they were drawn.
     attach(cause, attachJoin(context, series, slots, rest, "line"), rest);
   });
@@ -548,9 +548,10 @@ function rideOf(
 }
 
 /**
- * The dot on one series at the active slot. Write one per series that needs one. A pointer, key or
- * touch step glides it to the next reading along its series' drawn line, in step with the crosshair
- * on a spring that quickens with the pointer, unless the user prefers reduced motion. It rides its
+ * The dot on one series at the active slot. Write one per series that needs one. A pointer or touch
+ * step glides it to the next reading along its series' drawn line, in step with the crosshair on a
+ * spring that quickens with the pointer, unless the user prefers reduced motion. A key step moves it
+ * at once. It rides its
  * Line's or Area's drawn line, or on a Bar series a straight track through the bars' far ends: a
  * bar's top, a stack segment's outer edge, a negative bar's low end. It moves at once across a gap
  * or a missing reading. It shows and hides at once, and during a data update it rides what it sits
@@ -623,11 +624,16 @@ export function ChartActiveDot({
     // passes its slot, or on its bar's far end.
     const placed = point === null ? null : drawnPoint();
     const to = placed === null || frame === null ? null : pointCenter(frame, placed[0] ?? 0, placed[1] ?? 0);
-    // Only a step from one reading to another glides, and not while a data update moves the dot
-    // with what it sits on. Showing, hiding, a commit and reduced motion place it at once.
+    // Only a pointer step from one reading to another glides, and not while a data update moves the
+    // dot with what it sits on. Showing, hiding, a key step, a commit and reduced motion place it at
+    // once.
     const { motion, orientation, store } = context;
     const steps =
-      cause === "step" && series !== undefined && frame !== null && !motion.snaps() && !motion.running();
+      cause === "glide-step" &&
+      series !== undefined &&
+      frame !== null &&
+      !motion.snaps() &&
+      !motion.running();
     const riding = steps && from !== null && to !== null ? trackFor(context, series, frame, track) : null;
     const ride =
       riding === null || from === null || to === null ? null : rideOf(svg, riding, from, to, orientation);
@@ -764,7 +770,7 @@ export function ChartMarker({
     point: true,
   });
   useChartFollower("Chart.Marker", (_active, cause) => {
-    if (cause === "step" || series === undefined || frame === null) return;
+    if (cause !== "commit" || series === undefined || frame === null) return;
     const rest = marked.flatMap(({ point }) => [...point]);
     // The marker and its pills crossfade with their path, the pills' old text included.
     attach(

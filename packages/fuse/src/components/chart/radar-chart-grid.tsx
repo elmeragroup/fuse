@@ -62,6 +62,7 @@ function ringsOf(radar: RadarDrawing): readonly { readonly radius: number; reado
 /**
  * The rings and spokes. When the radius domain reaches below 0 it draws the zero ring solid. Its
  * hand marks the active spoke and turns to the next one the short way round, with the active dots.
+ * A key step turns it at once.
  *
  * @beta
  */

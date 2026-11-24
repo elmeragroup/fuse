@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, onTestFinished } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { recordFrames } from "../../../test/animation-frames";
+import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { label, pointerAt, popup } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
@@ -51,10 +51,12 @@ const SPOKE_CONFIG = {
 function Pie({
   children,
   width = 400,
+  data = BILL,
   ...props
 }: {
   readonly children?: ReactNode;
   readonly width?: number;
+  readonly data?: readonly { readonly name: string; readonly v: number }[];
   readonly startAngle?: number;
   readonly endAngle?: number;
 }) {
@@ -62,7 +64,7 @@ function Pie({
     <LocaleProvider locale="nb-NO">
       <div style={{ width }}>
         <PieChart.Root
-          data={BILL}
+          data={data}
           config={BILL_CONFIG}
           nameKey="name"
           valueKey="v"
@@ -368,6 +370,237 @@ describe("the tooltip's placement hold", () => {
     const left = lane();
     expect(positioner.getBoundingClientRect().right).toBeLessThan(center);
     expect(frames.find((frame) => Math.abs(frame.left - left) < 1)?.opacity).toBe(0);
+  });
+});
+
+describe("a key step that changes the tooltip's lane", () => {
+  /**
+   * A bill whose second and third values print far wider than the first. At 495 px the first
+   * value's popup fits a side lane, and the wide values' popups need the lane below the dial.
+   */
+  const WIDE = [
+    { name: "strom", v: 1 },
+    { name: "nettleie", v: 123_456 },
+    { name: "avgifter", v: 99_999 },
+  ];
+
+  /** The same bill with the wide value first, so the popup Tab opens needs the lane below the dial. */
+  const WIDE_FIRST = [
+    { name: "nettleie", v: 123_456 },
+    { name: "strom", v: 1 },
+    { name: "avgifter", v: 99_999 },
+  ];
+
+  /**
+   * Widens the viewport so the side lanes have room, and waits until the browser has delivered the
+   * resize, so no late resize lands during the test. The next test gets the default viewport back.
+   */
+  async function wideViewport(): Promise<void> {
+    await page.viewport(1024, 768);
+    onTestFinished(() => page.viewport(414, 896));
+    await expect.poll(() => window.innerWidth).toBe(1024);
+    await nextFrames(2);
+  }
+
+  /** The popup's lane, as Base UI marks the side its positioner sits on. */
+  function side(): string | null {
+    // The popup portals out of the host, and its positioner is its parent.
+    return popup()?.parentElement?.getAttribute("data-side") ?? null;
+  }
+
+  /** The open popup's computed opacity, or NaN while none is open. */
+  function opacity(): number {
+    const open = popup();
+    return open === null ? Number.NaN : Number(getComputedStyle(open).opacity);
+  }
+
+  /**
+   * The popup's lane and opacity on every frame from the next one until it shows `name` on a
+   * lane other than `from` and 20 more frames have run.
+   */
+  function laneFrames(
+    name: string,
+    from: string | null
+  ): Promise<{ side: string | null; opacity: number }[]> {
+    let left = 20;
+    return recordFrames(
+      () => ({ side: side(), opacity: opacity() }),
+      () => label() === name && side() !== from && (left -= 1) <= 0
+    );
+  }
+
+  /**
+   * Expects the popup to fade into a lane: a partly opaque frame in that lane, and fully opaque in
+   * that lane on the last frame recorded. A popup that never shows there, or that stays faint, fails.
+   */
+  function expectFadeInto(frames: readonly { side: string | null; opacity: number }[], lane: string): void {
+    const there = frames.filter((frame) => frame.side === lane);
+    const from = there.findIndex((frame) => frame.opacity > 0 && frame.opacity < 1);
+    expect(from, `a partly opaque frame in the ${lane} lane`).toBeGreaterThanOrEqual(0);
+    expect(frames.at(-1), `the last frame`).toEqual({ side: lane, opacity: 1 });
+  }
+
+  /** A bill at a width, with a button before it and the Tooltip. */
+  function chart(width: number, data = WIDE): ReactNode {
+    return (
+      <>
+        <button type="button">før</button>
+        <Pie width={width} data={data}>
+          <PieChart.Tooltip />
+        </Pie>
+      </>
+    );
+  }
+
+  /** Tabs onto the chart, which opens Strøm's popup, and waits until it shows. */
+  async function enter(host: HTMLElement): Promise<void> {
+    host.querySelector("button")?.focus();
+    await userEvent.keyboard("{Tab}");
+    await expect.poll(label).toBe("Strøm");
+    await expect.poll(opacity).toBe(1);
+  }
+
+  it("moves the popup to the lane a key step's content needs at once, with no fade", async () => {
+    await wideViewport();
+    const { host } = renderThemed(chart(495));
+    await enter(host);
+    const first = side();
+    // Nettleie's wide value sends the popup from its side lane to the lane below the dial.
+    const stepped = laneFrames("Nettleie", first);
+    await userEvent.keyboard("{ArrowRight}");
+    const frames = await stepped;
+    expect([first, frames.at(-1)?.side]).toEqual(["right", "bottom"]);
+    expect(frames.filter((frame) => frame.opacity !== 1)).toEqual([]);
+  });
+
+  it("opens on a key straight into the lane the content needs, with no fade", async () => {
+    await wideViewport();
+    const { host } = renderThemed(
+      <>
+        <button type="button">før</button>
+        <Pie width={495} data={WIDE_FIRST}>
+          <PieChart.Tooltip />
+        </Pie>
+      </>
+    );
+    host.querySelector("button")?.focus();
+    const opened = laneFrames("Nettleie", null);
+    await userEvent.keyboard("{Tab}");
+    const frames = await opened;
+    // The placement hold shows nothing until the popup's content is measured and Base UI has placed
+    // it in the lane that content needs. Its first visible frame, and every one after it, shows it
+    // fully opaque below the dial.
+    const shown = frames.filter((frame) => frame.opacity > 0);
+    expect(shown.length).toBeGreaterThan(0);
+    expect(shown.filter((frame) => frame.side !== "bottom" || frame.opacity !== 1)).toEqual([]);
+  });
+
+  it("fades the popup back into a key step's lane when a scroll moves it away and back", async () => {
+    await wideViewport();
+    onTestFinished(() => window.scrollTo(0, 0));
+    // Below 700 px of page, the wide popup a key opens has no room under the dial and rests above
+    // it. Scrolled to 800 px it rests below, and scrolled back it rests above again.
+    const { host } = renderThemed(
+      <>
+        <div style={{ height: 700 }} />
+        {chart(495, WIDE_FIRST)}
+        <div style={{ height: 1500 }} />
+      </>
+    );
+    host.querySelector("button")?.focus();
+    await userEvent.keyboard("{Tab}");
+    await expect.poll(label).toBe("Nettleie");
+    await expect.poll(opacity).toBe(1);
+    const keyed = window.scrollY;
+    const first = side();
+    const away = laneFrames("Nettleie", first);
+    window.scrollTo(0, 800);
+    expect([first, (await away).at(-1)?.side]).toEqual(["top", "bottom"]);
+    // The scroll back, not the key, moves the popup to the lane the key opened it in, so it fades.
+    const back = laneFrames("Nettleie", "bottom");
+    window.scrollTo(0, keyed);
+    expectFadeInto(await back, "top");
+  });
+
+  /**
+   * Pauses the next lane fade halfway: once the popup runs its script fade, the helper holds it at
+   * half its duration. It looks once per frame, for at most 60 frames.
+   */
+  function pausedLaneFade(): Promise<Animation> {
+    return new Promise((resolve, reject) => {
+      let frames = 0;
+      const look = (): void => {
+        const fade = popup()
+          ?.getAnimations()
+          .find(
+            (running) =>
+              !(running instanceof CSSTransition) &&
+              !(running instanceof CSSAnimation) &&
+              running.playState === "running"
+          );
+        if (fade !== undefined) {
+          fade.pause();
+          fade.currentTime = Number(fade.effect?.getComputedTiming().duration) / 2;
+          resolve(fade);
+        } else if ((frames += 1) > 60) reject(new Error("no lane fade"));
+        else requestAnimationFrame(look);
+      };
+      requestAnimationFrame(look);
+    });
+  }
+
+  it("keeps a resize's lane fade running when a data update drops the focused series", async () => {
+    await wideViewport();
+    // At 800 px the radar's popup rests in a side lane, and at 300 px only the lane below the dial
+    // has room, so the resize fades it in there.
+    const radar = (width: number, series: "both" | "Forbruk") => (
+      <LocaleProvider locale="nb-NO">
+        <button type="button">før</button>
+        <div style={{ width }}>
+          {series === "both" ? (
+            <RadarChart.Root data={SPOKES} config={SPOKE_CONFIG} nameKey="cat" aria-label="Radar">
+              <RadarChart.Tooltip />
+            </RadarChart.Root>
+          ) : (
+            <RadarChart.Root data={SPOKES} config={{ v: SPOKE_CONFIG.v }} nameKey="cat" aria-label="Radar">
+              <RadarChart.Tooltip />
+            </RadarChart.Root>
+          )}
+        </div>
+      </LocaleProvider>
+    );
+    const { host, rerender } = renderThemed(radar(800, "both"));
+    host.querySelector("button")?.focus();
+    await userEvent.keyboard("{Tab}{ArrowDown}{ArrowDown}");
+    expect(focused()[0]).toBe("Pris 3, a");
+    await expect.poll(opacity).toBe(1);
+    const fading = pausedLaneFade();
+    rerender(radar(300, "both"));
+    const fade = await fading;
+    const held = opacity();
+    expect([side(), held > 0 && held < 1]).toEqual(["bottom", true]);
+    // Dropping Pris moves the focus to all series. That is the data update's doing, not a reader's
+    // step, so the fade it interrupts goes on from where it is.
+    rerender(radar(300, "Forbruk"));
+    await expect.poll(() => focused()[0]).toBe("Alle serier, a: Forbruk 1");
+    await nextFrames(2);
+    expect([side(), fade.playState, opacity()]).toEqual(["bottom", "paused", held]);
+  });
+
+  it("still fades the popup into the lane a resize after a key step sends it to, the control", async () => {
+    await wideViewport();
+    // At 800 px Nettleie's wide value fits the side lane, and at 495 px it needs the lane below.
+    const { host, rerender } = renderThemed(chart(800));
+    await enter(host);
+    await userEvent.keyboard("{ArrowRight}");
+    await expect.poll(label).toBe("Nettleie");
+    await expect.poll(opacity).toBe(1);
+    const before = side();
+    const resized = laneFrames("Nettleie", before);
+    rerender(chart(495));
+    const frames = await resized;
+    expect([before, frames.at(-1)?.side]).toEqual(["right", "bottom"]);
+    expectFadeInto(frames, "bottom");
   });
 });
 

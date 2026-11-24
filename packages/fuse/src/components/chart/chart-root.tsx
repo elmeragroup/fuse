@@ -14,7 +14,7 @@ import type { ChartLayoutContextValue, ChartRootContextValue, PanelEntry } from 
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { useOpenDrawing } from "./chart-draw-gate";
 import { useEntrance } from "./chart-entrance";
-import { createChartFollowers } from "./chart-followers";
+import { createChartFollowers, stepCause } from "./chart-followers";
 import type { ActiveSlot, ChartFollowers } from "./chart-followers";
 import { useIssueWarnings } from "./chart-issue-warnings";
 import { createChartLabels } from "./chart-labels";
@@ -595,8 +595,13 @@ export function ChartRoot<
   const [axis] = useState(createAxisRecord);
   // The default layout's frame, which names its marks' tweens to the loop for the Root's life.
   const [owner] = useState(() => createFrameOwner("root"));
-  // The active slot and series last painted, so a store change that moves neither paints nothing.
-  const paintedRef = useRef<readonly [number | null, number | null]>([null, null]);
+  // The active slot, series and source last painted, so a store change that moves none of them
+  // paints nothing. A key that takes over the slot a pointer glides to still paints, and lands it.
+  const paintedRef = useRef<readonly [number | null, number | null, ChartSnapshot["source"]]>([
+    null,
+    null,
+    null,
+  ]);
   useLayoutEffect(() => {
     const previous = modelRef.current;
     modelRef.current = model;
@@ -605,7 +610,7 @@ export function ChartRoot<
       // The active slot keeps its x across new data, or gives way to the window's first slot.
       const window = model.window;
       const kept = window === null ? null : keepSlot(model.domain, window, slotX(previous.domain, active));
-      paintedRef.current = [kept, store.get().near];
+      paintedRef.current = [kept, store.get().near, store.get().source];
       store.set({ active: kept });
     }
     const slot = activeSlot(store.get(), model);
@@ -638,11 +643,11 @@ export function ChartRoot<
         const snapshot = store.get();
         const slot = activeSlot(snapshot, modelRef.current);
         if (rootRef.current) markActive(rootRef.current, snapshot, slot);
-        const [active, near] = paintedRef.current;
-        if (snapshot.active === active && snapshot.near === near) return;
-        paintedRef.current = [snapshot.active, snapshot.near];
-        // A pointer or key step applies at once, so a follower never glides after the pointer.
-        followers.paint(slot, "step");
+        const [active, near, source] = paintedRef.current;
+        if (snapshot.active === active && snapshot.near === near && snapshot.source === source) return;
+        paintedRef.current = [snapshot.active, snapshot.near, snapshot.source];
+        // A pointer step may glide its followers, and a key step lands them at once.
+        followers.paint(slot, stepCause(snapshot.source));
       }),
     [store, followers]
   );

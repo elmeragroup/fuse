@@ -96,23 +96,20 @@ export function springTiming(spring: Spring): Timing {
 }
 
 /**
- * The spring a step moves the crosshair and the active dots on: `FOLLOW_FASTEST` for a keyboard
- * step, which wants the least motion, so an arrow key held down never trails, and one that quickens
- * with the pointer's speed for a pointer step. Every follower reads the same store in the same step,
- * so all of them take the same spring.
+ * The spring a pointer step moves the crosshair and the active dots on, which quickens with the
+ * pointer's speed. A key step lands the crosshair and the active dots at once, on no spring. Every
+ * follower reads the same store in the same step, so all of them take the same spring.
  *
  * @param store - Root's store.
  * @returns The spring.
  */
 export function stepSpring(store: ChartStore): Spring {
-  return followSpring(
-    store.get().source === "keyboard" ? FOLLOW_SPEEDS.fast : (store.pointer()?.speed ?? null)
-  );
+  return followSpring(store.pointer()?.speed ?? null);
 }
 
 /**
  * The spring of a polar step that leaps across the dial, faster than the pointer's pace would carry
- * it: `FOLLOW_FASTEST`, the keyboard step's, since the pointer is already where the step lands.
+ * it: `FOLLOW_FASTEST`, since the pointer is already where the step lands.
  *
  * @returns The spring.
  */

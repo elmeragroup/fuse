@@ -144,13 +144,14 @@ export function PolarSurface(): ReactElement | null {
     }
   }
   useLayoutEffect(() => {
-    // The store's series focus follows the reconciled option while the keyboard drives it.
+    // The store's series focus follows the reconciled option while the keyboard drives it. The data
+    // update that dropped the focused series causes it, not a key, so it paints no reader step.
     const latest = handoff.options.at(-1);
     const snapshot = store.get();
     if (latest === undefined || snapshot.source !== "keyboard") return;
     const near = latest.focus === -1 ? null : latest.focus;
-    if (snapshot.near !== near) store.set({ near });
-  }, [handoff.options, store]);
+    if (snapshot.near !== near) kernel.reconcileNear(near);
+  }, [handoff.options, store, kernel]);
   useGestureEnd(!model.empty && model.count > 0, lift, gesture, null);
 
   const current = handoff.current;

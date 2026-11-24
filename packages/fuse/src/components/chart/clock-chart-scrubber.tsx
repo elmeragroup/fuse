@@ -28,7 +28,7 @@ export type ClockChartScrubberProps = ChartLayerProps & {
 /**
  * The active slot's hand, or its whole sector under "band". It turns to the next slot the short way
  * round on the Root's angle follower, which keeps its speed across steps and stiffens with a fast
- * pointer, so it turns with the active dots.
+ * pointer, so it turns with the active dots. A key step turns it at once.
  *
  * @beta
  */

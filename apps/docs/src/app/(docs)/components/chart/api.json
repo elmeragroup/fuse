@@ -1057,7 +1057,7 @@
           "type": "string",
           "shortType": null,
           "defaultValue": null,
-          "description": "The series the dot follows. It glides with the crosshair along the series' Line, Area or Bar, on a straight track through the bar tops. It moves at once across a gap or a missing reading, and under reduced motion.",
+          "description": "The series the dot follows. It glides with the crosshair along the series' Line, Area or Bar, on a straight track through the bar tops. It moves at once on a key step, across a gap or a missing reading, and under reduced motion.",
           "required": true
         },
         {
@@ -1246,7 +1246,7 @@
           "type": "\"band\" | \"line\" | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "A band over the active slot or a line through it. The default follows `xScale`. A band spans the active slot of the coarsest series in its layout, so an hourly bar's band covers its hour. `--chart-crosshair-width` sets the line's width, 1 px by default. The line glides from slot to slot on a spring that quickens with the pointer, so a key step or a slow scrub settles in about half a second and a fast sweep in about 120 ms. It moves at once under reduced motion.",
+          "description": "A band over the active slot or a line through it. The default follows `xScale`. A band spans the active slot of the coarsest series in its layout, so an hourly bar's band covers its hour. `--chart-crosshair-width` sets the line's width, 1 px by default. The line glides from slot to slot on a spring that quickens with the pointer, so a slow scrub settles in about half a second and a fast sweep in about 120 ms. It moves at once on a key step and under reduced motion.",
           "required": false,
           "values": [
             "band",
@@ -2044,7 +2044,7 @@
           "type": "\"point\" | \"top\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"point\"",
-          "description": "Where the popup rests on a vertical chart. \"point\" centers it on the active slot, inside the chart's box and then the viewport, and rests it 8 px above the highest mark under its own width: a bar, a stack top, a line or area stroke between readings, or a dot. A step to a taller neighbor lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way. A step to another slot glides the popup there over `--chart-glide`, 924 ms on a spring that never overshoots. It moves at once when it opens, flips side, or follows a scroll, a resize or a data update, when its path would leave the viewport, and under reduced motion. The popup stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.",
+          "description": "Where the popup rests on a vertical chart. \"point\" centers it on the active slot, inside the chart's box and then the viewport, and rests it 8 px above the highest mark under its own width: a bar, a stack top, a line or area stroke between readings, or a dot. A step to a taller neighbor lifts it over every mark on the way, and a step that would lower it by 16 px or less keeps its height. \"top\" pins it to the plot top and tracks x only, as a chart with Panels always does. A horizontal chart places it over or under the active row either way. On a cartesian chart, a pointer or touch step to another slot glides the popup there over `--chart-glide`, 924 ms on a spring that never overshoots. It moves at once on a key step, when it opens, flips side, or follows a scroll, a resize or a data update, when its path would leave the viewport, and under reduced motion. A key opens it with no fade. The popup stays open while the pointer moves onto it, and Escape closes it. A touch lift pins it, and a second tap dismisses it.",
           "required": false,
           "values": [
             "point",

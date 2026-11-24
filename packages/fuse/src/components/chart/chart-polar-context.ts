@@ -356,6 +356,11 @@ export type PolarKernel = {
   readonly registerToggleGroup: () => () => void;
   readonly hasToggles: () => boolean;
   readonly highlight: (key: string | null) => void;
+  /**
+   * Writes the series focus that a data update leaves the keyboard on, as part of that commit, so
+   * the store's subscriber paints no reader step for it.
+   */
+  readonly reconcileNear: (near: number | null) => void;
   readonly warnOnce: WarnOnce;
   /**
    * The pick a pointer makes over the cell, a hook with the same calls for the Root's life. Given

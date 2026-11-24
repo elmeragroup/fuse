@@ -19,7 +19,7 @@ import { definedProps } from "../../internal/defined-props";
 import type { SupportedLocale } from "../../intl/locale-context";
 import { writeAttribute, writeStyle } from "./chart-dom";
 import { useOpenDrawing } from "./chart-draw-gate";
-import { createChartFollowers } from "./chart-followers";
+import { createChartFollowers, stepCause } from "./chart-followers";
 import type { ActiveSlot } from "./chart-followers";
 import { useIssueWarnings } from "./chart-issue-warnings";
 import { StatusRegion } from "./chart-listbox";
@@ -269,7 +269,13 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
   // The active option keeps its place across new data while it still exists, and leaves otherwise.
   const countRef = useRef(model.count);
   const latestModel = useRef(model);
-  const paintedRef = useRef<readonly [number | null, number | null]>([null, null]);
+  // The active option, series and source last painted. A key that takes over the option a pointer
+  // turns to still paints, and lands it.
+  const paintedRef = useRef<readonly [number | null, number | null, ChartSnapshot["source"]]>([
+    null,
+    null,
+    null,
+  ]);
   useLayoutEffect(() => {
     const cell = cellRef.current;
     if (cell === null) return undefined;
@@ -292,7 +298,10 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
     latestModel.current = model;
     const snapshot = store.get();
     if (snapshot.active !== null && snapshot.active >= model.count) {
-      store.set({ active: model.count === 0 ? null : model.count - 1 });
+      // The clamp is part of this commit, so the store subscriber paints no reader step for it.
+      const kept = model.count === 0 ? null : model.count - 1;
+      paintedRef.current = [kept, snapshot.near, snapshot.source];
+      store.set({ active: kept });
     }
     const active = activeOf(store.get(), model.count);
     if (rootRef.current) markActive(rootRef.current, store.get(), active);
@@ -305,11 +314,13 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
         const snapshot = store.get();
         const active = activeOf(snapshot, countRef.current);
         if (rootRef.current) markActive(rootRef.current, snapshot, active);
-        const [was, near] = paintedRef.current;
-        if (snapshot.active === was && snapshot.near === near) return;
-        paintedRef.current = [snapshot.active, snapshot.near];
-        follow.retarget(rayAngle(latestModel.current, active), "step");
-        followers.paint(active, "step");
+        const [was, near, source] = paintedRef.current;
+        if (snapshot.active === was && snapshot.near === near && snapshot.source === source) return;
+        paintedRef.current = [snapshot.active, snapshot.near, snapshot.source];
+        // A pointer step turns the follower, and a key step lands it at once.
+        const cause = stepCause(snapshot.source);
+        follow.retarget(rayAngle(latestModel.current, active), cause);
+        followers.paint(active, cause);
       }),
     [store, followers, follow, rootRef]
   );
@@ -376,6 +387,15 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
     },
     [rootRef]
   );
+  // The data update's commit paints the followers after it, so the subscriber paints no step here.
+  const reconcileNear = useCallback(
+    (near: number | null): void => {
+      const snapshot = store.get();
+      paintedRef.current = [snapshot.active, near, snapshot.source];
+      store.set({ near });
+    },
+    [store]
+  );
   const modelRef = useRef(model);
   useLayoutEffect(() => {
     modelRef.current = model;
@@ -395,6 +415,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
       registerToggleGroup,
       hasToggles,
       highlight,
+      reconcileNear,
       warnOnce,
       usePick,
     }),
@@ -411,6 +432,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
       registerToggleGroup,
       hasToggles,
       highlight,
+      reconcileNear,
       warnOnce,
       usePick,
     ]
@@ -430,8 +452,8 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
 
 /**
  * The most CSS pixels a mark on the dial may travel in one frame of a step, by the pointer's speed:
- * 8 at 200 px/s or slower, 20 at 800 and 48 at 2,000 or faster, straight between,
- * and the fastest for a keyboard step. Each is read at a tenth above its speed, since the speed the
+ * 8 at 200 px/s or slower, 20 at 800 and 48 at 2,000 or faster, straight between. A key step turns
+ * nothing, since it lands at once. Each is read at a tenth above its speed, since the speed the
  * Root reads from the pointer's events runs a few percent over its true speed. A step that reaches
  * far, such as a radar's spoke or a month of a year, glides no faster than the pointer moves it,
  * unless it would take longer than the follower's leap allows.
@@ -459,8 +481,7 @@ function frameTravel(speed: number): number {
 /** The most degrees the follower turns in a frame: a frame's travel at the outer radius. */
 function maxTurn(radius: number, store: ChartStore): number {
   if (!(radius > 0)) return Number.POSITIVE_INFINITY;
-  const keyboard = store.get().source === "keyboard";
-  const speed = keyboard ? Number.POSITIVE_INFINITY : (store.pointer()?.speed ?? 0) * 1000;
+  const speed = (store.pointer()?.speed ?? 0) * 1000;
   return (frameTravel(speed) / radius) * (180 / Math.PI);
 }
 
