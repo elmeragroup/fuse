@@ -3,7 +3,6 @@
 import { useId, useLayoutEffect, useMemo, useRef } from "react";
 import type { ReactElement, RefCallback, RefObject } from "react";
 
-import type { SupportedLocale } from "../../intl/locale-context";
 import { usePlotLayout, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
 import { partsCache, writeAttribute, writeAttributes, writeStyle } from "./chart-dom";
@@ -15,11 +14,11 @@ import type { ChartFrame } from "./chart-plot";
 import { usePlotRead } from "./chart-plot-measure";
 import { referenceSentence } from "./chart-reference-text";
 import { sameShallow, useSteady } from "./chart-steady";
-import { linearLabel, NUMBER_RANGE_SEPARATOR, slotLabel, slotRangeLabel } from "./chart-text";
+import { linearLabel, rangeText, slotLabel, slotRangeLabel } from "./chart-text";
 import type { ChartLayerProps, ChartTone, ChartX, ValueFormat, XFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
-import { formatValue, formatValueRun } from "./format/value-format";
+import { formatValue } from "./format/value-format";
 import { barForm } from "./layout/bar-geometry";
 import { ChartCompositionError, isChartDevelopment } from "./layout/errors";
 import {
@@ -307,23 +306,6 @@ function useStackedLabel(
     }),
     [labels, key, stacks, row]
   );
-}
-
-/**
- * A number range from `low` to `high`, joined by a bare en dash in its visual form. Ends that write
- * the same text after their numbers write it once, such as `5–10 kWh`. Each number stays whole, so
- * nb-NO's `1 000` and `2 000` keep their digit groups. When Intl wraps a negative end in
- * parentheses, its closing parenthesis stays with that end.
- */
-function rangeText(locale: SupportedLocale, low: number, high: number, format: ValueFormat): FormattedText {
-  const from = formatValueRun(locale, low, format, "full");
-  const to = formatValueRun(locale, high, format, "full");
-  const shared = from.after !== "" && from.after === to.after && !from.before.includes("(");
-  const head = shared ? `${from.before}${from.number}` : from.text;
-  return {
-    text: `${head}${NUMBER_RANGE_SEPARATOR}${to.text}`,
-    spoken: CHART_STRINGS[locale].valueRange(from.spoken, to.spoken),
-  };
 }
 
 /**

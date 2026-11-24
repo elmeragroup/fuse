@@ -9,7 +9,7 @@ import type { ReactElement } from "react";
 
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import { referenceSentence } from "./chart-reference-text";
-import { joinRange, NUMBER_RANGE_SEPARATOR, slotLabel } from "./chart-text";
+import { joinRange, rangeText, slotLabel } from "./chart-text";
 import type { ChartLayerProps, ChartTone, ChartX, ValueFormat, XFormat } from "./chart-types";
 import { labelPlace, slotOfX } from "./clock-chart-dial";
 import type { LabelPlace } from "./clock-chart-dial";
@@ -17,7 +17,6 @@ import { PlacedLabel } from "./clock-chart-placed-label";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 import { isClockInterval, slotRunEnds } from "./format/time-format";
-import { formatValue } from "./format/value-format";
 import { slotAngles } from "./layout/clock";
 import { sectorPath } from "./layout/clock-path";
 import { viewBoxOf } from "./layout/polar-angle";
@@ -45,12 +44,13 @@ export type ClockChartReferenceAreaProps = ChartLayerProps &
         /** The sector's last instant. A band takes `y1` and `y2` or `x1` and `x2`. */
         x2?: never;
         /**
-         * How `{value}` in `label` prints the range. An annulus prints its values in this value
-         * format, joined by an en dash. A sector prints its ends, the first slot's start and the
-         * last slot's end, joined by the locale's range separator, and a range preset prints each
-         * end in its point form, as "hour-range" does in "hour". By default a dial of slots shorter
-         * than a day prints a sector's ends in "time", and a coarser dial prints the first and the
-         * last slot's labels.
+         * How `{value}` in `label` prints the range. An annulus prints its values low to high in
+         * this value format, joined by an en dash. When both ends write the same text after the
+         * number, it prints once, as in `5–10 kWh`. A sector prints its ends, the first slot's
+         * start and the last slot's end, joined by the locale's range separator, and a range preset
+         * prints each end in its point form, as "hour-range" does in "hour". By default a dial of
+         * slots shorter than a day prints a sector's ends in "time", and a coarser dial prints the
+         * first and the last slot's labels.
          */
         format?: ValueFormat;
       }
@@ -70,12 +70,13 @@ export type ClockChartReferenceAreaProps = ChartLayerProps &
         /** The annulus's last value. A band takes `y1` and `y2` or `x1` and `x2`. */
         y2?: never;
         /**
-         * How `{value}` in `label` prints the range. An annulus prints its values in this value
-         * format, joined by an en dash. A sector prints its ends, the first slot's start and the
-         * last slot's end, joined by the locale's range separator, and a range preset prints each
-         * end in its point form, as "hour-range" does in "hour". By default a dial of slots shorter
-         * than a day prints a sector's ends in "time", and a coarser dial prints the first and the
-         * last slot's labels.
+         * How `{value}` in `label` prints the range. An annulus prints its values low to high in
+         * this value format, joined by an en dash. When both ends write the same text after the
+         * number, it prints once, as in `5–10 kWh`. A sector prints its ends, the first slot's
+         * start and the last slot's end, joined by the locale's range separator, and a range preset
+         * prints each end in its point form, as "hour-range" does in "hour". By default a dial of
+         * slots shorter than a day prints a sector's ends in "time", and a coarser dial prints the
+         * first and the last slot's labels.
          */
         format?: XFormat;
       }
@@ -111,25 +112,19 @@ export function ClockChartReferenceArea({
   let drawn: boolean;
   let place: LabelPlace;
   if (props.y1 !== undefined) {
+    // The range prints and speaks low to high, as the cartesian ReferenceArea's does.
+    const [lowValue, highValue] = props.y1 <= props.y2 ? [props.y1, props.y2] : [props.y2, props.y1];
     // The band clips to the radius domain, from the hole to the rim, and a band outside it draws
     // nothing. It clips the values, since the area-true scale clamps a value below the domain
     // to a dial with no hole's center.
     const [min, max] = clock.domain;
-    const from = Math.max(min, Math.min(props.y1, props.y2));
-    const to = Math.min(max, Math.max(props.y1, props.y2));
+    const from = Math.max(min, lowValue);
+    const to = Math.min(max, highValue);
     drawn = to > from;
     const low = clock.radius(from);
     const high = clock.radius(to);
     d = drawn ? sectorPath(0, 360, low, high) : "";
-    const valueFormat = props.format ?? clock.format;
-    const first = formatValue(kernel.locale, props.y1, valueFormat, "full");
-    const second = formatValue(kernel.locale, props.y2, valueFormat, "full");
-    // Readers hear the range low to high, as the cartesian ReferenceArea says it.
-    const [lowEnd, highEnd] = props.y1 <= props.y2 ? [first, second] : [second, first];
-    value = {
-      text: `${first.text}${NUMBER_RANGE_SEPARATOR}${second.text}`,
-      spoken: strings.valueRange(lowEnd.spoken, highEnd.spoken),
-    };
+    value = rangeText(kernel.locale, lowValue, highValue, props.format ?? clock.format);
     place = labelPlace(box, 0, high);
   } else {
     const first = slotOfX(clock, "ClockChart.ReferenceArea", props.x1);
