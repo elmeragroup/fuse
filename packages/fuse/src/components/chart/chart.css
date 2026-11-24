@@ -353,10 +353,22 @@
   /*
     A Panel is a row of its own over the frame's columns, with the value axis rows above and below
     its plot. Its x axis row holds the tick labels of the Panel that draws them.
+
+    Below Chrome 117 the browser drops the subgrid declaration, so the Panel lays out its own copy
+    of the frame's three column tracks, and its plot takes the width its own value axes leave.
+    Root's plot column holds the pointer surface and its slots. No Panel then sizes the frame's axis
+    columns, so that column lies over the whole Panel, beside any side legend. The Panel draws its
+    marks across Root's plot width from its plot's physical left edge. A start-side value axis in a
+    left-to-right chart and an end-side one in a right-to-left chart sit on the Panel's left. With
+    one there, the left edge of the Panel's plot sits one axis width right of Root's, so hovering a
+    bar can report another and the marks run past the Panel's plot. With axes only on the right, the
+    left edges meet, but Root's plot is wider than the Panel's by those axes, so the marks can run
+    into their labels.
   */
   [data-slot="chart-frame"] > [data-slot="chart-panel"] {
     display: grid;
     grid-column: start / legend-end;
+    grid-template-columns: [start] auto [plot] minmax(0, 1fr) [end] auto [legend-end];
     grid-template-columns: subgrid;
     grid-template-rows: auto var(--chart-plot-height) auto;
     grid-template-areas:

@@ -91,10 +91,12 @@ function DescriptionListRoot(props: DescriptionListRootProps): ReactElement {
 // keep tailwind-variants out of this entry's bundle.
 
 /**
- * The responsive list: one column on phones, then a term column capped at min(50%, 20rem) that
- * every Item shares through a subgrid, so the list sizes its columns to its widest term and widest
- * details, as one grid would. Both lists start from one `minmax(0,1fr)` column, so an unbroken word
- * can't widen the Items past the list on a phone.
+ * The responsive list: one column on phones, then from `sm` a term column of
+ * `min(50%, calc(var(--spacing) * 80))` that every Item shares through a subgrid. The term track's
+ * width depends on the list's width alone, never on a term's content. The details track takes the
+ * rest of the row, and grows past it for an unbroken word wider than that rest. Both lists start
+ * from one `minmax(0,1fr)` column, so an unbroken word can't widen the Items past the list on a
+ * phone.
  */
 const responsiveContentClass = cn(
   "text-base/6 sm:grid-cols-[min(50%,calc(var(--spacing)*80))_auto] sm:text-sm/6 grid grid-cols-1 [--description-list-details:initial] [--description-list-term:initial]"
@@ -132,12 +134,19 @@ function DescriptionListContent({
 }
 
 // A responsive Item spans the list's columns as a subgrid, so its term and details sit in the
-// list's shared columns, and draws the rule above itself unless it is the first or its own list, as
-// its direct child, writes `data-dividers=false`; a list nested in a divider-less one keeps its
-// rules, and the reverse. Only Items draw rules, so the terms or details of one group are never
-// split by one. An inline Item is a wrapping flex row. Its term and details start at their longest
-// word and grow alike up to their full width, so a short one gives the rest to the other, and a
-// term and its details wrap apart only when their two longest words can't share the row: then the
+// list's shared columns. Below Chrome 117 the browser drops the subgrid declaration, and a fallback
+// rule gives an Item that still has `grid-cols-subgrid` its list's template instead, including one
+// a consumer sets on the list. The fallback has zero specificity, so a consumer's `grid-cols-*` on
+// the Item wins. Each Item sizes the inherited tracks on its own. The default term track depends on
+// the list's width alone, so it lines up across Items. An intrinsic template a consumer sets, such
+// as `max-content 1fr`, does not. From `sm`, an unbroken details wider than its track widens every
+// Item alike, so terms and details still line up, but the details can start farther from the
+// inline start than with subgrid, until the term track reaches its cap. The Item draws the rule above itself unless it is the first or its own list, as its
+// direct child, writes `data-dividers=false`; a list nested in a divider-less one keeps its rules,
+// and the reverse. Only Items draw rules, so the terms or details of one group are never split by
+// one. An inline Item is a wrapping flex row. Its term and details start at their longest word and
+// grow alike up to their full width, so a short one gives the rest to the other, and a term and its
+// details wrap apart only when their two longest words can't share the row: then the
 // details moves under its term instead of breaking a word, and breaks one only when it is wider
 // than the row. The last term never breaks a word, so a single word wider than the whole row would
 // overflow it. An Item's earlier terms and later details take lines of their own, capped at the
@@ -149,6 +158,7 @@ function DescriptionListItem({ className, ...props }: DescriptionListItemProps):
       data-slot="description-list-item"
       className={cn(
         "col-span-full grid grid-cols-subgrid border-t first-of-type:border-none [:where([data-dividers=false])>&]:border-none",
+        "supports-[not(grid-template-columns:subgrid)]:[:where(&.grid-cols-subgrid)]:grid-cols-[inherit]",
         "[:where([data-layout=inline])>&]:flex [:where([data-layout=inline])>&]:flex-wrap [:where([data-layout=inline])>&]:gap-x-(--surface-gap-md) [:where([data-layout=inline])>&]:border-none",
         className
       )}
