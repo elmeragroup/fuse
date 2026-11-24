@@ -1056,15 +1056,15 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
    * `value` and `countryCode`, a change of configuration alone. Both paths agree in what the field
    * shows, the output `steeredValue` holds and the proposal that still waits. `answerScenario` in
    * `test/phone-country-trace-model.ts` generates the scenario, and `prepareAnswer` plays it up to
-   * the answer. Issue #712 tracks the sequences where they differ.
+   * the answer.
    *
    * Unit under test: `PhoneEditor.reconcile`. Oracle: the same editor given the same final props in
    * one render, which must agree with the two-render path, as contract (xii) states.
    */
   it("gives an answer the same outcome after a no-steer change of its configuration", () => {
-    const outcome = (state: PhoneEditor.PhoneEditorState, compareSteered: boolean) => ({
+    const outcome = (state: PhoneEditor.PhoneEditorState) => ({
       ...shown(state),
-      steered: compareSteered ? (PhoneEditor.steeredValue(state)?.value ?? null) : "not compared",
+      steered: PhoneEditor.steeredValue(state)?.value ?? null,
       waiting: PhoneEditor.observeCountry(state).proposed?.code ?? null,
     });
     fc.assert(
@@ -1091,20 +1091,28 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
         // detection on or off or by a catalog that drops that country. The field shows that country
         // first, so the shown country moves without any answer.
         fc.pre(namedCountry(stored) === namedCountry(configured));
-        // #712, case 2: a metadata replacement carries an uncontrolled number through another read
-        // than direct adoption does. P that picks another country than the proposal's differs the
-        // same way, through `pick` and `moveInto`. The #712 fix removes this line.
-        fc.pre(stored.value !== undefined || catalogOf(stored.metadata) === catalogOf(next.metadata));
-        // Exclusion 1, #712 case 1: a format carry moves the baseline that suppresses an
-        // uncontrolled pick's notice. `pick` compares with the same moved baseline when P picks
-        // another country than the proposal's. The #712 fix makes this `true`.
-        const compareSteered = stored.value !== undefined;
+        // Exclusion 1, the pick rule in `settle`: with `preserveOnCountryChange`, a pick reads the
+        // digits shown before it in the destination country. When P changes `metadata` and its code
+        // moves an uncontrolled number to a country other than the stored one and the proposal's,
+        // the direct path reads the digits the old metadata showed. The split path reads the digits
+        // P' showed, and the `metadata` change in that render in between can change the digits a
+        // preserved third-country pick reads, for example by dropping a trunk prefix. Picks with no
+        // proposal waiting differ the same way.
+        const picksThirdCountry =
+          next.countryCode !== undefined &&
+          ![resolve(stored, countryCode), proposal].includes(resolve(next, next.countryCode));
+        fc.pre(
+          stored.value !== undefined ||
+            !stored.preserveOnCountryChange ||
+            catalogOf(stored.metadata) === catalogOf(next.metadata) ||
+            !picksThirdCountry
+        );
         const direct = PhoneEditor.reconcile(state, editorProps(next));
         const split = PhoneEditor.reconcile(
           PhoneEditor.reconcile(state, editorProps(configured)),
           editorProps(next)
         );
-        expect(outcome(split, compareSteered)).toEqual(outcome(direct, compareSteered));
+        expect(outcome(split)).toEqual(outcome(direct));
       }),
       { seed: 617, numRuns: 1000 }
     );

@@ -61,9 +61,12 @@ export type PhoneNumberFieldProps = {
    * The field calls it only when the proposal differs from the number the parent holds: `value`,
    * compared exactly, or the output an uncontrolled field already shows. So deleting a separator,
    * which keeps the number, calls nothing, while a parent that stores another form of the number,
-   * such as national digits, hears every proposal. It is also called once as hydration commits,
-   * with a number typed or autofilled before the client scripts ran, under the same rule. A
-   * controlled parent accepts or rejects it like any other proposal.
+   * such as national digits, hears every proposal. While a country the user picked, pasted or typed
+   * waits for the parent and the picker still offers it, a new `countryCode` that accepts it or
+   * moves the field to another country makes an uncontrolled field compare with the output from
+   * before that proposal, even if the shown output changed during the wait. It is also called once
+   * as hydration commits, with a number typed or autofilled before the client scripts ran, under
+   * the same rule. A controlled parent accepts or rejects it like any other proposal.
    */
   onChange?: (value: string) => void;
   /**

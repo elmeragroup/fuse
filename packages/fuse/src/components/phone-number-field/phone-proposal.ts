@@ -56,6 +56,8 @@ export type ProposalReading = {
    * precedence gives.
    */
   readonly numberAnswer: string;
+  /** The output the field showed before the proposal. */
+  readonly outputBefore: string;
 };
 
 /** A proposal waiting for the parent. */
@@ -253,8 +255,7 @@ function waitsOn(
  * detection, which could move it to a country the user never chose and the parent never heard;
  * read there, it is read again in its own country by its international form, as the editor
  * realigns an accepted number. Direct adoption instead keeps the moved read, and the editor
- * realigns it to its country precedence. These paths can normalize a raw value differently, as
- * #712 tracks.
+ * realigns it to its country precedence.
  */
 function carryProposal(
   from: Configuration,
@@ -374,11 +375,16 @@ function waitingIn(reading: ProposalReading): WaitingProposal {
  *
  * @param proposal - The proposal.
  * @param configuration - The configuration it was read in.
+ * @param outputBefore - The output the field showed before the proposal.
  * @returns The waiting proposal.
  */
-export function waitingFor(proposal: Snapshot, configuration: Configuration): WaitingProposal {
+export function waitingFor(
+  proposal: Snapshot,
+  configuration: Configuration,
+  outputBefore: string
+): WaitingProposal {
   const output = proposal.values.outputValue;
-  return waitingIn({ proposal, configuration, output, numberAnswer: output });
+  return waitingIn({ proposal, configuration, output, numberAnswer: output, outputBefore });
 }
 
 /**
@@ -395,6 +401,7 @@ function waitingAfter(
   if (number.kind === "answered" && number.read !== null) {
     const { read } = number;
     return waitingIn({
+      ...reading,
       proposal: read,
       configuration: next.configuration,
       output: read.values.outputValue,
@@ -404,6 +411,7 @@ function waitingAfter(
   const carried = carryWaiting(stored, next, waiting);
   if (next.value === stored.value && next.countryCode === stored.countryCode) return { ...carried, reading };
   return waitingIn({
+    ...reading,
     proposal: carried.proposal,
     configuration: next.configuration,
     output: rereads(reading, next, carried.proposal) ? carried.proposal.values.outputValue : reading.output,

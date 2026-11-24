@@ -314,10 +314,11 @@ function caretOffset(text: string, after: number, side: CaretSide): number {
  * caret replaces the record's, so an earlier edit's caret can never show again.
  */
 function propose(stored: EditorRecord, proposal: Snapshot, caret: EditCaret | null): PhoneEditorState {
+  const accepted = visibleSnapshot(stored);
   return succeed(stored, {
     ...stored,
-    accepted: visibleSnapshot(stored),
-    waiting: waitingFor(proposal, stored.configuration),
+    accepted,
+    waiting: waitingFor(proposal, stored.configuration, accepted.values.outputValue),
     caret,
     steered: null,
   });
@@ -517,28 +518,56 @@ function alignToPrecedence(record: EditorRecord): EditorRecord {
  * `countryCode` or a catalog that resolves it elsewhere, the move is a pick of it, from the
  * number shown before, so the catalog's own move of the number never stands in for the pick.
  * A waiting proposal's fate is {@link proposalFate}'s. Notifications come from the same
- * transition: a pick's output, or an uncontrolled proposal that showed only now.
+ * transition: a pick's output, or an uncontrolled proposal that showed only now. An uncontrolled
+ * number's notice compares with the output {@link noticeBaseline} gives.
  */
 function settle(stored: EditorRecord, next: EditorRecord): EditorRecord {
   const before = visibleSnapshot(stored);
   const { value } = next;
   const adopted = adoptedProposal(stored, next, before);
   const newValue = adopted === null && value !== undefined && value !== stored.value ? value : null;
-  const pending = adopted === null ? pendingProposal(stored, next) : null;
+  const pending = pendingProposal(stored, next);
+  const previousOutput = noticeBaseline(stored, next, before, pending);
   // The pick is decided before any snapshot is built, so the number is read once, in the country
   // picked, never carried first into the catalog it then leaves.
   const picked = adopted === null && newValue === null ? pickedCountry(stored, next, before, pending) : null;
-  if (picked !== null) return pick(next, before, picked);
+  if (picked !== null) return pick(next, before, picked, previousOutput);
   const accepted = placeNumber(stored, next, before, adopted, newValue);
-  const waiting = pending && proposalFate(stored, judged(next), pending);
+  const waiting = adopted === null && pending !== null ? proposalFate(stored, judged(next), pending) : null;
   const aligned = alignToPrecedence({ ...next, accepted, waiting });
   if (adopted && value === undefined && !shows(stored)) {
-    // An uncontrolled proposal shows only now, so `onChange` hears it only now. A no-steer carry
-    // before the answer can move `before` and lose this notice, as #712 tracks.
+    // An uncontrolled proposal shows only now, so `onChange` hears it only now.
     const output = aligned.accepted.values.outputValue;
-    return output === before.values.outputValue ? aligned : { ...aligned, steered: { value: output } };
+    return output === previousOutput ? aligned : { ...aligned, steered: { value: output } };
   }
   return aligned;
+}
+
+/**
+ * The output that an uncontrolled number's notice from `next` compares with. While a proposal
+ * waits out of view, a format, metadata or catalog change re-formats the shown number without a
+ * notice. So when `next` sets a new `countryCode` that steers, and the catalog still offers the
+ * proposal's country, the notice compares with the output from before the proposal, whether that
+ * change came first or with the new code. Otherwise it compares with the output of `before`. A new
+ * code steers when the catalog offers it, or when it resolves there to another country than the old
+ * code does.
+ */
+function noticeBaseline(
+  stored: EditorRecord,
+  next: EditorRecord,
+  before: Snapshot,
+  pending: PendingProposal | null
+): string {
+  const shownOutput = before.values.outputValue;
+  if (pending === null || pending.country === "unchanged" || stored.value !== undefined || shows(stored)) {
+    return shownOutput;
+  }
+  const controlled = controlledCountry(next);
+  return controlled !== null &&
+    (offeredCountry(next.configuration, next.countryCode) !== undefined ||
+      controlledCountry({ ...next, countryCode: stored.countryCode })?.code !== controlled.code)
+    ? pending.waiting.reading.outputBefore
+    : shownOutput;
 }
 
 /**
@@ -575,10 +604,16 @@ function pickedSnapshot(
  * once. A controlled value, which names no offered country here, is read as it stands in
  * `country`, and the pick is proposed over it, to show once the parent echoes its output. The
  * pick's output, when it differs from the value the parent holds, waits in `steered` for
- * `onChange`. At most one parse, the number read in `country`. An uncontrolled pick that clears
- * the digits parses nothing.
+ * `onChange`. For an uncontrolled number that value is `previousOutput`, as {@link noticeBaseline}
+ * gives it. At most one parse, the number read in `country`. An uncontrolled pick that clears the
+ * digits parses nothing.
  */
-function pick(record: EditorRecord, before: Snapshot, country: PhoneNumberCountry): EditorRecord {
+function pick(
+  record: EditorRecord,
+  before: Snapshot,
+  country: PhoneNumberCountry,
+  previousOutput: string
+): EditorRecord {
   const { configuration, value, preserveOnCountryChange } = record;
   if (value === undefined) {
     const picked = pickedSnapshot(record, before, country);
@@ -587,7 +622,7 @@ function pick(record: EditorRecord, before: Snapshot, country: PhoneNumberCountr
       ...record,
       accepted: picked,
       waiting: null,
-      steered: output === before.values.outputValue ? record.steered : { value: output },
+      steered: output === previousOutput ? record.steered : { value: output },
     };
   }
   const read = readValueIn(value, country, configuration);
@@ -596,7 +631,7 @@ function pick(record: EditorRecord, before: Snapshot, country: PhoneNumberCountr
   return {
     ...record,
     accepted: read,
-    waiting: picked === read ? null : waitingFor(picked, configuration),
+    waiting: picked === read ? null : waitingFor(picked, configuration, before.values.outputValue),
     // As a pick through the picker: nothing for `onChange` only when the output is the value the
     // parent holds. A parent that stores another form of the number hears it.
     steered: output === value ? record.steered : { value: output },
