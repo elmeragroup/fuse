@@ -118,7 +118,13 @@ export type ClockChartRootProps<
      * such as a price, so a negative value hangs inward from the zero ring.
      */
     radiusScale?: "radial" | "linear";
-    /** The slot that is active before any pointer or key moves. */
+    /**
+     * The slot that is active before any pointer or key moves. While the slot is active by default,
+     * `ClockChart.Tooltip` opens only while at least half of the plot's box is in view. Width and
+     * height are checked separately, and on an axis where the plot is larger than the viewport,
+     * half of the viewport's extent is enough. The rule ends when a reader takes over: a pointer
+     * pick, keyboard focus on the plot, even with the same slot still active, or a pin.
+     */
     defaultActiveX?: ChartXValue<TRow[TXKey]>;
     /**
      * "none" turns off the entrance, in which each slot rises from its base as a clockwise wedge

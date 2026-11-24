@@ -126,7 +126,11 @@ export type ChartSlotScaleProps<TX> = {
   defaultXRange?: ChartXRange<TX>;
   /**
    * The slot that is active before any pointer or key moves, by its x. On a linear axis the x is a
-   * number. An x survives a reload where an index would not.
+   * number. An x survives a reload where an index would not. While the slot is active by default,
+   * `Chart.Tooltip` opens only while at least half of the plot's box is in view. Width and height
+   * are checked separately, and on an axis where the plot is larger than the viewport, half of the
+   * viewport's extent is enough. The rule ends when a reader takes over: a pointer pick, keyboard
+   * focus on the plot, even with the same slot still active, or a pin.
    *
    * The plot is one tab stop. ArrowRight and ArrowLeft move one slot, PageDown and PageUp a tenth
    * of the window's slots and at least one, and Home and End go to the window's first and last

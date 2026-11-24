@@ -9,7 +9,20 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { S06Chart } from "../../../test/chart/bar-charts";
-import { bars as drawnBars, label, pointerAt, popup, surfaceBox, visible } from "../../../test/chart/marks";
+import {
+  bars as drawnBars,
+  framesThroughReport,
+  label,
+  mountedPopup,
+  pointerAt,
+  popup,
+  popupFrame,
+  popupPaints,
+  shownFrames,
+  surface,
+  surfaceBox,
+  visible,
+} from "../../../test/chart/marks";
 import { renderIn, restoreDocumentThemeAroundEach, srgb, surfaceAt } from "../../../test/surface-paint";
 import { fkasBranded } from "../../../test/theme-fixtures";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
@@ -207,9 +220,124 @@ describe("tooltip readings", () => {
         </LocaleProvider>
       </div>
     );
-    await settle();
-    // The popup portals out of the host, and its value slot holds the reading.
-    expect(document.querySelector('[data-slot="chart-tooltip-value"]')?.textContent).toBe("2 (projected)");
+    // The popup opens once the plot's first in-view report lands. It portals out of the host, and its
+    // value slot holds the reading.
+    await expect
+      .poll(() => document.querySelector('[data-slot="chart-tooltip-value"]')?.textContent)
+      .toBe("2 (projected)");
+  });
+});
+
+describe("the default item's popup while its plot is out of view", () => {
+  it("paints no popup under display: none, and paints its first frame over the default bar once it shows", async () => {
+    // B is active by default, and the chart starts under display: none. The oracle is the rule that
+    // a default item's popup shows only while the plot is in view, and `anchor="point"`'s documented
+    // rest: centered on the active slot, 8 px above its bar. The top padding leaves room above, and
+    // the bars skip their entrance, so they stand at their full height on the first frame.
+    let host: HTMLElement = document.body;
+    const mounted = await framesThroughReport(popupFrame, () => {
+      ({ host } = renderThemed(
+        <div data-testid="hidden" style={{ display: "none", width: 400, paddingTop: 160 }}>
+          <LocaleProvider locale="en-US">
+            <Chart.Root
+              data={[
+                { name: "a", v: 1 },
+                { name: "b", v: 2 },
+              ]}
+              config={{ v: { label: "V", color: "chart-1" } }}
+              xKey="name"
+              defaultActiveX="b"
+              data-intro="none"
+              aria-label="Hidden">
+              <Chart.Bar dataKey="v" />
+              <Chart.Tooltip />
+            </Chart.Root>
+          </LocaleProvider>
+        </div>
+      ));
+      expect(popup()).toBeNull();
+      return surface(host);
+    });
+    expect(shownFrames(mounted)).toEqual([]);
+    const hidden = host.querySelector<HTMLElement>('[data-testid="hidden"]');
+    if (hidden === null) throw new Error("no hidden wrapper");
+    /** The popup's positioner box and bar B's box, on the first frame the popup paints. */
+    const first = recordFrames(() => {
+      const positioner = mountedPopup()?.parentElement;
+      const bar = drawnBars(host)[1];
+      return popupPaints() && positioner != null && bar !== undefined
+        ? { placed: positioner.getBoundingClientRect(), bar: bar.getBoundingClientRect() }
+        : null;
+    }, popupPaints);
+    hidden.style.display = "";
+    const frame = (await first).at(-1);
+    if (frame == null) throw new Error("no painted frame");
+    expect(frame.placed.bottom).toBeCloseTo(frame.bar.top - 8, 0);
+    expect((frame.placed.left + frame.placed.right) / 2).toBeCloseTo(
+      (frame.bar.left + frame.bar.right) / 2,
+      0
+    );
+    expect(label()).toBe("b");
+  });
+
+  it("opens the popup of a plot wider than twice a phone viewport once half the viewport's width of it shows", async () => {
+    // A 950 px chart sits 800 px into a horizontal scroller at a 390 px viewport, so at most 41% of
+    // its plot is ever in view. The oracle is the rule that a plot larger than the viewport on an
+    // axis is in view once half the viewport's extent on that axis shows it: 195 px across here,
+    // with the whole plot's height in view. The scroll positions come from the plot's box: 120 px
+    // of it in view, then 300 px, then 120 px again.
+    await page.viewport(390, 844);
+    let host: HTMLElement = document.body;
+    const mounted = await framesThroughReport(popupFrame, () => {
+      ({ host } = renderThemed(
+        <div data-testid="scroller" style={{ overflowX: "auto" }}>
+          <div style={{ display: "flex", width: 1750 }}>
+            <div style={{ flex: "0 0 800px" }} />
+            <div style={{ flex: "0 0 950px" }}>
+              <LocaleProvider locale="en-US">
+                <Chart.Root
+                  data={["a", "b", "c", "d", "e", "f"].map((name, index) => ({ name, v: index + 1 }))}
+                  config={{ v: { label: "V", color: "chart-1" } }}
+                  xKey="name"
+                  defaultActiveX="a"
+                  aria-label="Wide">
+                  <Chart.Bar dataKey="v" />
+                  <Chart.Tooltip />
+                </Chart.Root>
+              </LocaleProvider>
+            </div>
+          </div>
+        </div>
+      ));
+      expect(popup()).toBeNull();
+      return surface(host);
+    });
+    expect(shownFrames(mounted)).toEqual([]);
+    const scroller = host.querySelector<HTMLElement>('[data-testid="scroller"]');
+    if (scroller === null) throw new Error("no scroller");
+    const plot = surface(host);
+    const { width, height } = plot.getBoundingClientRect();
+    expect(width).toBeGreaterThan(2 * window.innerWidth);
+    expect(height).toBeLessThan(window.innerHeight);
+    /** Scrolls the scroller so `shown` px of the plot's left edge show at its right edge. */
+    const reveal = (shown: number): void => {
+      scroller.scrollLeft +=
+        plot.getBoundingClientRect().left - (scroller.getBoundingClientRect().right - shown);
+    };
+    const revealed = await framesThroughReport(popupFrame, () => {
+      reveal(120);
+      return plot;
+    });
+    expect(shownFrames(revealed)).toEqual([]);
+    reveal(300);
+    await expect.poll(label).toBe("a");
+    await expect.poll(popupPaints).toBe(true);
+    // Back at 120 px the popup closes, so a cutoff under 120 px fails here even when its wrong open
+    // is still transparent. A close because the plot left view paints no exit, so the popup stops
+    // painting on the frame it closes.
+    const closing = recordFrames(popupFrame, () => !popupFrame().open);
+    reveal(120);
+    expect((await closing).at(-1)).toEqual({ open: false, painted: false });
   });
 });
 
@@ -401,6 +529,8 @@ describe("the frosted tooltip", () => {
         </Chart.Root>
       </div>
     );
+    // The popup opens once the plot's first in-view report lands.
+    await expect.poll(popup).not.toBeNull();
     await settle();
     const open = openPopup();
     const beneath = open.parentElement;

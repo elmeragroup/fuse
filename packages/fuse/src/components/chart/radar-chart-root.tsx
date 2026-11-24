@@ -72,7 +72,13 @@ export type RadarChartRootProps<
      * and then the grid draws a zero ring.
      */
     max?: number;
-    /** The spoke that is active before any pointer or key moves. */
+    /**
+     * The spoke that is active before any pointer or key moves. While the spoke is active by
+     * default, `RadarChart.Tooltip` opens only while at least half of the plot's box is in view.
+     * Width and height are checked separately, and on an axis where the plot is larger than the
+     * viewport, half of the viewport's extent is enough. The rule ends when a reader takes over: a
+     * pointer pick, keyboard focus on the plot, even with the same spoke still active, or a pin.
+     */
     defaultActiveName?: TRow[TNameKey];
     /**
      * "none" turns off the entrance, in which each series grows from the center the first time the

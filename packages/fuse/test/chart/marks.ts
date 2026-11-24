@@ -32,6 +32,19 @@ export function linePath(host: HTMLElement): string {
 }
 
 /**
+ * The plot surface, which a chart Tooltip's in-view gate observes. The lookup finds it under a
+ * `display: none` ancestor too, so it reads the role attribute instead of the accessibility tree.
+ *
+ * @param host - The rendered chart's host.
+ * @returns The surface.
+ */
+export function surface(host: HTMLElement): Element {
+  const found = host.querySelector('[role="listbox"]');
+  if (found === null) throw new Error("no plot surface");
+  return found;
+}
+
+/**
  * The plot surface's client box.
  *
  * @param host - The rendered chart's host.
@@ -39,6 +52,86 @@ export function linePath(host: HTMLElement): string {
  */
 export function surfaceBox(host: HTMLElement): DOMRect {
   return host.querySelector('[role="listbox"]')?.getBoundingClientRect() ?? new DOMRect();
+}
+
+/**
+ * Records `read()` on every frame from before `act` runs until the browser has reported the
+ * intersection of the element `act` returns, as that element stands after `act`. A chart Tooltip's
+ * in-view gate reads the same report in the same task, and React renders the gate's answer in a
+ * task that its update posts there, so the recording waits one posted message more and then ends on
+ * the next frame. A record of a closed popup then means the gate saw the element's state, and the
+ * mount, scroll or reveal that `act` does is inside the record. The test's timeout fails a report
+ * that never comes.
+ *
+ * @template T - What each frame records.
+ * @param read - What to record each frame.
+ * @param act - The mount, scroll or reveal, returning the element the gate observes, such as the
+ * plot surface.
+ * @returns Every frame's reading.
+ */
+export function framesThroughReport<T>(read: () => T, act: () => Element): Promise<T[]> {
+  let rendered = false;
+  const frames = recordFrames(read, () => rendered);
+  const observer = new IntersectionObserver(() => {
+    observer.disconnect();
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => {
+      channel.port1.close();
+      rendered = true;
+    };
+    channel.port2.postMessage(null);
+  });
+  observer.observe(act());
+  return frames;
+}
+
+/**
+ * The tooltip popup, open or closed. It portals out of the host, and once it has opened it stays
+ * mounted, hidden, so a record can follow it through its close.
+ *
+ * @returns The popup, or null before it first opens.
+ */
+export function mountedPopup(): HTMLElement | null {
+  // The popup is aria-hidden and portals out of the host, so its slot is the locator.
+  return document.querySelector<HTMLElement>('[data-slot="chart-tooltip"]');
+}
+
+/**
+ * Whether the tooltip popup paints, open or closing. A closed popup stays mounted, so this follows
+ * it through its close.
+ *
+ * @returns Whether the popup paints, or false before it first opens.
+ */
+export function popupPaints(): boolean {
+  const element = mountedPopup();
+  return element !== null && visible(element);
+}
+
+/** Whether the tooltip popup is open and whether it paints, on one frame. */
+export type PopupFrame = {
+  readonly open: boolean;
+  readonly painted: boolean;
+};
+
+/**
+ * Reads whether the tooltip popup is open and whether it paints. A placement hold keeps a popup
+ * that has just opened at opacity 0, so a record of paint alone misses a popup that opened too
+ * early. The open state catches it.
+ *
+ * @returns The popup's state now.
+ */
+export function popupFrame(): PopupFrame {
+  return { open: popup() !== null, painted: popupPaints() };
+}
+
+/**
+ * The frames on which the popup was open or painted, which a gate that holds it closed leaves empty.
+ *
+ * @param frames - The frames recorded.
+ * @returns Those frames.
+ */
+export function shownFrames<T extends PopupFrame>(frames: readonly T[]): T[] {
+  return frames.filter((frame) => frame.open || frame.painted);
 }
 
 /**
