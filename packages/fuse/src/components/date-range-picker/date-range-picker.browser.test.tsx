@@ -15,6 +15,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
+import { expectFocusRing } from "../../../test/assert-focus-ring";
 import { expectRenderTypeError } from "../../../test/caught-error";
 import { freezeToday } from "../../../test/freeze-today";
 import { withLocale } from "../../../test/locale-matrix";
@@ -1389,6 +1390,34 @@ describe("DateRangePicker disabled", () => {
     await userEvent.click(roleNamed("button", "Monday, October 12, 2026"), { force: true });
     await userEvent.click(roleNamed("button", "Wednesday, October 14, 2026"), { force: true });
     expect(values).toEqual([]);
+  });
+});
+
+describe("DateRangePicker focus ring", () => {
+  it("paints the focus ring on the box while Tab puts a segment of either end in focus", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <button type="button">Before</button>
+          <DateRangePickerField label="Stay" />
+        </>
+      )
+    );
+    const box = roleNamed("group", "Stay");
+    await userEvent.click(roleNamed("button", "Before"));
+    await userEvent.keyboard("{Tab}");
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start Date, Stay", exact: true }))
+      .toHaveFocus();
+    expectFocusRing(box, "the Stay box rings for the start");
+
+    // Past the start's day and year to the end's month.
+    await userEvent.keyboard("{Tab}{Tab}{Tab}");
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, End Date, Stay", exact: true }))
+      .toHaveFocus();
+    expectFocusRing(box, "the Stay box rings for the end");
   });
 });
 

@@ -14,6 +14,8 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { expectFocusRing, expectNoFocusRing } from "../../../test/assert-focus-ring";
+import { expectInvalidFocusRing } from "../../../test/assert-invalid-ring";
 import { MonthsWithDay } from "../../../test/calendar-fixtures";
 import { expectRenderTypeError } from "../../../test/caught-error";
 import { freezeToday } from "../../../test/freeze-today";
@@ -24,12 +26,14 @@ import { popupFocusRestored } from "../../../test/popup-focus";
 import { waitForPopupFocus, waitForPopupSettled } from "../../../test/popup-settled";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { wrappedSegment } from "../../../test/wrapped-date-segment";
 import { definedProps } from "../../internal/defined-props";
 import "../../temporal-polyfill";
 import { Calendar } from "../calendar";
 import type { DateInputValue } from "../date-field/date-input";
 import { Field } from "../field";
 import { Form } from "../form/form";
+import { NumberField } from "../number-field/number-field";
 import type { DatePickerRootProps } from "./date-picker";
 import { DatePicker, DatePickerField } from "./index";
 import type { DatePickerPresetValue } from "./picker-change-details";
@@ -1754,6 +1758,85 @@ describe("DatePicker form reset", () => {
     await expect
       .element(page.getByText("Please fill out this field.", { exact: true }))
       .not.toBeInTheDocument();
+  });
+});
+
+describe("DatePicker focus ring", () => {
+  it.each([
+    {
+      face: "the focus ring",
+      picker: <DatePickerField label="Start date" />,
+      expectRing: (box: HTMLElement) => expectFocusRing(box, "the Start date box rings"),
+    },
+    {
+      face: "the invalid focus ring",
+      picker: <DatePickerField label="Start date" isInvalid />,
+      expectRing: (box: HTMLElement) => expectInvalidFocusRing("the Start date box", box),
+    },
+    {
+      face: "the focus ring around wrapped segments",
+      picker: (
+        <DatePicker.Root aria-label="Start date">
+          <DatePicker.Group>
+            <DatePicker.Input>{wrappedSegment}</DatePicker.Input>
+            <DatePicker.Trigger />
+          </DatePicker.Group>
+        </DatePicker.Root>
+      ),
+      expectRing: (box: HTMLElement) => expectFocusRing(box, "the Start date box rings"),
+    },
+    {
+      face: "the invalid focus ring for aria-invalid on the group",
+      picker: (
+        <DatePicker.Root aria-label="Start date">
+          <DatePicker.Group aria-invalid="true">
+            <DatePicker.Input />
+            <DatePicker.Trigger />
+          </DatePicker.Group>
+        </DatePicker.Root>
+      ),
+      expectRing: (box: HTMLElement) => expectInvalidFocusRing("the Start date box", box),
+    },
+  ])("paints $face on the box while Tab puts a segment in focus", async ({ picker, expectRing }) => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <button type="button">Before</button>
+          {picker}
+        </>
+      )
+    );
+    await userEvent.click(roleNamed("button", "Before"));
+    await userEvent.keyboard("{Tab}");
+
+    await expect
+      .element(page.getByRole("spinbutton", { name: "month, Start date", exact: true }))
+      .toHaveFocus();
+    expectRing(roleNamed("group", "Start date"));
+  });
+
+  it("leaves the box unringed while Tab puts a NumberField composed into the group in focus", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <button type="button">Before</button>
+          <DatePicker.Root aria-label="Start date">
+            <DatePicker.Group>
+              <NumberField aria-label="Nights" />
+              <DatePicker.Input />
+              <DatePicker.Trigger />
+            </DatePicker.Group>
+          </DatePicker.Root>
+        </>
+      )
+    );
+    await userEvent.click(roleNamed("button", "Before"));
+    await userEvent.keyboard("{Tab}");
+
+    await expect.element(page.getByRole("textbox", { name: "Nights", exact: true })).toHaveFocus();
+    expectNoFocusRing(roleNamed("group", "Start date"), "the Start date box stays unringed");
   });
 });
 

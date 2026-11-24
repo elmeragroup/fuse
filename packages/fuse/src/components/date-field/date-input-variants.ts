@@ -4,22 +4,18 @@ import { fieldEntryClass, fieldReads, fieldSize } from "../../styles/field-size"
 import { dateInputShellClass } from "../../styles/inner-corner/date-field";
 import { dataStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
-import {
-  dataWithinInvalidFocusRingClass,
-  withinFocusRingClass,
-  withinFocusRingControlClass,
-} from "../../styles/utils";
+import { dateBoxFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 
 /**
  * DateInput's module-private recipe. No entry exports it.
  *
  * - `root` is the field box around the segments, the box React Aria's DateInput paints:
  *   the shared field chrome, the field height of its `size`, the md control inset and the text-entry
- *   type, floored at 150px wide. Its segments are direct children marked `data-focus-ring-control`,
- *   so the box rings while one has keyboard focus. Base UI-style `data-invalid` and `data-disabled`
- *   give it the data-target state face, and `data-readonly` the muted read-only fill. The whole
- *   box is the pointer target, which keeps the 24px target-size floor: a press beside the segments
- *   focuses the last filled one.
+ *   type, floored at 150px wide. It rings through {@link dateBoxFocusRingClass} while a segment
+ *   matches `:focus-visible`. A picker's rows drop this box, and the picker's group rings for them.
+ *   Base UI-style `data-invalid` and `data-disabled` give it the data-target state face, and
+ *   `data-readonly` the muted read-only fill. The whole box is the pointer target, which keeps the
+ *   24px target-size floor: a press beside the segments focuses the last filled one.
  * - `segment` is one segment: a span the box's type sizes, highlighted while focused, muted and
  *   italic while it shows its placeholder, muted while disabled. A literal takes no padding.
  */
@@ -32,8 +28,7 @@ export const dateInputVariants = tv({
       dateInputShellClass,
       "flex w-full min-w-[150px] cursor-text items-center overflow-hidden whitespace-nowrap",
       dataStateFaceClass,
-      withinFocusRingClass,
-      dataWithinInvalidFocusRingClass,
+      dateBoxFocusRingClass,
       "data-readonly:bg-muted"
     ),
     // A visually hidden input: the ISO value it submits and the validity a form reads stay out of

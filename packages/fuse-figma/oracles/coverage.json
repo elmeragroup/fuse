@@ -3442,35 +3442,39 @@
       },
       {
         "part": "field-group",
-        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3"
+        "className": "data-invalid:date-box-focus:ring-3"
       },
       {
         "part": "field-group",
-        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20"
+        "className": "data-invalid:date-box-focus:ring-error/20"
       },
       {
         "part": "field-group",
-        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1"
+        "className": "data-invalid:date-box-focus:ring-offset-1"
       },
       {
         "part": "field-group",
-        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
+        "className": "data-invalid:date-box-focus:ring-offset-error"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:date-box-focus:ring-3"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:date-box-focus:ring-error/20"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:date-box-focus:ring-offset-1"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:date-box-focus:ring-offset-error"
       },
       {
         "part": "field-group",
         "className": "entry-floor:[--entry-text:max(16px,var(--field-text,var(--control-text)))]"
-      },
-      {
-        "part": "field-group",
-        "className": "has-[>[data-focus-ring-control]:focus-visible]:outline-hidden"
-      },
-      {
-        "part": "field-group",
-        "className": "has-[>[data-focus-ring-control]:focus-visible]:ring-2"
-      },
-      {
-        "part": "field-group",
-        "className": "has-[>[data-focus-ring-control]:focus-visible]:ring-ring"
       },
       {
         "part": "field",
@@ -3732,31 +3736,35 @@
       },
       {
         "part": "field-group",
-        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3"
+        "className": "data-invalid:date-box-focus:ring-3"
       },
       {
         "part": "field-group",
-        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20"
+        "className": "data-invalid:date-box-focus:ring-error/20"
       },
       {
         "part": "field-group",
-        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1"
+        "className": "data-invalid:date-box-focus:ring-offset-1"
       },
       {
         "part": "field-group",
-        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
+        "className": "data-invalid:date-box-focus:ring-offset-error"
       },
       {
         "part": "field-group",
-        "className": "has-[>[data-focus-ring-control]:focus-visible]:outline-hidden"
+        "className": "aria-invalid:date-box-focus:ring-3"
       },
       {
         "part": "field-group",
-        "className": "has-[>[data-focus-ring-control]:focus-visible]:ring-2"
+        "className": "aria-invalid:date-box-focus:ring-error/20"
       },
       {
         "part": "field-group",
-        "className": "has-[>[data-focus-ring-control]:focus-visible]:ring-ring"
+        "className": "aria-invalid:date-box-focus:ring-offset-1"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:date-box-focus:ring-offset-error"
       },
       {
         "part": "field",
@@ -4961,31 +4969,35 @@
       },
       {
         "part": "field-group",
-        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-3"
+        "className": "data-invalid:date-box-focus:ring-3"
       },
       {
         "part": "field-group",
-        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-error/20"
+        "className": "data-invalid:date-box-focus:ring-error/20"
       },
       {
         "part": "field-group",
-        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-1"
+        "className": "data-invalid:date-box-focus:ring-offset-1"
       },
       {
         "part": "field-group",
-        "className": "data-invalid:has-[>[data-focus-ring-control]:focus-visible]:ring-offset-error"
+        "className": "data-invalid:date-box-focus:ring-offset-error"
       },
       {
         "part": "field-group",
-        "className": "has-[>[data-focus-ring-control]:focus-visible]:outline-hidden"
+        "className": "aria-invalid:date-box-focus:ring-3"
       },
       {
         "part": "field-group",
-        "className": "has-[>[data-focus-ring-control]:focus-visible]:ring-2"
+        "className": "aria-invalid:date-box-focus:ring-error/20"
       },
       {
         "part": "field-group",
-        "className": "has-[>[data-focus-ring-control]:focus-visible]:ring-ring"
+        "className": "aria-invalid:date-box-focus:ring-offset-1"
+      },
+      {
+        "part": "field-group",
+        "className": "aria-invalid:date-box-focus:ring-offset-error"
       },
       {
         "part": "month",

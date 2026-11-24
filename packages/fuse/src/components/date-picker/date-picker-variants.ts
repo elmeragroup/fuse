@@ -5,7 +5,7 @@ import { dateInputShellClass } from "../../styles/inner-corner/date-field";
 import { pickerPresetsShellClass } from "../../styles/inner-corner/picker";
 import { dataStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
-import { dataWithinInvalidFocusRingClass, withinFocusRingClass } from "../../styles/utils";
+import { dateBoxFocusRingClass } from "../../styles/utils";
 import { buttonVariants } from "../button/button-variants";
 
 /**
@@ -13,9 +13,10 @@ import { buttonVariants } from "../button/button-variants";
  * exports it.
  *
  * - `group` is the field box around the trigger and the segment rows: the shared field chrome at
- *   the field height of its `size`, ringed while a segment has keyboard focus, with the data-target
- *   state face (`data-invalid="true"`, `data-disabled`) and the muted read-only fill
- *   (`data-readonly`). The `range` axis lays out two rows.
+ *   the field height of its `size`, with the data-target state face (`data-invalid="true"`,
+ *   `data-disabled`) and the muted read-only fill (`data-readonly`). The `range` axis lays out two
+ *   rows. The box rings through {@link dateBoxFocusRingClass} while a segment in one of its `input`
+ *   rows matches `:focus-visible`.
  * - `input` is a `DateInput.Root` inside the box: no chrome of its own, the md control inset and the
  *   text-entry type, so the segments line up with DateField's.
  * - `trigger` is the calendar button flush against the box's border: it reads the box's inner
@@ -46,8 +47,7 @@ export const datePickerVariants = tv({
       fieldReads.height(),
       "flex w-full min-w-[180px] items-center overflow-hidden",
       dataStateFaceClass,
-      withinFocusRingClass,
-      dataWithinInvalidFocusRingClass,
+      dateBoxFocusRingClass,
       "data-readonly:bg-muted"
     ),
     input: cn(

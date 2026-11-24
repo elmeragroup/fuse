@@ -657,6 +657,18 @@
     @slot;
   }
 }
+/* A date box while one of its segments matches `:focus-visible`; see `dateBoxFocusRingClass` in
+   `utils.ts`. Each segment but a literal carries `data-focus-ring-control="date-segment"`, and the
+   variant matches that value at any depth, since a `DateInput.Root` children callback may wrap the
+   segments and a picker's segments sit in its input rows. Any other marked control, such as a
+   NumberField composed into a picker group, leaves the box unringed. The selector weighs three
+   classes, one more than the resting invalid halo, and an invalid arm that adds `data-invalid` or
+   `aria-invalid="true"` outweighs this plain arm. */
+@custom-variant date-box-focus {
+  &:has([data-focus-ring-control="date-segment"]:focus-visible) {
+    @slot;
+  }
+}
 /* Block spacing inside a rich-text body, where inline content flows as one paragraph:
    Alert.Description and PopoverInfoButton's body. A block child that follows another child takes
    the step; inline-level children never do, because a top margin on an inline-block child (a
