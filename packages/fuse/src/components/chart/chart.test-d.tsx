@@ -618,7 +618,6 @@ test("the aliases hold Chart's parts, and every shared part is one type across t
   expectTypeOf<Members<typeof BarChart>>().toEqualTypeOf<Members<typeof Chart>>();
   expectTypeOf<Members<typeof AreaChart>>().toEqualTypeOf<Members<typeof Chart>>();
   expectTypeOf<Members<typeof LineChart>>().toEqualTypeOf<Members<typeof Chart>>();
-  expectTypeOf(PieChart.Tooltip).toEqualTypeOf(Chart.Tooltip);
   expectTypeOf(RadialChart.Legend).toEqualTypeOf(Chart.Legend);
   expectTypeOf(RadarChart.Table).toEqualTypeOf(Chart.Table);
   expectTypeOf(RadarChart.TableColumn).toEqualTypeOf(Chart.TableColumn);

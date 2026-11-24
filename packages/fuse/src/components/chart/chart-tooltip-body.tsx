@@ -36,7 +36,7 @@ import type { ChartLayerProps } from "./chart-types";
 export type ChartTooltipBodyProps = ChartLayerProps & {
   /** The popup's surface. */
   readonly variant: "default" | "frosted";
-  /** The Tooltip's `anchor` prop, which the family's anchor reads. */
+  /** The cartesian anchor's placement preference, from `Chart.Tooltip`'s `anchor` prop. */
   readonly placement: "point" | "top";
   /** The family's anchor. */
   readonly placer: TooltipPlacer;

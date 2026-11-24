@@ -160,6 +160,7 @@ export type { PieChartTrackProps } from "./components/chart/pie-chart-track";
 export type { PieChartLabelsProps } from "./components/chart/pie-chart-labels";
 export type { PieChartPieProps } from "./components/chart/pie-chart-pie";
 export type { PieChartSkeletonProps } from "./components/chart/pie-chart-skeleton";
+export type { ChartPolarTooltipProps } from "./components/chart/polar-chart-tooltip";
 export type { RadialChartBarProps } from "./components/chart/radial-chart-bar";
 export type { RadialChartSkeletonProps } from "./components/chart/radial-chart-skeleton";
 export type { RadarChartGridProps } from "./components/chart/radar-chart-grid";
