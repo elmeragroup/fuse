@@ -2240,11 +2240,11 @@
       },
       {
         "part": "Caret",
-        "className": "data-[side=inline-end]:ltr:-rotate-90"
+        "className": "data-[side=inline-end]:-rotate-90"
       },
       {
         "part": "Caret",
-        "className": "data-[side=inline-start]:ltr:rotate-90"
+        "className": "data-[side=inline-start]:rotate-90"
       },
       {
         "part": "Caret",
@@ -2336,11 +2336,11 @@
       },
       {
         "part": "Caret",
-        "className": "data-[side=inline-end]:ltr:-rotate-90"
+        "className": "data-[side=inline-end]:-rotate-90"
       },
       {
         "part": "Caret",
-        "className": "data-[side=inline-start]:ltr:rotate-90"
+        "className": "data-[side=inline-start]:rotate-90"
       },
       {
         "part": "Caret",
