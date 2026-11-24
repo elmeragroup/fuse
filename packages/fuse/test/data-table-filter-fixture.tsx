@@ -20,7 +20,7 @@ import {
 import { functionalUpdate } from "@tanstack/react-table";
 import type { ColumnFiltersState, Updater } from "@tanstack/react-table";
 import { expect } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { cdp, page, userEvent } from "vitest/browser";
 
 import { DataTableFilter } from "../src/components/data-table-filter";
 import type { DataTableFilterRootProps } from "../src/components/data-table-filter/data-table-filter";
@@ -33,7 +33,10 @@ import { definedProps } from "../src/internal/defined-props";
 import type { SupportedLocale } from "../src/intl/locale-context";
 import { nextFrames } from "./animation-frames";
 import { withLocale } from "./locale-matrix";
+import { whilePointerPressed } from "./pointer-press";
 import { renderThemed, roleNamed } from "./themed-browser-render";
+import type { Finger } from "./touch-input";
+import { withTouchscreen } from "./touch-input";
 
 type Status = "draft" | "pending" | "paid" | "overdue" | "canceled";
 type Tag = "priority" | "export" | "manual";
@@ -485,4 +488,185 @@ export function popoverOpen(name: string): boolean {
  */
 export function menuOpen(): boolean {
   return page.getByRole("dialog", { name: "Add filter" }).query() !== null;
+}
+
+/**
+ * The chip strip.
+ *
+ * @returns The strip's element.
+ */
+export function chipStrip(): HTMLElement {
+  const strip = document.querySelector<HTMLElement>("[data-slot=data-table-filter-chips]");
+  if (strip === null) {
+    throw new Error("expected the chip strip");
+  }
+  return strip;
+}
+
+/**
+ * A bar whose chip template renders `value` as its Value, and the value popover.
+ *
+ * @param value - The template's Value.
+ * @returns The bar and the popover.
+ */
+export function barWithValue(value: ReactElement): ReactElement {
+  return (
+    <>
+      <DataTableFilter.Bar>
+        <DataTableFilter.Trigger />
+        <DataTableFilter.Chips>
+          <DataTableFilter.Chip>
+            <DataTableFilter.Subject />
+            <DataTableFilter.Operator />
+            {value}
+            <DataTableFilter.Remove />
+          </DataTableFilter.Chip>
+        </DataTableFilter.Chips>
+      </DataTableFilter.Bar>
+      <DataTableFilter.ValueContent />
+    </>
+  );
+}
+
+/** A Customer and an Amount filter, in that order. */
+export const PEEKING_FILTERS: ColumnFiltersState = [
+  ...CUSTOMER_NORD,
+  { id: "amount", value: { kind: "number", operator: "isGreaterThan", values: [500] } },
+];
+
+/** The strip, and the Amount segment that shows only its start at the strip's end. */
+export type AmountPeeking = { readonly strip: HTMLElement; readonly segment: HTMLElement };
+
+/**
+ * Sizes the page so Amount's `peeking` segment, its Value by default, shows only its first 12px at
+ * the strip's end, with Customer's chip, the first, still in view. The strip ends a fixed distance
+ * before the page's.
+ *
+ * @param peeking - Finds the segment to clip.
+ * @returns The strip and the clipped segment.
+ */
+export async function sizeAmountPeeking(
+  peeking: () => HTMLElement = () => roleNamed("button", "500")
+): Promise<AmountPeeking> {
+  const strip = chipStrip();
+  const segment = peeking();
+  const stripInset = window.innerWidth - strip.getBoundingClientRect().right;
+  await page.viewport(Math.round(segment.getBoundingClientRect().left + 12 + stripInset), 896);
+  expect(strip.getBoundingClientRect().right).toBeLessThan(segment.getBoundingClientRect().right);
+  return { strip, segment };
+}
+
+/**
+ * Renders a Customer and an Amount chip, and sizes the page with {@link sizeAmountPeeking}.
+ *
+ * @param children - The filter's children, or the default bar.
+ * @param peeking - Finds the segment to clip.
+ * @returns The strip and the clipped segment.
+ */
+export async function renderAmountPeeking(
+  children?: ReactNode,
+  peeking?: () => HTMLElement
+): Promise<AmountPeeking> {
+  renderOrders({ initial: PEEKING_FILTERS, children });
+  return sizeAmountPeeking(peeking);
+}
+
+/**
+ * The point 4px in from `element`'s left edge and halfway down, where it shows at the strip's end.
+ *
+ * @param element - The element to point at.
+ * @returns The point, in the test frame's viewport.
+ */
+export function shownStart(element: Element): Finger {
+  const rect = element.getBoundingClientRect();
+  return { x: rect.left + 4, y: rect.top + rect.height / 2 };
+}
+
+/**
+ * Presses where `element` shows at the strip's end, past which it hides. `userEvent.click` would
+ * scroll the element into view before it pressed.
+ *
+ * @param element - The element to press.
+ * @param read - Runs while the button is down, by default for one frame.
+ */
+export async function pressShownStart(
+  element: Element,
+  read: () => Promise<number | void> = () => nextFrames(1)
+): Promise<void> {
+  await userEvent.hover(document.documentElement, { position: shownStart(element), force: true });
+  await whilePointerPressed(read);
+}
+
+/**
+ * Taps one finger where `element` shows at the strip's end, and lifts it three frames later.
+ * Chromium only.
+ *
+ * @param element - The element to tap.
+ */
+export async function tapShownStart(element: Element): Promise<void> {
+  const at = shownStart(element);
+  await withTouchscreen(async (screen) => {
+    await screen.place([at]);
+    await nextFrames(3);
+    await screen.lift();
+  });
+}
+
+/**
+ * Whether `element` lies inside the strip's box.
+ *
+ * @param strip - The chip strip.
+ * @param element - An element in the strip.
+ * @returns Whether the element shows in full.
+ */
+export function insideStrip(strip: Element, element: Element): boolean {
+  const outer = strip.getBoundingClientRect();
+  const inner = element.getBoundingClientRect();
+  return inner.left >= outer.left - 0.5 && inner.right <= outer.right + 0.5;
+}
+
+const PRESS_END_TYPES: ReadonlySet<string> = new Set(["pointerup", "pointercancel", "mouseup"]);
+
+/**
+ * The test document's live listeners for the events that end a press, as Chromium's DevTools
+ * protocol lists them. Vitest renders the test document in a frame, so the frame carries a marker
+ * while the top page looks it up.
+ */
+async function livePressEndListeners(): Promise<number> {
+  const frame = window.frameElement;
+  if (frame === null) {
+    throw new Error("expected the test document in a frame");
+  }
+  const session = cdp();
+  frame.setAttribute("data-press-end-listeners", "");
+  try {
+    const { result } = await session.send("Runtime.evaluate", {
+      expression: 'document.querySelector("[data-press-end-listeners]").contentDocument',
+    });
+    if (result.objectId === undefined) {
+      throw new Error("expected the test document's remote object");
+    }
+    // The document belongs to another frame than the top page's context, and Chromium lists its
+    // listeners only with `pierce`. `depth: 0` leaves out its descendants' listeners.
+    const { listeners } = await session.send("DOMDebugger.getEventListeners", {
+      objectId: result.objectId,
+      depth: 0,
+      pierce: true,
+    });
+    await session.send("Runtime.releaseObject", { objectId: result.objectId });
+    return listeners.filter((listener) => PRESS_END_TYPES.has(listener.type)).length;
+  } finally {
+    frame.removeAttribute("data-press-end-listeners");
+  }
+}
+
+/**
+ * Starts counting the test document's listeners for `pointerup`, `pointercancel` and `mouseup`
+ * above the ones live now. Chromium only.
+ *
+ * @returns Reads how many more such listeners are live than at the call.
+ */
+export async function watchPressEndListeners(): Promise<() => Promise<number>> {
+  const baseline = await livePressEndListeners();
+  return async () => (await livePressEndListeners()) - baseline;
 }

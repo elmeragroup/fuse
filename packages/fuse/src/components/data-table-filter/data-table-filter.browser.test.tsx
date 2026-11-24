@@ -1,5 +1,4 @@
 import { Activity } from "react";
-import type { ReactElement, ReactNode } from "react";
 import { useState } from "react";
 
 import { flushSync } from "react-dom";
@@ -11,12 +10,15 @@ import { nextFrames, recordFrames, useFakeTimeouts } from "../../../test/animati
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import {
   active,
+  barWithValue,
   captureActions,
+  chipStrip,
   columnFilters,
   CUSTOMER_NORD,
   FIELDS,
   finishMotion,
   Orders,
+  PEEKING_FILTERS,
   renderOrders,
   renderCounted,
   STATUS_THREE,
@@ -26,11 +28,20 @@ import {
   pickOption,
   popoverOpen,
   FIELDS_WITH_RUSH_TOGGLE,
+  insideStrip,
+  pressShownStart,
+  renderAmountPeeking,
+  shownStart,
+  sizeAmountPeeking,
+  tapShownStart,
+  watchPressEndListeners,
 } from "../../../test/data-table-filter-fixture";
 import { withLocale } from "../../../test/locale-matrix";
 import { whilePointerPressed } from "../../../test/pointer-press";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
+import type { Finger, Touchscreen } from "../../../test/touch-input";
+import { withTouchscreen } from "../../../test/touch-input";
 import { useDataTableFilterChip } from "./data-table-filter-context";
 import type { FilterField, FilterFieldMap } from "./filter-fields";
 import { DataTableFilter } from "./index";
@@ -200,81 +211,6 @@ describe("DataTableFilter value popover", () => {
   const positioner = (): HTMLElement | null =>
     document.querySelector<HTMLElement>("[data-slot=data-table-filter-positioner]");
 
-  /** The chip strip. */
-  const chipStrip = (): HTMLElement => {
-    const strip = document.querySelector<HTMLElement>("[data-slot=data-table-filter-chips]");
-    if (strip === null) {
-      throw new Error("expected the chip strip");
-    }
-    return strip;
-  };
-
-  /** A bar whose chip template renders `value` as its Value, and the value popover. */
-  const barWithValue = (value: ReactElement) => (
-    <>
-      <DataTableFilter.Bar>
-        <DataTableFilter.Trigger />
-        <DataTableFilter.Chips>
-          <DataTableFilter.Chip>
-            <DataTableFilter.Subject />
-            <DataTableFilter.Operator />
-            {value}
-            <DataTableFilter.Remove />
-          </DataTableFilter.Chip>
-        </DataTableFilter.Chips>
-      </DataTableFilter.Bar>
-      <DataTableFilter.ValueContent />
-    </>
-  );
-
-  const PEEKING_FILTERS = [
-    ...CUSTOMER_NORD,
-    { id: "amount", value: { kind: "number", operator: "isGreaterThan", values: [500] } },
-  ];
-
-  /**
-   * Sizes the page so Amount's `peeking` segment, its Value by default, shows only its first 12px at
-   * the strip's end, with Customer's chip, the first, still in view. The strip ends a fixed distance
-   * before the page's.
-   */
-  const sizeAmountPeeking = async (peeking: () => HTMLElement = () => roleNamed("button", "500")) => {
-    const strip = chipStrip();
-    const segment = peeking();
-    const stripInset = window.innerWidth - strip.getBoundingClientRect().right;
-    await page.viewport(Math.round(segment.getBoundingClientRect().left + 12 + stripInset), 896);
-    expect(strip.getBoundingClientRect().right).toBeLessThan(segment.getBoundingClientRect().right);
-    return { strip, segment };
-  };
-
-  /** Renders a Customer and an Amount chip, and sizes the page with `sizeAmountPeeking`. */
-  const renderAmountPeeking = async (children?: ReactNode, peeking?: () => HTMLElement) => {
-    renderOrders({ initial: PEEKING_FILTERS, children });
-    return sizeAmountPeeking(peeking);
-  };
-
-  /**
-   * Presses where `element` shows at the strip's end, past which it hides. `userEvent.click` would
-   * scroll the element into view before it pressed.
-   */
-  const pressShownStart = async (
-    element: Element,
-    read: () => Promise<number | void> = () => nextFrames(1)
-  ) => {
-    const rect = element.getBoundingClientRect();
-    await userEvent.hover(document.documentElement, {
-      position: { x: rect.left + 4, y: rect.top + rect.height / 2 },
-      force: true,
-    });
-    await whilePointerPressed(read);
-  };
-
-  /** Whether `element` lies inside the strip's box. */
-  const insideStrip = (strip: Element, element: Element) => {
-    const outer = strip.getBoundingClientRect();
-    const inner = element.getBoundingClientRect();
-    return inner.left >= outer.left - 0.5 && inner.right <= outer.right + 0.5;
-  };
-
   it("moves from one chip to a partly hidden chip's pressed Value without clamping to the viewport edge", async () => {
     useFakeTimeouts();
     const { strip, segment: amountValue } = await renderAmountPeeking();
@@ -410,20 +346,200 @@ describe("DataTableFilter value popover", () => {
       )
     );
     const below = strip.getBoundingClientRect().bottom + 40;
+    // The release's click, outside the strip, focuses the Value. With `preventScroll`, only the
+    // strip's own scroll can bring the Value into view.
+    let focusedOnPress = false;
+    document.addEventListener(
+      "click",
+      () => {
+        focusedOnPress = document.activeElement === amountValue;
+        amountValue.focus({ preventScroll: true });
+      },
+      { capture: true, once: true }
+    );
+    const pressEndListeners = await watchPressEndListeners();
     await pressShownStart(amountValue, () =>
       userEvent.hover(document.documentElement, { position: { x: 4, y: below }, force: true })
     );
     expect({
+      focusedOnPress,
       focused: document.activeElement === amountValue,
       visible: insideStrip(strip, amountValue),
-    }).toEqual({
-      focused: false,
-      visible: false,
-    });
+      pressEndListeners: await pressEndListeners(),
+    }).toEqual({ focusedOnPress: false, focused: true, visible: true, pressEndListeners: 0 });
+  });
 
-    // With `preventScroll`, only the strip's own scroll can bring the Value into view.
-    amountValue.focus({ preventScroll: true });
-    expect(insideStrip(strip, amountValue)).toBe(true);
+  it.each([
+    { segment: "Value", peeking: () => roleNamed("button", "500"), opened: () => popoverOpen("Amount") },
+    {
+      segment: "Operator",
+      peeking: () => roleNamed("combobox", "Amount operator"),
+      opened: () => page.getByRole("listbox").query() !== null,
+    },
+  ])("opens a partly hidden chip's tapped $segment", async ({ peeking, opened }) => {
+    const { strip, segment } = await renderAmountPeeking(undefined, peeking);
+    const scrollLeft = strip.scrollLeft;
+    // A tap focuses at its mousedown, after the pointerup. A focus scroll then would move the
+    // segment before the tap's mouseup and click land on it.
+    let scrollAtMouseUp = Number.NaN;
+    document.addEventListener(
+      "mouseup",
+      () => {
+        scrollAtMouseUp = strip.scrollLeft;
+      },
+      { capture: true, once: true }
+    );
+    await tapShownStart(segment);
+    await finishMotion();
+    expect({ opened: opened(), scrollAtMouseUp }).toEqual({ opened: true, scrollAtMouseUp: scrollLeft });
+  });
+
+  it("opens a partly hidden chip's tapped Value whose own pointerup focuses it", async () => {
+    let focusedOnPointerUp = false;
+    const { segment: amountValue } = await renderAmountPeeking(
+      barWithValue(
+        <DataTableFilter.Value
+          onPointerUp={(event) => {
+            if (event.pointerType === "touch") {
+              event.currentTarget.focus({ preventScroll: true });
+              focusedOnPointerUp = document.activeElement === event.currentTarget;
+            }
+          }}
+        />
+      )
+    );
+    // A focus scroll at the pointerup moves the Value before the tap's mousedown and click, which
+    // then land on the chip's Remove.
+    await tapShownStart(amountValue);
+    await finishMotion();
+    expect({ focusedOnPointerUp, opened: popoverOpen("Amount") }).toEqual({
+      focusedOnPointerUp: true,
+      opened: true,
+    });
+  });
+
+  it("holds the strip still under a held touch on a Value that its move focuses after a mouse release outside the strip", async () => {
+    const { strip, segment: amountValue } = await renderAmountPeeking(
+      barWithValue(
+        <DataTableFilter.Value
+          onPointerMove={(event) => {
+            if (event.pointerType === "touch") {
+              event.currentTarget.focus({ preventScroll: true });
+            }
+          }}
+        />
+      )
+    );
+    // The strip takes no touch pan, so the finger's move stays a pointermove.
+    strip.style.touchAction = "none";
+    const scrollLeft = strip.scrollLeft;
+    const at = shownStart(amountValue);
+    const below = strip.getBoundingClientRect().bottom + 40;
+    // The strip is read while the finger is still down, three frames after a focus scroll would draw.
+    const held = await withTouchscreen(async (screen) => {
+      await screen.place([at]);
+      await userEvent.hover(document.documentElement, { position: { x: 4, y: below }, force: true });
+      await whilePointerPressed(() => nextFrames(1));
+      await screen.move([{ x: at.x, y: at.y + 2 }]);
+      await nextFrames(3);
+      return { focused: document.activeElement === amountValue, scrollLeft: strip.scrollLeft };
+    });
+    expect(held).toEqual({ focused: true, scrollLeft });
+  });
+
+  /** Drags one finger down from `at` in six 20px steps, then lifts it. */
+  const dragDown = async (screen: Touchscreen, at: Finger) => {
+    await screen.place([at]);
+    for (const step of [1, 2, 3, 4, 5, 6]) {
+      await screen.move([{ x: at.x, y: at.y + step * 20 }]);
+    }
+    await screen.lift();
+  };
+
+  // Each touch gesture ends its press with no click or focus in the strip. A handler then focuses
+  // the segment: in the last finger's touchend after a pointerup, in the pointercancel, or after the
+  // gesture. A two-finger tap's focus waits until the press-end listeners are counted, so the count
+  // shows that the lift alone removes them.
+  it.each([
+    {
+      gesture: "a two-finger tap with one finger outside the strip",
+      peeking: () => roleNamed("button", "500"),
+      end: "pointerup",
+      focusIn: "afterwards",
+      run: async (screen: Touchscreen, at: Finger, strip: Element) => {
+        await screen.place([at]);
+        await screen.place([{ x: 20, y: strip.getBoundingClientRect().bottom + 200 }]);
+        await screen.lift();
+      },
+    },
+    {
+      gesture: "a vertical drag on an Operator in a strip that pans only sideways",
+      peeking: () => roleNamed("combobox", "Amount operator"),
+      end: "pointerup",
+      focusIn: "touchend",
+      run: async (screen: Touchscreen, at: Finger, strip: HTMLElement) => {
+        // Chromium cancels a touch whose drag pans, so the strip allows no vertical pan.
+        strip.style.touchAction = "pan-x";
+        await dragDown(screen, at);
+      },
+    },
+    {
+      gesture: "a vertical drag on a Value that the browser cancels to pan",
+      peeking: () => roleNamed("button", "500"),
+      end: "pointercancel",
+      focusIn: "pointercancel",
+      run: dragDown,
+    },
+  ])("scrolls a segment into view on a focus as $gesture ends", async ({ peeking, end, focusIn, run }) => {
+    const { strip, segment } = await renderAmountPeeking(undefined, peeking);
+    const at = shownStart(segment);
+    // The contact that pressed the segment, and how it ended.
+    let pressing: number | undefined;
+    const ends: Array<string> = [];
+    segment.addEventListener("pointerdown", (event) => {
+      pressing = event.pointerId;
+    });
+    // With `preventScroll`, only the strip's own scroll can bring the segment into view.
+    let focusedBefore = false;
+    const restore = () => {
+      focusedBefore = document.activeElement === segment;
+      segment.focus({ preventScroll: true });
+    };
+    const onEnd = (event: PointerEvent) => {
+      if (event.pointerId !== pressing) {
+        return;
+      }
+      ends.push(event.type);
+      if (event.type === focusIn) {
+        restore();
+      }
+    };
+    const onTouchEnd = (event: TouchEvent) => {
+      if (event.touches.length === 0 && focusIn === "touchend") {
+        restore();
+      }
+    };
+    document.addEventListener("pointerup", onEnd);
+    document.addEventListener("pointercancel", onEnd);
+    document.addEventListener("touchend", onTouchEnd);
+    onTestFinished(() => {
+      document.removeEventListener("pointerup", onEnd);
+      document.removeEventListener("pointercancel", onEnd);
+      document.removeEventListener("touchend", onTouchEnd);
+    });
+    const pressEndListeners = await watchPressEndListeners();
+    await withTouchscreen((screen) => run(screen, at, strip));
+    const leftListeners = await pressEndListeners();
+    if (focusIn === "afterwards") {
+      restore();
+    }
+    expect({
+      ends,
+      focusedBefore,
+      focused: document.activeElement === segment,
+      visible: insideStrip(strip, segment),
+      pressEndListeners: leftListeners,
+    }).toEqual({ ends: [end], focusedBefore: false, focused: true, visible: true, pressEndListeners: 0 });
   });
 
   /**
