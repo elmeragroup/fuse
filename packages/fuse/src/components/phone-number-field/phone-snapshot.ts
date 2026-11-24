@@ -286,18 +286,37 @@ export function carry(
 ): Snapshot {
   if (from === to) return previous;
   const country = resolveSelectedCountry(to.countries, previous.country.code);
-  const replaced = catalogReplaced(from, to, previous.country);
-  if (value !== undefined && replaced) {
-    // A controlled value the parent kept: its number reads again by its international form,
-    // which keeps the number's identity, unless the field was submitting `value` and that
-    // would change it. A `raw` value carries no country, so it then reads again as itself in
-    // the country that remains.
-    const kept = reformat(previous, country, from, to, true);
-    return kept.values.outputValue === value || previous.values.outputValue !== value
-      ? kept
-      : receiveValue(value, country, to);
-  }
-  return reformat(previous, country, from, to, replaced);
+  const kept = reformat(previous, country, from, to, catalogReplaced(from, to, previous.country));
+  return carryValue(from, to, previous, kept, value);
+}
+
+/**
+ * `previous` carried into a new configuration as {@link carry} carries it with `value`, from
+ * `kept`, the carry without a controlled value. A caller that keeps `kept` carries again into the
+ * same configuration without reading `previous` again.
+ *
+ * @param from - The configuration `previous` was read in.
+ * @param to - The new configuration.
+ * @param previous - The number carried.
+ * @param kept - `carry(from, to, previous, undefined)`.
+ * @param value - The controlled value, if any.
+ * @returns The number read in `to`.
+ */
+export function carryValue(
+  from: Configuration,
+  to: Configuration,
+  previous: Snapshot,
+  kept: Snapshot,
+  value: string | undefined
+): Snapshot {
+  if (value === undefined || from === to || !catalogReplaced(from, to, previous.country)) return kept;
+  // A controlled value the parent kept: its number reads again by its international form, which
+  // keeps the number's identity, unless the field was submitting `value` and that would change
+  // it. A `raw` value carries no country, so it then reads again as itself in the country that
+  // remains.
+  return kept.values.outputValue === value || previous.values.outputValue !== value
+    ? kept
+    : receiveValue(value, resolveSelectedCountry(to.countries, previous.country.code), to);
 }
 
 /**

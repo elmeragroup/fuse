@@ -1,10 +1,18 @@
 import fc from "fast-check";
+import type { MetadataJson } from "libphonenumber-js/core";
 import maxMetadata from "libphonenumber-js/metadata.max.json";
 import { describe, expect, it } from "vitest";
 
 import * as BaseEditor from "../../../test/phone-base/phone-editor";
-import { initialTraceProps, traceAnswer, traceStep } from "../../../test/phone-country-trace-model";
+import {
+  answerScenario,
+  initialTraceProps,
+  storedForm,
+  traceAnswer,
+  traceStep,
+} from "../../../test/phone-country-trace-model";
 import type {
+  AnswerScenario,
   CountryTraceProps,
   MetadataKind,
   TraceAnswer,
@@ -12,7 +20,6 @@ import type {
 } from "../../../test/phone-country-trace-model";
 import { parseCounter, phoneEditorFixtures } from "../../../test/phone-editor-fixtures";
 import {
-  CALLING_CODES,
   TRACE_CODES,
   decodeNumber,
   namedCountry,
@@ -29,13 +36,13 @@ import * as PhoneEditor from "./phone-editor";
 import type { PhoneEditorProps } from "./phone-editor";
 import { defaultMetadata } from "./phone-engine";
 
-const { fill } = phoneEditorFixtures(PhoneEditor);
+const { fill, shown } = phoneEditorFixtures(PhoneEditor);
 const { fill: fillBase } = phoneEditorFixtures(BaseEditor);
 const parses = parseCounter();
 
 /**
  * Unit under test: `PhoneEditor` and `createCountryAnnouncer` under a controlled `countryCode`, as
- * the hook drives them. Oracle: contracts (i) to (xi) below, read through the independent number
+ * the hook drives them. Oracle: contracts (i) to (xii) below, read through the independent number
  * decoder in `test/phone-number-oracle.ts`, and for (vii) the parse cost of the #586 editor frozen
  * in `test/phone-base`.
  *
@@ -81,6 +88,9 @@ const parses = parseCounter();
  *   output, country, a waiting proposal, and `onChange` silent;
  * - (xi) a step that only releases `value` keeps the number the field submits and tells
  *   `onChange` nothing; its shown country follows (i);
+ * - (xii) an answer's outcome does not depend on a no-steer change before it: props that answer a
+ *   waiting proposal leave the field as they do when a change of configuration alone came first,
+ *   one that keeps the controlled country where it resolves and still offers the proposal's;
  * - with (v), a proposal the parent answered in full, value and country held, no longer waits.
  *   The country counts as held also when the value names its own.
  */
@@ -121,10 +131,10 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
     }
   }
 
-  /** A shown country as one of the generated codes; the field shows no other. */
+  /** A country code the field showed or proposed, as one of the generated codes; it gives no other. */
   function asCode(code: string): Code {
     const known = TRACE_CODES.find((candidate) => candidate === code);
-    if (!known) throw new Error(`the field showed ${code}, outside the generated catalog`);
+    if (!known) throw new Error(`the field gave ${code}, outside the generated catalog`);
     return known;
   }
 
@@ -494,17 +504,9 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
       heard = null;
       const withValue = (base: Props): Props => {
         if (answered === null || base.value === undefined || answered.value === null) return base;
-        if (answer.value === "echo") return { ...base, value: answered.value };
-        if (answer.value === "countryless") return { ...base, value: decodeNumber(answered.value).nsn };
-        if (answer.value === "national") {
-          const { cc, nsn } = decodeNumber(answered.value);
-          // SE and FI write a trunk zero before national numbers; NO and SJ write none. A national
-          // number that starts with a zero of its own is written as it is: another zero would make
-          // it a `00` international prefix.
-          const trunked = (cc === CALLING_CODES.SE || cc === CALLING_CODES.FI) && !nsn.startsWith("0");
-          return { ...base, value: trunked ? `0${nsn}` : nsn };
-        }
-        return base;
+        return answer.value === "reject"
+          ? base
+          : { ...base, value: storedForm(answered.value, answer.value) };
       };
       const withCountry = (base: Props): Props =>
         answered !== null &&
@@ -771,7 +773,8 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
           answer: echoing("country first", { countries: ["FI", "SJ"], metadata: "max" }),
         },
       ],
-      [1],
+      // The echo reads the held value again under max metadata, as the same answer in one render does.
+      [2],
     ],
     [
       "a waiting edit keeps its country when detection turns on with max metadata",
@@ -887,6 +890,74 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
     });
   });
 
+  // (vii) for a country-only answer that adopts a proposal the field carried into new metadata.
+  // React may discard renders, and each discarded one parses its own value. The state the answer
+  // reconciles keeps its own parses, so the answer parses nothing after any number of them.
+  it("parses nothing for a country answer after discarded renders, when a carried proposal shows", () => {
+    const props: Props = {
+      ...plain,
+      value: "",
+      countryCode: "NO",
+      countries: ["NO", "SE"],
+      outputFormat: "raw",
+      autoDetectCountry: true,
+    };
+    const pasted = PhoneEditor.paste(PhoneEditor.create(editorProps(props)), "+4600701234567");
+    const echoed = PhoneEditor.reconcile(pasted, editorProps({ ...props, value: "0701234567" }));
+    const held: Props = { ...props, value: "0701234567", metadata: "max" };
+    const carried = PhoneEditor.reconcile(echoed, editorProps(held));
+    expect(PhoneEditor.observeCountry(carried).proposed?.code).toBe("SE");
+    for (let index = 0; index < 20; index += 1) {
+      PhoneEditor.reconcile(
+        carried,
+        editorProps({ ...held, value: `+47412345${String(index).padStart(2, "0")}` })
+      );
+    }
+    parses.reset();
+    const answered = PhoneEditor.reconcile(carried, editorProps({ ...held, countryCode: "SE" }));
+    expect(parses.count, "(vii) the answer's parses").toBe(0);
+    expect(PhoneEditor.observeCountry(answered).proposed).toBeNull();
+    expect(PhoneEditor.view(answered).country.code).toBe("SE");
+  });
+
+  // (vii) for a value-only echo after discarded renders, while a proposal waits under metadata
+  // that reads its trunk zeros differently. Under the min catalog, SE's trunk prefix is one `0`;
+  // this catalog strips one or two. The echo costs at most the two parses of a new value alone.
+  it("parses at most twice for a value-only echo after discarded renders, when a carried proposal waits", () => {
+    const se: readonly unknown[] = defaultMetadata.countries.SE ?? [];
+    const doubleTrunk: MetadataJson = {
+      ...defaultMetadata,
+      countries: { ...defaultMetadata.countries, SE: [...se.slice(0, 5), "0", null, "0{1,2}"] },
+    };
+    const props: PhoneEditorProps = {
+      ...editorProps({ ...plain, countries: ["NO", "SE"], autoDetectCountry: true }),
+      value: "00701234567",
+      countryCode: "NO",
+    };
+    const pasted = PhoneEditor.paste(PhoneEditor.create(props), "+46000701234567");
+    const answered = rendered(PhoneEditor.reconcile, pasted, {
+      ...props,
+      countryCode: "SE",
+      outputFormat: "raw",
+    });
+    const held: PhoneEditorProps = {
+      ...props,
+      countryCode: "SE",
+      outputFormat: "raw",
+      metadata: doubleTrunk,
+    };
+    const carried = rendered(PhoneEditor.reconcile, answered, held);
+    expect(PhoneEditor.observeCountry(carried).proposed?.code).toBe("SE");
+    for (let index = 0; index < 20; index += 1) {
+      PhoneEditor.reconcile(carried, { ...held, value: `+47412345${String(index).padStart(2, "0")}` });
+    }
+    parses.reset();
+    const echoed = rendered(PhoneEditor.reconcile, carried, { ...held, value: "+460701234567" });
+    expect(parses.count, "(vii) the echo's parses").toBeLessThanOrEqual(2);
+    expect(PhoneEditor.view(echoed).country.code).toBe("SE");
+    expect(PhoneEditor.view(echoed).displayValue).toBe("701234567");
+  });
+
   it("holds every contract after every step of generated traces", () => {
     fc.assert(
       fc.property(initialTraceProps, fc.array(traceStep, { maxLength: 12 }), (initial, steps) => {
@@ -933,6 +1004,109 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
         run(initial, [{ kind: "user", action, answer: reply }, ...after]);
       }),
       { seed: 2, numRuns: 1000 }
+    );
+  });
+
+  /**
+   * Plays a scenario up to its answer: the action, the number half, then the carries. The parent
+   * keeps the value it had, so a controlled value's proposal that repeats it tells the parent
+   * nothing, and that value already holds the proposal's output. It returns `null` when the action
+   * proposes nothing or no proposal waits.
+   */
+  function prepareAnswer({ initial, action, reply }: AnswerScenario) {
+    let props: Props = initial;
+    const created = PhoneEditor.create(editorProps(props));
+    const proposed =
+      action.kind === "pick"
+        ? PhoneEditor.selectCountry(created, action.country)
+        : PhoneEditor.paste(created, pasteText(action.country, action.form));
+    if (proposed === created) return null;
+    const heard = PhoneEditor.proposedValue(proposed) ?? props.value ?? null;
+    let state = PhoneEditor.reconcile(proposed, editorProps(props));
+    if (reply.half !== null && props.value !== undefined && heard !== null) {
+      props = { ...props, value: storedForm(heard, reply.half) };
+      state = PhoneEditor.reconcile(state, editorProps(props));
+    }
+    for (const carry of reply.carries) {
+      props = { ...props, ...carry };
+      state = PhoneEditor.reconcile(state, editorProps(props));
+    }
+    const waiting = PhoneEditor.observeCountry(state).proposed;
+    if (waiting === null) return null;
+    const proposal = asCode(waiting.code);
+    const value =
+      props.value === undefined || reply.value === "stored" || heard === null
+        ? props.value
+        : reply.value === "echo" || reply.value === "countryless" || reply.value === "national"
+          ? storedForm(heard, reply.value)
+          : reply.value;
+    const countryCode =
+      reply.code === "stored" ? initial.countryCode : reply.code === "proposal" ? proposal : reply.code;
+    // P', the stored props with the configuration change alone, and P, the props that answer the
+    // proposal, which are P' with the answer's `value` and `countryCode`.
+    const configured: Props = { ...props, ...reply.change };
+    const next: Props = { ...configured, value, countryCode };
+    return { state, stored: props, heard, proposal, next, configured };
+  }
+
+  /**
+   * An answer's outcome does not depend on a no-steer change before it. Take a state with a proposal
+   * waiting under a controlled `countryCode`, and the props it was stored with. For new props P,
+   * `reconcile(state, P)` equals `reconcile(reconcile(state, P'), P)`, where P' is P with the stored
+   * `value` and `countryCode`, a change of configuration alone. Both paths agree in what the field
+   * shows, the output `steeredValue` holds and the proposal that still waits. `answerScenario` in
+   * `test/phone-country-trace-model.ts` generates the scenario, and `prepareAnswer` plays it up to
+   * the answer. Issue #712 tracks the sequences where they differ.
+   *
+   * Unit under test: `PhoneEditor.reconcile`. Oracle: the same editor given the same final props in
+   * one render, which must agree with the two-render path, as contract (xii) states.
+   */
+  it("gives an answer the same outcome after a no-steer change of its configuration", () => {
+    const outcome = (state: PhoneEditor.PhoneEditorState, compareSteered: boolean) => ({
+      ...shown(state),
+      steered: compareSteered ? (PhoneEditor.steeredValue(state)?.value ?? null) : "not compared",
+      waiting: PhoneEditor.observeCountry(state).proposed?.code ?? null,
+    });
+    fc.assert(
+      fc.property(answerScenario, (scenario) => {
+        const prepared = prepareAnswer(scenario);
+        fc.pre(prepared !== null);
+        const { state, stored, heard, proposal, next, configured } = prepared;
+        const { countryCode } = scenario.initial;
+        // The proposal must wait, which the field shows by not showing it. An uncontrolled value's
+        // proposal waits while it is in another country. A controlled one waits until the parent
+        // holds the output it heard in the proposal's country; #1006 tracks the state where it then
+        // still waits, which this skips.
+        fc.pre(
+          proposal !== PhoneEditor.view(state).country.code ||
+            (stored.value !== undefined && stored.value !== heard)
+        );
+        // Contract (xii) covers a P' that changes the configuration alone, with two conditions: the
+        // controlled code resolves to the same country under P' as before it, and the catalog
+        // still offers the proposal's country.
+        fc.pre(
+          resolve(configured, countryCode) === resolve(stored, countryCode) && offered(configured, proposal)
+        );
+        // Exclusion 2, rule (i): P' changes the offered country the held value names, by turning
+        // detection on or off or by a catalog that drops that country. The field shows that country
+        // first, so the shown country moves without any answer.
+        fc.pre(namedCountry(stored) === namedCountry(configured));
+        // #712, case 2: a metadata replacement carries an uncontrolled number through another read
+        // than direct adoption does. P that picks another country than the proposal's differs the
+        // same way, through `pick` and `moveInto`. The #712 fix removes this line.
+        fc.pre(stored.value !== undefined || catalogOf(stored.metadata) === catalogOf(next.metadata));
+        // Exclusion 1, #712 case 1: a format carry moves the baseline that suppresses an
+        // uncontrolled pick's notice. `pick` compares with the same moved baseline when P picks
+        // another country than the proposal's. The #712 fix makes this `true`.
+        const compareSteered = stored.value !== undefined;
+        const direct = PhoneEditor.reconcile(state, editorProps(next));
+        const split = PhoneEditor.reconcile(
+          PhoneEditor.reconcile(state, editorProps(configured)),
+          editorProps(next)
+        );
+        expect(outcome(split, compareSteered)).toEqual(outcome(direct, compareSteered));
+      }),
+      { seed: 617, numRuns: 1000 }
     );
   });
 });

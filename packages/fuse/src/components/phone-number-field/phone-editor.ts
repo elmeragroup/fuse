@@ -3,8 +3,8 @@ import type { CountryCode, MetadataJson } from "libphonenumber-js/core";
 import type { CountryObservation } from "./phone-country-notices";
 import { resolveSelectedCountry } from "./phone-engine";
 import type { ParsePins, PhoneCountryCode, PhoneNumberCountry, PhoneNumberFormat } from "./phone-engine";
-import { carryAdopted, pendingProposal, proposalFate } from "./phone-proposal";
-import type { JudgedProps, NumberAnswer, PendingProposal } from "./phone-proposal";
+import { adoptedNumber, pendingProposal, proposalFate, waitingFor, waitsUnchanged } from "./phone-proposal";
+import type { JudgedProps, PendingProposal, WaitingProposal } from "./phone-proposal";
 import {
   carry,
   catalogReplaced,
@@ -134,12 +134,11 @@ type EditorRecord = {
   readonly countryCode: PhoneCountryCode | undefined;
   readonly preserveOnCountryChange: boolean;
   readonly accepted: Snapshot;
-  readonly proposal: Snapshot | null;
+  /** The proposal waiting for the parent, or `null` when none waits. */
+  readonly waiting: WaitingProposal | null;
   readonly caret: EditCaret | null;
   /** The output the latest `countryCode` change proposed, until a transition replaces it. */
   readonly steered: ValueNotice | null;
-  /** The value that holds the waiting proposal's number without a parse, or `null` when no proposal waits. */
-  readonly numberAnswer: NumberAnswer | null;
   /**
    * How many transitions led to this state: 0 for a new field, one more for each transition. A
    * caller that sees states out of order, as the hook's notices do, tells the older one by it.
@@ -178,9 +177,13 @@ class PhoneEditorState {
 
   /** Creates the state for `record` and pins its parses. Every transition returns through it. */
   constructor(record: EditorRecord) {
-    const { configuration, value, accepted, proposal } = record;
+    const { configuration, value, accepted, waiting } = record;
     this.#record = record;
-    this.#pins = pinReads(configuration, value, proposal ? [accepted, proposal] : [accepted]);
+    this.#pins = pinReads(
+      configuration,
+      value,
+      waiting ? [accepted, waiting.proposal, waiting.adoption, waiting.kept] : [accepted]
+    );
   }
 
   /** Restores this state's pins and returns its record. Every transition and read starts here. */
@@ -255,25 +258,22 @@ function shownCountry(record: EditorRecord, held: Snapshot | null, number: Snaps
 }
 
 /**
- * Whether the record shows `proposal`. The number check passes when `value` is `undefined`, equals
- * the proposal's output, or equals the value of a `"heard"` {@link NumberAnswer}. The shown country,
+ * Whether the record shows its waiting proposal. An uncontrolled value passes the number check. A
+ * controlled value passes when it equals the `output` of the proposal's reading. The shown country,
  * with the proposal held, must also be the proposal's country. A proposal that fails these checks
- * is out of view from the transition that creates it. The parent answers through new props, and an
- * answer that repeats the old props rejects it. A no-steer carry can still rewrite the output this
- * function compares `value` with, as #710 tracks.
+ * is out of view from the transition that creates it, and {@link proposalFate} decides whether it
+ * waits on.
  */
-function shows(record: EditorRecord, proposal: Snapshot): boolean {
-  const { value, numberAnswer, accepted } = record;
-  const held =
-    value === undefined ||
-    value === proposal.values.outputValue ||
-    (numberAnswer?.kind === "heard" && value === numberAnswer.value);
-  return held && shownCountry(record, proposal, accepted).code === proposal.country.code;
+function shows(record: EditorRecord): boolean {
+  const { value, waiting, accepted } = record;
+  if (waiting === null) return false;
+  const held = value === undefined || value === waiting.reading.output;
+  return held && shownCountry(record, waiting.proposal, accepted).code === waiting.proposal.country.code;
 }
 
 function visibleSnapshot(record: EditorRecord): Snapshot {
-  const { proposal, accepted } = record;
-  return proposal && shows(record, proposal) ? proposal : accepted;
+  const { waiting, accepted } = record;
+  return waiting && shows(record) ? waiting.proposal : accepted;
 }
 
 /** The caret the field shows, or `null` when it shows a display other than the caret's. */
@@ -317,10 +317,9 @@ function propose(stored: EditorRecord, proposal: Snapshot, caret: EditCaret | nu
   return succeed(stored, {
     ...stored,
     accepted: visibleSnapshot(stored),
-    proposal,
+    waiting: waitingFor(proposal, stored.configuration),
     caret,
     steered: null,
-    numberAnswer: { kind: "heard", value: proposal.values.outputValue },
   });
 }
 
@@ -332,10 +331,10 @@ function propose(stored: EditorRecord, proposal: Snapshot, caret: EditCaret | nu
  * report it through `steered`.
  */
 function proposalOutput(record: EditorRecord): string | null {
-  const { proposal, value, accepted } = record;
-  if (!proposal || (value === undefined && !shows(record, proposal))) return null;
-  const held = value ?? accepted.values.outputValue;
-  return proposal.values.outputValue === held ? null : proposal.values.outputValue;
+  const { waiting, value, accepted } = record;
+  if (!waiting || (value === undefined && !shows(record))) return null;
+  const output = waiting.proposal.values.outputValue;
+  return output === (value ?? accepted.values.outputValue) ? null : output;
 }
 
 /** The snapshot for text entered over the visible state, read from its country. */
@@ -401,28 +400,27 @@ export function create(props: PhoneEditorProps): PhoneEditorState {
     value,
     countryCode,
     accepted,
-    proposal: null,
+    waiting: null,
     caret: null,
     steered: null,
-    numberAnswer: null,
     version: 0,
   });
 }
 
 /**
- * The proposal the new props show, which becomes the accepted number, or `null`. Releasing
- * `countryCode` judges it as if the parent had set the country shown before, so the field keeps
- * showing it; releasing `value` accepts nothing, and drops a proposal the parent held its value
- * against, as releasing `countryCode` keeps the shown country.
+ * The waiting proposal when the new props show it, to become the accepted number, else `null`.
+ * Releasing `countryCode` judges it as if the parent had set the country shown before, so the
+ * field keeps showing it; releasing `value` accepts nothing, and drops a proposal the parent held
+ * its value against, as releasing `countryCode` keeps the shown country.
  */
-function adoptedProposal(stored: EditorRecord, next: EditorRecord, before: Snapshot): Snapshot | null {
-  const { proposal } = stored;
-  if (proposal === null || (stored.value !== undefined && next.value === undefined)) return null;
+function adoptedProposal(stored: EditorRecord, next: EditorRecord, before: Snapshot): WaitingProposal | null {
+  const { waiting } = stored;
+  if (waiting === null || (stored.value !== undefined && next.value === undefined)) return null;
   const judge =
     stored.countryCode !== undefined && next.countryCode === undefined
       ? { ...next, countryCode: before.country.code }
       : next;
-  return shows(judge, proposal) ? proposal : null;
+  return shows(judge) ? waiting : null;
 }
 
 /** The record as {@link proposalFate} judges it: its props and the countries they name. */
@@ -470,12 +468,12 @@ function placeNumber(
   stored: EditorRecord,
   next: EditorRecord,
   before: Snapshot,
-  adopted: Snapshot | null,
+  adopted: WaitingProposal | null,
   newValue: string | null
 ): Snapshot {
   const { configuration, value } = next;
   const controlled = controlledCountry(next);
-  if (adopted) return carryAdopted(stored.configuration, configuration, adopted, value);
+  if (adopted) return adoptedNumber(stored, next, adopted);
   if (newValue !== null) {
     const country = controlled ?? resolveSelectedCountry(configuration.countries, before.country.code);
     return receiveValue(newValue, country, configuration);
@@ -533,14 +531,8 @@ function settle(stored: EditorRecord, next: EditorRecord): EditorRecord {
   if (picked !== null) return pick(next, before, picked);
   const accepted = placeNumber(stored, next, before, adopted, newValue);
   const waiting = pending && proposalFate(stored, judged(next), pending);
-  const placed: EditorRecord = {
-    ...next,
-    accepted,
-    proposal: waiting?.proposal ?? null,
-    numberAnswer: waiting?.numberAnswer ?? null,
-  };
-  const aligned = alignToPrecedence(placed);
-  if (adopted && value === undefined && !shows(stored, adopted)) {
+  const aligned = alignToPrecedence({ ...next, accepted, waiting });
+  if (adopted && value === undefined && !shows(stored)) {
     // An uncontrolled proposal shows only now, so `onChange` hears it only now. A no-steer carry
     // before the answer can move `before` and lose this notice, as #712 tracks.
     const output = aligned.accepted.values.outputValue;
@@ -594,8 +586,7 @@ function pick(record: EditorRecord, before: Snapshot, country: PhoneNumberCountr
     return {
       ...record,
       accepted: picked,
-      proposal: null,
-      numberAnswer: null,
+      waiting: null,
       steered: output === before.values.outputValue ? record.steered : { value: output },
     };
   }
@@ -605,8 +596,7 @@ function pick(record: EditorRecord, before: Snapshot, country: PhoneNumberCountr
   return {
     ...record,
     accepted: read,
-    proposal: picked === read ? null : picked,
-    numberAnswer: picked === read ? null : { kind: "heard", value: output },
+    waiting: picked === read ? null : waitingFor(picked, configuration),
     // As a pick through the picker: nothing for `onChange` only when the output is the value the
     // parent holds. A parent that stores another form of the number hears it.
     steered: output === value ? record.steered : { value: output },
@@ -653,11 +643,10 @@ export function reconcile(state: PhoneEditorState, props: PhoneEditorProps): Pho
  * changed or the waiting proposal ended.
  */
 function kept(stored: EditorRecord, settings: Settings): EditorRecord {
-  const pending = pendingProposal(stored, stored);
-  const ends =
-    stored.proposal !== null && (pending === null || proposalFate(stored, judged(stored), pending) === null);
+  const { waiting } = stored;
+  const ends = waiting !== null && !waitsUnchanged(judged(stored), waiting);
   if (!ends && sameSettings(stored, settings)) return stored;
-  return ends ? { ...stored, ...settings, proposal: null, numberAnswer: null } : { ...stored, ...settings };
+  return { ...stored, ...settings, waiting: ends ? null : waiting };
 }
 
 /**
@@ -748,10 +737,9 @@ export function reset(state: PhoneEditorState): PhoneEditorState {
             { digits: "", country: controlledCountry(stored) ?? visibleSnapshot(stored).country },
             configuration
           ),
-    proposal: null,
+    waiting: null,
     caret: null,
     steered: null,
-    numberAnswer: null,
   });
 }
 
@@ -821,6 +809,6 @@ export function steeredValue(state: PhoneEditorState): ValueNotice | null {
  * @returns The observation for `phone-country-notices`.
  */
 export function observeCountry(state: PhoneEditorState): CountryObservation {
-  const { version, countryCode, proposal } = state[OPEN]();
-  return { version, countryCode, shown: view(state).country, proposed: proposal?.country ?? null };
+  const { version, countryCode, waiting } = state[OPEN]();
+  return { version, countryCode, shown: view(state).country, proposed: waiting?.proposal.country ?? null };
 }
