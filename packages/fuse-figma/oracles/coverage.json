@@ -4344,6 +4344,10 @@
         "className": "[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)"
       },
       {
+        "part": "description-list-item",
+        "className": "supports-[not(grid-template-columns:subgrid)]:[:where(&.grid-cols-subgrid)]:grid-cols-[inherit]"
+      },
+      {
         "part": "description-list-term",
         "className": "[:where([data-layout=inline]>*)>&]:basis-[min-content]"
       },

@@ -47,8 +47,6 @@ const FORCED_COLORS = "Forced colors only: Safari has no forced-colors mode to o
 const TEXT_WRAP = "Below the floor the text wraps greedily, as text-wrap: wrap does.";
 const OVERSCROLL =
   "Below Chrome 144 and in Safari the property does not hold a container whose content fits, which is always at its scroll boundary, so a scroll there, as in a short Command or Combobox list, can move the page behind it.";
-const SUBGRID =
-  "Degrades below Chrome 117: the row lays its cells out on its own implicit columns instead of its parent's, until #635 lands a fallback.";
 const SVG_MASK =
   "The value is url(#…) to an SVG <mask> on an SVG element, which engines at the floor apply; MDN's partial rows cover CSS masks on HTML.";
 const WEBKIT_MASK_COMPOSITE =
@@ -71,6 +69,7 @@ const SPARKLINE_BAND_CLIPPED: FloorFallback = {
   property: "clip-path",
   value: "inset(50%)",
 };
+const SUBGRID_MISSING = "@supports not (grid-template-columns:subgrid)";
 const TAILWIND_SUPPORTS_TEST =
   "A @supports test in Tailwind's own output: an engine without a feature it tests reads that test false, which is the answer the condition selects on.";
 
@@ -187,8 +186,24 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "grid-template-columns",
     value: "subgrid",
     features: ["css.properties.grid-template-columns.subgrid"],
+    fallback: {
+      kind: "rule",
+      within: [SUBGRID_MISSING],
+      where:
+        ":where(.supports-\\[not\\(grid-template-columns\\:subgrid\\)\\]\\:\\[\\:where\\(\\&\\.grid-cols-subgrid\\)\\]\\:grid-cols-\\[inherit\\].grid-cols-subgrid)",
+      property: "grid-template-columns",
+      value: "inherit",
+    },
+    reason:
+      "Below Chrome 117 the companion gives each DescriptionList.Item that still has grid-cols-subgrid its list's column template, including one a consumer sets on the list. The companion has zero specificity, so a consumer's grid-cols-* utility on the Item wins. Each Item sizes the inherited tracks on its own. The default term track, min(50%, calc(var(--spacing) * 80)) from sm, depends on the list's width alone, so terms and details line up across Items. From sm, an unbroken details wider than its track widens every Item alike, so terms and details still line up, but the details can start farther from the inline start than with subgrid, until the term track reaches its cap. An intrinsic template, such as max-content 1fr, sizes each Item's term track to its own term, so those terms do not line up. Below Chrome 117 SelectionItem's sub-section band lays its spacer and SubSections out on columns of its own, so a SubSection takes the full row width. In a row whose control leads, it starts under the control instead of under the label text. In a row whose control trails, it runs under the control. Its text and controls stay usable.",
+  },
+  {
+    sheet: "styles.css",
+    where: SUBGRID_MISSING,
+    features: ["css.properties.grid-template-columns.subgrid"],
     fallback: { kind: "none" },
-    reason: SUBGRID,
+    reason:
+      "A @supports test: below Chrome 117 it reads true, and its block gives a DescriptionList.Item that still has grid-cols-subgrid its list's column template.",
   },
   {
     sheet: "styles.css",
@@ -472,8 +487,13 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "grid-template-columns",
     value: "subgrid",
     features: ["css.properties.grid-template-columns.subgrid"],
-    fallback: { kind: "none" },
-    reason: SUBGRID,
+    fallback: {
+      kind: "declaration",
+      property: "grid-template-columns",
+      value: "[start]auto[plot]minmax(0,1fr)[end]auto[legend-end]",
+    },
+    reason:
+      "Below Chrome 117 each Panel lays out its own copy of the frame's tracks, so its plot takes the width its value axes leave, but Root's pointer surface no longer lines up with that plot. With a value axis on the Panel's left, the marks start one axis width right of the pointer slots, so hovering a bar can report another and the last marks run past the plot. With axes only on the right, the marks can run into the axis labels.",
   },
   {
     sheet: "chart.css",

@@ -179,13 +179,13 @@
         "root": {
           "tag": "div",
           "attributes": {"data-slot":"description-list-item"},
-          "classes": ["col-span-full","grid","grid-cols-subgrid","border-t","first-of-type:border-none","[:where([data-dividers=false])>&]:border-none","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
+          "classes": ["col-span-full","grid","grid-cols-subgrid","border-t","first-of-type:border-none","[:where([data-dividers=false])>&]:border-none","supports-[not(grid-template-columns:subgrid)]:[:where(&.grid-cols-subgrid)]:grid-cols-[inherit]","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
           "text": "",
           "declarations": [63,65,6,66,91,69,70,92,71,93,94,95,96],
           "initial": [65,91,69,70,94,96],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"}},
-          "unmatched": ["[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
+          "unmatched": ["supports-[not(grid-template-columns:subgrid)]:[:where(&.grid-cols-subgrid)]:grid-cols-[inherit]","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
           "measured": {"containerWidth":576,"coincidingAround":2},
           "children": [
             {
@@ -253,13 +253,13 @@
         "root": {
           "tag": "div",
           "attributes": {"data-slot":"description-list-item"},
-          "classes": ["col-span-full","grid","grid-cols-subgrid","border-t","first-of-type:border-none","[:where([data-dividers=false])>&]:border-none","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
+          "classes": ["col-span-full","grid","grid-cols-subgrid","border-t","first-of-type:border-none","[:where([data-dividers=false])>&]:border-none","supports-[not(grid-template-columns:subgrid)]:[:where(&.grid-cols-subgrid)]:grid-cols-[inherit]","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
           "text": "",
           "declarations": [63,65,6,66,91,69,70,92,71,93,94,95,96],
           "initial": [65,91,69,70,94,96],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"}},
-          "unmatched": ["[:where([data-dividers=false])>&]:border-none","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
+          "unmatched": ["[:where([data-dividers=false])>&]:border-none","supports-[not(grid-template-columns:subgrid)]:[:where(&.grid-cols-subgrid)]:grid-cols-[inherit]","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
           "measured": {"containerWidth":576,"coincidingAround":2},
           "children": [
             {
@@ -327,13 +327,13 @@
         "root": {
           "tag": "div",
           "attributes": {"data-slot":"description-list-item"},
-          "classes": ["col-span-full","grid","grid-cols-subgrid","border-t","first-of-type:border-none","[:where([data-dividers=false])>&]:border-none","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
+          "classes": ["col-span-full","grid","grid-cols-subgrid","border-t","first-of-type:border-none","[:where([data-dividers=false])>&]:border-none","supports-[not(grid-template-columns:subgrid)]:[:where(&.grid-cols-subgrid)]:grid-cols-[inherit]","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
           "text": "",
           "declarations": [63,65,6,66,91,69,70,92,71,93,94,97,98],
           "initial": [65,91,69,70,94,98],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"}},
-          "unmatched": ["first-of-type:border-none","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
+          "unmatched": ["first-of-type:border-none","supports-[not(grid-template-columns:subgrid)]:[:where(&.grid-cols-subgrid)]:grid-cols-[inherit]","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
           "measured": {"containerWidth":576,"coincidingAround":2},
           "children": [
             {
@@ -401,13 +401,13 @@
         "root": {
           "tag": "div",
           "attributes": {"data-slot":"description-list-item"},
-          "classes": ["col-span-full","grid","grid-cols-subgrid","border-t","first-of-type:border-none","[:where([data-dividers=false])>&]:border-none","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
+          "classes": ["col-span-full","grid","grid-cols-subgrid","border-t","first-of-type:border-none","[:where([data-dividers=false])>&]:border-none","supports-[not(grid-template-columns:subgrid)]:[:where(&.grid-cols-subgrid)]:grid-cols-[inherit]","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
           "text": "",
           "declarations": [63,65,6,66,99,91,69,70,92,71,93,100,94],
           "initial": [65,91,69,70],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--tw-border-style":{"_tag":"unset"}},
-          "unmatched": ["first-of-type:border-none","[:where([data-dividers=false])>&]:border-none","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
+          "unmatched": ["first-of-type:border-none","[:where([data-dividers=false])>&]:border-none","supports-[not(grid-template-columns:subgrid)]:[:where(&.grid-cols-subgrid)]:grid-cols-[inherit]","[:where([data-layout=inline])>&]:flex","[:where([data-layout=inline])>&]:flex-wrap","[:where([data-layout=inline])>&]:gap-x-(--surface-gap-md)","[:where([data-layout=inline])>&]:border-none"],
           "measured": {"containerWidth":576,"coincidingAround":2},
           "children": [
             {
