@@ -23,12 +23,6 @@ import { FLAG_SVG_COUNT } from "../scripts/flag-payload";
 
 const FIXTURE_SVG = '<svg xmlns="http://www.w3.org/2000/svg"/>';
 
-/**
- * Building the 249-file git fixture and spawning git against it is slow under full-gate
- * parallel load, so `beforeAll` raises Vitest's hook default to the project's test hang guard.
- */
-const FIXTURE_TIMEOUT = 30_000;
-
 type FlagSourceFixture = {
   root: string;
   repoRoot: string;
@@ -107,7 +101,7 @@ describe("flag source", () => {
 
   beforeAll(() => {
     fixture = makeFixture();
-  }, FIXTURE_TIMEOUT);
+  });
 
   afterAll(() => {
     rmSync(fixture.root, { recursive: true, force: true });
