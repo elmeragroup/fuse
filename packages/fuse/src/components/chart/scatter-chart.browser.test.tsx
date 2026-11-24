@@ -397,10 +397,10 @@ describe("interaction", () => {
       ]);
     });
 
-    it("pages past 500 points by row range", async () => {
+    it("pages past 500 points by row range, and keeps the asked-for page across a shrink and regrow", async () => {
       // 501 points of one series on a line, x 0 to 500.
       const many = Array.from({ length: 501 }, (_, index) => ({ t: index, kwh: 20_000 + index, s: "now" }));
-      renderThemed(
+      const { rerender } = renderThemed(
         <InteractiveScatter data={many}>
           <ScatterChart.Table />
         </InteractiveScatter>
@@ -420,6 +420,23 @@ describe("interaction", () => {
       expect(bodyRows()).toBe(1);
       // The status region announces the new page, and the pagination shows it.
       expect(page.getByRole("status").element().textContent).toBe("Side 2 av 2 · Rad 501 til 501");
+      // Down to 400 points the table shows its one page. Back at 501, it shows page 2 again.
+      rerender(
+        <InteractiveScatter data={many.slice(0, 400)}>
+          <ScatterChart.Table />
+        </InteractiveScatter>
+      );
+      await expect.poll(bodyRows).toBe(400);
+      expect(document.querySelector('[data-slot="chart-table-pagination"]')).toBeNull();
+      rerender(
+        <InteractiveScatter data={many}>
+          <ScatterChart.Table />
+        </InteractiveScatter>
+      );
+      await expect.poll(bodyRows).toBe(1);
+      expect(document.querySelector('[data-slot="chart-table-pagination"]')?.textContent).toContain(
+        "Side 2 av 2 · Rad 501 til 501"
+      );
     });
   });
 

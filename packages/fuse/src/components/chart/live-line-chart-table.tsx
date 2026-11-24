@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { ReactElement } from "react";
 
 import { countOf } from "../../intl/count-of";
 import { Table } from "../table/table";
-import { ChartTableShell, PAGE_ROWS, Twin, useTableDisclosure } from "./chart-table-shell";
+import { ChartTableShell, Twin, useRowPages, useTableDisclosure } from "./chart-table-shell";
 import type { ChartLayerProps } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
@@ -56,14 +56,10 @@ export function LiveLineChartTable({
   const { points, duration } = useShownFeed(context);
   const strings = CHART_STRINGS[text.locale];
   const disclosure = useTableDisclosure();
-  const [page, setPage] = useState(0);
   const span = latestWindow(points, duration);
   const count = span.end - span.first;
-  const pages = Math.max(1, Math.ceil(count / PAGE_ROWS));
-  // A data update that drops pages clamps to the last one.
-  const index = Math.min(page, pages - 1);
-  const from = index * PAGE_ROWS;
-  const to = Math.min(count, from + PAGE_ROWS);
+  const pages = useRowPages(count, strings, announce);
+  const { from, to } = pages;
   // The shown page formats once per page, reading or format change, so the clock formats nothing.
   const rows = useMemo(
     () =>
@@ -79,15 +75,6 @@ export function LiveLineChartTable({
     [points, span.end, text, from, to]
   );
   if (count === 0) return <></>;
-  const range = (start: number, end: number) => strings.rowRange(String(start + 1), String(end));
-  const go = (next: number): void => {
-    if (next < 0 || next >= pages || next === index) return;
-    setPage(next);
-    const start = next * PAGE_ROWS;
-    announce(
-      strings.pageStatus(String(next + 1), String(pages), range(start, Math.min(count, start + PAGE_ROWS)))
-    );
-  };
   return (
     <ChartTableShell
       disclosure={disclosure}
@@ -106,12 +93,7 @@ export function LiveLineChartTable({
           <Table.Head scope="col">{liveName(text)}</Table.Head>
         </>
       }
-      pages={{
-        index,
-        count: pages,
-        status: strings.pageStatus(String(index + 1), String(pages), range(from, to)),
-        go,
-      }}>
+      pages={pages}>
       {rows.map((row, offset) => (
         // Rows key by their place on the page, so a new reading updates them in place.
         <Table.Row key={offset}>
