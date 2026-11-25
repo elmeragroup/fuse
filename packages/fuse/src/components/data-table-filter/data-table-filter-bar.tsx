@@ -4,7 +4,7 @@
 // is a Toolbar.Group of Toolbar.Buttons. State and wiring sit on the Base UI part, and the Fuse
 // Button is only its `render` element.
 
-import { use, useCallback, useEffect, useMemo, useRef } from "react";
+import { use, useCallback, useEffect, useMemo, useState } from "react";
 import type {
   ComponentProps,
   FocusEvent,
@@ -27,7 +27,6 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { Funnel } from "../../icons/generated/funnel";
 import { X } from "../../icons/generated/x";
 import { XCircle } from "../../icons/generated/x-circle";
-import { activeElementFrom } from "../../internal/active-element";
 import { definedProps } from "../../internal/defined-props";
 import { isHTMLElement, isNode } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
@@ -49,6 +48,7 @@ import { isToggleOn } from "./filter-model";
 import type { FilterOperator } from "./filter-model";
 import { summarize } from "./filter-summary";
 import { OperatorOptions, useOperatorItems } from "./operator-options";
+import { createStripPress } from "./strip-press";
 import { scrollStripOnWheel } from "./strip-wheel";
 
 /**
@@ -196,45 +196,6 @@ export function DataTableFilterTrigger({
   );
 }
 
-/**
- * Calls `end` when the press that the pointerdown `event` starts ends, and returns the function that
- * stops listening. A mouse focuses on pointerdown, so its press ends at its pointerup. Touch and pen
- * focus after pointerup, so their press ends only at a pointer cancel. A release outside the strip
- * brings it no click, so the listeners are on the document.
- */
-function listenForPressEnd(event: PointerEvent<HTMLElement>, end: () => void): () => void {
-  const { pointerId, pointerType } = event;
-  const { ownerDocument } = event.currentTarget;
-  const onPressEnd = (next: globalThis.PointerEvent) => {
-    if (next.pointerId === pointerId && (next.type === "pointercancel" || pointerType === "mouse")) {
-      end();
-    }
-  };
-  ownerDocument.addEventListener("pointerup", onPressEnd, true);
-  ownerDocument.addEventListener("pointercancel", onPressEnd, true);
-  return () => {
-    ownerDocument.removeEventListener("pointerup", onPressEnd, true);
-    ownerDocument.removeEventListener("pointercancel", onPressEnd, true);
-  };
-}
-
-/**
- * The elements the pointerdown `event` passes through inside the strip, from its target up to the
- * strip. The strip skips its focus scroll only for a focus on this path. The path keeps the pressed
- * element even after a handler detaches the pressed node. A consumer handler can still focus a
- * control outside the path, and that focus scrolls. The path leaves out the element that already
- * has focus. The press cannot focus that element again, so a later keyboard focus on it still
- * scrolls it into view. A press in a portaled popup reaches the strip's React handler but not its
- * DOM path, so its path is empty.
- */
-function pressPath(event: PointerEvent<HTMLElement>): ReadonlyArray<EventTarget> {
-  const strip = event.currentTarget;
-  const path = event.nativeEvent.composedPath();
-  const end = path.indexOf(strip);
-  const focused = activeElementFrom(strip);
-  return end === -1 ? [] : path.slice(0, end).filter((element) => element !== focused);
-}
-
 /** Props for `DataTableFilter.Chips`. */
 export type DataTableFilterChipsProps = Omit<ComponentProps<"div">, "children"> & {
   /**
@@ -250,7 +211,7 @@ export type DataTableFilterChipsProps = Omit<ComponentProps<"div">, "children"> 
  * scrolls sideways at every width. Its ends fade while chips hide past them. A focused segment
  * scrolls into view, since `focus()` leaves a partly visible element where it is, and a vertical
  * mouse wheel scrolls the strip until it reaches an end. The strip skips its focus scroll when a
- * primary pointer press focuses the segment. The strip reveals a `DataTableFilter.Value`'s chip
+ * primary press focuses the segment. The strip reveals a `DataTableFilter.Value`'s chip
  * once a press opens the value popover on it or moves the popover to it.
  */
 export function DataTableFilterChips({
@@ -258,28 +219,16 @@ export function DataTableFilterChips({
   children,
   onFocus,
   onPointerDownCapture,
+  onMouseDownCapture,
   onClickCapture,
   ref,
   ...props
 }: DataTableFilterChipsProps): ReactElement {
   const { state } = useFilterInternals("DataTableFilter.Chips");
   const stripRef = useMergedRefs(ref, scrollStripOnWheel);
-  // A primary pointer press's path through the strip, with the function that stops listening for
-  // the press's end. The record lasts from the pointerdown until the strip's next focus or click, or
-  // until the press ends without either. Only event handlers read and write it.
-  const press = useRef<{ readonly path: ReadonlyArray<EventTarget>; readonly stop: () => void } | null>(null);
-  const forgetPress = () => {
-    press.current?.stop();
-    press.current = null;
-  };
-  // A strip that unmounts or hides mid-press, before the focus or click that would end it, forgets it.
-  useEffect(
-    () => () => {
-      press.current?.stop();
-      press.current = null;
-    },
-    []
-  );
+  const [press] = useState(createStripPress);
+  // A strip that unmounts or hides mid-press ends the press.
+  useEffect(() => press.dispose, [press]);
   return (
     <div
       ref={stripRef}
@@ -287,13 +236,12 @@ export function DataTableFilterChips({
       className={cn(slots.chips(), className)}
       onFocus={(event: FocusEvent<HTMLDivElement>) => {
         onFocus?.(event);
-        // A mouse press focuses its segment on pointerdown, before the release. A scroll then would
-        // move the segment out from under the pointer. Base UI's Select opens an Operator's list on
-        // mousedown and cancels the opening when the mouseup lands outside both the trigger and the
+        // A press focuses its segment before its click, as `createStripPress` describes. A scroll then
+        // would move the segment out from under the pointer. Base UI's Select opens an Operator's list
+        // on mousedown and cancels the opening when the mouseup lands outside both the trigger and the
         // list, which a scroll can cause. A Value's click would not land, and an open popover would
         // follow its old chip out of the strip.
-        const pressed = press.current?.path.includes(event.target) ?? false;
-        forgetPress();
+        const pressed = press.takeFocus(event.target);
         if (pressed || event.defaultPrevented || !isHTMLElement(event.target)) {
           return;
         }
@@ -302,16 +250,16 @@ export function DataTableFilterChips({
       onPointerDownCapture={(event: PointerEvent<HTMLDivElement>) => {
         // The strip's capture runs before any handler inside it, and the consumer's capture runs
         // after the record, so a handler that focuses the segment still meets the record.
-        forgetPress();
-        const path = pressPath(event);
-        if (event.isPrimary && event.button === 0 && path.length > 0) {
-          press.current = { path, stop: listenForPressEnd(event, forgetPress) };
-        }
+        press.startPointer(event);
         onPointerDownCapture?.(event);
+      }}
+      onMouseDownCapture={(event: MouseEvent<HTMLDivElement>) => {
+        press.recordMouseDown(event);
+        onMouseDownCapture?.(event);
       }}
       onClickCapture={(event: MouseEvent<HTMLDivElement>) => {
         onClickCapture?.(event);
-        forgetPress();
+        press.dropFocusPath();
       }}
       {...props}>
       {state.chips.map((chip) => (
