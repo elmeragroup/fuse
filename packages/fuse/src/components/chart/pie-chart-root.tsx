@@ -97,7 +97,14 @@ export type PieChartRootProps<
     maxSlices?: number;
     /** The Other slice's label. Defaults to the dictionary's "Annet". */
     otherLabel?: string;
-    /** The slice that is active before any pointer or key moves. A folded category activates Other. */
+    /**
+     * The slice that is active before any pointer or key moves. A folded category activates Other.
+     * While the slice is active by default, `PieChart.Tooltip` opens only while at least half of
+     * the plot's box is in view. Width and height are checked separately, and on an axis where the
+     * plot is larger than the viewport, half of the viewport's extent is enough. The rule ends when
+     * a reader takes over: a pointer pick, keyboard focus on the plot, even with the same slice
+     * still active, or a pin.
+     */
     defaultActiveKey?: keyof TConfig & string;
     /**
      * `"none"` turns off the entrance, which sweeps the slices in the first time the chart comes into

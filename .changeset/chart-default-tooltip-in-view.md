@@ -1,0 +1,5 @@
+---
+"@elmeragroup/fuse": patch
+---
+
+Open the Tooltip of an item active through `defaultActiveX`, `defaultActiveKey` or `defaultActiveName` only while at least half of the chart's plot is in view. Width and height are checked separately, and on an axis where the plot is larger than the viewport, half of the viewport's extent is enough. A chart below the fold, under `display: none` or scrolled out of a panel no longer paints its popup at the viewport's edge or at the page's top-left. When the plot leaves view, the popup stops painting at once, with no exit fade. The item stays active, and the popup opens in its place once the plot scrolls or moves into view, including a plot that mounts later because its first readings were all empty, and a chart rendered into a container that is attached to the page later. The rule ends when a reader takes over: a pointer pick, keyboard focus on the plot, even with the same item still active, or a pin. A popup that a pointer, a key or a pin opened behaves as before.

@@ -67,7 +67,7 @@ export function tooltipInput(input: string | null): "touch" | undefined {
   return input === "touch" || input === "pen" ? "touch" : undefined;
 }
 
-/** How a chart popup opens: as an overlay, as the live readout's entrance, or at once. */
+/** How a chart popup opens and closes: as an overlay, as the live readout's entrance, or at once. */
 export type TooltipMotion = "overlay" | "entrance" | "none";
 
 /**
@@ -94,7 +94,7 @@ export function useTooltipOpenedBy<TSource extends string>(
  * variant and its motion, then the consumer's.
  *
  * @param variant - The popup's surface.
- * @param motion - How the popup opens, as the recipe's `motion` axis describes.
+ * @param motion - How the popup opens and closes, as the recipe's `motion` axis describes.
  * @param className - The consumer's classes.
  * @returns The class list.
  */
@@ -121,7 +121,7 @@ export function viewportSize(): PlaceSize {
  * fill it replaces, so the class merge drops the opaque fill. A translucent fill keeps the surface
  * beneath it, so frosted glass also drops the popover `--surface` the overlay fill states.
  *
- * The `motion` axis sets how the popup opens:
+ * The `motion` axis sets how the popup opens and closes:
  *
  * - `"overlay"` is for a Base UI popup. It takes Fuse's overlay transitions, which reverse when the
  *   popup opens or closes partway through.
@@ -130,8 +130,9 @@ export function viewportSize(): PlaceSize {
  *   readout writes its own `translate` and `transform-origin` every frame and the keyframes move
  *   `transform`, so the readout keeps pace with the crosshair while it enters.
  * - `"none"` is for a popup a key opened, which shows at once with no transition. A Base UI popup
- *   takes `"overlay"` again once it closes, so its exit still fades. The live readout unmounts at
- *   once when it closes, so it has no exit.
+ *   takes `"overlay"` again once it closes, so its exit still fades. A popup that closes under
+ *   `"none"` is transparent from its first closed frame, with no exit, as when a chart's surface
+ *   leaves view. The live readout unmounts at once when it closes, so it has no exit.
  */
 const tooltipPopup = tv({
   // The chart popup has an 8 px radius and 8 px of block padding. It is never taller than the room
@@ -144,7 +145,7 @@ const tooltipPopup = tv({
         "supports-backdrop-filter:backdrop-blur-md bg-popover/70 [--surface-muted-foreground:inherit] [--surface:inherit]",
     },
     motion: {
-      none: "",
+      none: "data-closed:opacity-0",
       overlay: overlayPopupMotionClass,
       entrance:
         "data-[side=bottom]:slide-in-from-top-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",

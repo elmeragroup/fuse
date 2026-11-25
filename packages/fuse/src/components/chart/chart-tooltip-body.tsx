@@ -19,6 +19,7 @@ import type { TooltipPlacer } from "./chart-readout-port";
 import { ChartHeldPointContext, ChartLiveContext } from "./chart-scope-contexts";
 import type { HeldPoint } from "./chart-scope-contexts";
 import { useChartStore } from "./chart-store";
+import { useSurfaceInView } from "./chart-surface-in-view";
 import { shareCorridor } from "./chart-tooltip-corridor";
 import { createTooltipGlider } from "./chart-tooltip-glide";
 import type { GlideRoute, TooltipGlider } from "./chart-tooltip-glide";
@@ -85,7 +86,16 @@ export function ChartTooltipBody({
   const lane = placer.keeps === "lane";
   const { store, id, root: rootOf } = readout;
   const point = useActivePoint(readout, true);
-  const active = point.index;
+  // A default item's popup shows only while the surface is in view, so a chart below the fold,
+  // under display: none or scrolled out of a panel paints none at the viewport's edge. The store
+  // keeps the item active, and a reveal reaches the anchor as an open. The gate ends when a reader
+  // takes over: a pointer pick, keyboard focus on the plot, even with the same item still active,
+  // or a pin each changes the source.
+  const defaulted = useChartStore(store, (snapshot) => snapshot.source === "default" && !snapshot.pinned);
+  const inView = useSurfaceInView(id, rootOf, defaulted);
+  // Whether the gate, and nothing else, keeps the active item's popup shut.
+  const gated = defaulted && !inView && point.index !== null;
+  const active = gated ? null : point.index;
   const open = active !== null;
   // Once open, the portal stays mounted. Its node sits after the scope's last child, so mounting
   // and dropping it on each open and close flips that child's :last-child and restyles all of it,
@@ -190,8 +200,11 @@ export function ChartTooltipBody({
   // The popup's input mark, which follows the reader's pointer whether or not it moves the slot.
   const input = useChartStore(store, (snapshot) => tooltipInput(snapshot.input));
   // A key opens the popup at once, with no entrance, and a pointer opens it with the overlay's fade.
+  // The gate closes it with no exit, so a chart that leaves view or goes under display: none never
+  // fades a popup at the viewport's edge.
   const source = useChartStore(store, (snapshot) => snapshot.source);
   const openedBy = useTooltipOpenedBy(open, source);
+  const motion = openedBy === "keyboard" || gated ? "none" : "overlay";
   return (
     <TooltipPrimitive.Root
       open={open}
@@ -222,7 +235,7 @@ export function ChartTooltipBody({
             data-input={input}
             aria-hidden="true"
             ref={watchOverflow}
-            className={tooltipPopupClass(variant, openedBy === "keyboard" ? "none" : "overlay", className)}
+            className={tooltipPopupClass(variant, motion, className)}
             style={style}
             onClick={(event) => {
               // A popup that scrolls takes touch events, so a tap on it that did not scroll
