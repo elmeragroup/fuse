@@ -27,7 +27,7 @@ import {
 } from "../../../test/skeleton-reveal-fixtures";
 import type { Invoice } from "../../../test/skeleton-reveal-fixtures";
 import { heightAnimation } from "../../../test/skeleton-reveal-fixtures";
-import { renderThemed, roleNamed, fkasPrivate } from "../../../test/themed-browser-render";
+import { effectiveOpacity, renderThemed, roleNamed, fkasPrivate } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { ThemeScope } from "../../theme/theme-scope";
 import { SkeletonReveal } from "./skeleton-reveal";
@@ -439,7 +439,7 @@ describe("lifecycle", () => {
     );
 
     it.each(["together", "sequence"] as const)(
-      "calls onReveal only once the root has eased to taller content's height in a %s reveal",
+      "hides the ghost, fades the bones and calls onReveal only once the root has eased to taller content's height in a %s reveal",
       async (reveal) => {
         type Seen = {
           readonly root: number;
@@ -463,13 +463,29 @@ describe("lifecycle", () => {
                 easing: heightAnimation(root) !== undefined,
               });
             }}>
-            {(shown) => <div style={{ width: 288, height: shown.height }}>Balance 1200 kr</div>}
+            {(shown) => (
+              // A card with a child, which the ghost keeps visible while it stands in.
+              <div data-card="" style={{ width: 288, height: shown.height }}>
+                <span>Balance 1200 kr</span>
+              </div>
+            )}
           </SkeletonReveal>
         );
         const { rerender } = renderThemed(view(null));
         await nextFrames(2);
+        const skeleton = slot("skeleton-reveal-skeleton");
+        const card = slot("skeleton-reveal-ghost", skeleton).querySelector("[data-card]");
+        if (card === null) throw new Error("expected the ghost's card");
+        const bone = slot("skeleton-reveal-bone", slot("skeleton-reveal-bones", skeleton));
+        expect(getComputedStyle(card).visibility).toBe("visible");
         rerender(view({ height: 400 }));
+        // At the swap the card goes at once, while the bones still show and fade out from there.
+        expect(getComputedStyle(card).visibility).toBe("hidden");
+        expect(effectiveOpacity(bone)).toBeGreaterThan(0);
         expect(heightAnimation(slot("skeleton-reveal"))).toBeDefined();
+        // Run to its end, the exit leaves the bones at zero until the pane is removed.
+        finishAnimations();
+        expect(effectiveOpacity(bone)).toBe(0);
         await expect
           .poll(() => {
             finishAnimations();
