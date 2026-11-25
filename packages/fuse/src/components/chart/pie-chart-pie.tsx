@@ -4,10 +4,9 @@
  * The pie's slices. Each slice is a mark of its own on the Root's loop, so it sweeps in on its own
  * stagger, tweens to new data and pops on its own, and the pie's frame paints every slice of a
  * frame together through the rim floor. An estimated slice paints a hatch of its own color, and a
- * missing one draws no arc. A slice that leaves collapses as a ghost. It collapses to Other's seam
- * when it folds into Other, which grows as it takes the slice in, and to its own seam otherwise.
- * The server writes every slice at rest, and the first paint keeps the slices hidden until the
- * chart comes into view.
+ * missing one draws no arc. A slice that leaves collapses as a ghost onto the seam that
+ * `collapseAngle` picks. The server writes every slice at rest, and the first paint keeps the
+ * slices hidden until the chart comes into view.
  */
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement } from "react";
@@ -174,7 +173,6 @@ export function PieChartPie({ cornerRadius = 0, className, style }: PieChartPieP
       observer.disconnect();
     };
   }, [frame, look, box]);
-  // A slice that leaves collapses as a ghost, to Other's seam when it folds, or to its own.
   const drawn = useRef<{ readonly pie: PieDrawing; readonly targets: typeof targets } | null>(null);
   const exits = useRef(0);
   useLayoutEffect(() => {
@@ -284,9 +282,10 @@ function collapseAngle(
   order: number
 ): number {
   const key = before.slices[order]?.key ?? "";
-  const into =
-    after.sliceOf(key) === OTHER_KEY ? after.slices.findIndex((slice) => slice.key === OTHER_KEY) : -1;
-  if (into !== -1) return targets[into]?.[0] ?? after.fill.end;
+  if (after.folds(key)) {
+    const other = after.slices.findIndex((slice) => slice.key === OTHER_KEY);
+    return targets[other]?.[0] ?? after.fill.end;
+  }
   for (const next of before.slices.slice(order + 1)) {
     const place = after.slices.findIndex((slice) => slice.key === next.key);
     if (place !== -1) return targets[place]?.[0] ?? after.fill.end;
