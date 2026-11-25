@@ -429,7 +429,7 @@ function namespaceElements(): ReactElement[] {
       "DayGridCell",
       "DayButton",
     ]),
-    ...renderNamespace("ScrollArea", ScrollArea, ["Root", "Bar"]),
+    ...renderNamespace("ScrollArea", ScrollArea, ["Root", "Viewport", "Bar"]),
     ...renderNamespace("Select", Select, [
       "Root",
       "Trigger",

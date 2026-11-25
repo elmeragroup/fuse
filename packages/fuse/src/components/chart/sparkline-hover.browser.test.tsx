@@ -22,12 +22,12 @@ import {
   hoverIn,
   imageNamed,
   placeIn,
-  rows,
   settleStylesheet,
   shareIn,
   shownIn,
 } from "../../../test/chart/sparkline";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
+import { rows } from "../../../test/screenshot-pixels";
 import { renderThemed } from "../../../test/themed-browser-render";
 import "./chart.css";
 import { Sparkline } from "./sparkline";

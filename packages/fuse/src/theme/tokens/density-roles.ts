@@ -47,6 +47,7 @@ export const PART_DENSITY = {
   attachment: "surface",
   "attachment-group": "layout",
   "attachment-group-viewport": "layout",
+  "attachment-group-focus-indicator": "fixed",
   "attachment-group-list": "surface",
   "attachment-media": "fixed",
   "attachment-aspect-ratio": "layout",

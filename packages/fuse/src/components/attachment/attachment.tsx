@@ -9,7 +9,7 @@ import type { VariantProps } from "tailwind-variants";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
-import { ScrollAreaBar } from "../scroll-area/scroll-area";
+import { FocusIndicator, ScrollAreaBar, ViewportElement } from "../scroll-area/scroll-area";
 import { attachmentVariants } from "./attachment-variants";
 
 const styles = attachmentVariants();
@@ -130,10 +130,7 @@ export function AttachmentGroup({
         data-slot="attachment-group"
         className={mergeClassName(className, styles.group())}
         {...props}>
-        <ScrollAreaPrimitive.Viewport
-          data-slot="attachment-group-viewport"
-          data-focus-ring-control=""
-          className={styles.groupViewport()}>
+        <ViewportElement data-slot="attachment-group-viewport" className={styles.groupViewport()}>
           <ScrollAreaPrimitive.Content
             data-slot="attachment-group-list"
             role="list"
@@ -141,8 +138,11 @@ export function AttachmentGroup({
             className={styles.groupList()}>
             {children}
           </ScrollAreaPrimitive.Content>
-        </ScrollAreaPrimitive.Viewport>
+        </ViewportElement>
         <ScrollAreaBar orientation="horizontal" />
+        {/* A parent of the group may clip, so the viewport's focus outline draws inside the root's
+            edge on this sibling, after the positioned scrollbar, as in `ScrollArea.Root`. */}
+        <FocusIndicator data-slot="attachment-group-focus-indicator" />
       </ScrollAreaPrimitive.Root>
     </AttachmentGroupContext.Provider>
   );

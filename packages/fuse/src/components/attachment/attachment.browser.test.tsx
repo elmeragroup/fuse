@@ -9,7 +9,10 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { settleTransitions } from "../../../test/assert-invalid-ring";
 import { assertNoAxeViolations } from "../../../test/axe";
+import { withForcedColors } from "../../../test/media-emulation";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
+import { expectTokenColor, pixelsAt } from "../../../test/screenshot-pixels";
+import type { Point } from "../../../test/screenshot-pixels";
 import { expectTargetBoxes } from "../../../test/target-size";
 import {
   cssVarColor,
@@ -109,6 +112,114 @@ describe("Attachment.Group", () => {
     expect(items.every((item) => item.parentElement === list)).toBe(true);
     expect(rootOf("loose.txt").getAttribute("role")).toBeNull();
     await assertNoAxeViolations(host);
+  });
+
+  /**
+   * Four 160px previewable rows in a 200px group, flush inside a parent that clips, so the list
+   * overflows and any focus ring drawn outside the group's edge is cut off.
+   */
+  function ClippedGroup(): ReactElement {
+    return (
+      <>
+        <button type="button">Before the group</button>
+        <div style={{ width: "200px", overflow: "hidden" }}>
+          <Attachment.Group aria-label="Clipped files">
+            {["a.pdf", "b.pdf", "c.pdf", "d.pdf"].map((name) => (
+              <FileRow key={name} name={name}>
+                <Attachment.Trigger aria-label={`Preview ${name}`} />
+              </FileRow>
+            ))}
+          </Attachment.Group>
+        </div>
+      </>
+    );
+  }
+
+  /** The group root around its list, the element the parent clips to. */
+  function groupOf(list: HTMLElement): HTMLElement {
+    // The group root has no role; locate it by the mandated data-slot.
+    const group = list.closest("[data-slot=attachment-group]");
+    if (!(group instanceof HTMLElement)) {
+      throw new Error("expected a group around the list");
+    }
+    return group;
+  }
+
+  type Points = Readonly<Record<string, Point>>;
+
+  /** The outer two pixels of each of the group's four edges, halfway along that edge. */
+  function edgePoints(group: HTMLElement) {
+    const width = group.clientWidth;
+    const height = group.clientHeight;
+    const column = Math.round(width / 2);
+    const row = Math.round(height / 2);
+    return {
+      top0: [column, 0],
+      top1: [column, 1],
+      bottom1: [column, height - 2],
+      bottom0: [column, height - 1],
+      left0: [0, row],
+      left1: [1, row],
+      right1: [width - 2, row],
+      right0: [width - 1, row],
+    } satisfies Points;
+  }
+
+  /** The colors of one screenshot of the group at each named point. */
+  async function sample(group: HTMLElement, points: Points): Promise<Record<string, number[]>> {
+    const pixels = await pixelsAt(group, Object.values(points));
+    return Object.fromEntries(Object.keys(points).map((name, index) => [name, pixels[index] ?? []]));
+  }
+
+  describe.each(["none", "active"] as const)("with forced colors %s", (forcedColors) => {
+    it("draws the keyboard focus outline on all four edges inside a parent that clips", async () => {
+      await withForcedColors(forcedColors, async () => {
+        renderThemed(<ClippedGroup />);
+        const list = roleNamed("list", "Clipped files");
+        const viewport = viewportOf(list);
+        const group = groupOf(list);
+        await expect.poll(() => viewport.hasAttribute("data-has-overflow-x")).toBe(true);
+        roleNamed("button", "Before the group").focus();
+        const before = await sample(group, edgePoints(group));
+        await userEvent.tab();
+        expect(document.activeElement).toBe(viewport);
+        expect(viewport.matches(":focus-visible")).toBe(true);
+        const after = await sample(group, edgePoints(group));
+        for (const [edge, pixel] of Object.entries(after)) {
+          expect(pixel, `${edge} after focus`).not.toEqual(before[edge]);
+          if (forcedColors === "none") {
+            expectTokenColor(pixel, group, "--ring", `${edge} after focus`);
+          }
+        }
+      });
+    });
+  });
+
+  it("paints a focused tile's own ring inside the list and leaves the group's edge unpainted", async () => {
+    renderThemed(<ClippedGroup />);
+    const list = roleNamed("list", "Clipped files");
+    const group = groupOf(list);
+    await expect.poll(() => viewportOf(list).hasAttribute("data-has-overflow-x")).toBe(true);
+    roleNamed("button", "Before the group").focus();
+    const edges = edgePoints(group);
+    const before = await sample(group, edges);
+    await userEvent.tab();
+    await userEvent.tab();
+    const trigger = roleNamed("button", "Preview a.pdf");
+    expect(document.activeElement).toBe(trigger);
+    // The ring is a 2px shadow around the trigger's box; sample both of its columns at the start side.
+    const box = trigger.getBoundingClientRect();
+    const origin = group.getBoundingClientRect();
+    const row = Math.round(box.top - origin.top + box.height / 2);
+    const start = Math.round(box.left - origin.left);
+    const { ringOuter, ringInner, ...after } = await sample(group, {
+      ...edges,
+      ringOuter: [start - 2, row],
+      ringInner: [start - 1, row],
+    });
+    expect(after).toEqual(before);
+    expectTokenColor(ringOuter ?? [], group, "--ring", "ring outer column");
+    expectTokenColor(ringInner ?? [], group, "--ring", "ring inner column");
   });
 });
 

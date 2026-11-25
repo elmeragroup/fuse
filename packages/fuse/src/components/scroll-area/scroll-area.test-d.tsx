@@ -5,12 +5,12 @@ import { expectTypeOf, test } from "vitest";
 import type { ScrollArea as RootScrollArea } from "@elmeragroup/fuse";
 import { ScrollArea } from "@elmeragroup/fuse/scroll-area";
 
-test("the public namespace is Root + Bar on both entries", () => {
+test("the public namespace is Root, Viewport and Bar on both entries", () => {
   expectTypeOf<typeof ScrollArea>().toEqualTypeOf<typeof RootScrollArea>();
   expectTypeOf(ScrollArea.Root).toBeFunction();
+  expectTypeOf(ScrollArea.Viewport).toBeFunction();
   expectTypeOf(ScrollArea.Bar).toBeFunction();
   expectTypeOf(ScrollArea).not.toHaveProperty("ScrollBar");
-  expectTypeOf(ScrollArea).not.toHaveProperty("Viewport");
   expectTypeOf(ScrollArea).not.toHaveProperty("Content");
   expectTypeOf(ScrollArea).not.toHaveProperty("Corner");
 });
