@@ -192,15 +192,16 @@ function widestLabel(
 }
 
 /**
- * The widest the popup's content will be on any step: its max-content width with the widest item
- * label in place of the current one, wherever the popup prints it, in the label line and in the rows
- * that name the item, each in its own font. A popup's lines are its item's label and rows that name
- * it, so its width follows the label, and a lane chosen for the widest label never has to change
- * for a longer one later. The text goes back before the measure returns, in the same task, so
- * nothing paints it and React's text nodes end as they were. The estimate applies only while the
- * label line carries the TooltipLabel's marker and reads as the label the marker holds, the active
- * item's in Root's format. A line whose `format` changes the text, whose `children` or `render`
- * element replace it, or whose `render` function prints other text, is measured as it reads.
+ * The popup's content width, measured one of two ways. While the label line carries the
+ * TooltipLabel's default-label marker, Fuse prints the label, so the measure covers every step: the
+ * popup's max-content width with the widest item label in place of the current one, wherever the
+ * popup prints it, in the label line and in the rows that name the item, each in its own font. A
+ * lane chosen for that width never has to change for a longer label later. The text goes back
+ * before the measure returns, in the same task, so nothing paints it and React's text nodes end as
+ * they were. Without the marker, the measure is the popup's max-content width as it reads on this
+ * step, and a later step that prints wider content widens the popup then. The TooltipLabel decides
+ * when it writes the marker. A host element that carries the marker but shows other text through
+ * its own props, such as a `<textarea>`'s `value`, is also measured as it reads.
  *
  * @param popup - The popup.
  * @param readout - The Root's readout, whose items' labels the popup prints.
@@ -226,6 +227,20 @@ function widestContent(
   const width = contentWidth(popup);
   for (const node of swapped) node.data = now;
   return width;
+}
+
+/**
+ * Whether a batch of mutation records changes the popup's text, and not only swaps a text out and
+ * back as `widestContent` does. A node's first record holds its text before the batch.
+ */
+function changesContent(records: readonly MutationRecord[]): boolean {
+  const before = new Map<Node, string | null>();
+  for (const record of records) {
+    if (record.type !== "characterData") return true;
+    if (!before.has(record.target)) before.set(record.target, record.oldValue);
+  }
+  for (const [node, text] of before) if (node.textContent !== text) return true;
+  return false;
 }
 
 /**
@@ -622,6 +637,50 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   const lane = useRef<LaneNow | null>(null);
   const before = useRef<LaneSide | null>(null);
   const sizing = useRef<number | null>(null);
+  /** The latest step's content measure, which runs in the next frame once per frame. */
+  const sizeStep = useRef<(() => void) | null>(null);
+  const sizeSoon = useCallback((): void => {
+    sizing.current ??= requestAnimationFrame(() => {
+      sizing.current = null;
+      sizeStep.current?.();
+    });
+  }, []);
+  /**
+   * The watch on the open popup's content. A custom label can print other content while the active
+   * item and the angle stay, such as a series name on a radar spoke as the focus moves between
+   * series, and the popup measures that content in the next frame.
+   */
+  const watching = useRef<{ readonly popup: HTMLElement; readonly watch: MutationObserver } | null>(null);
+  const watchContent = useCallback(
+    (popup: HTMLElement | null): void => {
+      if (watching.current?.popup === popup) return;
+      watching.current?.watch.disconnect();
+      watching.current = null;
+      if (popup === null) return;
+      const watch = new MutationObserver((records) => {
+        if (changesContent(records)) sizeSoon();
+      });
+      watch.observe(popup, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        characterDataOldValue: true,
+      });
+      watching.current = { popup, watch };
+    },
+    [sizeSoon]
+  );
+  /**
+   * Ends the content watch and drops a queued measure, and clears both, so a popup that opens again
+   * starts a fresh watch. A close ends them, and so does the anchor's teardown. A Suspense boundary
+   * that hides the Tooltip runs that teardown while the popup stays in the page, and reveals the
+   * same popup.
+   */
+  const stopSizing = useCallback((): void => {
+    watchContent(null);
+    if (sizing.current !== null) cancelAnimationFrame(sizing.current);
+    sizing.current = null;
+  }, [watchContent]);
   const placing = useRef<number | null>(null);
   /**
    * The lane fade that runs, which a close, a new open, the next fade or a key step cancels: a script
@@ -646,10 +705,10 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
   });
   useLayoutEffect(
     () => () => {
-      if (sizing.current !== null) cancelAnimationFrame(sizing.current);
+      stopSizing();
       if (placing.current !== null) cancelAnimationFrame(placing.current);
     },
-    []
+    [stopSizing]
   );
   /**
    * Whether the scene already holds the popup's content as it is now, so the lane it sits in is the
@@ -741,12 +800,13 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
         if (popup === null) return;
         watch.disconnect();
         mounting.current = null;
+        watchContent(popup);
         hold(popup, needed);
       });
       watch.observe(document.body, { childList: true, subtree: true });
       mounting.current = watch;
     },
-    [positioner, hold]
+    [positioner, hold, watchContent]
   );
   useLayoutEffect(() => () => mounting.current?.disconnect(), []);
   useLayoutEffect(() => {
@@ -757,6 +817,8 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       before.current = null;
       mounting.current?.disconnect();
       mounting.current = null;
+      // A measure queued before the close would widen the popup as it fades out.
+      stopSizing();
       const running = fade.current;
       fade.current = null;
       if (running !== null) handOver(running, popupOf(positioner.current));
@@ -795,8 +857,7 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     shiftPopup(positioner.current, lane.current, kernel.follow.shown());
     // The step's new content is measured in this frame's animation callback, before it paints, with
     // the frame's own style pass instead of a forced one in the pointer's event.
-    sizing.current ??= requestAnimationFrame(() => {
-      sizing.current = null;
+    sizeStep.current = () => {
       const node = positioner.current;
       const now = lane.current;
       if (node === null || now === null) return;
@@ -819,9 +880,11 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
       // known, and keeps the scene settles a key step's placement.
       else if (room !== null && width !== null && popup !== null && popup.textContent !== "")
         keyPlacement.current = null;
-    });
+    };
+    sizeSoon();
     const node = positioner.current;
     const popup = popupOf(node);
+    watchContent(popup);
     // The positioner takes the popup's one width in its lane, its widest content within the room,
     // and the popup fills it, so new text never changes its width, its edges never move from step
     // to step, and Base UI never moves it a frame later; a label longer than the lane wraps. A
@@ -855,6 +918,9 @@ export function usePolarTooltipAnchor(input: AnchorInput): TooltipAnchor {
     hold,
     holdOnMount,
     readout,
+    sizeSoon,
+    stopSizing,
+    watchContent,
   ]);
   useLayoutEffect(
     () =>

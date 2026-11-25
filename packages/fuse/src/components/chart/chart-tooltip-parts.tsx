@@ -24,13 +24,23 @@ import type { ChartDomProps, ChartFractionDigits, ValueFormat, XFormat } from ".
  *
  * @beta
  */
-export type ChartTooltipLabelProps = ChartDomProps<"span"> & {
+export type ChartTooltipLabelProps = Omit<ChartDomProps<"span">, "render"> & {
   /**
    * The slot label format. Defaults to Root's `xFormat`. A clock's slots take it, and the
    * categories of pie, radial and radar charts print as they are. A linear axis prints its x number
    * in Root's `xFormat`, so it does not read this.
    */
   format?: XFormat;
+  /**
+   * The element or function that renders the label in place of its `span`. In a pie, radial, radar
+   * or clock chart, the popup opens wide enough for the widest item label while Fuse prints the
+   * label in Root's format. Fuse prints it when the label has no `children` and either no `render`
+   * or a `render` element of an HTML tag without children of its own, such as `<strong />`.
+   * Otherwise the popup measures the content it shows, and measures it again whenever that content
+   * changes. The popup keeps the largest width it has measured for the same chart data, across steps
+   * and reopenings. A popup in a side lane is at most 256 px wide, so a wider label wraps there.
+   */
+  render?: useRender.ComponentProps<"span">["render"];
 };
 
 /**
@@ -79,16 +89,23 @@ export function ChartTooltipLabel({
   const active = useActiveIndex(readout);
   const text = active === null ? null : readout.activeLabel(active, format);
   // The marker holds the item's label in Root's format, which a polar popup's width estimate prints.
-  // A `format` the readout ignores keeps it. `children`, or a `render` element's own, replace the
-  // text on every step, and fixed text that reads as one item's label would take the estimate on
-  // that step, so they drop it. A `render` function's text is checked in the DOM.
-  // A server-rendered `render` element arrives lazy, so it is unwrapped before its children are read.
+  // A `format` the readout ignores keeps it. The label carries it only while Fuse prints its text.
+  // A `render` function or component can print the label on one step and other text, such as an
+  // abbreviation of a long name, on the next, and one step's DOM cannot tell which. Children of the
+  // label or its element replace the text on every step, and fixed text that reads as one item's
+  // label would take the estimate on that step. A `children` key set to `undefined` counts, since
+  // it erases the text through the merge.
+  // A server-rendered `render` element arrives lazy, so it is unwrapped before its type is read.
   const element = unwrapLazyRenderProp(render);
-  const replaced =
-    props.children !== undefined ||
-    (isValidElement<{ readonly children?: unknown }>(element) && element.props.children !== undefined);
+  const printsLabel =
+    !("children" in props) &&
+    (element === undefined ||
+      (isValidElement<object>(element) &&
+        // oxlint-disable-next-line anti-slop/no-runtime-typeof -- React's element contract: a string `type` is an HTML tag, which prints the children Fuse gives it
+        typeof element.type === "string" &&
+        !("children" in element.props)));
   const marked =
-    active !== null && !replaced && text === readout.activeLabel(active, undefined)
+    active !== null && printsLabel && text === readout.activeLabel(active, undefined)
       ? defaultLabelMarker(text)
       : {};
   const merged = mergeProps<"span">({ className, children: text }, props);

@@ -6,11 +6,21 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import { nextFrames, recordFrames } from "../../../test/animation-frames";
 import { label, pointerAt, popup } from "../../../test/chart/marks";
+import { SPOKE_CONFIG } from "../../../test/chart/polar-fixtures";
+import {
+  LETTER_SPOKES,
+  opacity,
+  pausedExit,
+  Pie,
+  side,
+  tabIn,
+  THREE_PART_BILL,
+  THREE_PART_BILL_CONFIG,
+  viewport,
+} from "../../../test/chart/polar-root";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
-import type { ChartConfig } from "./chart-types";
 import "./chart.css";
-import { ClockChart } from "./clock-chart-namespace";
 import { PieChart } from "./pie-chart-namespace";
 import { RadarChart } from "./radar-chart-namespace";
 import { RadialChart } from "./radial-chart-namespace";
@@ -24,56 +34,6 @@ afterEach(() => {
   document.removeEventListener("keydown", recordKey);
   keys.length = 0;
 });
-
-/** A bill's parts as shares of 100, so each value prints as its own share. */
-const BILL = [
-  { name: "strom", v: 62 },
-  { name: "nettleie", v: 34 },
-  { name: "avgifter", v: 4 },
-];
-
-const BILL_CONFIG = {
-  strom: { label: "Strøm", color: "chart-1" },
-  nettleie: { label: "Nettleie", color: "chart-2" },
-  avgifter: { label: "Avgifter", color: "chart-3" },
-} as const;
-
-/** Two series over three categories. */
-const SPOKES = [
-  { cat: "a", v: 1, w: 3 },
-  { cat: "b", v: 2, w: 2 },
-  { cat: "c", v: 3, w: 1 },
-];
-
-const SPOKE_CONFIG = {
-  v: { label: "Forbruk", color: "chart-1" },
-  w: { label: "Pris", color: "chart-2" },
-} as const;
-
-function Pie({
-  children,
-  width = 400,
-  data = BILL,
-  config = BILL_CONFIG,
-  ...props
-}: {
-  readonly children?: ReactNode;
-  readonly width?: number;
-  readonly data?: readonly { readonly name: string; readonly v: number }[];
-  readonly config?: ChartConfig;
-  readonly startAngle?: number;
-  readonly endAngle?: number;
-}) {
-  return (
-    <LocaleProvider locale="nb-NO">
-      <div style={{ width }}>
-        <PieChart.Root data={data} config={config} nameKey="name" valueKey="v" aria-label="Kake" {...props}>
-          {children}
-        </PieChart.Root>
-      </div>
-    </LocaleProvider>
-  );
-}
 
 /** The focused option's name, position and set size. */
 function focused(): readonly [string | null, string | null, string | null] {
@@ -112,66 +72,11 @@ async function hover(x: number, y: number): Promise<void> {
   await pointerAt(x, y);
 }
 
-/** The popup's lane, as Base UI marks the side its positioner sits on. */
-function side(): string | null {
-  // The popup portals out of the host, and its positioner is its parent.
-  return popup()?.parentElement?.getAttribute("data-side") ?? null;
-}
-
-/** The open popup's computed opacity, or NaN while none is open. */
-function opacity(): number {
-  const open = popup();
-  return open === null ? Number.NaN : Number(getComputedStyle(open).opacity);
-}
-
-/** Tabs from the button before the chart onto the chart. */
-async function tabIn(host: HTMLElement): Promise<void> {
-  host.querySelector("button")?.focus();
-  await userEvent.keyboard("{Tab}");
-}
-
 /** Tabs onto the chart, which opens Strøm's popup, and waits until it shows. */
 async function enter(host: HTMLElement): Promise<void> {
   await tabIn(host);
   await expect.poll(label).toBe("Strøm");
   await expect.poll(opacity).toBe(1);
-}
-
-/**
- * Sets the viewport and waits until the browser has delivered the resize, so no late resize lands
- * during the test. The next test gets the default viewport back.
- */
-async function viewport(width: number, height: number): Promise<void> {
-  await page.viewport(width, height);
-  onTestFinished(() => page.viewport(414, 896));
-  await expect.poll(() => [window.innerWidth, window.innerHeight]).toEqual([width, height]);
-  await nextFrames(2);
-}
-
-/** How many lines an element's text wraps to, or 0 when there is no element. */
-function lineCount(element: Element | null): number {
-  if (element === null) return 0;
-  const range = document.createRange();
-  range.selectNodeContents(element);
-  // A range's client rects hold one box per line of each text run, so equal tops share a line.
-  return new Set([...range.getClientRects()].map((box) => Math.round(box.top))).size;
-}
-
-/** The width `text` takes on one line in the font `like` computes, measured outside any popup. */
-function unwrappedWidth(like: Element, text: string): number {
-  const style = getComputedStyle(like);
-  const probe = document.createElement("span");
-  probe.textContent = text;
-  Object.assign(probe.style, {
-    position: "absolute",
-    whiteSpace: "nowrap",
-    font: style.font,
-    letterSpacing: style.letterSpacing,
-  });
-  document.body.append(probe);
-  const { width } = probe.getBoundingClientRect();
-  probe.remove();
-  return width;
 }
 
 describe("the polar Root's structure", () => {
@@ -213,7 +118,7 @@ describe("the polar Root's structure", () => {
   it("orients a radar's listbox horizontally and reads the cartesian key help", () => {
     const { host } = renderThemed(
       <LocaleProvider locale="nb-NO">
-        <RadarChart.Root data={SPOKES} config={SPOKE_CONFIG} nameKey="cat" aria-label="Radar" />
+        <RadarChart.Root data={LETTER_SPOKES} config={SPOKE_CONFIG} nameKey="cat" aria-label="Radar" />
       </LocaleProvider>
     );
     expect(page.getByRole("listbox").element().getAttribute("aria-orientation")).toBe("horizontal");
@@ -245,8 +150,8 @@ describe("the pie and radial key maps", () => {
     renderThemed(
       <LocaleProvider locale="nb-NO">
         <RadialChart.Root
-          data={BILL}
-          config={BILL_CONFIG}
+          data={THREE_PART_BILL}
+          config={THREE_PART_BILL_CONFIG}
           nameKey="name"
           valueKey="v"
           max={100}
@@ -275,7 +180,7 @@ describe("the radar key map", () => {
   it("moves between spokes with Left and Right, wrapping, and between series with Up and Down", async () => {
     renderThemed(
       <LocaleProvider locale="nb-NO">
-        <RadarChart.Root data={SPOKES} config={SPOKE_CONFIG} nameKey="cat" aria-label="Radar" />
+        <RadarChart.Root data={LETTER_SPOKES} config={SPOKE_CONFIG} nameKey="cat" aria-label="Radar" />
       </LocaleProvider>
     );
     await userEvent.tab();
@@ -356,34 +261,6 @@ describe("Escape and pinning", () => {
     expect(figureOf(host).hasAttribute("data-pinned")).toBe(true);
   });
 });
-
-/**
- * Pauses the popup's exit halfway. Once Base UI marks the popup `data-ending-style`, the helper holds
- * its opacity transition toward the close's 0 at half its duration.
- *
- * @param popup - The open popup.
- * @returns The paused transition.
- */
-function pausedExit(popup: HTMLElement): Promise<Animation> {
-  return new Promise((resolve, reject) => {
-    const observer = new MutationObserver(() => {
-      if (!popup.hasAttribute("data-ending-style")) return;
-      observer.disconnect();
-      // Reading them computes the ending style, which starts the exit's transitions.
-      const fade = popup
-        .getAnimations()
-        .find((running) => running instanceof CSSTransition && running.transitionProperty === "opacity");
-      if (fade === undefined) {
-        reject(new Error("no exit transition"));
-        return;
-      }
-      fade.pause();
-      fade.currentTime = Number(fade.effect?.getComputedTiming().duration) / 2;
-      resolve(fade);
-    });
-    observer.observe(popup, { attributes: true, attributeFilter: ["data-ending-style"] });
-  });
-}
 
 describe("the tooltip's placement hold", () => {
   it("shows a popup that reopens on the dial's other half during its exit transparent in its new lane", async () => {
@@ -590,11 +467,15 @@ describe("a key step that changes the tooltip's lane", () => {
         <button type="button">før</button>
         <div style={{ width }}>
           {series === "both" ? (
-            <RadarChart.Root data={SPOKES} config={SPOKE_CONFIG} nameKey="cat" aria-label="Radar">
+            <RadarChart.Root data={LETTER_SPOKES} config={SPOKE_CONFIG} nameKey="cat" aria-label="Radar">
               <RadarChart.Tooltip />
             </RadarChart.Root>
           ) : (
-            <RadarChart.Root data={SPOKES} config={{ v: SPOKE_CONFIG.v }} nameKey="cat" aria-label="Radar">
+            <RadarChart.Root
+              data={LETTER_SPOKES}
+              config={{ v: SPOKE_CONFIG.v }}
+              nameKey="cat"
+              aria-label="Radar">
               <RadarChart.Tooltip />
             </RadarChart.Root>
           )}
@@ -666,8 +547,8 @@ describe("Table, Empty and Skeleton", () => {
     renderThemed(
       <LocaleProvider locale="nb-NO">
         <PieChart.Root
-          data={BILL.map(({ name }) => ({ name, v: 0 }))}
-          config={BILL_CONFIG}
+          data={THREE_PART_BILL.map(({ name }) => ({ name, v: 0 }))}
+          config={THREE_PART_BILL_CONFIG}
           nameKey="name"
           valueKey="v"
           aria-label="Kake">
@@ -745,240 +626,5 @@ describe("the tooltip's lane around parts that take a consumer's data-slot", () 
         () => (popup()?.getBoundingClientRect().bottom ?? Infinity) <= headline.getBoundingClientRect().top
       )
       .toBe(true);
-  });
-
-  it("opens at the widest label's width under a TooltipLabel that takes its own data-slot", async () => {
-    const config = {
-      ...BILL_CONFIG,
-      avgifter: { label: "Offentlige avgifter og gebyrer", color: "chart-3" },
-    } as const;
-    const { host } = renderThemed(
-      <>
-        <button type="button">før</button>
-        <Pie width={300} config={config}>
-          <PieChart.Tooltip>
-            <PieChart.TooltipLabel data-slot="bill-label" />
-          </PieChart.Tooltip>
-        </Pie>
-      </>
-    );
-    // The label takes the consumer's slot, so its own slot finds it.
-    const labelOf = (): HTMLElement | null =>
-      popup()?.querySelector<HTMLElement>('[data-slot="bill-label"]') ?? null;
-    const shown = (): string | null => labelOf()?.textContent ?? null;
-    await tabIn(host);
-    await expect.poll(shown).toBe("Strøm");
-    const width = (): number => popup()?.getBoundingClientRect().width ?? 0;
-    await expect.poll(opacity).toBe(1);
-    const first = width();
-    const longest = labelOf();
-    if (longest === null) throw new Error("no label");
-    // The longest label's width on one line, measured apart from the popup in the label's font.
-    expect(first).toBeGreaterThanOrEqual(unwrappedWidth(longest, "Offentlige avgifter og gebyrer"));
-    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
-    await expect.poll(shown).toBe("Offentlige avgifter og gebyrer");
-    // The step has laid the longest label out once it reads as one line.
-    await expect.poll(() => lineCount(labelOf())).toBe(1);
-    // The popup opened as wide as the longest label, so the step changes no width.
-    expect(Math.abs(width() - first)).toBeLessThanOrEqual(0.5);
-  });
-});
-
-describe("the popup's width under a TooltipLabel that prints its own text", () => {
-  /** The open popup's label line. */
-  const labelLine = (): HTMLElement | null =>
-    popup()?.querySelector<HTMLElement>('[data-slot="chart-tooltip-label"]') ?? null;
-
-  /**
-   * Expects the open popup to hold its label, once it reads as `text` matches, on one line, as wide
-   * as the label's text set apart from the popup in the label's font.
-   */
-  async function expectOneLine(text: string | RegExp): Promise<void> {
-    await expect.poll(() => labelLine()?.textContent ?? "").toMatch(text);
-    await expect.poll(opacity).toBe(1);
-    const line = labelLine();
-    if (line === null) throw new Error("no label");
-    expect(lineCount(line)).toBe(1);
-    expect(popup()?.getBoundingClientRect().width ?? 0).toBeGreaterThanOrEqual(
-      unwrappedWidth(line, line.textContent)
-    );
-  }
-
-  it("opens a pie's popup as wide as a label whose render element brings its own text", async () => {
-    // The text is wider than any slice's name, which the popup's estimate prints.
-    const text = "Andel av månedens strømregning";
-    const { host } = renderThemed(
-      <>
-        <button type="button">før</button>
-        <Pie width={300}>
-          <PieChart.Tooltip>
-            <PieChart.TooltipLabel render={<span>{text}</span>} />
-          </PieChart.Tooltip>
-        </Pie>
-      </>
-    );
-    await tabIn(host);
-    await expectOneLine(text);
-  });
-
-  /** A bill whose last part's name is wider than a side lane holds. */
-  const LONG_CONFIG = {
-    ...BILL_CONFIG,
-    avgifter: { label: "Offentlige avgifter, gebyrer og merverdiavgift på strøm", color: "chart-3" },
-  } as const;
-
-  /** A pie of `width` whose TooltipLabel prints `text` in place of the slice's name. */
-  function detailPie(width: number, text = "Detaljer"): ReactNode {
-    return (
-      <>
-        <button type="button">før</button>
-        <Pie width={width} config={LONG_CONFIG}>
-          <PieChart.Tooltip>
-            <PieChart.TooltipLabel render={<span>{text}</span>} />
-          </PieChart.Tooltip>
-        </Pie>
-      </>
-    );
-  }
-
-  it("rests a short label of its own in a side lane, whatever the slices' names", async () => {
-    // A side lane is capped below the long name's width, so a popup sized for that name would
-    // take the lane below the dial.
-    await viewport(1024, 768);
-    const { host } = renderThemed(detailPie(650));
-    await tabIn(host);
-    await expectOneLine("Detaljer");
-    expect(["left", "right"]).toContain(side());
-  });
-
-  it("keeps a short label of its own in a side lane inside a short viewport", async () => {
-    // The viewport has no room below or above the dial, so only a side lane keeps the popup in view.
-    await viewport(1024, 220);
-    const { host } = renderThemed(detailPie(495));
-    await tabIn(host);
-    await expectOneLine("Detaljer");
-    expect(["left", "right"]).toContain(side());
-    const box = popup()?.getBoundingClientRect();
-    expect(box?.top).toBeGreaterThanOrEqual(0);
-    expect(box?.bottom).toBeLessThanOrEqual(window.innerHeight);
-  });
-
-  // Each function spreads the props it gets. One replaces their string children with its own
-  // text, and one uppercases them. The row below still prints the slice's name. Sized for the long
-  // last name in that row, the popup would need the lane below or above the dial, which the
-  // viewport has no room for.
-  it.each([
-    { prints: "its own text", text: "Detaljer", print: (): string => "Detaljer" },
-    {
-      prints: "the label uppercased",
-      text: "STRØM",
-      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- the consumer contract under test: a render function receives the label as string children
-      print: (children: ReactNode): string => (typeof children === "string" ? children.toUpperCase() : ""),
-    },
-  ])(
-    "keeps a render function that prints $prints in a side lane inside a short viewport",
-    async ({ text, print }) => {
-      await viewport(1024, 220);
-      const { host } = renderThemed(
-        <>
-          <button type="button">før</button>
-          <Pie width={495} config={LONG_CONFIG}>
-            <PieChart.Tooltip>
-              <PieChart.TooltipLabel render={(props) => <span {...props}>{print(props.children)}</span>} />
-              <PieChart.TooltipItems>
-                <PieChart.SeriesLabel />
-              </PieChart.TooltipItems>
-            </PieChart.Tooltip>
-          </Pie>
-        </>
-      );
-      await tabIn(host);
-      await expectOneLine(text);
-      expect(["left", "right"]).toContain(side());
-      const box = popup()?.getBoundingClientRect();
-      expect(box?.top).toBeGreaterThanOrEqual(0);
-      expect(box?.bottom).toBeLessThanOrEqual(window.innerHeight);
-    }
-  );
-
-  it("opens at the widest name's width under a format the pie does not use", async () => {
-    // A pie prints its slices' names whatever the format, so the label reads as Root's labels do.
-    const longest = "Offentlige avgifter og gebyrer";
-    const config = { ...BILL_CONFIG, avgifter: { label: longest, color: "chart-3" } } as const;
-    const { host } = renderThemed(
-      <>
-        <button type="button">før</button>
-        <Pie width={300} config={config}>
-          <PieChart.Tooltip>
-            <PieChart.TooltipLabel format="date" />
-          </PieChart.Tooltip>
-        </Pie>
-      </>
-    );
-    await tabIn(host);
-    await expect.poll(() => labelLine()?.textContent).toBe("Strøm");
-    await expect.poll(opacity).toBe(1);
-    const width = (): number => popup()?.getBoundingClientRect().width ?? 0;
-    const first = width();
-    const line = labelLine();
-    if (line === null) throw new Error("no label");
-    // The longest name's width on one line, measured apart from the popup in the label's font.
-    expect(first).toBeGreaterThanOrEqual(unwrappedWidth(line, longest));
-    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
-    await expect.poll(() => labelLine()?.textContent).toBe(longest);
-    await expect.poll(() => lineCount(labelLine())).toBe(1);
-    // The popup opened as wide as the longest name, so the step changes no width.
-    expect(Math.abs(width() - first)).toBeLessThanOrEqual(0.5);
-  });
-
-  it("keeps a label of its own that reads as a slice's name in view inside a short viewport", async () => {
-    // The label prints "Strøm", the first slice's name, on every step. Sized for the long last
-    // name, the popup would need the lane below or above the dial, which the viewport has no room
-    // for.
-    await viewport(1024, 220);
-    const { host } = renderThemed(detailPie(495, "Strøm"));
-    await tabIn(host);
-    await expectOneLine("Strøm");
-    expect(["left", "right"]).toContain(side());
-    const box = popup()?.getBoundingClientRect();
-    expect(box?.top).toBeGreaterThanOrEqual(0);
-    expect(box?.bottom).toBeLessThanOrEqual(window.innerHeight);
-  });
-
-  it("opens a clock's popup as wide as a label in its own format", async () => {
-    // The label's own format prints a long date and time, wider than the "00–01" range in Root's
-    // format, which the popup's estimate prints.
-    const day = Date.parse("2025-10-24T22:00:00Z");
-    const format = {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      hour: "2-digit",
-      minute: "2-digit",
-    } as const;
-    const data = Array.from({ length: 24 }, (_, hour) => ({ start: day + hour * 3_600_000, kwh: 1 }));
-    const { host } = renderThemed(
-      <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
-        <button type="button">før</button>
-        <div style={{ width: 320 }}>
-          <ClockChart.Root
-            data={data}
-            config={{ kwh: { label: "kWh", color: "chart-1" } }}
-            xKey="start"
-            cycle="day"
-            interval="hour"
-            data-intro="none"
-            aria-label="Døgn">
-            <ClockChart.Column dataKey="kwh" />
-            <ClockChart.Tooltip>
-              <ClockChart.TooltipLabel format={format} />
-            </ClockChart.Tooltip>
-          </ClockChart.Root>
-        </div>
-      </LocaleProvider>
-    );
-    await tabIn(host);
-    // Intl may print a no-break space between the parts, which `\s` matches.
-    await expectOneLine(/^lørdag\s25\.\soktober\skl\.\s00:00$/u);
   });
 });

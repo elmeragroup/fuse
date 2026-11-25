@@ -1954,7 +1954,6 @@
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/chart/chart-tooltip-parts.tsx",
       "forwardedFrom": [
-        "@base-ui/react",
         "@types/react"
       ],
       "forwardedCount": 277,
@@ -1970,13 +1969,11 @@
         },
         {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<HTMLProps, {}> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "The element or function that renders the label in place of its `span`. In a pie, radial, radar or clock chart, the popup opens wide enough for the widest item label while Fuse prints the label in Root's format. Fuse prints it when the label has no `children` and either no `render` or a `render` element of an HTML tag without children of its own, such as `<strong />`. Otherwise the popup measures the content it shows, and measures it again whenever that content changes. The popup keeps the largest width it has measured for the same chart data, across steps and reopenings. A popup in a side lane is at most 256 px wide, so a wider label wraps there.",
           "required": false
         },
         {
