@@ -465,7 +465,8 @@ export function create(props: PhoneEditorProps): PhoneEditorState {
  * The waiting proposal when the new props show it, to become the accepted number, else `null`.
  * Releasing `countryCode` judges it as if the parent had set the country shown before, so the
  * field keeps showing it; releasing `value` accepts nothing, and drops a proposal the parent held
- * its value against, as releasing `countryCode` keeps the shown country.
+ * its value against, as releasing `countryCode` keeps the shown country. A release that comes with
+ * a metadata replacement still takes a proposal the held value shows, through {@link settleProps}.
  */
 function adoptedProposal(stored: EditorRecord, next: EditorRecord, before: Snapshot): WaitingProposal | null {
   const { waiting } = stored;
@@ -718,7 +719,7 @@ export function reconcile(state: PhoneEditorState, props: PhoneEditorProps): Pho
     props.value !== stored.value ||
     props.countryCode !== stored.countryCode;
   const record = changesReading
-    ? settle(stored, {
+    ? settleProps(stored, {
         ...stored,
         ...settings,
         configuration,
@@ -734,6 +735,29 @@ export function reconcile(state: PhoneEditorState, props: PhoneEditorProps): Pho
     : kept(stored, settings);
   const caret = shownCaret(record);
   return record === stored && caret === stored.caret ? state : succeed(stored, { ...record, caret });
+}
+
+/**
+ * The record for new props that change how the number reads, as {@link settle} gives it. A render
+ * that releases `value` and replaces the metadata, under a `countryCode` that resolves where it
+ * did, settles twice: first as the render that replaces the metadata with the previous `value`
+ * still held, then as the release. So the release starts from the number that render shows, and
+ * the field submits the same number whether the replacement came a render earlier or with the
+ * release (#1015). A country control that starts or moves in this render settles once, from the
+ * number shown before, under the pick rules {@link settle} follows. For example, an FI-controlled
+ * field that already shows `+46701234567` as an SE number, given new metadata and released with
+ * `countryCode="SE"`, keeps the number and sends no pick notice.
+ */
+function settleProps(stored: EditorRecord, next: EditorRecord): EditorRecord {
+  const releasesWithReplacement =
+    stored.value !== undefined &&
+    next.value === undefined &&
+    stored.configuration.metadata !== next.configuration.metadata &&
+    stored.countryCode !== undefined &&
+    controlledCountry(next)?.code === controlledCountry(stored)?.code;
+  return releasesWithReplacement
+    ? settle(settle(stored, { ...next, value: stored.value }), next)
+    : settle(stored, next);
 }
 
 /**

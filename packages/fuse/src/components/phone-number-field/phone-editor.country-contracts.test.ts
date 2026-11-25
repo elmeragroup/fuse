@@ -19,6 +19,7 @@ import type {
   TraceStep,
 } from "../../../test/phone-country-trace-model";
 import { parseCounter, phoneEditorFixtures } from "../../../test/phone-editor-fixtures";
+import { outcome } from "../../../test/phone-editor-outcome";
 import {
   TRACE_CODES,
   decodeNumber,
@@ -36,7 +37,7 @@ import * as PhoneEditor from "./phone-editor";
 import type { PhoneEditorProps } from "./phone-editor";
 import { defaultMetadata } from "./phone-engine";
 
-const { fill, shown } = phoneEditorFixtures(PhoneEditor);
+const { fill } = phoneEditorFixtures(PhoneEditor);
 const { fill: fillBase } = phoneEditorFixtures(BaseEditor);
 const parses = parseCounter();
 
@@ -1064,11 +1065,6 @@ describe("PhoneEditor controlled country contracts over generated traces", () =>
    * one render, which must agree with the two-render path, as contract (xii) states.
    */
   it("gives an answer the same outcome after a no-steer change of its configuration", () => {
-    const outcome = (state: PhoneEditor.PhoneEditorState) => ({
-      ...shown(state),
-      steered: PhoneEditor.steeredNotice(state)?.output,
-      waiting: PhoneEditor.observeCountry(state).proposed?.code ?? null,
-    });
     fc.assert(
       fc.property(answerScenario, (scenario) => {
         const prepared = prepareAnswer(scenario);

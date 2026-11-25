@@ -120,11 +120,19 @@ export type PhoneNumberFieldProps = {
    */
   countryCode?: Extract<CountryCode, FlagAssetCode>;
   /**
-   * Custom or trimmed libphonenumber metadata. A new metadata object updates the picker and keeps
-   * the international identity of the number shown. A shallow copy, such as `{ ...metadata }`
-   * written in a render, is the same metadata and replaces nothing. To limit the picker, pass
-   * `countries` instead, since trimmed metadata can no longer parse the numbers it leaves out. It
-   * does not make the bundle smaller, since the field imports its full default metadata either way.
+   * Custom or trimmed libphonenumber metadata. A new metadata object updates the picker and reads
+   * the number shown again. Under a controlled `countryCode`, the new metadata reads a controlled
+   * `value` again as written, which may give the number another international identity. When the
+   * field shows a user's edit whose output equals `value`, such as a paste, it keeps that edit
+   * instead. While `countryCode` stays controlled and resolves to the same country, a render that
+   * releases `value` with the new metadata gives the same number as the new metadata in one render
+   * and the release in the next. For example, an FI-controlled field over `["FI", "SE"]` with raw
+   * output holds `+46701234567`, and `libphonenumber-js/metadata.max.json` replaces the default
+   * metadata. A render that still holds `value` submits `701234567`, and both paths through the
+   * release submit `+46701234567`. A shallow copy, such as `{ ...metadata }` written in a render, is
+   * the same metadata and replaces nothing. To limit the picker, pass `countries` instead, since
+   * trimmed metadata can no longer parse the numbers it leaves out. It does not make the bundle
+   * smaller, since the field imports its full default metadata either way.
    */
   metadata?: MetadataJson;
   /**
