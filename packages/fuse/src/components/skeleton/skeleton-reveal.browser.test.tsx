@@ -30,6 +30,7 @@ import { heightAnimation } from "../../../test/skeleton-reveal-fixtures";
 import { effectiveOpacity, renderThemed, roleNamed, fkasPrivate } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
 import { ThemeScope } from "../../theme/theme-scope";
+import { Button } from "../button/button";
 import { SkeletonReveal } from "./skeleton-reveal";
 
 failOnResizeObserverLoop();
@@ -495,6 +496,29 @@ describe("lifecycle", () => {
         expect(seen).toEqual([{ root: 400, content: 400, overflow: "", easing: false }]);
       }
     );
+  });
+});
+
+/**
+ * Unit under test: which skeleton role a Fuse part keeps. Oracle: the part's own border box, which
+ * a block bone covers whole and a text bar does not, so a part drawn as one block gives one bone
+ * the size of the part.
+ */
+describe("parts", () => {
+  it("draws a Button that takes its own data-slot as one block", async () => {
+    renderThemed(
+      <SkeletonReveal data={null} sample="Pay invoice" label="Henter">
+        {(text) => <Button data-slot="pay-invoice">{text}</Button>}
+      </SkeletonReveal>
+    );
+    const button = slot("pay-invoice", slot("skeleton-reveal-ghost"));
+    await expect.poll(() => slot("skeleton-reveal-bones").children.length).toBe(1);
+    const [bone] = slot("skeleton-reveal-bones").children;
+    const box = (element: Element | undefined) => {
+      const rect = element?.getBoundingClientRect();
+      return rect && [rect.left, rect.top, rect.width, rect.height].map(Math.round);
+    };
+    expect(box(bone)).toEqual(box(button));
   });
 });
 

@@ -9,6 +9,7 @@ import { CheckCircle } from "../../icons/generated/check-circle";
 import { Warning } from "../../icons/generated/warning";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { getMeterLevel, meterPercentage } from "./get-meter-level";
 import { meterStrings } from "./intl";
 import type { MeterMode } from "./meter-constants";
@@ -124,7 +125,10 @@ export function Meter({
           {valueLabel ?? <MeterPrimitive.Value />}
         </span>
       </div>
-      <MeterPrimitive.Track data-slot="meter-bar" className={slots.bar()}>
+      <MeterPrimitive.Track
+        data-slot="meter-bar"
+        data-skeleton-part={"meter-bar" satisfies SkeletonPart}
+        className={slots.bar()}>
         <MeterPrimitive.Indicator data-slot="meter-bar-fill" className={slots.barFill()} />
       </MeterPrimitive.Track>
     </MeterPrimitive.Root>

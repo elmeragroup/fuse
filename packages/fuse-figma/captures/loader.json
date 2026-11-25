@@ -152,7 +152,7 @@
         "around": [],
         "root": {
           "tag": "div",
-          "attributes": {"aria-label":"Loading","data-slot":"loader","role":"status"},
+          "attributes": {"aria-label":"Loading","data-skeleton-part":"loader","data-slot":"loader","role":"status"},
           "classes": ["flex","items-center","justify-center","p-4","text-foreground"],
           "text": "",
           "declarations": [63,82,6,83,84,85,86,87,88,89,90,91],
@@ -200,7 +200,7 @@
         "around": [],
         "root": {
           "tag": "div",
-          "attributes": {"aria-label":"Loading","data-slot":"loader","role":"status"},
+          "attributes": {"aria-label":"Loading","data-skeleton-part":"loader","data-slot":"loader","role":"status"},
           "classes": ["flex","items-center","justify-center","p-4","text-foreground"],
           "text": "",
           "declarations": [63,82,6,83,84,85,86,87,88,89,90,91],
@@ -248,7 +248,7 @@
         "around": [],
         "root": {
           "tag": "div",
-          "attributes": {"aria-label":"Loading","data-slot":"loader","role":"status"},
+          "attributes": {"aria-label":"Loading","data-skeleton-part":"loader","data-slot":"loader","role":"status"},
           "classes": ["flex","items-center","justify-center","p-4","text-foreground"],
           "text": "",
           "declarations": [63,82,6,83,84,85,86,87,88,89,90,91],
@@ -296,7 +296,7 @@
         "around": [],
         "root": {
           "tag": "div",
-          "attributes": {"aria-label":"Loading","data-slot":"loader","role":"status"},
+          "attributes": {"aria-label":"Loading","data-skeleton-part":"loader","data-slot":"loader","role":"status"},
           "classes": ["flex","items-center","justify-center","p-4","text-foreground"],
           "text": "",
           "declarations": [63,82,6,83,84,85,86,87,88,89,90,91],
@@ -344,7 +344,7 @@
         "around": [],
         "root": {
           "tag": "div",
-          "attributes": {"aria-label":"Loading","data-slot":"loader","role":"status"},
+          "attributes": {"aria-label":"Loading","data-skeleton-part":"loader","data-slot":"loader","role":"status"},
           "classes": ["flex","items-center","justify-center","p-4","text-foreground"],
           "text": "",
           "declarations": [63,82,6,83,84,85,86,87,88,89,90,91],

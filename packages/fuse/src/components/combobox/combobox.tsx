@@ -23,6 +23,7 @@ import { chipRemoveShellClass } from "../../styles/inner-corner/listbox";
 import { mergeClassName } from "../../styles/merge-class-name";
 import { withinStateFaceControlClass } from "../../styles/state-face";
 import { withinFocusRingControlClass } from "../../styles/utils";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { Button } from "../button/button";
 import {
   InputGroupAddon,
@@ -144,7 +145,8 @@ export function ComboboxTrigger({
     <ComboboxPrimitive.Trigger
       data-slot="combobox-trigger"
       className={mergeClassName(className, comboboxSlots.trigger())}
-      {...definedProps(props)}>
+      {...definedProps(props)}
+      data-skeleton-part={"combobox-trigger" satisfies SkeletonPart}>
       {children}
       <CaretDown className={comboboxSlots.caret()} />
     </ComboboxPrimitive.Trigger>

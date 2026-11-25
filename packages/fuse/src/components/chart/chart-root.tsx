@@ -7,6 +7,7 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { createAxisRecord } from "./chart-axis-format";
 import { keyDomains, useChartCommit } from "./chart-commit";
 import { partOutsidePanel, useChartRoot } from "./chart-context";
@@ -956,7 +957,11 @@ export function ChartRoot<
                   {strings.instructionsCartesian}
                 </p>
                 <div ref={frameRef} {...chartPart("frame")} style={{ "--chart-slots": slots }}>
-                  <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
+                  <div
+                    ref={plotRef}
+                    data-slot="chart-plot"
+                    data-skeleton-part={"chart-plot" satisfies SkeletonPart}
+                    aria-hidden="true">
                     {probe}
                     {plot === null && !model.empty ? <PlotLoader /> : null}
                   </div>

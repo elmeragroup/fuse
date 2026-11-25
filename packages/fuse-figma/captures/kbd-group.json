@@ -161,7 +161,7 @@
           "children": [
             {
               "tag": "kbd",
-              "attributes": {"data-slot":"kbd"},
+              "attributes": {"data-skeleton-part":"kbd","data-slot":"kbd"},
               "classes": ["text-xs","font-medium","box-border","inline-flex","h-5","min-w-5","shrink-0","items-center","justify-center","gap-1","rounded-sm","border","border-border","bg-muted","px-1","font-sans","text-muted-foreground","tabular-nums","select-none","[&_svg]:pointer-events-none","[&_svg:not([class*='size-'])]:size-3"],
               "text": "Ctrl",
               "textIndex": 0,
@@ -174,7 +174,7 @@
             },
             {
               "tag": "kbd",
-              "attributes": {"data-slot":"kbd"},
+              "attributes": {"data-skeleton-part":"kbd","data-slot":"kbd"},
               "classes": ["text-xs","font-medium","box-border","inline-flex","h-5","min-w-5","shrink-0","items-center","justify-center","gap-1","rounded-sm","border","border-border","bg-muted","px-1","font-sans","text-muted-foreground","tabular-nums","select-none","[&_svg]:pointer-events-none","[&_svg:not([class*='size-'])]:size-3"],
               "text": "K",
               "textIndex": 0,

@@ -7,6 +7,7 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { writeAttribute } from "./chart-dom";
 import { useOpenDrawing } from "./chart-draw-gate";
 import { useEntrance } from "./chart-entrance";
@@ -335,7 +336,11 @@ export function ScatterChartRoot<
             {CHART_STRINGS[locale].instructionsCartesian}
           </p>
           <div data-slot="chart-frame">
-            <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
+            <div
+              ref={plotRef}
+              data-slot="chart-plot"
+              data-skeleton-part={"chart-plot" satisfies SkeletonPart}
+              aria-hidden="true">
               {probe}
               {plot === null && !model.empty ? <PlotLoader /> : null}
             </div>

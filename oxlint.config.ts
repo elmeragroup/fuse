@@ -432,6 +432,12 @@ export default defineConfig({
         "fuse/no-base-ui-preview-menu": "error",
         "fuse/no-data-slot-selector": "error",
         "fuse/overlay-root-override-last": "error",
+        "fuse/skeleton-part-marker": [
+          "error",
+          {
+            roles: "packages/fuse/src/theme/tokens/skeleton-roles.ts",
+          },
+        ],
         "fuse/owned-class-tokens": [
           "error",
           {

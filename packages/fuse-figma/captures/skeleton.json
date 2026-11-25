@@ -130,7 +130,7 @@
         "around": [],
         "root": {
           "tag": "div",
-          "attributes": {"aria-hidden":"true","data-slot":"skeleton"},
+          "attributes": {"aria-hidden":"true","data-skeleton-part":"skeleton","data-slot":"skeleton"},
           "classes": ["animate-pulse","rounded-md","bg-muted","h-4","w-48"],
           "text": "",
           "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73,74],
@@ -151,7 +151,7 @@
         "around": [],
         "root": {
           "tag": "div",
-          "attributes": {"aria-hidden":"true","data-slot":"skeleton"},
+          "attributes": {"aria-hidden":"true","data-skeleton-part":"skeleton","data-slot":"skeleton"},
           "classes": ["animate-pulse","bg-muted","size-10","rounded-full"],
           "text": "",
           "declarations": [62,63,64,6,65,66,67,68,69,75,76,72,77,74],

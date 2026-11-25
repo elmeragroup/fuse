@@ -3,6 +3,7 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { itemActionsClass, itemContentClass, itemDescriptionClass, itemHeaderClass } from "./item-class";
 import { itemFooterVariants } from "./item-footer-variants";
 import { itemMediaVariants } from "./item-media-variants";
@@ -49,6 +50,7 @@ export function ItemMedia({ className, variant = "default", ...props }: ItemMedi
       data-variant={variant}
       className={cn(itemMediaVariants({ variant }), className)}
       {...props}
+      data-skeleton-part={"item-media" satisfies SkeletonPart}
     />
   );
 }

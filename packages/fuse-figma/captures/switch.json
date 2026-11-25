@@ -203,7 +203,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"false","aria-label":"Notifications","data-size":"default","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"false","aria-label":"Notifications","data-size":"default","data-skeleton-part":"switch","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[18.4px]","w-[32px]","max-w-[32px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [64,65,68,69,87,88,89,90,91,92,93,94,74,95,96,97,98,99,100,101,102,103,104],
@@ -237,7 +237,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"false","aria-label":"Notifications","data-size":"default","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"false","aria-label":"Notifications","data-size":"default","data-skeleton-part":"switch","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[18.4px]","w-[32px]","max-w-[32px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [117,118,64,65,68,69,87,88,89,90,91,92,93,94,74,95,96,97,98,100,101,102,119,120,121,122,123],
@@ -271,7 +271,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"false","aria-disabled":"true","aria-label":"Notifications","data-disabled":"","data-size":"default","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"-1"},
+          "attributes": {"aria-checked":"false","aria-disabled":"true","aria-label":"Notifications","data-disabled":"","data-size":"default","data-skeleton-part":"switch","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"-1"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[18.4px]","w-[32px]","max-w-[32px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [64,65,68,69,87,88,89,90,91,92,93,94,74,95,96,97,98,99,100,101,102,103,104,124,125],
@@ -318,7 +318,7 @@
         ],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"false","aria-invalid":"true","aria-label":"Notifications","data-invalid":"","data-size":"default","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"false","aria-invalid":"true","aria-label":"Notifications","data-invalid":"","data-size":"default","data-skeleton-part":"switch","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[18.4px]","w-[32px]","max-w-[32px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [64,65,68,69,87,88,89,90,91,92,93,94,74,95,96,98,100,101,102,103,104,131,132,133,134],
@@ -365,7 +365,7 @@
         ],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"false","aria-invalid":"true","aria-label":"Notifications","data-invalid":"","data-size":"default","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"false","aria-invalid":"true","aria-label":"Notifications","data-invalid":"","data-size":"default","data-skeleton-part":"switch","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[18.4px]","w-[32px]","max-w-[32px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [117,118,64,65,68,69,87,88,89,90,91,92,93,94,74,95,96,98,100,101,102,122,123,131,135,136,137,138,139,140],
@@ -399,7 +399,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"true","aria-label":"Notifications","data-checked":"","data-size":"default","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"true","aria-label":"Notifications","data-checked":"","data-size":"default","data-skeleton-part":"switch","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[18.4px]","w-[32px]","max-w-[32px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [64,65,68,69,87,88,89,90,91,92,93,94,74,95,96,98,99,100,101,102,103,104,144,145],
@@ -433,7 +433,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"true","aria-label":"Notifications","data-checked":"","data-size":"default","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"true","aria-label":"Notifications","data-checked":"","data-size":"default","data-skeleton-part":"switch","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[18.4px]","w-[32px]","max-w-[32px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [117,118,64,65,68,69,87,88,89,90,91,92,93,94,74,95,96,98,100,101,102,144,145,119,120,121,122,123],
@@ -467,7 +467,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"true","aria-disabled":"true","aria-label":"Notifications","data-checked":"","data-disabled":"","data-size":"default","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"-1"},
+          "attributes": {"aria-checked":"true","aria-disabled":"true","aria-label":"Notifications","data-checked":"","data-disabled":"","data-size":"default","data-skeleton-part":"switch","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"-1"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[18.4px]","w-[32px]","max-w-[32px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [64,65,68,69,87,88,89,90,91,92,93,94,74,95,96,98,99,100,101,102,103,104,144,145,124,125],
@@ -514,7 +514,7 @@
         ],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"true","aria-invalid":"true","aria-label":"Notifications","data-checked":"","data-invalid":"","data-size":"default","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"true","aria-invalid":"true","aria-label":"Notifications","data-checked":"","data-invalid":"","data-size":"default","data-skeleton-part":"switch","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[18.4px]","w-[32px]","max-w-[32px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [64,65,68,69,87,88,89,90,91,92,93,94,74,95,96,98,100,101,102,103,104,145,131,132,133,134],
@@ -561,7 +561,7 @@
         ],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"true","aria-invalid":"true","aria-label":"Notifications","data-checked":"","data-invalid":"","data-size":"default","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"true","aria-invalid":"true","aria-label":"Notifications","data-checked":"","data-invalid":"","data-size":"default","data-skeleton-part":"switch","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[18.4px]","w-[32px]","max-w-[32px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [117,118,64,65,68,69,87,88,89,90,91,92,93,94,74,95,96,98,100,101,102,145,122,123,131,135,136,137,138,139,140],
@@ -595,7 +595,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"false","aria-label":"Notifications","data-size":"sm","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"false","aria-label":"Notifications","data-size":"sm","data-skeleton-part":"switch","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[14px]","w-[24px]","max-w-[24px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [64,65,68,69,87,88,148,149,150,92,93,94,74,95,96,97,98,99,100,101,102,103,104],
@@ -629,7 +629,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"false","aria-label":"Notifications","data-size":"sm","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"false","aria-label":"Notifications","data-size":"sm","data-skeleton-part":"switch","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[14px]","w-[24px]","max-w-[24px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [117,118,64,65,68,69,87,88,148,149,150,92,93,94,74,95,96,97,98,100,101,102,119,120,121,122,123],
@@ -663,7 +663,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"false","aria-disabled":"true","aria-label":"Notifications","data-disabled":"","data-size":"sm","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"-1"},
+          "attributes": {"aria-checked":"false","aria-disabled":"true","aria-label":"Notifications","data-disabled":"","data-size":"sm","data-skeleton-part":"switch","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"-1"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[14px]","w-[24px]","max-w-[24px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [64,65,68,69,87,88,148,149,150,92,93,94,74,95,96,97,98,99,100,101,102,103,104,124,125],
@@ -710,7 +710,7 @@
         ],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"false","aria-invalid":"true","aria-label":"Notifications","data-invalid":"","data-size":"sm","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"false","aria-invalid":"true","aria-label":"Notifications","data-invalid":"","data-size":"sm","data-skeleton-part":"switch","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[14px]","w-[24px]","max-w-[24px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [64,65,68,69,87,88,148,149,150,92,93,94,74,95,96,98,100,101,102,103,104,131,132,133,134],
@@ -757,7 +757,7 @@
         ],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"false","aria-invalid":"true","aria-label":"Notifications","data-invalid":"","data-size":"sm","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"false","aria-invalid":"true","aria-label":"Notifications","data-invalid":"","data-size":"sm","data-skeleton-part":"switch","data-slot":"switch","data-unchecked":"","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[14px]","w-[24px]","max-w-[24px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [117,118,64,65,68,69,87,88,148,149,150,92,93,94,74,95,96,98,100,101,102,122,123,131,135,136,137,138,139,140],
@@ -791,7 +791,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"true","aria-label":"Notifications","data-checked":"","data-size":"sm","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"true","aria-label":"Notifications","data-checked":"","data-size":"sm","data-skeleton-part":"switch","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[14px]","w-[24px]","max-w-[24px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [64,65,68,69,87,88,148,149,150,92,93,94,74,95,96,98,99,100,101,102,103,104,144,145],
@@ -825,7 +825,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"true","aria-label":"Notifications","data-checked":"","data-size":"sm","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"true","aria-label":"Notifications","data-checked":"","data-size":"sm","data-skeleton-part":"switch","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[14px]","w-[24px]","max-w-[24px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [117,118,64,65,68,69,87,88,148,149,150,92,93,94,74,95,96,98,100,101,102,144,145,119,120,121,122,123],
@@ -859,7 +859,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"true","aria-disabled":"true","aria-label":"Notifications","data-checked":"","data-disabled":"","data-size":"sm","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"-1"},
+          "attributes": {"aria-checked":"true","aria-disabled":"true","aria-label":"Notifications","data-checked":"","data-disabled":"","data-size":"sm","data-skeleton-part":"switch","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"-1"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[14px]","w-[24px]","max-w-[24px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [64,65,68,69,87,88,148,149,150,92,93,94,74,95,96,98,99,100,101,102,103,104,144,145,124,125],
@@ -906,7 +906,7 @@
         ],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"true","aria-invalid":"true","aria-label":"Notifications","data-checked":"","data-invalid":"","data-size":"sm","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"true","aria-invalid":"true","aria-label":"Notifications","data-checked":"","data-invalid":"","data-size":"sm","data-skeleton-part":"switch","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[14px]","w-[24px]","max-w-[24px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [64,65,68,69,87,88,148,149,150,92,93,94,74,95,96,98,100,101,102,103,104,145,131,132,133,134],
@@ -953,7 +953,7 @@
         ],
         "root": {
           "tag": "span",
-          "attributes": {"aria-checked":"true","aria-invalid":"true","aria-label":"Notifications","data-checked":"","data-invalid":"","data-size":"sm","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
+          "attributes": {"aria-checked":"true","aria-invalid":"true","aria-label":"Notifications","data-checked":"","data-invalid":"","data-size":"sm","data-skeleton-part":"switch","data-slot":"switch","id":"base-ui-1","role":"switch","tabindex":"0"},
           "classes": ["shadow-xs","relative","inline-flex","shrink-0","items-center","justify-start","rounded-full","border","border-muted-foreground","transition-colors","data-checked:border-primary","data-checked:bg-primary","h-[14px]","w-[24px]","max-w-[24px]","peer","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-3","after:content-['']","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50"],
           "text": "",
           "declarations": [117,118,64,65,68,69,87,88,148,149,150,92,93,94,74,95,96,98,100,101,102,145,122,123,131,135,136,137,138,139,140],

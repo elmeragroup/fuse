@@ -3,6 +3,7 @@
 import { use, useInsertionEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { assertKnownKey, reportLayoutDomain, useChartRoot } from "./chart-context";
 import type { ChartLayoutContextValue } from "./chart-context";
 import { createChartLabels } from "./chart-labels";
@@ -152,7 +153,11 @@ export function ChartPanel({
   return (
     <ChartLayoutContext value={layout}>
       <div {...chartPart("panel")} className={className} style={style}>
-        <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
+        <div
+          ref={plotRef}
+          data-slot="chart-plot"
+          data-skeleton-part={"chart-plot" satisfies SkeletonPart}
+          aria-hidden="true">
           {probe}
           {plot === null && !model.empty ? <PlotLoader /> : null}
         </div>

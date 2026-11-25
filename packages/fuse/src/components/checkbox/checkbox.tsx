@@ -12,6 +12,7 @@ import { definedProps } from "../../internal/defined-props";
 import { isTextNode } from "../../internal/is-text-node";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { FieldFrame } from "../field/field-frame";
 import { SelectionGroupLayout, SelectionItemGroup } from "../selection-item/selection-item";
 import { selectionGroupOrientationVariants } from "../selection-item/selection-item-variants";
@@ -38,7 +39,8 @@ export function Checkbox({
       inputRef={syncedInputRef}
       data-slot="checkbox"
       className={mergeClassName(className, slots.root())}
-      {...definedProps(props)}>
+      {...definedProps(props)}
+      data-skeleton-part={"checkbox" satisfies SkeletonPart}>
       <CheckboxPrimitive.Indicator
         data-slot="checkbox-indicator"
         className={slots.indicator()}

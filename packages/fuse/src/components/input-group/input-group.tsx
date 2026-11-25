@@ -7,6 +7,7 @@ import type { VariantProps } from "tailwind-variants";
 import { OWN_CLICK_SELECTOR } from "../../internal/own-click";
 import { cn } from "../../styles/cn";
 import { fieldReads } from "../../styles/field-size";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { Button } from "../button/button";
 import { InputControl } from "../input/input";
 import type { InputControlProps } from "../input/input";
@@ -134,6 +135,7 @@ export function InputGroupRoot({ className, size = "default", ...props }: InputG
       data-size={size}
       className={cn(inputGroupRootVariants({ size }), className)}
       {...props}
+      data-skeleton-part={"input-group" satisfies SkeletonPart}
     />
   );
 }

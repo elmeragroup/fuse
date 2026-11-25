@@ -159,7 +159,7 @@
           "children": [
             {
               "tag": "span",
-              "attributes": {"data-slot":"avatar"},
+              "attributes": {"data-skeleton-part":"avatar","data-slot":"avatar"},
               "classes": ["text-sm","font-medium","inline-flex","size-8","shrink-0","items-center","justify-center","overflow-hidden","rounded-full","bg-muted","align-middle","text-muted-foreground","select-none"],
               "text": "",
               "declarations": [64,6,65,66,67,75,69,76,77,78,79,80,81,82,83,84,85,73,74,86,87,88,89,90,91,92,93,94,95],
@@ -185,7 +185,7 @@
             },
             {
               "tag": "span",
-              "attributes": {"data-slot":"avatar"},
+              "attributes": {"data-skeleton-part":"avatar","data-slot":"avatar"},
               "classes": ["text-sm","font-medium","inline-flex","size-8","shrink-0","items-center","justify-center","overflow-hidden","rounded-full","bg-muted","align-middle","text-muted-foreground","select-none"],
               "text": "",
               "declarations": [64,6,65,66,67,75,69,76,77,78,79,80,81,82,83,84,85,73,74,86,87,88,89,90,91,92,93,94,95],
@@ -212,7 +212,7 @@
             },
             {
               "tag": "span",
-              "attributes": {"data-slot":"avatar"},
+              "attributes": {"data-skeleton-part":"avatar","data-slot":"avatar"},
               "classes": ["text-sm","font-medium","inline-flex","size-8","shrink-0","items-center","justify-center","overflow-hidden","rounded-full","bg-muted","align-middle","text-muted-foreground","select-none"],
               "text": "",
               "declarations": [64,6,65,66,67,68,69,79,80,81,82,83,84,85,73,74,86,87,88,89,90,91,92,93,94,95],

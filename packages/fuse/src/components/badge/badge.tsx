@@ -3,6 +3,7 @@ import type { HTMLAttributes, ReactElement, ReactNode } from "react";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { badgeVariants } from "./badge-variants";
 
 /** Props for `Badge`, a native `span`'s props plus the recipe's `variant` and `size`. */
@@ -28,7 +29,14 @@ export function Badge({
   size = "default",
   ...props
 }: BadgeProps): ReactElement {
-  return <span data-slot="badge" className={cn(badgeVariants({ variant, size }), className)} {...props} />;
+  return (
+    <span
+      data-slot="badge"
+      className={cn(badgeVariants({ variant, size }), className)}
+      {...props}
+      data-skeleton-part={"badge" satisfies SkeletonPart}
+    />
+  );
 }
 
 Badge.displayName = "Badge";

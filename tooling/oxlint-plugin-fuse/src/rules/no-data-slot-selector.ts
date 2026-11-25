@@ -13,6 +13,9 @@ const SELECTOR_METHODS: ReadonlySet<string> = new Set([
   "matches",
 ]);
 
+/** The DOM methods that take an attribute name as their first argument. */
+const ATTRIBUTE_METHODS: ReadonlySet<string> = new Set(["getAttribute", "hasAttribute"]);
+
 /** The attribute name the rule looks for, lowercase: HTML attribute names match without case. */
 const DATA_SLOT = "data-slot";
 
@@ -76,25 +79,34 @@ function selectsDataSlot(parts: ReadonlyArray<TextPart>): boolean {
 }
 
 /**
- * Component source finds no element through a `data-slot` selector. A consumer's props or `render`
- * element can replace the `data-slot` Fuse writes, so a lookup through it breaks for that
- * consumer. The rule flags `querySelector`, `querySelectorAll`, `closest` and `matches` calls
- * whose selector names `[data-slot…]`. Test files may still select by slot, and so may styles,
- * which call none of these methods.
+ * Component source finds no element through a `data-slot` selector and reads no behavior off an
+ * element's `data-slot`. A consumer's props or `render` element can replace the `data-slot` Fuse
+ * writes, so a lookup or a read through it breaks for that consumer. The rule flags
+ * `querySelector`, `querySelectorAll`, `closest` and `matches` calls whose selector names
+ * `[data-slot…]`, and `getAttribute` and `hasAttribute` calls whose attribute name is `data-slot`.
+ * Test files may still select and read by slot, and so may styles, which call none of these
+ * methods.
  *
  * The rule scans the string alternatives `evaluate` returns for the selector, read with
  * `strings: "partial"`, so it can flag a known `data-slot` attribute name when the rest of the
  * value is dynamic: `` `[data-slot="${slot}"]` `` still shows `[data-slot="`.
  *
- * Scope: a selector that arrives as a parameter or an import is not read.
+ * Scope: a selector or attribute name that arrives as a parameter or an import is not read. An
+ * attribute name is flagged when any alternative the rule resolves it to is `"data-slot"`, so
+ * `open ? "data-slot" : name` is flagged although `name` is unknown.
  */
 export const noDataSlotSelector: Rule = {
   meta: {
     type: "problem",
-    docs: { description: "Forbid finding elements through a `data-slot` selector in component source." },
+    docs: {
+      description:
+        "Forbid finding elements through a `data-slot` selector, or reading `data-slot`, in component source.",
+    },
     messages: {
       dataSlot:
         "A consumer's props or `render` element can replace `data-slot`, so this lookup can miss. Prefer a ref or registration; failing that, a library-owned marker Fuse writes after the consumer's props.",
+      dataSlotRead:
+        "A consumer's props or `render` element can replace `data-slot`, so this read can return the consumer's value. Read a library-owned marker Fuse writes after the consumer's props.",
     },
     schema: [],
   },
@@ -103,13 +115,21 @@ export const noDataSlotSelector: Rule = {
     return {
       CallExpression(node) {
         const method = memberName(node.callee);
-        const [selector] = node.arguments;
-        if (method === undefined || !SELECTOR_METHODS.has(method) || selector === undefined) return;
-        const messageId = firstViolation(evaluate(context, selector, { strings: "partial" }), (value) => {
+        const [argument] = node.arguments;
+        if (method === undefined || argument === undefined) return;
+        if (ATTRIBUTE_METHODS.has(method)) {
+          const reads = firstViolation(evaluate(context, argument), (value) =>
+            value.kind === "string" && value.value.toLowerCase() === DATA_SLOT ? "dataSlotRead" : undefined
+          );
+          if (reads !== undefined) context.report({ node: argument, messageId: reads });
+          return;
+        }
+        if (!SELECTOR_METHODS.has(method)) return;
+        const messageId = firstViolation(evaluate(context, argument, { strings: "partial" }), (value) => {
           const parts = textParts(value);
           return parts !== undefined && selectsDataSlot(parts) ? "dataSlot" : undefined;
         });
-        if (messageId !== undefined) context.report({ node: selector, messageId });
+        if (messageId !== undefined) context.report({ node: argument, messageId });
       },
     };
   },

@@ -10,6 +10,7 @@ import { CaretUp } from "../../icons/generated/caret-up";
 import { Check } from "../../icons/generated/check";
 import { definedProps } from "../../internal/defined-props";
 import { mergeClassName } from "../../styles/merge-class-name";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { overlayPositionerClass } from "../overlay/overlay-classes";
 import { OverlayPortal } from "../overlay/overlay-portal";
 import type { OverlayContainerProps, OverlayPositionerProps } from "../overlay/overlay-props";
@@ -46,7 +47,8 @@ export function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={mergeClassName(className, slots.trigger())}
-      {...definedProps(props)}>
+      {...definedProps(props)}
+      data-skeleton-part={"select-trigger" satisfies SkeletonPart}>
       {children}
       <SelectPrimitive.Icon render={<CaretDown className={slots.caret()} />} />
     </SelectPrimitive.Trigger>

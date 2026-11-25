@@ -3,6 +3,7 @@ import type { ComponentProps, ReactElement } from "react";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { AspectRatio } from "../aspect-ratio/aspect-ratio";
 import type { AspectRatioProps } from "../aspect-ratio/aspect-ratio";
 import { attachmentVariants } from "./attachment-variants";
@@ -39,6 +40,7 @@ export function AttachmentMedia({
       data-variant={variant}
       className={cn(attachmentVariants({ variant }).media(), className)}
       {...props}
+      data-skeleton-part={"attachment-media" satisfies SkeletonPart}
     />
   );
 }

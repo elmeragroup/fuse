@@ -3,6 +3,7 @@ import type { ComponentProps, ReactElement } from "react";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { emptyMediaVariants, emptyVariants } from "./empty-variants";
 
 type EmptyRootProps = ComponentProps<"div"> & {
@@ -42,6 +43,7 @@ function EmptyMedia({ className, variant = "default", ...props }: EmptyMediaProp
       data-variant={variant}
       className={cn(emptyMediaVariants({ variant }), className)}
       {...props}
+      data-skeleton-part={"empty-media" satisfies SkeletonPart}
     />
   );
 }

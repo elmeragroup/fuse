@@ -6,6 +6,7 @@ import { Toggle as TogglePrimitive } from "@base-ui/react/toggle";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { toggleVariants } from "./toggle-variants";
 
 type ToggleVariantProps = VariantProps<typeof toggleVariants>;
@@ -38,6 +39,7 @@ export function Toggle({
       data-slot="toggle"
       className={cn(toggleVariants({ variant, size, className }))}
       {...props}
+      data-skeleton-part={"toggle" satisfies SkeletonPart}
     />
   );
 }

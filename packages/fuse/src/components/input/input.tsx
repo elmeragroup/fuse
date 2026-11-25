@@ -8,6 +8,7 @@ import { Input as InputPrimitive } from "@base-ui/react/input";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { isThemeDevelopment } from "../../theme/validate-theme";
 import { inputVariants } from "./input-class";
 
@@ -150,6 +151,7 @@ export function InputControl({
         inputMode: inputMode ?? (isNumeric ? "numeric" : undefined),
         onChange: isNumeric ? handleChange : onChange,
       })}
+      data-skeleton-part={"input" satisfies SkeletonPart}
     />
   );
 }

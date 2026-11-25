@@ -101,9 +101,13 @@ async function hydrate(server: ReactNode, client: (onHydrated: () => void) => Re
 describe("hydration", () => {
   it("sends a hidden loader and no mark from the server, and draws every bar once hydrated", async () => {
     const html = renderToString(<Fixture />);
-    expect(html).toMatch(
-      /data-slot="chart-plot" aria-hidden="true"><div data-slot="loader" role="status"[^>]* aria-hidden="true">/u
-    );
+    const served = new DOMParser().parseFromString(html, "text/html");
+    const plot = served.querySelector('[data-slot="chart-plot"]');
+    expect(plot?.getAttribute("aria-hidden")).toBe("true");
+    const loader = plot?.firstElementChild;
+    expect(loader?.getAttribute("data-slot")).toBe("loader");
+    expect(loader?.getAttribute("role")).toBe("status");
+    expect(loader?.getAttribute("aria-hidden")).toBe("true");
     expect(html).not.toContain('data-slot="chart-bar"');
     const { host, root, recover } = await hydrate(<Fixture />, (onHydrated) => (
       <Fixture onHydrated={onHydrated} />

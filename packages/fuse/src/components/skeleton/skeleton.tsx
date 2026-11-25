@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactElement } from "react";
 
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { skeletonClass } from "./skeleton-class";
 
 /** Props for `Skeleton`. It takes a native `div`'s props. */
@@ -18,7 +19,15 @@ export type SkeletonProps = ComponentProps<"div"> & {
  * browser APIs.
  */
 export function Skeleton({ className, ...props }: SkeletonProps): ReactElement {
-  return <div data-slot="skeleton" aria-hidden="true" className={cn(skeletonClass, className)} {...props} />;
+  return (
+    <div
+      data-slot="skeleton"
+      aria-hidden="true"
+      className={cn(skeletonClass, className)}
+      {...props}
+      data-skeleton-part={"skeleton" satisfies SkeletonPart}
+    />
+  );
 }
 
 Skeleton.displayName = "Skeleton";

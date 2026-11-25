@@ -9,7 +9,12 @@ ruleTester.run("no-data-slot-selector", noDataSlotSelector, {
     // A test may find what it checks by slot.
     { code: 'root.querySelectorAll("[data-slot=option]");', filename: "listbox.test.jsx" },
     'element.closest("[data-slot-id=x]");',
-    'element.getAttribute("data-slot");',
+    'element.getAttribute("data-skeleton-part");',
+    'element.hasAttribute("data-slot-id");',
+    // Writing the slot is how a part declares it.
+    'element.setAttribute("data-slot", "chart-grid-line");',
+    { code: 'element.getAttribute("data-slot");', filename: "skeleton.test.ts" },
+    "function read(name: string) {\n  return element.getAttribute(name);\n}",
     'element.matches(".data-slot");',
     'const className = "[data-slot=card]:p-4";',
     '<div data-slot="card" className="*:data-[slot=title]:font-medium" />;',
@@ -29,6 +34,21 @@ ruleTester.run("no-data-slot-selector", noDataSlotSelector, {
     "function find(id: string) {\n  const s0 = `[data-slot=${id}]`;\n  const s1 = `${s0}${s0}`;\n  const s2 = `${s1}${s1}`;\n  const s3 = `${s2}${s2}`;\n  const s4 = `${s3}${s3}`;\n  const s5 = `${s4}${s4}`;\n  return root.querySelector(s5);\n}",
   ],
   invalid: [
+    { code: 'element.getAttribute("data-slot");', errors: [{ messageId: "dataSlotRead" }] },
+    { code: 'element.hasAttribute("data-slot");', errors: [{ messageId: "dataSlotRead" }] },
+    { code: "element.getAttribute('DATA-SLOT');", errors: [{ messageId: "dataSlotRead" }] },
+    {
+      code: 'const SLOT = "data-slot";\nelement?.getAttribute(SLOT);',
+      errors: [{ messageId: "dataSlotRead" }],
+    },
+    {
+      code: 'element.hasAttribute(open ? "data-slot" : "data-open");',
+      errors: [{ messageId: "dataSlotRead" }],
+    },
+    {
+      code: 'function read(name: string) {\n  return element.hasAttribute(open ? "data-slot" : name);\n}',
+      errors: [{ messageId: "dataSlotRead" }],
+    },
     { code: 'root.querySelector("[data-slot=chart-dot]");', errors: error },
     { code: "root.querySelector('[data-slot=\"select-value\"]');", errors: error },
     { code: 'root.querySelectorAll("[data-slot$=\\"label\\"]");', errors: error },

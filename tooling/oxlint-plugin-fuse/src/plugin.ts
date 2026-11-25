@@ -21,6 +21,7 @@ import { ownedClassTokens } from "./rules/owned-class-tokens.ts";
 import { renderElementWiring } from "./rules/render-element-wiring.ts";
 import { restrictedImports } from "./rules/restricted-imports.ts";
 import { sideOverlayState } from "./rules/side-overlay-state.ts";
+import { skeletonPartMarker } from "./rules/skeleton-part-marker.ts";
 import { stateFace } from "./rules/state-face.ts";
 import { surfaceMutedForeground } from "./rules/surface-muted-foreground.ts";
 
@@ -53,6 +54,7 @@ const plugin: Plugin = {
     "render-element-wiring": renderElementWiring,
     "restricted-imports": restrictedImports,
     "side-overlay-state": sideOverlayState,
+    "skeleton-part-marker": skeletonPartMarker,
     "state-face": stateFace,
     "surface-muted-foreground": surfaceMutedForeground,
   },

@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { kbdVariants } from "./kbd-variants";
 
 const styles = kbdVariants();
@@ -31,7 +32,14 @@ export type KbdGroupProps = Omit<ComponentProps<"kbd">, "children"> & {
 
 /** One key cap, such as `Esc`, as a `<kbd>` element. */
 export function Kbd({ className, ...props }: KbdProps): ReactElement {
-  return <kbd data-slot="kbd" className={cn(styles.cap(), className)} {...props} />;
+  return (
+    <kbd
+      data-slot="kbd"
+      className={cn(styles.cap(), className)}
+      {...props}
+      data-skeleton-part={"kbd" satisfies SkeletonPart}
+    />
+  );
 }
 
 /**

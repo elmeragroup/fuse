@@ -154,7 +154,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"avatar"},
+          "attributes": {"data-skeleton-part":"avatar","data-slot":"avatar"},
           "classes": ["text-sm","font-medium","inline-flex","shrink-0","items-center","justify-center","overflow-hidden","rounded-full","bg-muted","align-middle","text-muted-foreground","select-none","size-8"],
           "text": "",
           "declarations": [64,6,65,66,67,68,69,75,76,77,78,73,74,79,80,81,82,83,84,85,86,87,88],
@@ -189,7 +189,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"avatar"},
+          "attributes": {"data-skeleton-part":"avatar","data-slot":"avatar"},
           "classes": ["text-sm","font-medium","inline-flex","shrink-0","items-center","justify-center","overflow-hidden","rounded-full","bg-muted","align-middle","text-muted-foreground","select-none","size-6"],
           "text": "",
           "declarations": [64,6,65,66,67,68,69,75,89,90,78,73,74,79,80,81,82,83,84,85,86,87,88],
@@ -224,7 +224,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"avatar"},
+          "attributes": {"data-skeleton-part":"avatar","data-slot":"avatar"},
           "classes": ["text-sm","font-medium","inline-flex","shrink-0","items-center","justify-center","overflow-hidden","rounded-full","bg-muted","align-middle","text-muted-foreground","select-none","size-10"],
           "text": "",
           "declarations": [64,6,65,66,67,68,69,75,91,92,78,73,74,79,80,81,82,83,84,85,86,87,88],
@@ -259,7 +259,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"avatar"},
+          "attributes": {"data-skeleton-part":"avatar","data-slot":"avatar"},
           "classes": ["text-sm","font-medium","inline-flex","shrink-0","items-center","justify-center","overflow-hidden","rounded-full","bg-muted","align-middle","text-muted-foreground","select-none","size-12"],
           "text": "",
           "declarations": [64,6,65,66,67,68,69,93,94,75,78,73,74,79,80,81,82,83,84,85,86,87,88],
@@ -294,7 +294,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"avatar"},
+          "attributes": {"data-skeleton-part":"avatar","data-slot":"avatar"},
           "classes": ["text-sm","font-medium","inline-flex","shrink-0","items-center","justify-center","overflow-hidden","rounded-full","bg-muted","align-middle","text-muted-foreground","select-none","size-8"],
           "text": "",
           "declarations": [64,6,65,66,67,68,69,75,76,77,78,73,74,79,80,81,82,83,84,85,86,87,88],
@@ -328,7 +328,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"avatar"},
+          "attributes": {"data-skeleton-part":"avatar","data-slot":"avatar"},
           "classes": ["text-sm","font-medium","inline-flex","shrink-0","items-center","justify-center","overflow-hidden","rounded-full","bg-muted","align-middle","text-muted-foreground","select-none","size-6"],
           "text": "",
           "declarations": [64,6,65,66,67,68,69,75,89,90,78,73,74,79,80,81,82,83,84,85,86,87,88],
@@ -362,7 +362,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"avatar"},
+          "attributes": {"data-skeleton-part":"avatar","data-slot":"avatar"},
           "classes": ["text-sm","font-medium","inline-flex","shrink-0","items-center","justify-center","overflow-hidden","rounded-full","bg-muted","align-middle","text-muted-foreground","select-none","size-10"],
           "text": "",
           "declarations": [64,6,65,66,67,68,69,75,91,92,78,73,74,79,80,81,82,83,84,85,86,87,88],
@@ -396,7 +396,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"avatar"},
+          "attributes": {"data-skeleton-part":"avatar","data-slot":"avatar"},
           "classes": ["text-sm","font-medium","inline-flex","shrink-0","items-center","justify-center","overflow-hidden","rounded-full","bg-muted","align-middle","text-muted-foreground","select-none","size-12"],
           "text": "",
           "declarations": [64,6,65,66,67,68,69,93,94,75,78,73,74,79,80,81,82,83,84,85,86,87,88],
