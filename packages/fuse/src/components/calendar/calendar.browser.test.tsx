@@ -937,6 +937,7 @@ describe("Calendar grid names", () => {
       case "direct":
         return <Calendar.MonthHeading id="october-heading" />;
       case "render":
+        // oxlint-disable-next-line jsx-a11y/heading-has-content -- Calendar.MonthHeading renders the month label inside the heading
         return <Calendar.MonthHeading render={<h3 id="october-heading" />} />;
     }
   }

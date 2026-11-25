@@ -37,6 +37,7 @@ test("public API exports only the namespace and part prop types, with native att
   const _root = (
     <DescriptionList.Root className="max-w-md" id="customer">
       <DescriptionList.Heading>Customer</DescriptionList.Heading>
+      {/* oxlint-disable-next-line jsx-a11y/heading-has-content -- the part forwards its children to the heading */}
       <DescriptionList.Heading render={<h3 />}>Section</DescriptionList.Heading>
       <DescriptionList.Content>
         <DescriptionList.Item data-testid="name">

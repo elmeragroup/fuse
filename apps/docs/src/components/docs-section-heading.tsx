@@ -34,5 +34,6 @@ export function DocsSectionHeading({
   className,
   ...props
 }: DocsSectionHeadingProps): ReactElement {
+  // oxlint-disable-next-line jsx-a11y/heading-has-content -- the heading's children arrive through props
   return <h2 className={docsSectionHeading({ scope, className })} {...props} />;
 }

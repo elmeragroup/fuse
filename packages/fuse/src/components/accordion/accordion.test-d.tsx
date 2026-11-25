@@ -31,6 +31,7 @@ test("Root takes the array value shape, multiple, and recipe axes — never radi
   const _heading = (
     <Accordion.Root>
       <Accordion.Item value="shipping">
+        {/* oxlint-disable-next-line jsx-a11y/heading-has-content -- the part forwards its children to the heading */}
         <Accordion.Header render={<h2 />}>
           <Accordion.Trigger nativeButton>Shipping</Accordion.Trigger>
         </Accordion.Header>
