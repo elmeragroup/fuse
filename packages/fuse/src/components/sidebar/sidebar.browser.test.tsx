@@ -381,6 +381,7 @@ describe("Sidebar in a bounded container", () => {
   it("reports a handled ⌘B as handled to a React ancestor's onKeyDown", async () => {
     const seen: { defaultPrevented: boolean; isDefaultPrevented: boolean }[] = [];
     renderThemed(
+      // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- the group catches ⌘B bubbling from the After button inside it
       <div
         role="group"
         aria-label="Host"
