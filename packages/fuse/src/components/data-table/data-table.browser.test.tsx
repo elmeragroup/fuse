@@ -967,14 +967,33 @@ describe("DataTable column resizing", () => {
   /**
    * Renders the ticket table and waits for the handles to name their header cells.
    *
-   * @param props - The ticket table's `locked` prop.
-   * @returns Every `columnSizing` state the table commits, in order, and the render's `rerender`.
+   * @param options - The ticket table's `locked` prop, and whether to render the table inside a host
+   * element whose React `onKeyDown` handler records each key it receives.
+   * @returns Every `columnSizing` state the table commits, every key the host receives, both in order,
+   * and the render's `rerender`.
    */
-  async function renderTickets({ locked = false }: { readonly locked?: boolean } = {}) {
+  async function renderTickets({
+    locked = false,
+    keyHost = false,
+  }: { readonly locked?: boolean; readonly keyHost?: boolean } = {}) {
     const { sizings, onSizing } = recordSizings();
-    const { rerender } = renderInEnglish(<ResizableTicketTable onSizing={onSizing} locked={locked} />);
+    const keys: string[] = [];
+    const table = <ResizableTicketTable onSizing={onSizing} locked={locked} />;
+    const { rerender } = renderInEnglish(
+      keyHost ? (
+        // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- a host's key handler around the table, the shape the handle's keys must not reach
+        <div
+          onKeyDown={(event) => {
+            keys.push(event.key);
+          }}>
+          {table}
+        </div>
+      ) : (
+        table
+      )
+    );
     await expect.element(page.getByRole("columnheader", { name: "Status", exact: true })).toBeInTheDocument();
-    return { sizings, onSizing, rerender };
+    return { sizings, onSizing, keys, rerender };
   }
 
   function widthOf(name: string): number {
@@ -1083,8 +1102,9 @@ describe("DataTable column resizing", () => {
     expect(page.getByRole("separator").elements()).toHaveLength(2);
   });
 
-  // Oracle: the 10px step from the issue's keyboard model, and the fixture's 120 to 200px bounds.
-  it("resizes from the keyboard within the column's bounds, and resets on double-click", async () => {
+  // Oracle: the 10px step from the issue's keyboard model, the fixture's 120 to 200px bounds, and
+  // its 160px default, which Enter and a double-click restore.
+  it("resizes from the keyboard within the column's bounds, and resets on Enter and double-click", async () => {
     const { sizings } = await renderTickets();
     const subject = handle("Subject");
     subject.focus();
@@ -1118,9 +1138,48 @@ describe("DataTable column resizing", () => {
       { subject: 200 },
     ]);
 
+    await userEvent.keyboard("{Home}{Enter}");
+    expect(subject.getAttribute("aria-valuenow")).toBe("160");
+    expect(widthOf("Subject")).toBe(announced(subject));
+    expect(sizings.slice(-2)).toEqual([{ subject: 120 }, {}]);
+
+    await userEvent.keyboard("{End}");
     await userEvent.dblClick(subject);
     expect(subject.getAttribute("aria-valuenow")).toBe("160");
-    expect(sizings.at(-1)).toEqual({});
+    expect(sizings.slice(-2)).toEqual([{ subject: 200 }, {}]);
+  });
+
+  // Oracle: an enclosing React `onKeyDown` handler, such as a form's Enter-to-submit or a header's
+  // sort key, which a key the handle leaves alone does reach.
+  it("keeps Enter, Left Arrow, Right Arrow, Home and End from an enclosing React onKeyDown handler", async () => {
+    const { keys } = await renderTickets({ keyHost: true });
+    handle("Subject").focus();
+
+    await userEvent.keyboard("{ArrowRight}{ArrowLeft}{Home}{End}{Enter}x");
+    expect(keys).toEqual(["x"]);
+  });
+
+  // Oracle: the fixture's 160px default less the 15px drag, which the release commits. A key pressed
+  // during the drag must not commit a width of its own first, nor reach an enclosing React
+  // `onKeyDown` handler, which a key the handle leaves alone does reach. The handle still cancels
+  // End's default, which scrolls the page.
+  it("ignores its keys during a pointer drag, so the release commits the dragged width", async () => {
+    const { sizings, keys } = await renderTickets({ keyHost: true });
+    const subject = handle("Subject");
+
+    await dragHandle("Subject", -15, async () => {
+      await userEvent.keyboard("{Enter}{ArrowRight}{ArrowLeft}{Home}{End}x");
+      expect(subject.getAttribute("aria-valuenow")).toBe("145");
+      const end = new KeyboardEvent("keydown", { key: "End", bubbles: true, cancelable: true });
+      subject.dispatchEvent(end);
+      expect(end.defaultPrevented).toBe(true);
+    });
+
+    expect(keys).toEqual(["x"]);
+
+    expect(sizings).toEqual([{ subject: 145 }]);
+    expect(subject.getAttribute("aria-valuenow")).toBe("145");
+    expect(widthOf("Subject")).toBe(announced(subject));
   });
 
   it("previews a pointer drag without rendering a row, commits once on release, and leaves sorting alone", async () => {
