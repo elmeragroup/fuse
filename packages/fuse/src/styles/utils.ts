@@ -2,11 +2,19 @@ import { cn } from "./cn";
 import { tv } from "./tv";
 
 /**
- * The shared keyboard focus ring: a 2px `--ring` box-shadow drawn flush against the control,
- * with no offset gap. The flush ring keeps one 2px reach in every target, so a ring never
- * paints the page color between itself and the control. `contrast-matrix.test.ts` holds the
- * ring's color to 3:1 against the page and card it is drawn on. The focused faces use
- * `outline-hidden`, so forced-colors mode, which drops box-shadow, still draws an outline.
+ * The `control` slot's classes for the `within` and `overlay` targets. They cancel the control's
+ * own ring and outline, the invalid face's offset line included, so the paired element paints the
+ * only indicator.
+ */
+const controlRingCancel = cn(
+  "focus-visible:ring-0 focus-visible:outline-none aria-invalid:focus-visible:ring-0 aria-invalid:focus-visible:ring-offset-0"
+);
+
+/**
+ * The shared keyboard focus ring, 2px of `--ring` drawn flush against the control with no
+ * offset gap. The flush ring keeps one 2px reach in every target, so a ring never paints the
+ * page color between itself and the control. `contrast-matrix.test.ts` holds the ring's color
+ * to 3:1 against the page and card it is drawn on.
  *
  * - `self` paints on the element that matches `:focus-visible`.
  * - `within` paints on a group whose `data-focus-ring-control` direct child is focus-visible;
@@ -15,9 +23,22 @@ import { tv } from "./tv";
  *   group's addon, such as a NumberField, rings itself and leaves the outer group unpainted.
  *   The owner keeps its control as a direct child. A date box, whose segments may sit deeper,
  *   rings through {@link dateBoxFocusRingClass} instead.
+ * - `overlay` is for a control whose parent clips, such as a scroll area's viewport, where an
+ *   outer box-shadow ring would be clipped away. It draws a 2px `--ring` outline instead, which
+ *   forced-colors mode keeps. The outline sits flush with the inside edge of an empty `root`
+ *   element that covers the positioned parent's padding box, under the parent's corner radius.
+ *   Render `root` as a later sibling of the control, after every positioned sibling it must
+ *   paint above. The `control` slot marks the control as the peer, cancels its own ring and
+ *   outline as `within` does, and makes the control `isolate` while it is focus-visible. The
+ *   control's content then stacks inside the control, whatever its `z-index`, and `root`, at
+ *   `z-index: auto`, paints above it. Host content that stacks above the parent still covers
+ *   the outline, and stacking outside the focused control does not change.
  *
- * A focused invalid control paints the invalid focus face from the constants below instead,
- * which the state face composes: see {@link ariaInvalidFocusRingClass}.
+ * `self` and `within` draw the ring as a box-shadow. Their focused faces use `outline-hidden`,
+ * so forced-colors mode, which drops box-shadow, still draws an outline.
+ *
+ * A focused invalid control on the `self` or `within` target paints the invalid focus face from
+ * the constants below instead, which the state face composes: see {@link ariaInvalidFocusRingClass}.
  */
 export const focusRing = tv({
   slots: {
@@ -31,8 +52,14 @@ export const focusRing = tv({
       },
       within: {
         root: "has-[>[data-focus-ring-control]:focus-visible]:ring-2 has-[>[data-focus-ring-control]:focus-visible]:ring-ring has-[>[data-focus-ring-control]:focus-visible]:outline-hidden",
-        control:
-          "focus-visible:ring-0 focus-visible:outline-none aria-invalid:focus-visible:ring-0 aria-invalid:focus-visible:ring-offset-0",
+        control: controlRingCancel,
+      },
+      overlay: {
+        root: [
+          "pointer-events-none absolute inset-0 rounded-[inherit]",
+          "peer-focus-visible/focus-ring-control:outline-2 peer-focus-visible/focus-ring-control:-outline-offset-2 peer-focus-visible/focus-ring-control:outline-ring",
+        ],
+        control: ["peer/focus-ring-control focus-visible:isolate", controlRingCancel],
       },
     },
   },
@@ -70,6 +97,20 @@ export const withinFocusRingControlClass = focusRing({ target: "within" }).contr
 export const insetFocusOutlineClass = cn(
   "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
 );
+
+/**
+ * The overlay-target focus ring class, resolved once at module scope, for the empty element that
+ * follows a clipped control as its sibling and draws the control's focus outline. Pair it with
+ * {@link overlayFocusRingControlClass} on the control.
+ */
+export const overlayFocusRingClass = focusRing({ target: "overlay" }).root();
+
+/**
+ * The control half of the overlay-target focus ring. It marks the control as the overlay's peer,
+ * suppresses the control's own ring and outline, so only the overlay draws one, and makes the
+ * control `isolate` while it is focus-visible. Pair with {@link overlayFocusRingClass}.
+ */
+export const overlayFocusRingControlClass = focusRing({ target: "overlay" }).control();
 
 /**
  * The focused invalid face for a control that carries `aria-invalid` itself. Outside the error

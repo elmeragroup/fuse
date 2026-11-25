@@ -613,6 +613,7 @@ export const PART_DENSITY = {
 
   "scroll-area": "fixed",
   "scroll-area-viewport": "fixed",
+  "scroll-area-focus-indicator": "fixed",
   "scroll-area-content": "fixed",
   "scroll-area-scrollbar": "fixed",
   "scroll-area-thumb": "fixed",

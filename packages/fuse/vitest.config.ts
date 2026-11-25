@@ -3,6 +3,7 @@ import { defineConfig } from "vitest/config";
 import type { TestProjectInlineConfiguration } from "vitest/config";
 
 import { keyCommands } from "./test/key-commands.ts";
+import { mediaCommands } from "./test/media-commands.ts";
 import { pageSizeCommands } from "./test/page-size-commands.ts";
 import { pointerCommands } from "./test/pointer-commands.ts";
 import { requestHoldCommands } from "./test/request-hold-commands.ts";
@@ -101,7 +102,13 @@ function browserProject(
         // `false` into one worker, then lets `VITEST_MAX_WORKERS` replace that count; it clamps an
         // instance's workers to one after reading the variable, so only here does `false` hold.
         instances: browsers.map((browser) => ({ browser, fileParallelism: options.fileParallelism ?? true })),
-        commands: { ...pointerCommands, ...keyCommands, ...pageSizeCommands, ...requestHoldCommands },
+        commands: {
+          ...pointerCommands,
+          ...keyCommands,
+          ...mediaCommands,
+          ...pageSizeCommands,
+          ...requestHoldCommands,
+        },
       },
     },
   };
