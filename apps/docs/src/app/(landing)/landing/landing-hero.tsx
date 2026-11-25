@@ -1,6 +1,5 @@
 import type { ReactElement } from "react";
 
-import Link from "next/link";
 import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
@@ -48,11 +47,11 @@ export function LandingHero(): ReactElement {
           <Button
             size="lg"
             className={styles.primary()}
-            render={<Link href={QUICK_START.href} />}
+            render={<a href={QUICK_START.href} />}
             nativeButton={false}>
             Get started
           </Button>
-          <Button variant="link" render={<Link href={BROWSE_COMPONENTS.href} />} nativeButton={false}>
+          <Button variant="link" render={<a href={BROWSE_COMPONENTS.href} />} nativeButton={false}>
             Browse components ›
           </Button>
         </div>

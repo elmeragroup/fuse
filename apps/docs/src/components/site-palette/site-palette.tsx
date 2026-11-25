@@ -123,13 +123,22 @@ function copiedText(target: CopyTarget): string {
 type Router = ReturnType<typeof useRouter>;
 
 /**
- * Goes to a site address. A route goes through the Next router. An anchor on the page on screen
- * goes through the address's hash, as an in-page link does, so the hash listeners on the page
- * hear it; the same hash again scrolls to its element, which a hash assignment would not.
+ * Goes to a site address. Another path goes to `navigateToOtherPath`, and the same path without a
+ * hash goes through the Next router. An anchor on the page on screen goes through the address's
+ * hash, as an in-page link does, so the hash listeners on the page hear it; the same hash again
+ * scrolls to its element, which a hash assignment would not.
  */
-function navigate(router: Router, href: string): void {
+function navigate(
+  router: Router,
+  href: string,
+  navigateToOtherPath = (page: string) => router.push(page)
+): void {
   const url = new URL(href, window.location.href);
-  if (url.pathname !== window.location.pathname || url.hash === "") {
+  if (url.pathname !== window.location.pathname) {
+    navigateToOtherPath(href);
+    return;
+  }
+  if (url.hash === "") {
     router.push(href);
     return;
   }
@@ -146,6 +155,12 @@ type SitePaletteProviderProps = {
   readonly settings: SiteSettings;
   /** Where a copy action reports what it copied. */
   readonly toasts: CopyToasts;
+  /**
+   * Runs a `Navigate` row whose address has another path than the page on screen. A `Navigate`
+   * row on the same path goes through the router or the hash instead. Defaults to the Next
+   * router's `push`. Memoize it.
+   */
+  readonly navigateToOtherPath?: (href: string) => void;
   readonly children: ReactNode;
 };
 
@@ -155,7 +170,12 @@ type SitePaletteProviderProps = {
  * document, since the listener captures the key before any other handler sees it. Render one per
  * root layout, around the surface's chrome, and place `SitePaletteDialog` inside it.
  */
-export function SitePaletteProvider({ settings, toasts, children }: SitePaletteProviderProps): ReactElement {
+export function SitePaletteProvider({
+  settings,
+  toasts,
+  navigateToOtherPath,
+  children,
+}: SitePaletteProviderProps): ReactElement {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -277,7 +297,7 @@ export function SitePaletteProvider({ settings, toasts, children }: SitePaletteP
             return;
           case "Navigate":
             afterClose.current = () => {
-              navigate(router, action.href);
+              navigate(router, action.href, navigateToOtherPath);
             };
             close();
             return;
@@ -291,7 +311,7 @@ export function SitePaletteProvider({ settings, toasts, children }: SitePaletteP
         option.apply();
       },
     };
-  }, [open, show, stack, query, shown, toasts, router]);
+  }, [open, show, stack, query, shown, toasts, router, navigateToOtherPath]);
 
   return (
     <RegistryContext.Provider value={registry}>

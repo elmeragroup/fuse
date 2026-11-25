@@ -1,7 +1,6 @@
 import { Fragment } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import Link from "next/link";
 import { cn, tv } from "tailwind-variants";
 
 import { Meter } from "@elmeragroup/fuse/meter";
@@ -40,9 +39,9 @@ export function Labelled({ parts, children }: LabelledProps): ReactElement {
         {parts.map((part, index) => (
           <Fragment key={part.slug}>
             {index > 0 ? <span aria-hidden>·</span> : null}
-            <Link href={landingComponent(part.slug).href} className={styles.part()}>
+            <a href={landingComponent(part.slug).href} className={styles.part()}>
               {part.name}
-            </Link>
+            </a>
           </Fragment>
         ))}
       </p>

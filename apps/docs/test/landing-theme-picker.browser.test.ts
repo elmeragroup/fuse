@@ -1,10 +1,12 @@
-import type { Locator, Page, Route } from "playwright";
-import { describe, expect, it } from "vitest";
+import type { Locator, Page, Request, Route } from "playwright";
+import { describe, expect, it, onTestFinished } from "vitest";
 
 import { DESKTOP_VIEWPORT, readThemeAttributes } from "./demo-page";
 import type { ThemeAttributes } from "./demo-page";
 import { brandSite, dashboard, PHONE_VIEWPORT, row, shownSide } from "./landing-dashboard";
 import { expectTargets, launchLandingSuite, settleFrames } from "./landing-page";
+import { box } from "./studio/page";
+import type { Box } from "./studio/page";
 
 const { openLanding } = launchLandingSuite();
 
@@ -55,6 +57,11 @@ const STEPS: readonly Step[] = [
 /** The sticky nav, where every picker variant lives. */
 function nav(page: Page): Locator {
   return page.getByRole("banner");
+}
+
+/** The nav's home link, the Fuse wordmark. */
+function home(page: Page): Locator {
+  return nav(page).getByRole("link", { name: "Fuse" });
 }
 
 /** The nav's theme chip. */
@@ -109,6 +116,15 @@ function urlTheme(page: Page): string | null {
 
 /** A shared address's theme: its slug, and the attributes it must stamp. */
 const SHARED = STEPS.at(-1) ?? OPENING;
+
+/** The shared address with Elmera picked: a theme other than the opening one. */
+const ELMERA_FROM_SHARED: Step = {
+  brand: "Elmera",
+  segment: "Company",
+  identity: "Neutral",
+  attributes: { identity: "neutral", brand: "elma", segment: "company" },
+  slug: "neutral-elma-company",
+};
 
 /** The first step's theme: its slug, and the attributes it must stamp. */
 const FIRST_PICK = STEPS[0] ?? OPENING;
@@ -180,7 +196,7 @@ describe("landing theme picker", () => {
     // The route names the opening theme both before and after the pick; only the address changed.
     await choose(page, FIRST_PICK);
     await expect.poll(() => urlTheme(page)).toBe(FIRST_PICK.slug);
-    await nav(page).getByRole("link", { name: "Fuse" }).click();
+    await home(page).click();
     await expect.poll(() => urlTheme(page)).toBeNull();
     await expect.poll(async () => documentTheme(page)).toEqual(OPENING.attributes);
 
@@ -235,6 +251,197 @@ describe("landing theme picker", () => {
   });
 });
 
+/** Whether `request` is a Next router prefetch, not the request a click or a load made. */
+function isPrefetch(request: Request): boolean {
+  return request.headers()["next-router-prefetch"] !== undefined;
+}
+
+/** A page's requests held at the network until the test lets them through. */
+type HeldPage = {
+  /** Resolves once the click's own request, any request but a prefetch, is held. */
+  readonly holding: Promise<void>;
+  /** Lets every held request through. */
+  readonly release: () => void;
+};
+
+/**
+ * Holds every request for `pathname`, prefetches included, so the page a click opens stays
+ * loading until the test releases it. The first `passing` requests go through, as the landing's
+ * own document does when the test holds `/`. The test's end releases whatever is still held, so a
+ * failing step leaves no request suspended.
+ *
+ * While Chromium loads a document it answers no DevTools call into the page, so `evaluate` and
+ * locators wait for the load to finish. Only `page.mouse`, `page.keyboard` and `page.url()` work
+ * while a document request is held, and a test aims a click at a box it measured before.
+ */
+async function holdPage(page: Page, pathname: string, passing = 0): Promise<HeldPage> {
+  const { promise: released, resolve: release } = Promise.withResolvers<void>();
+  const { promise: holding, resolve: hold } = Promise.withResolvers<void>();
+  onTestFinished(() => release());
+  let passed = 0;
+  await page.route(
+    (url) => url.pathname === pathname,
+    async (route) => {
+      if (passed < passing) {
+        passed += 1;
+        await route.continue();
+        return;
+      }
+      if (!isPrefetch(route.request())) {
+        hold();
+      }
+      await released;
+      // The page may have closed while the request waited.
+      await route.continue().catch(() => undefined);
+    }
+  );
+  return { holding, release };
+}
+
+/**
+ * Opens the landing at `search` with the requests for `pathname` held from the start, before any
+ * prefetch. The first `passing` requests go through, as `holdPage` describes.
+ */
+async function openHolding(
+  pathname: string,
+  { search = "", passing = 0 }: { search?: string; passing?: number } = {}
+): Promise<{ page: Page; held: HeldPage }> {
+  let held: HeldPage | undefined;
+  const page = await openLanding(DESKTOP_VIEWPORT, {
+    search,
+    prepare: async (opening) => {
+      held = await holdPage(opening, pathname, passing);
+    },
+  });
+  if (held === undefined) throw new Error("prepare did not run");
+  return { page, held };
+}
+
+/**
+ * Resolves once the next request for `pathname`, other than a prefetch, finishes or fails. A
+ * document request finishes after its page has committed, so the address shows where it went.
+ */
+function requestSettles(page: Page, pathname: string): Promise<void> {
+  const { promise, resolve } = Promise.withResolvers<void>();
+  const settle = (request: Request): void => {
+    if (new URL(request.url()).pathname !== pathname || isPrefetch(request)) {
+      return;
+    }
+    page.off("requestfinished", settle);
+    page.off("requestfailed", settle);
+    resolve();
+  };
+  page.on("requestfinished", settle);
+  page.on("requestfailed", settle);
+  return promise;
+}
+
+/** Clicks the middle of `target` with the mouse alone, which works while a document loads. */
+async function clickAt(page: Page, target: Box): Promise<void> {
+  await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
+}
+
+describe("landing theme picker during a page navigation", () => {
+  const quickStart = (page: Page): Locator => page.getByRole("heading", { level: 1, name: /^Quick start/u });
+  const getStarted = (page: Page): Locator => nav(page).getByRole("button", { name: "Get started" });
+  /** The page's brand rail tile for `step`'s brand. Its name ends in its brand code. */
+  const brandTile = (page: Page, step: Step): Locator =>
+    page
+      .getByRole("region", { name: /^Try it yourself/u })
+      .getByRole("button", { name: `data-theme-brand="${String(step.attributes.brand)}"` });
+
+  it.each([
+    {
+      via: "the nav's Get started",
+      // Playwright would otherwise wait for the navigation the click starts, which stays held.
+      leave: async (page: Page) => getStarted(page).click({ noWaitAfter: true }),
+    },
+    {
+      via: "the site palette",
+      leave: async (page: Page) => {
+        await page.keyboard.press("Control+k");
+        const palette = page.getByRole("dialog", { name: "Site search", exact: true });
+        await palette.getByRole("combobox").fill("quick start");
+        await palette
+          .getByRole("option", { name: /^Quick start/u })
+          .first()
+          .waitFor();
+        await page.keyboard.press("Enter");
+      },
+    },
+  ])("finishes the page $via opened when a pick lands while it loads", async ({ leave }) => {
+    const { page, held } = await openHolding("/quick-start");
+    // From the opening theme, the Fjordkraft tile makes the first pick.
+    const tile = brandTile(page, FIRST_PICK);
+    await tile.scrollIntoViewIfNeeded();
+    const tileBox = await box(tile);
+    await leave(page);
+    await held.holding;
+
+    await clickAt(page, tileBox);
+    await expect.poll(() => urlTheme(page)).toBe(FIRST_PICK.slug);
+    held.release();
+
+    await quickStart(page).waitFor();
+    expect(new URL(page.url()).pathname).toBe("/quick-start");
+
+    // The pick rewrote the landing's entry before the page left, so Back wears it again.
+    await page.goBack();
+    await expect.poll(() => urlTheme(page)).toBe(FIRST_PICK.slug);
+    await expect.poll(async () => documentTheme(page)).toEqual(FIRST_PICK.attributes);
+    await page.context().close();
+  });
+
+  it("stays on the landing the home link opened over a page still loading, and follows the address", async () => {
+    const { page, held } = await openHolding("/quick-start", { search: `?theme=${SHARED.slug}` });
+    const homeBox = await box(home(page));
+    await getStarted(page).click({ noWaitAfter: true });
+    await held.holding;
+    const quickStartSettles = requestSettles(page, "/quick-start");
+    const reachedPlainLanding = page.waitForEvent("framenavigated", {
+      predicate: (frame) => frame === page.mainFrame() && new URL(frame.url()).search === "",
+    });
+
+    // The home link's document load replaces the quick start's, so the quick start's response,
+    // let through after it, opens nothing.
+    await clickAt(page, homeBox);
+    held.release();
+    await Promise.all([quickStartSettles, reachedPlainLanding]);
+    await page.waitForLoadState("load");
+    expect(new URL(page.url()).pathname).toBe("/");
+    expect(urlTheme(page)).toBeNull();
+    await expect.poll(async () => documentTheme(page)).toEqual(OPENING.attributes);
+    await page.context().close();
+  });
+
+  it("opens the plain landing the home link asked for when a pick lands while it loads", async () => {
+    // The landing's own document goes through; every later request for `/` is held.
+    const { page, held } = await openHolding("/", { search: `?theme=${SHARED.slug}`, passing: 1 });
+    const tile = brandTile(page, ELMERA_FROM_SHARED);
+    await tile.scrollIntoViewIfNeeded();
+    const tileBox = await box(tile);
+    const homeBox = await box(home(page));
+    const homeSettles = requestSettles(page, "/");
+
+    await clickAt(page, homeBox);
+    await held.holding;
+    await clickAt(page, tileBox);
+    await expect.poll(() => urlTheme(page)).toBe(ELMERA_FROM_SHARED.slug);
+    held.release();
+    await homeSettles;
+
+    await expect.poll(() => urlTheme(page)).toBeNull();
+    expect(new URL(page.url()).pathname).toBe("/");
+    await expect.poll(async () => documentTheme(page)).toEqual(OPENING.attributes);
+
+    // The pick rewrote the entry the home link left, so Back wears it.
+    await page.goBack();
+    await expect.poll(() => urlTheme(page)).toBe(ELMERA_FROM_SHARED.slug);
+    await expect.poll(async () => documentTheme(page)).toEqual(ELMERA_FROM_SHARED.attributes);
+    await page.context().close();
+  });
+});
+
 describe("landing theme picker shortcut", () => {
   /** Opens on Fjordkraft, so the focused tile is the current brand's, not the grid's first. */
   const search = "?theme=branded-fkas-private";
@@ -249,7 +456,7 @@ describe("landing theme picker shortcut", () => {
 
   it("opens on the current brand, closes on a second press and gives focus back", async () => {
     const page = await openLanding(DESKTOP_VIEWPORT, { search });
-    const before = nav(page).getByRole("link", { name: "Fuse" });
+    const before = home(page);
     await before.focus();
 
     await page.keyboard.press("ControlOrMeta+j");
