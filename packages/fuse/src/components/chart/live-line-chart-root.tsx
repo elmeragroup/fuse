@@ -211,11 +211,11 @@ export function LiveLineChartRoot({
   const { plot, probe, reads } = useMeasuredPlot(plotRef);
   useOpenDrawing(drawing);
   const reduced = useReducedMotion();
+  const mode: LiveMode = paused ? "paused" : reduced ? "still" : "live";
   // The mode goes first, so a Root that mounts paused holds the first frame, at the latest reading.
   useLayoutEffect(() => {
-    const mode: LiveMode = paused ? "paused" : reduced ? "still" : "live";
     clock.setMode(mode);
-  }, [clock, paused, reduced]);
+  }, [clock, mode]);
   useLayoutEffect(() => {
     clock.feed(feed);
   }, [clock, feed]);
@@ -265,11 +265,10 @@ export function LiveLineChartRoot({
       id,
       name,
       drawing,
-      reduced,
-      paused,
+      mode,
       announce,
     }),
-    [text, clock, store, id, name, drawing, reduced, paused, announce]
+    [text, clock, store, id, name, drawing, mode, announce]
   );
   // The description reads the feed the plot shows, as every readout does, so a paused chart's
   // description holds still with it.

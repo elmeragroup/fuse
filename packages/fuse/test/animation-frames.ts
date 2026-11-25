@@ -53,6 +53,27 @@ export function useFakeFrames(): void {
 }
 
 /**
+ * Fakes the page's animation frames and its `performance` clock for the rest of the current test,
+ * as `useFakeFrames` does, and holds `Date.now()` at an instant, so a loop that reads the wall clock
+ * as well runs frame by frame against a wall clock that stays put. The frame clock and the wall
+ * clock are separate fakes, so each step runs one frame callback. Restores the real ones when the
+ * test finishes.
+ *
+ * @param epoch - The instant `Date.now()` returns, in epoch milliseconds.
+ * @returns Runs a count of frames, each on the next frame boundary of the frame clock.
+ */
+export function useFakeFramesAt(epoch: number): (frames: number) => void {
+  useFakeFrames();
+  const now = vi.spyOn(Date, "now").mockReturnValue(epoch);
+  onTestFinished(() => {
+    now.mockRestore();
+  });
+  return (frames) => {
+    for (let frame = 0; frame < frames; frame += 1) vi.advanceTimersToNextFrame();
+  };
+}
+
+/**
  * Waits until the page has a fake timeout pending, checking once per animation frame. A component
  * that arms its next timeout in an effect commits the render that shows the last one's work first,
  * and the runner can render a frame between that commit and the effect, so a test that moves the

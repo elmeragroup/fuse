@@ -149,7 +149,7 @@ describe("createLiveClock", () => {
     // wall clock, so the lead decays from 30 s by half every 10 s, faster than the wall clock moves
     // at first: 100 ms on, T + 100 + 30 000 × 2^(−0.01) ≈ T + 29 892.5 lies behind T + 30 000. The
     // end holds at T + 30 000 until the decay slows: 10 s on it would be T + 25 000, still held,
-    // and 30 s on it is T + 30 000 + 3 750, moving again.
+    // and 30 s on it is T + 30 000 + 3 750, moving again. The frames say when they hold it.
     const { advance, clock } = runningClock(FEED);
     clock.feed({ ...FEED, points: [...FEED.points, { time: NOON + 40 * SECOND + 16, value: 50 }], tip: 50 });
     advance(16);
@@ -159,12 +159,13 @@ describe("createLiveClock", () => {
     let before = clock.get().now;
     for (let step = 1; step <= 300; step += 1) {
       advance(100);
-      const { now } = clock.get();
+      const { now, holds } = clock.get();
       expect(now).toBeGreaterThanOrEqual(before);
       before = now;
-      if (step === 1 || step === 100) expect(now).toBe(at + 30 * SECOND);
+      if (step === 1 || step === 100) expect([now, holds]).toEqual([at + 30 * SECOND, true]);
     }
     expect(clock.get().now).toBeCloseTo(at + 30 * SECOND + 3_750, 6);
+    expect(clock.get().holds).toBe(false);
   });
 
   it("glides the domain and the tip from what they show to the new fit on the live curve", () => {

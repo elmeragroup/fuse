@@ -49,11 +49,20 @@ export type LiveFrame = {
   /** The clock, the window's end, in epoch milliseconds. */
   readonly now: number;
   readonly window: LiveWindow;
+  /**
+   * Whether the clock clamps the window's end ahead of the wall clock plus the lead, at the last
+   * frame's end or the latest reading. It does while a lead from readings stamped ahead of the wall
+   * clock decays faster than the wall clock moves, and the window holds still meanwhile.
+   */
+  readonly holds: boolean;
   /** The readings inside the window. */
   readonly span: LiveSpan;
   /** The value domain as it shows now. */
   readonly domain: readonly [number, number];
-  /** The value domain the domain's glide comes to rest at, whose tick step the value ticks keep. */
+  /**
+   * The value domain the domain's glide comes to rest at, whose tick step the value ticks keep under
+   * a live clock.
+   */
   readonly rest: readonly [number, number];
   /** The tip's value as it shows now, or null with no reading. */
   readonly tip: number | null;
@@ -158,6 +167,9 @@ function leadAt(lead: Lead, epoch: number): number {
   return lead.to + (lead.from - lead.to) * 2 ** (-(epoch - lead.at) / LEAD_HALF_LIFE_MS);
 }
 
+/** Where a frame's window ends, and whether the clock clamps it there, ahead of the led wall clock. */
+type WindowEnd = { readonly now: number; readonly holds: boolean };
+
 /** When a frame was composed, on the frame clock, and the window length it drew. */
 type Composed = { readonly at: number; readonly duration: number };
 
@@ -259,7 +271,7 @@ export function createLiveClock(host: LiveClockHost, initial: LiveFeed): LiveClo
    * scrolling out of view, or under a new window length, shows a window the last frame never did,
    * so nothing on screen shows where a glide would start, and it rests on its targets.
    */
-  const compose = (now: number, time: number, motion: boolean): LiveFrame => {
+  const compose = ({ now, holds }: WindowEnd, time: number, motion: boolean): LiveFrame => {
     const { points, tip: target } = feed;
     const glides =
       motion &&
@@ -279,6 +291,7 @@ export function createLiveClock(host: LiveClockHost, initial: LiveFeed): LiveClo
         feed,
         now,
         window,
+        holds,
         span,
         domain: domain.to,
         rest: domain.to,
@@ -311,11 +324,11 @@ export function createLiveClock(host: LiveClockHost, initial: LiveFeed): LiveClo
     // A widened domain is what the frame showed, so the glide goes on from it: a value that leaves
     // eases the domain back in rather than snapping it.
     if (shown !== showing) domain = { from: shown, to: domain.to, at: time };
-    return { feed, now, window, span, domain: shown, rest: domain.to, tip, held, vertices };
+    return { feed, now, window, holds, span, domain: shown, rest: domain.to, tip, held, vertices };
   };
 
   // The first frame rests at the latest reading, so the server and every browser draw it alike.
-  let frame = compose(latest() ?? 0, 0, false);
+  let frame = compose({ now: latest() ?? 0, holds: false }, 0, false);
 
   const show = (next: LiveFrame): void => {
     frame = next;
@@ -326,11 +339,13 @@ export function createLiveClock(host: LiveClockHost, initial: LiveFeed): LiveClo
    * The wall clock and the lead the readings run ahead of it, never behind the latest reading, so a
    * reading never lies past the right edge, and never behind the last frame's end. A lead of more
    * than about 14 s decays faster than the wall clock moves, and the window holds still until the
-   * decay slows rather than scroll back.
+   * decay slows rather than scroll back. The end it returns says when it clamps the window's end.
    */
-  const wallNow = (): number => {
+  const wallNow = (): WindowEnd => {
     const epoch = host.epoch();
-    return Math.max(frame.now, epoch + leadAt(lead, epoch), latest() ?? Number.NEGATIVE_INFINITY);
+    const led = epoch + leadAt(lead, epoch);
+    const now = Math.max(frame.now, led, latest() ?? Number.NEGATIVE_INFINITY);
+    return { now, holds: led < now };
   };
 
   /** Redraws the feed at the wall clock with no motion, as a still clock and a first reading do. */

@@ -14,7 +14,7 @@ import type { DrawGate } from "./chart-draw-gate";
 import type { ChartPlot } from "./chart-plot-measure";
 import { LiveLinePlotContext, LiveLineRootContext } from "./chart-scope-contexts";
 import { ChartCompositionError } from "./layout/errors";
-import type { LiveClock, LiveFeed, LiveFrame } from "./layout/live-clock";
+import type { LiveClock, LiveFeed, LiveFrame, LiveMode } from "./layout/live-clock";
 import type { LiveGeometry } from "./layout/live-window";
 import type { LiveText } from "./live-line-chart-text";
 
@@ -123,10 +123,11 @@ export type LiveLineRootContextValue = {
   /** Root's `aria-label`, or undefined when `aria-labelledby` names the chart. */
   readonly name: string | undefined;
   readonly drawing: DrawGate;
-  /** Whether the reader asks for reduced motion, under which no part glides. */
-  readonly reduced: boolean;
-  /** Whether Root is `paused`, under which the live dot sends out no ping. */
-  readonly paused: boolean;
+  /**
+   * How Root runs its clock, from `paused` and reduced motion. The live dot sends out no ping while
+   * it is `"paused"`.
+   */
+  readonly mode: LiveMode;
   /** Says a message through Root's status region, such as the table's page. */
   readonly announce: (text: string) => void;
 };

@@ -31,9 +31,6 @@ const AXE_EXCLUSIONS_BY_RULE = {
     '[data-demo-stage] [data-slot="text"].text-brand',
     '[data-demo-stage] [data-slot="span"].text-brand',
     '[data-demo-stage] [data-slot="link"].text-brand',
-    // #1039: every LiveLineChart axis tick. Only the ticks in the edge fade fail, but a tick's
-    // opacity changes as readings arrive, so a selector keyed to it races the scan.
-    '[data-slot$="-axis"][data-live] [data-slot$="-tick"]',
     // WCAG 1.4.3 exempts the text of an inactive control.
     '[data-slot="file-upload"][data-disabled] [data-slot="file-upload-description"]',
     '[data-slot="input-group"]:has(> [data-slot="input-group-control"]:disabled) [data-slot="input-group-text"]',
