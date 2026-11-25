@@ -5,8 +5,10 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { expectFocusRing } from "../../../test/assert-focus-ring";
 import { withLocale } from "../../../test/locale-matrix";
-import { formNamed, renderThemed } from "../../../test/themed-browser-render";
+import { MUTED, expectSameColor, roleFill, toSrgb } from "../../../test/surface-paint";
+import { fieldBoxOf, formNamed, renderThemed } from "../../../test/themed-browser-render";
 import type { SupportedLocale } from "../../intl/locale-context";
 import { Field } from "../field";
 import { InputGroup } from "../input-group";
@@ -661,4 +663,39 @@ describe("Combobox", () => {
     addonRail().click();
     expect(document.activeElement).toBe(input);
   });
+
+  it("rings the field box of an input rendered through a custom element on keyboard focus", async () => {
+    renderCombobox(
+      <>
+        <button type="button">Before</button>
+        <Combobox.Root items={[...FRUITS]}>
+          <Combobox.Input aria-label="Fruit" render={<input />} />
+        </Combobox.Root>
+      </>
+    );
+    buttonNamed("Before").focus();
+    await userEvent.keyboard("{Tab}");
+    const input = comboboxNamed("Fruit");
+    expect(document.activeElement).toBe(input);
+    expectFocusRing(fieldBoxOf(input), "the field box rings for its custom input");
+  });
+
+  it.each([
+    ["disabled", { disabled: true }, [{ role: "--input", alpha: 0.5 }]],
+    ["read-only", { readOnly: true }, MUTED],
+  ] as const)(
+    "gives the field box of a %s input rendered through a custom element its fill",
+    (_state, rootProps, fill) => {
+      // Unit under test: the fill the InputGroup root paints around a custom `render` input. Oracle:
+      // the theme role `field-box.ts` names for the state, `--input` at 50% for a disabled control
+      // and `--muted` for a read-only one, read at the box.
+      renderCombobox(
+        <Combobox.Root items={[...FRUITS]} {...rootProps}>
+          <Combobox.Input aria-label="Fruit" render={<input />} />
+        </Combobox.Root>
+      );
+      const box = fieldBoxOf(comboboxNamed("Fruit"));
+      expectSameColor(toSrgb(getComputedStyle(box).backgroundColor), roleFill(box, fill));
+    }
+  );
 });

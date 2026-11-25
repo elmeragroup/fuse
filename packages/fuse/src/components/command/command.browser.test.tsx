@@ -6,6 +6,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { expectFocusRing } from "../../../test/assert-focus-ring";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import { waitForPopupSettled } from "../../../test/popup-settled";
@@ -191,6 +192,22 @@ describe("Command", () => {
     }
     await userEvent.click(icon);
     expect(document.activeElement).toBe(input);
+  });
+
+  it("rings the field box of an input rendered through a custom element on keyboard focus", async () => {
+    renderPalette(
+      <>
+        <button type="button">Before</button>
+        <Command.Root items={["Customers"]}>
+          <Command.Input aria-label="Commands" render={<input />} />
+        </Command.Root>
+      </>
+    );
+    roleNamed("button", "Before").focus();
+    await userEvent.keyboard("{Tab}");
+    const input = comboboxNamed("Commands");
+    expect(document.activeElement).toBe(input);
+    expectFocusRing(fieldBoxOf(input), "the field box rings for its custom input");
   });
 
   it("filters as the user types and shows the dictionary's empty message when nothing matches", async () => {
