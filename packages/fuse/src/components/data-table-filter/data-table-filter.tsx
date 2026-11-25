@@ -477,13 +477,20 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
   // would take an open popover out of the strip with the chip it leaves, and miss a draft the
   // move settles that widens a chip. Scrolling a chip wider than the strip can leave its Value
   // clipped, so the Value scrolls into view after it. The scroll is instant, since the popover's
-  // glide is the motion.
+  // glide is the motion. Each request reveals once. An Activity that hides and shows the filter
+  // runs this effect again, and the strip then stays where the user scrolled it. Only an element
+  // with a layout box scrolls. A request with neither box, such as one made as the Bar hid, stays
+  // pending until this effect finds a target with a layout box or the editor closes.
+  const revealedRequest = useRef<typeof editRequest>(null);
   useLayoutEffect(() => {
-    if (editRequest === null) {
+    if (editRequest === null || editRequest === revealedRequest.current) {
       return;
     }
     for (const element of [chipElement(editRequest.fieldId), valueElement(editRequest.fieldId)]) {
-      element?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
+      if (element !== null && element.getClientRects().length > 0) {
+        element.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
+        revealedRequest.current = editRequest;
+      }
     }
   }, [editRequest, chipElement, valueElement]);
 
