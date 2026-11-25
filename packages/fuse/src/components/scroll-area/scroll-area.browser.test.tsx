@@ -114,7 +114,7 @@ describe("ScrollArea", () => {
     expect(getComputedStyle(hover).pointerEvents).toBe("auto");
   });
 
-  it("keeps ArrowDown and PageDown on a focused overflow viewport as native scroll", async () => {
+  it.each(["ArrowDown", "PageDown"])("scrolls a focused overflow viewport natively on %s", async (key) => {
     render(
       <ScrollArea.Root style={{ height: 128 }}>
         <TallList label="Keyboard list" items={30} />
@@ -125,19 +125,36 @@ describe("ScrollArea", () => {
     const viewport = viewportFromText("Keyboard list");
     expect(viewport.tabIndex).toBe(0);
 
-    await userEvent.click(viewport);
+    viewport.focus();
     expect(document.activeElement).toBe(viewport);
-    expect(viewport.scrollHeight).toBeGreaterThan(viewport.clientHeight);
-    expect(getComputedStyle(viewport).overflowY).toBe("scroll");
+    expect(viewport.scrollTop).toBe(0);
 
-    // Trusted ArrowDown and PageDown in this iframe never move scrollTop, so the test asserts that
-    // the default stays uncanceled.
-    const arrow = new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true });
-    const pageDown = new KeyboardEvent("keydown", { key: "PageDown", bubbles: true, cancelable: true });
-    expect(viewport.dispatchEvent(arrow)).toBe(true);
-    expect(viewport.dispatchEvent(pageDown)).toBe(true);
-    expect(arrow.defaultPrevented).toBe(false);
-    expect(pageDown.defaultPrevented).toBe(false);
+    const keydowns: KeyboardEvent[] = [];
+    viewport.addEventListener("keydown", (event) => keydowns.push(event));
+    await userEvent.keyboard(`{${key}}`);
+    // The browser scrolls after the trusted keydown resolves.
+    await expect.poll(() => viewport.scrollTop).toBeGreaterThan(0);
+    // A script can move scrollTop after cancelling the key, so the scroll alone does not prove a native one.
+    expect(
+      keydowns.map((event) => ({
+        key: event.key,
+        isTrusted: event.isTrusted,
+        defaultPrevented: event.defaultPrevented,
+      }))
+    ).toEqual([{ key, isTrusted: true, defaultPrevented: false }]);
+  });
+
+  it("scrolls an overflow viewport natively on a trusted wheel", async () => {
+    render(
+      <ScrollArea.Root style={{ height: 128 }}>
+        <TallList label="Wheel list" items={30} />
+      </ScrollArea.Root>
+    );
+
+    await waitForOverflow("Wheel list", "data-has-overflow-y");
+    const viewport = viewportFromText("Wheel list");
+    viewport.focus();
+    expect(document.activeElement).toBe(viewport);
 
     const wheels: WheelEvent[] = [];
     viewport.addEventListener("wheel", (event) => wheels.push(event), { passive: true });
