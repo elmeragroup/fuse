@@ -75,25 +75,26 @@ describe("PhoneEditor controlled countryCode", () => {
   it("clears the digits on a prop change, as a pick does, and proposes the cleared number", () => {
     const state = PhoneEditor.reconcile(typedInNorway(), { countryCode: "SE" });
     expect(shown(state)).toEqual({ display: "", output: "", country: "SE" });
-    expect(PhoneEditor.steeredValue(state)).toEqual({ value: "" });
+    expect(PhoneEditor.steeredNotice(state)?.output).toBe("");
   });
 
   it("keeps the digits on a prop change under preserveOnCountryChange", () => {
     const props = { preserveOnCountryChange: true } as const;
     const state = PhoneEditor.reconcile(typedInNorway(props), { ...props, countryCode: "SE" });
     expect(shown(state)).toEqual({ display: "41234567", output: "+4641234567", country: "SE" });
-    expect(PhoneEditor.steeredValue(state)).toEqual({ value: "+4641234567" });
+    expect(PhoneEditor.steeredNotice(state)?.output).toBe("+4641234567");
   });
 
   it("gives each prop change a new proposal and keeps it across equal props", () => {
     const first = PhoneEditor.reconcile(typedInNorway(), { countryCode: "SE" });
-    const proposal = PhoneEditor.steeredValue(first);
+    const firstNotice = PhoneEditor.steeredNotice(first);
     expect(PhoneEditor.reconcile(first, { countryCode: "SE" })).toBe(first);
     const typed = fill(first, "701234567");
-    expect(PhoneEditor.steeredValue(typed), "an edit replaces the proposal").toBeNull();
-    const second = PhoneEditor.reconcile(typed, { countryCode: "NO" });
-    expect(PhoneEditor.steeredValue(second)).toEqual({ value: "" });
-    expect(PhoneEditor.steeredValue(second)).not.toBe(proposal);
+    expect(PhoneEditor.steeredNotice(typed), "an edit replaces the proposal").toBeNull();
+    const secondNotice = PhoneEditor.steeredNotice(PhoneEditor.reconcile(typed, { countryCode: "NO" }));
+    expect(firstNotice?.output).toBe("");
+    expect(secondNotice?.output).toBe("");
+    expect(secondNotice?.notice).not.toBe(firstNotice?.notice);
   });
 
   it("reads a controlled value without a country in countryCode, and proposes the pick over it", () => {
@@ -112,7 +113,7 @@ describe("PhoneEditor controlled countryCode", () => {
     // The parent still holds its digits, so they show, read in the new country, until it takes
     // the cleared number.
     expect(shown(steered)).toEqual({ display: "41234567", output: "41234567", country: "SE" });
-    expect(PhoneEditor.steeredValue(steered)).toEqual({ value: "" });
+    expect(PhoneEditor.steeredNotice(steered)?.output).toBe("");
     expect(shown(PhoneEditor.reconcile(steered, { ...props, value: "", countryCode: "SE" }))).toEqual({
       display: "",
       output: "",
@@ -173,7 +174,7 @@ describe("PhoneEditor controlled countryCode", () => {
       expect(shown(typed)).toMatchObject({ output: "+4741234567", country: "NO" });
       const steered = PhoneEditor.reconcile(typed, { ...props, value: "+4741234567", countryCode: "SE" });
       expect(shown(steered)).toMatchObject({ output: "+4741234567", country: "NO" });
-      expect(PhoneEditor.steeredValue(steered)).toBeNull();
+      expect(PhoneEditor.steeredNotice(steered)).toBeNull();
     }
   );
 
@@ -187,7 +188,7 @@ describe("PhoneEditor controlled countryCode", () => {
     expect(shown(echoed)).toEqual({ display: "701234567", output: "701234567", country: "SE" });
     const steered = PhoneEditor.reconcile(echoed, { ...props, value: "701234567", countryCode: "NO" });
     expect(shown(steered)).toEqual({ display: "701234567", output: "701234567", country: "NO" });
-    expect(PhoneEditor.steeredValue(steered)).toEqual({ value: "" });
+    expect(PhoneEditor.steeredNotice(steered)?.output).toBe("");
   });
 
   it("reads a value accepted from a rejected pick in the parent's country", () => {
@@ -242,7 +243,7 @@ describe("PhoneEditor controlled countryCode", () => {
     expect(shown(state).country).toBe("NO");
     const expanded = PhoneEditor.reconcile(state, { ...props, countries: ["NO", "FI", "SE"] });
     expect(shown(expanded)).toEqual({ display: "41234567", output: "+4741234567", country: "NO" });
-    expect(PhoneEditor.steeredValue(expanded)).toBeNull();
+    expect(PhoneEditor.steeredNotice(expanded)).toBeNull();
   });
 
   it("lets the country a value names win over a preserved pick the parent accepts without the value", () => {
@@ -269,14 +270,14 @@ describe("PhoneEditor controlled countryCode", () => {
     const picked = PhoneEditor.selectCountry(typedInNorway(), "SE");
     const accepted = PhoneEditor.reconcile(picked, { formatOnType: true, countryCode: "SE" });
     expect(shown(accepted)).toEqual({ display: "", output: "", country: "SE" });
-    expect(PhoneEditor.steeredValue(accepted)).toEqual({ value: "" });
+    expect(PhoneEditor.steeredNotice(accepted)?.output).toBe("");
   });
 
   it("clears on a countryCode change that also drops the old country from the catalog", () => {
     const typed = fill(PhoneEditor.create({ countryCode: "NO", countries: ["NO", "SE"] }), "41234567");
     const steered = PhoneEditor.reconcile(typed, { countryCode: "SE", countries: ["SE"] });
     expect(shown(steered)).toEqual({ display: "", output: "", country: "SE" });
-    expect(PhoneEditor.steeredValue(steered)).toEqual({ value: "" });
+    expect(PhoneEditor.steeredNotice(steered)?.output).toBe("");
   });
 
   it("reads the controlled value itself in the steered country, keeping its trunk 0", () => {
@@ -289,7 +290,7 @@ describe("PhoneEditor controlled countryCode", () => {
     const echoed = PhoneEditor.reconcile(pasted, { ...props, value: "070-123 45 67", countryCode: "SE" });
     const steered = PhoneEditor.reconcile(echoed, { ...props, value: "070-123 45 67", countryCode: "NO" });
     expect(shown(steered)).toMatchObject({ display: "0701234567", country: "NO" });
-    expect(PhoneEditor.steeredValue(steered)?.value.replace(/\D/g, "")).toBe("0701234567");
+    expect(PhoneEditor.steeredNotice(steered)?.output?.replace(/\D/g, "")).toBe("0701234567");
   });
 
   it("shows the country a controlled value names once the catalog offers it", () => {
@@ -310,7 +311,7 @@ describe("PhoneEditor controlled countryCode", () => {
     expect(shown(echoed).country).toBe("US");
     const steered = PhoneEditor.reconcile(echoed, { value: "+10", countryCode: "NO" });
     expect(shown(steered).country).toBe("NO");
-    expect(PhoneEditor.steeredValue(steered)).toEqual({ value: "" });
+    expect(PhoneEditor.steeredNotice(steered)?.output).toBe("");
   });
 
   it("keeps an uncontrolled default from another country in international form beside countryCode", () => {
@@ -336,7 +337,7 @@ describe("PhoneEditor controlled countryCode", () => {
     const props = { defaultValue: "41234567" } as const;
     const started = PhoneEditor.reconcile(PhoneEditor.create(props), { ...props, countryCode: "NO" });
     expect(shown(started)).toEqual({ display: "41234567", output: "+4741234567", country: "NO" });
-    expect(PhoneEditor.steeredValue(started)).toBeNull();
+    expect(PhoneEditor.steeredNotice(started)).toBeNull();
   });
 
   it("treats a code that only falls back to a waiting paste's country as a pick of its own", () => {
@@ -349,10 +350,10 @@ describe("PhoneEditor controlled countryCode", () => {
     const pasted = PhoneEditor.paste(PhoneEditor.create(props), "+4741234567");
     // FI is not offered, so it falls back to NO, the pasted country, yet it is not NO itself.
     expect(
-      PhoneEditor.steeredValue(PhoneEditor.reconcile(pasted, { ...props, countryCode: "FI" }))?.value
+      PhoneEditor.steeredNotice(PhoneEditor.reconcile(pasted, { ...props, countryCode: "FI" }))?.output
     ).toBe("");
     expect(
-      PhoneEditor.steeredValue(PhoneEditor.reconcile(pasted, { ...props, countryCode: "NO" }))
+      PhoneEditor.steeredNotice(PhoneEditor.reconcile(pasted, { ...props, countryCode: "NO" }))
     ).toBeNull();
   });
 
@@ -367,7 +368,7 @@ describe("PhoneEditor controlled countryCode", () => {
     const { value: _released, ...uncontrolled } = props;
     const released = PhoneEditor.reconcile(pasted, { ...uncontrolled, countryCode: "NO" });
     expect(shown(released)).toEqual({ display: "", output: "", country: "NO" });
-    expect(PhoneEditor.steeredValue(released)?.value).toBe("");
+    expect(PhoneEditor.steeredNotice(released)?.output).toBe("");
   });
 });
 
@@ -388,7 +389,7 @@ describe("PhoneEditor without a controlled country", () => {
     const props = { defaultValue: "+47 41 23 45 67", international: true, outputFormat: "raw" } as const;
     const replaced = PhoneEditor.reconcile(PhoneEditor.create(props), { ...props, metadata: maxMetadata });
     expect(shown(replaced)).toEqual({ display: "+47 41 23 45 67", output: "+47 41 23 45 67", country: "NO" });
-    expect(PhoneEditor.steeredValue(replaced)).toBeNull();
+    expect(PhoneEditor.steeredNotice(replaced)).toBeNull();
   });
 
   it("keeps the shown number when the parent releases a value it held against a proposal", () => {
@@ -427,7 +428,7 @@ describe("PhoneEditor answers to a proposal", () => {
       formatOnType: true,
       countryCode: "SE",
     });
-    expect(PhoneEditor.steeredValue(accepted)).toBeNull();
+    expect(PhoneEditor.steeredNotice(accepted)).toBeNull();
     expect(shown(accepted)).toMatchObject({ output: "701234567", country: "SE" });
   });
 
@@ -447,7 +448,7 @@ describe("PhoneEditor answers to a proposal", () => {
       countryCode: "SE",
     });
     // The pick already told the parent its cleared number; the country answer clears nothing new.
-    expect(PhoneEditor.steeredValue(accepted)).toBeNull();
+    expect(PhoneEditor.steeredNotice(accepted)).toBeNull();
     expect(shown(accepted)).toEqual({ display: "41234567", output: "41234567", country: "SE" });
   });
 
@@ -456,7 +457,7 @@ describe("PhoneEditor answers to a proposal", () => {
     const pasted = PhoneEditor.paste(PhoneEditor.create({ ...props, value: "" }), "+44 (0)20 1234 5678");
     const answered = PhoneEditor.reconcile(pasted, { ...props, value: "02012345678" });
     const accepted = PhoneEditor.reconcile(answered, { ...props, value: "02012345678", countryCode: "GB" });
-    expect(PhoneEditor.steeredValue(accepted)).toBeNull();
+    expect(PhoneEditor.steeredNotice(accepted)).toBeNull();
     expect(shown(accepted)).toMatchObject({ output: "+442012345678", country: "GB" });
   });
 
@@ -480,9 +481,9 @@ describe("PhoneEditor answers to a proposal", () => {
     const props = { value: "41234567", preserveOnCountryChange: true } as const;
     const state = PhoneEditor.create({ ...props, countryCode: "NO" });
     expect(proposedValue(PhoneEditor.selectCountry(state, "SJ"))).toBe("+4741234567");
-    expect(PhoneEditor.steeredValue(PhoneEditor.reconcile(state, { ...props, countryCode: "SJ" }))).toEqual({
-      value: "+4741234567",
-    });
+    expect(
+      PhoneEditor.steeredNotice(PhoneEditor.reconcile(state, { ...props, countryCode: "SJ" }))?.output
+    ).toBe("+4741234567");
   });
 });
 
@@ -504,7 +505,7 @@ describe("PhoneEditor controlled country across catalog and metadata changes", (
     expect(shown(state).country).toBe("SE");
     const changed = PhoneEditor.reconcile(state, { ...props, countries: ["NO"] });
     expect(shown(changed)).toEqual({ display: "+46701234567", output: "+46701234567", country: "NO" });
-    expect(PhoneEditor.steeredValue(changed)).toBeNull();
+    expect(PhoneEditor.steeredNotice(changed)).toBeNull();
   });
 
   it("keeps the controlled country when replaced metadata would detect another", () => {
@@ -513,7 +514,7 @@ describe("PhoneEditor controlled country across catalog and metadata changes", (
     expect(shown(state).country).toBe("US");
     const replaced = PhoneEditor.reconcile(state, { ...props, metadata: maxMetadata });
     expect(shown(replaced)).toMatchObject({ output: "4165551234", country: "US" });
-    expect(PhoneEditor.steeredValue(replaced)).toBeNull();
+    expect(PhoneEditor.steeredNotice(replaced)).toBeNull();
     expect(PhoneEditor.reconcile(replaced, { ...props, metadata: maxMetadata })).toBe(replaced);
   });
 
@@ -763,7 +764,7 @@ describe("PhoneEditor controlled country parse budget", () => {
     const accepted = PhoneEditor.reconcile(echoed, { ...props, value: "701234567", countryCode: "SE" });
     expect(parses.count).toBeLessThanOrEqual(1);
     expect(shown(accepted)).toEqual({ display: "701234567", output: "701234567", country: "SE" });
-    expect(PhoneEditor.steeredValue(accepted)).toBeNull();
+    expect(PhoneEditor.steeredNotice(accepted)).toBeNull();
   });
 
   it.each([
@@ -815,7 +816,7 @@ describe("PhoneEditor controlled country parse budget", () => {
     const accepted = PhoneEditor.reconcile(answered, { ...props, value: "0701234567", countryCode: "SE" });
     expect(parses.count).toBeLessThanOrEqual(1);
     expect(shown(accepted).country).toBe("SE");
-    expect(PhoneEditor.steeredValue(accepted)).toBeNull();
+    expect(PhoneEditor.steeredNotice(accepted)).toBeNull();
   });
 
   it("costs one parse for a catalog change that starts offering the controlled code", () => {
@@ -875,7 +876,7 @@ describe("PhoneEditor controlled country parse budget", () => {
     // The read of the value in the shown country; the echo of what the parent heard holds the
     // proposal's number without a comparison.
     expect(parses.count).toBe(1);
-    expect(PhoneEditor.steeredValue(echoed)).toBeNull();
+    expect(PhoneEditor.steeredNotice(echoed)).toBeNull();
   });
 
   it("costs two parses for a number answer in the parent's own form that comes with a formatting change", () => {

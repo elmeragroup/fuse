@@ -792,6 +792,166 @@ describe("PhoneNumberField countryCode", () => {
     expect(change).not.toHaveBeenCalled();
   });
 
+  type Shown = {
+    countryCode: "NO" | "SE";
+    outputFormat: "e164" | "international" | "raw";
+    value?: string;
+    submits: string;
+  };
+  it.each<{
+    proposal: string;
+    defaults: { defaultValue?: string; preserveOnCountryChange?: boolean };
+    // The user's proposal before the field hides, when the row has one.
+    act?: () => Promise<void> | void;
+    announced: { code: string; dialCode: string }[];
+    initial: Shown;
+    inView: Shown[];
+    hidden: Shown[];
+    revealed: Shown[];
+    heard: string[];
+  }>([
+    {
+      proposal: "sends onChange the number a picked country submits",
+      defaults: { defaultValue: "41234567" },
+      act: () => selectCountry("Sweden"),
+      announced: [{ code: "SE", dialCode: "+46" }],
+      initial: { countryCode: "NO", outputFormat: "international", submits: "+47 41 23 45 67" },
+      inView: [],
+      hidden: [
+        { countryCode: "SE", outputFormat: "international", submits: "+46 412 345 67" },
+        { countryCode: "SE", outputFormat: "raw", submits: "41234567" },
+      ],
+      revealed: [{ countryCode: "SE", outputFormat: "international", submits: "+46 412 345 67" }],
+      heard: ["41234567"],
+    },
+    {
+      proposal: "sends onChange nothing for a picked country after a format change",
+      defaults: { defaultValue: "41234567" },
+      act: () => selectCountry("Sweden"),
+      announced: [{ code: "SE", dialCode: "+46" }],
+      initial: { countryCode: "NO", outputFormat: "raw", submits: "41234567" },
+      // The proposal keeps waiting through the format change, and keeps the output from before it.
+      inView: [{ countryCode: "NO", outputFormat: "international", submits: "+47 41 23 45 67" }],
+      hidden: [
+        { countryCode: "SE", outputFormat: "international", submits: "+46 412 345 67" },
+        { countryCode: "SE", outputFormat: "raw", submits: "41234567" },
+      ],
+      revealed: [{ countryCode: "SE", outputFormat: "international", submits: "+46 412 345 67" }],
+      heard: [],
+    },
+    {
+      proposal: "sends onChange the number a pasted country submits",
+      defaults: {},
+      act: () => pastePhoneText("+46701234567"),
+      announced: [{ code: "SE", dialCode: "+46" }],
+      initial: { countryCode: "NO", outputFormat: "e164", submits: "" },
+      inView: [],
+      hidden: [
+        { countryCode: "SE", outputFormat: "e164", submits: "+46701234567" },
+        { countryCode: "SE", outputFormat: "raw", submits: "701234567" },
+      ],
+      revealed: [{ countryCode: "SE", outputFormat: "e164", submits: "+46701234567" }],
+      heard: ["701234567"],
+    },
+    {
+      proposal: "sends onChange nothing for a pasted country that a value answered",
+      defaults: {},
+      act: () => pastePhoneText("+46701234567"),
+      announced: [{ code: "SE", dialCode: "+46" }],
+      initial: { countryCode: "NO", outputFormat: "e164", submits: "" },
+      inView: [],
+      hidden: [
+        { countryCode: "SE", outputFormat: "e164", submits: "+46701234567" },
+        { countryCode: "SE", outputFormat: "raw", value: "722345678", submits: "722345678" },
+      ],
+      revealed: [],
+      heard: [],
+    },
+    {
+      proposal: "sends onChange nothing for a controlled cleared number that a value answered",
+      defaults: { preserveOnCountryChange: false },
+      announced: [],
+      initial: { countryCode: "NO", outputFormat: "raw", value: "41234567", submits: "41234567" },
+      inView: [],
+      // The new code clears the number for `onChange`, and the parent holds its value until it answers.
+      // The format makes the step's commit visible in the submission.
+      hidden: [
+        { countryCode: "SE", outputFormat: "international", value: "41234567", submits: "+46 412 345 67" },
+        { countryCode: "SE", outputFormat: "raw", value: "722345678", submits: "722345678" },
+      ],
+      revealed: [],
+      heard: [],
+    },
+    {
+      proposal: "sends onChange once the controlled number a kept country change proposed",
+      defaults: { preserveOnCountryChange: true },
+      announced: [],
+      initial: { countryCode: "NO", outputFormat: "e164", value: "41234567", submits: "+4741234567" },
+      inView: [],
+      // The parent keeps its value, so the proposal from the e164 step stays pending through the format change.
+      hidden: [
+        { countryCode: "SE", outputFormat: "e164", value: "41234567", submits: "+4641234567" },
+        { countryCode: "SE", outputFormat: "raw", value: "41234567", submits: "41234567" },
+      ],
+      revealed: [],
+      heard: ["+4641234567"],
+    },
+  ])(
+    "$proposal when a hidden Activity reveals the field",
+    async ({ defaults, act, announced, initial, inView, hidden, revealed, heard }) => {
+      const change = vi.fn<(value: string) => void>();
+      const countryChange = vi.fn<(country: { code: string; dialCode: string }) => void>();
+      const field = (mode: "hidden" | "visible", { submits: _submits, ...shown }: Shown) =>
+        withLocale(
+          "en-US",
+          <form aria-label="Phone form">
+            <Activity mode={mode}>
+              <PhoneNumberField
+                label="Mobile"
+                name="phone"
+                countries={["NO", "SE"]}
+                preserveOnCountryChange
+                {...defaults}
+                {...shown}
+                onChange={change}
+                onCountryChange={countryChange}
+              />
+            </Activity>
+          </form>
+        );
+      const { rerender } = renderThemed(field("visible", initial));
+      await act?.();
+      // The parent has not taken a proposed country, so the proposal waits out of view and reports nothing.
+      expect(countryChange.mock.calls.map(([country]) => country)).toEqual(announced);
+      await expect.element(page.getByRole("button", { name: "+47 Norway", exact: true })).toBeInTheDocument();
+      for (const step of inView) {
+        rerender(field("visible", step));
+        await expect.poll(() => phoneSubmission().get("phone")).toBe(step.submits);
+      }
+      expect(change).not.toHaveBeenCalled();
+      rerender(field("hidden", inView.at(-1) ?? initial));
+      for (const step of hidden) {
+        rerender(field("hidden", step));
+        // A hidden Activity renders at idle priority, so each step waits for its own commit.
+        await expect.poll(() => phoneSubmission().get("phone")).toBe(step.submits);
+      }
+      // A hidden Activity runs no effects, so nothing reaches `onChange` before the reveal.
+      expect(change).not.toHaveBeenCalled();
+      const last = hidden.at(-1) ?? initial;
+      rerender(field("visible", last));
+      await expect.element(page.getByRole("button", { name: "+46 Sweden", exact: true })).toBeInTheDocument();
+      expect(phoneSubmission().get("phone")).toBe(last.submits);
+      expect(change.mock.calls.map(([value]) => value)).toEqual(heard);
+      for (const step of revealed) {
+        rerender(field("visible", step));
+        await expect.poll(() => phoneSubmission().get("phone")).toBe(step.submits);
+        // A format change in view reports nothing, so the reveal's notice stays the only call.
+        expect(change.mock.calls.map(([value]) => value)).toEqual(heard);
+      }
+      expect(countryChange.mock.calls.map(([country]) => country)).toEqual(announced);
+    }
+  );
+
   it("lets a parent steer the country of an empty field without calling it back", async () => {
     const countryChange = vi.fn<(country: { code: string; dialCode: string }) => void>();
     const change = vi.fn<(value: string) => void>();

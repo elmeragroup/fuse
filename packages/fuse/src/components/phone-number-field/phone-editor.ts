@@ -28,7 +28,7 @@ import type { Configuration, Snapshot } from "./phone-snapshot";
  * proposal, which shows while the parent leaves `value` undefined or echoes the proposal's
  * output, and, when it moves the country, leaves `countryCode` undefined or echoes that country.
  * `reconcile` folds new props in; `view` reads what the field shows, `proposedValue` the output
- * a transition just proposed, `steeredValue` what a `countryCode` change proposed, and
+ * a transition just proposed, `steeredNotice` what a `countryCode` change proposed, and
  * `observeCountry` what `phone-country-notices` needs to decide what `onCountryChange` hears.
  */
 
@@ -138,8 +138,11 @@ type EditorRecord = {
   /** The proposal waiting for the parent, or `null` when none waits. */
   readonly waiting: WaitingProposal | null;
   readonly caret: EditCaret | null;
-  /** The output the latest `countryCode` change proposed, until a transition replaces it. */
-  readonly steered: ValueNotice | null;
+  /**
+   * The output the latest `countryCode` change proposed, until a transition replaces it or later
+   * props change `value`.
+   */
+  readonly steered: SteeredNotice | null;
   /**
    * How many transitions led to this state: 0 for a new field, one more for each transition. A
    * caller that sees states out of order, as the hook's notices do, tells the older one by it.
@@ -147,14 +150,39 @@ type EditorRecord = {
   readonly version: number;
 };
 
+const NOTICE = Symbol("notice");
+
 /**
- * An output a props change proposed: the number a `countryCode` pick leaves, cleared or kept under
- * `preserveOnCountryChange`, or the number of an uncontrolled proposal the props show only now. A
- * new object for each output, so the hook sends it once by its identity.
+ * The identity of one output a props change proposed: the number a `countryCode` pick leaves,
+ * cleared or kept under `preserveOnCountryChange`, or the number of an uncontrolled proposal the
+ * props show only now. Later states that carry the notice return the same object, and each change
+ * makes a new one, so the hook sends it once by its identity. It has no readable output;
+ * {@link steeredNotice} gives the one `onChange` hears.
  */
-export type ValueNotice = {
-  /** The proposed output value. */
-  readonly value: string;
+export type ValueNotice = { readonly [NOTICE]: true };
+
+/** A steered notice, its proposed output and the output it was compared with. */
+type SteeredNotice = ValueNotice & {
+  /** The output the props proposed. */
+  readonly output: string;
+  /**
+   * The value the parent held then: `value`, or for an uncontrolled number the output
+   * {@link noticeBaseline} gave.
+   */
+  readonly previousOutput: string;
+};
+
+/** A new notice for `output`, which differs from `previousOutput`. */
+function steer(output: string, previousOutput: string): SteeredNotice {
+  return { [NOTICE]: true, output, previousOutput };
+}
+
+/** A steered notice as a commit of a state delivers it to `onChange`. */
+export type SteeredRead = {
+  /** The notice's key, the same object for every state that carries it. */
+  readonly notice: ValueNotice;
+  /** The output `onChange` hears for the notice, or `null` when the field reports nothing for it. */
+  readonly output: string | null;
 };
 
 const OPEN = Symbol("open");
@@ -563,7 +591,7 @@ function settle(stored: EditorRecord, next: EditorRecord): EditorRecord {
   if (adopted && value === undefined && !shows(stored)) {
     // An uncontrolled proposal shows only now, so `onChange` hears it only now.
     const output = aligned.accepted.values.outputValue;
-    return output === previousOutput ? aligned : { ...aligned, steered: { value: output } };
+    return output === previousOutput ? aligned : { ...aligned, steered: steer(output, previousOutput) };
   }
   return aligned;
 }
@@ -647,7 +675,7 @@ function pick(
       ...record,
       accepted: picked,
       waiting: null,
-      steered: output === previousOutput ? record.steered : { value: output },
+      steered: output === previousOutput ? record.steered : steer(output, previousOutput),
     };
   }
   const read = readValueIn(value, country, configuration);
@@ -663,7 +691,7 @@ function pick(
         : waitingFor(picked, configuration, { outputBefore: before.values.outputValue, alreadyShown: false }),
     // As a pick through the picker: nothing for `onChange` only when the output is the value the
     // parent holds. A parent that stores another form of the number hears it.
-    steered: output === value ? record.steered : { value: output },
+    steered: output === value ? record.steered : steer(output, value),
   };
 }
 
@@ -696,6 +724,12 @@ export function reconcile(state: PhoneEditorState, props: PhoneEditorProps): Pho
         configuration,
         value: props.value,
         countryCode: props.countryCode,
+        // A new `value` answers the notice from earlier props. A visible field has delivered that
+        // notice in the effect of the commit that made it, which React runs before it renders
+        // again. Behind a hidden Activity the notice has not reached `onChange` yet, and would
+        // overwrite the new value. `settle` runs after the notice is dropped, so a notice these
+        // props make still stands.
+        steered: props.value === stored.value ? stored.steered : null,
       })
     : kept(stored, settings);
   const caret = shownCaret(record);
@@ -833,7 +867,7 @@ export function view(state: PhoneEditorState): PhoneEditorView {
  * an uncontrolled field showed before the proposal. A controlled field shows that proposal only
  * once the parent echoes it. An uncontrolled number's proposal that moves the
  * country against a controlled `countryCode` reports nothing here: it shows, and reports through
- * {@link steeredValue}, once the parent sets that country.
+ * {@link steeredNotice}, once the parent sets that country.
  *
  * One rule covers every proposal, edit, paste, country pick and the hydration edit alike,
  * because it is a rule about the output: a call that repeats the parent's value tells it
@@ -851,18 +885,31 @@ export function proposedValue(state: PhoneEditorState): string | null {
 }
 
 /**
- * The output the latest `countryCode` change proposed, for `onChange`: the pick's output when
- * it differs from the value the parent holds, or the output of an uncontrolled number's
- * proposal that the change revealed. Later props that propose nothing carry it forward; an
- * edit, paste, picker pick or reset clears it. It is a new object for each change, so a caller
- * sends it once by its identity.
+ * The notice the latest change to the controlled country proposed, and the output `onChange`
+ * hears for it in `state`. A new `countryCode` proposes one, as does a `countries` or `metadata`
+ * change that resolves `countryCode` to another country, such as removing `NO` from `countries`
+ * while `countryCode="NO"` stays. The change proposes the pick's output when it differs from the
+ * value the parent holds, or the output of an uncontrolled number's proposal that the change
+ * revealed. Later props that propose nothing carry the notice forward; an edit, paste, picker
+ * pick or reset clears it, as do later props that change `value`.
+ *
+ * In a controlled field the output is the one the change proposed. In an uncontrolled field it is
+ * the output `state` shows, or `null` when that output is the one the notice was compared with.
+ * The two differ when the notice is still pending for `onChange` and later props, such as a new
+ * `outputFormat`, changed the shown output, as behind a hidden Activity, which runs no effects.
+ * The hook handles each notice once, keyed by `notice`, whether or not it calls `onChange`, so a
+ * later state may return another output for a notice it already handled.
  *
  * @param state - The current state.
- * @returns The latest steered output, or `null` when none was proposed since the last user
- * transition or reset.
+ * @returns The notice and its output in `state`, or `null` when `state` holds no notice.
  */
-export function steeredValue(state: PhoneEditorState): ValueNotice | null {
-  return state[OPEN]().steered;
+export function steeredNotice(state: PhoneEditorState): SteeredRead | null {
+  const stored = state[OPEN]();
+  const { steered, value } = stored;
+  if (steered === null) return null;
+  if (value !== undefined) return { notice: steered, output: steered.output };
+  const shown = visibleSnapshot(stored).values.outputValue;
+  return { notice: steered, output: shown === steered.previousOutput ? null : shown };
 }
 
 /**
