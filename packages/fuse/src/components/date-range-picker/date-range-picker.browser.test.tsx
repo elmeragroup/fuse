@@ -3,7 +3,9 @@
  * `endName` with the label, description and merged error wired to both, a half-filled range held,
  * an end before its start, `Form` errors by name, the range calendar in the popup with cancel,
  * presets that discard a half-picked range, a calendar showing several months, the cancelable
- * details, typing across the two ends, and the popup's time inputs.
+ * details, typing across the two ends, and the popup's time inputs. In a box narrower than its
+ * segments, each segment focus reaches lies whole inside the box, a press at the trigger's center
+ * opens the calendar, and the ends share a line only where their measured widths fit it.
  */
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
@@ -17,6 +19,11 @@ import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { expectFocusRing } from "../../../test/assert-focus-ring";
 import { expectRenderTypeError } from "../../../test/caught-error";
+import {
+  atEachDensity,
+  expectFocusedSegmentsShow,
+  expectTriggerPressOpens,
+} from "../../../test/date-row-reach";
 import { freezeToday } from "../../../test/freeze-today";
 import { withLocale } from "../../../test/locale-matrix";
 import { parentHandle } from "../../../test/parent-handle";
@@ -24,8 +31,9 @@ import type { ParentHandle } from "../../../test/parent-handle";
 import { popupFocusRestored } from "../../../test/popup-focus";
 import { waitForPopupFocus, waitForPopupSettled } from "../../../test/popup-settled";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
-import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
-import { segmentWithCustomSlot } from "../../../test/wrapped-date-segment";
+import { expectTargetBoxes } from "../../../test/target-size";
+import { CONTROL_MD, formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { segmentWithCustomSlot, segmentWithCustomType } from "../../../test/wrapped-date-segment";
 import { definedProps } from "../../internal/defined-props";
 import "../../temporal-polyfill";
 import type { DateInputValue } from "../date-field/date-input";
@@ -332,6 +340,143 @@ describe("DateRangePicker wiring", () => {
       .element(page.getByRole("group", { name: "Stay", exact: true }))
       .not.toHaveAttribute("data-invalid");
   });
+});
+
+describe("DateRangePickerField in a narrow box", () => {
+  const dateTime = Temporal.PlainDateTime.from("2030-12-28T11:59:59");
+  const minutes = { start: dateTime, end: dateTime };
+  const pickers = {
+    day: <DateRangePickerField label="Stay" defaultValue={range("2030-12-28", "2030-12-31")} />,
+    minute: <DateRangePickerField label="Stay" granularity="minute" defaultValue={minutes} />,
+  };
+
+  /** Renders one range picker in a box `width` pixels wide and returns the box and its unmount. */
+  function rangeIn(width: number, granularity: keyof typeof pickers) {
+    const { unmount } = renderThemed(
+      withLocale(
+        "en-US",
+        <div data-testid="box" style={{ width }}>
+          {pickers[granularity]}
+        </div>
+      )
+    );
+    const box = page.getByTestId("box").element();
+    if (!(box instanceof HTMLElement)) throw new Error("expected the box");
+    return { box, unmount };
+  }
+
+  // 208px is the box's floor, where each end's row is narrower than its segments.
+  it("at 208px, shows each focused segment whole and opens the calendar from a press on the trigger", async () => {
+    const { box } = rangeIn(208, "minute");
+    await atEachDensity(async (density) => {
+      // Month, day, year, hour, minute and AM/PM at each end.
+      expectFocusedSegmentsShow(box, 12, `208px ${density}`);
+      await expectTriggerPressOpens(box, `208px ${density}`);
+    });
+  });
+
+  // At 384px both ends to the minute wrap onto two lines. The box grows with its lines whatever the
+  // segments' `data-type` says, and whatever the field text's size: at 32px, the trigger of a
+  // date-only range wraps under its rows.
+  it.for([
+    [
+      "a minute range whose segments carry a consumer's data-type",
+      <DateRangePicker.Root key="typed" granularity="minute" defaultValue={minutes}>
+        <DateRangePicker.Label>Stay</DateRangePicker.Label>
+        <DateRangePicker.Group>
+          <DateRangePicker.StartInput>{segmentWithCustomType}</DateRangePicker.StartInput>
+          <DateRangePicker.Separator />
+          <DateRangePicker.EndInput>{segmentWithCustomType}</DateRangePicker.EndInput>
+          <DateRangePicker.Trigger />
+        </DateRangePicker.Group>
+        <DateRangePicker.Popup>
+          <DateRangePicker.Calendar />
+        </DateRangePicker.Popup>
+      </DateRangePicker.Root>,
+    ],
+    [
+      "a date-only range with 32px field text",
+      <div key="large" style={{ "--control-text": "32px" }}>
+        <DateRangePickerField label="Stay" defaultValue={range("2030-12-28", "2030-12-31")} />
+      </div>,
+    ],
+  ] as const)("at 384px, grows the box to hold %s", async ([label, picker]) => {
+    renderThemed(withLocale("en-US", <div style={{ width: 384 }}>{picker}</div>));
+    await atEachDensity((density) => {
+      const group = roleNamed("group", "Stay");
+      expect(group.scrollHeight, `${label} ${density}: the box holds every line`).toBeLessThanOrEqual(
+        group.clientHeight
+      );
+    });
+  });
+
+  /** The range picker's group and its parts, failing when one is missing. */
+  function rangeParts(label: string) {
+    const group = roleNamed("group", "Stay");
+    const [start, end] = [...group.querySelectorAll<HTMLElement>('[data-slot="date-picker-input"]')];
+    const separator = group.querySelector('[data-slot="date-range-picker-separator"]');
+    const trigger = group.querySelector('[data-slot="date-picker-trigger"]');
+    if (start === undefined || end === undefined || separator === null || trigger === null) {
+      throw new Error(`${label}: parts`);
+    }
+    return { group, start, end, separator, trigger };
+  }
+
+  /** Whether `inner`'s vertical center lies between `outer`'s top and bottom. */
+  function onLineOf(inner: DOMRect, outer: DOMRect): boolean {
+    const center = inner.top + inner.height / 2;
+    return center >= outer.top && center <= outer.bottom;
+  }
+
+  // Flex lines break where the next item would not fit (CSS Flexbox 1 §9.3). Measured in a wide box,
+  // the rows, the separator and the trigger give three widths: all four fit, the rows fit and the
+  // trigger does not, or the end row does not fit beside the start.
+  it.for(["day", "minute"] as const)(
+    "with granularity %s, places the ends and the trigger by the room the box leaves them, inside the box",
+    async (granularity) => {
+      await atEachDensity((density) => {
+        const wide = rangeIn(1000, granularity);
+        const parts = rangeParts(`${granularity} ${density} wide`);
+        const chrome = parts.group.offsetWidth - parts.group.clientWidth;
+        const rows =
+          parts.start.scrollWidth + parts.separator.getBoundingClientRect().width + parts.end.scrollWidth;
+        const trigger = parts.trigger.getBoundingClientRect().width;
+        wide.unmount();
+        for (const [placement, room] of [
+          ["one line", rows + trigger + 8],
+          ["trigger under the rows", rows + trigger / 2],
+          ["end under the start", rows - 8],
+        ] as const) {
+          const label = `${granularity} ${density} ${placement}`;
+          const { unmount } = rangeIn(Math.ceil(room + chrome), granularity);
+          const placed = rangeParts(label);
+          const { group } = placed;
+          const startBox = placed.start.getBoundingClientRect();
+          const endBox = placed.end.getBoundingClientRect();
+          const triggerBox = placed.trigger.getBoundingClientRect();
+          if (placement === "end under the start") {
+            expect(endBox.top, `${label}: the end`).toBeGreaterThanOrEqual(startBox.bottom - 0.5);
+            expect(onLineOf(triggerBox, endBox), `${label}: the trigger beside the end`).toBe(true);
+          } else {
+            expect(endBox.top, `${label}: the end`).toBeCloseTo(startBox.top, 1);
+            expect(onLineOf(triggerBox, startBox), `${label}: the trigger beside the rows`).toBe(
+              placement === "one line"
+            );
+          }
+          expect(group.scrollHeight, `${label}: the box holds every line`).toBeLessThanOrEqual(
+            group.clientHeight
+          );
+          if (placement === "one line") {
+            expect(group.getBoundingClientRect().height, `${label}: the field height`).toBe(
+              CONTROL_MD[density].height
+            );
+          }
+          expectTargetBoxes([placed.trigger], label);
+          unmount();
+        }
+      });
+    }
+  );
 });
 
 describe("DateRangePicker calendar", () => {

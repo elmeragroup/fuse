@@ -28,6 +28,7 @@ import { useIsIOS } from "./date-input-ios";
 import { DateInputKindContext } from "./date-input-kind";
 import { useDateInputNaming } from "./date-input-naming";
 import { DateInputResetContext } from "./date-input-reset";
+import { useRowScroll } from "./date-input-row-scroll";
 import { DateInputScopeContext, scopeShows, standInDay } from "./date-input-scope";
 import { DateInputSegment } from "./date-input-segment";
 import { basisOf, draftOver, entryOf } from "./date-input-session";
@@ -325,6 +326,8 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
     [disabled, readOnly, required, invalid, entry.kind]
   );
 
+  const rowScrollHandlers = useRowScroll({ disabled, root: rootRef });
+
   const element = useRender({
     defaultTagName: "div",
     render,
@@ -357,6 +360,7 @@ export function DateInputRoot<P = object, T extends DateInputValue = PropsMadeVa
             )
           ),
         },
+        rowScrollHandlers,
         definedProps(elementProps)
       ),
     },

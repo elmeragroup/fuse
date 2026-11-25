@@ -58,6 +58,9 @@ export const fieldSize = tv({
     entryType:
       "text-[length:var(--entry-text,var(--field-text,var(--control-text)))] entry-floor:[--entry-text:max(16px,var(--field-text,var(--control-text)))]",
     inner: "size-[var(--field-inner,var(--control-h-sm))]",
+    // The widest a row may be beside one inner button, the box's content width less the inner
+    // square.
+    besideInner: "max-w-[calc(100%-var(--field-inner,var(--control-h-sm)))]",
   },
   variants: {
     size: {

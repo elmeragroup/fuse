@@ -2,7 +2,8 @@
  * DatePicker and DatePickerField in the browser: opening and closing, focus moving into the
  * calendar and back, Alt+ArrowDown, presets, time values, forms, cancelable details and the
  * computed faces of the trigger, the group and a checked preset. Names, typing, popup naming and
- * preset radios follow React Aria's DatePicker.
+ * preset radios follow React Aria's DatePicker. In a box narrower than its segments, each segment
+ * focus reaches lies whole inside the box, and a press at the trigger's center opens the calendar.
  * Expectations are literals: ISO values, accessible names, reasons.
  */
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
@@ -15,10 +16,17 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { expectFocusRing, expectNoFocusRing } from "../../../test/assert-focus-ring";
 import { expectInvalidFocusRing } from "../../../test/assert-invalid-ring";
 import { MonthsWithDay } from "../../../test/calendar-fixtures";
 import { expectRenderTypeError } from "../../../test/caught-error";
+import {
+  atEachDensity,
+  expectArrowedSegmentsShow,
+  expectFocusedSegmentShows,
+  expectTriggerPressOpens,
+} from "../../../test/date-row-reach";
 import { freezeToday } from "../../../test/freeze-today";
 import { withLocale } from "../../../test/locale-matrix";
 import { parentHandle } from "../../../test/parent-handle";
@@ -351,6 +359,57 @@ describe("DatePicker values", () => {
         minValue="2026-10-01"
       />
     );
+  });
+});
+
+describe("DatePickerField in a narrow box", () => {
+  const dateTime = Temporal.PlainDateTime.from("2030-12-28T11:59:59");
+
+  // At 220px a date and time to the second is wider than the row beside the trigger at either density.
+  it("scrolls each focused segment whole into view and opens the calendar from a press on the trigger", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div data-testid="box" style={{ width: 220 }}>
+          <DatePickerField label="Due" granularity="second" defaultValue={dateTime} />
+        </div>
+      )
+    );
+    const box = page.getByTestId("box").element();
+    if (!(box instanceof HTMLElement)) throw new Error("expected the box");
+    await atEachDensity(async (density) => {
+      // Month, day, year, hour, minute, second and AM/PM.
+      await expectArrowedSegmentsShow(box, 7, density);
+      await expectTriggerPressOpens(box, density);
+    });
+  });
+
+  // Narrowing the box from 220px to the picker's 180px floor moves the row's end over the focused
+  // minute.
+  it("keeps the focused segment whole in view when the box narrows", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div data-testid="box" style={{ width: 220 }}>
+          <DatePickerField label="Due" granularity="minute" defaultValue={dateTime} />
+        </div>
+      )
+    );
+    const box = page.getByTestId("box").element();
+    if (!(box instanceof HTMLElement)) throw new Error("expected the box");
+    await atEachDensity(async (density) => {
+      box.style.width = "220px";
+      const minute = roleNamed("spinbutton", "minute, Due");
+      // Arrowing from the month scrolls the row the least distance, so the minute ends flush with
+      // the row's end, where `focus()` would let the browser scroll it to the middle.
+      roleNamed("spinbutton", "month, Due").focus();
+      await userEvent.keyboard("{ArrowRight}".repeat(4));
+      expectFocusedSegmentShows(minute, `${density} at 220px`);
+      box.style.width = "180px";
+      await nextFrames(2);
+      expectFocusedSegmentShows(minute, `${density} at 180px`);
+      minute.blur();
+    });
   });
 });
 
