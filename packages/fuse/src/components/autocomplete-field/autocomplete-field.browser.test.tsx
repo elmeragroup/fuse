@@ -183,7 +183,8 @@ describe("AutocompleteField", () => {
 
     // The caret opens the list to show the matching suggestions, but a click on one keeps the text.
     await userEvent.click(roleNamed("button", "Toggle suggestions"));
-    await userEvent.click(roleNamed("option", "Banana"));
+    // The locator waits for the list, which opens a frame after the press.
+    await userEvent.click(page.getByRole("option", { name: "Banana", exact: true }));
     expect(input().value).toBe("Ban");
     await userEvent.keyboard("{Escape}");
     await expect.poll(() => page.getByRole("listbox").query()).toBeNull();

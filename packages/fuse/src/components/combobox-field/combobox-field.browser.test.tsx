@@ -168,7 +168,8 @@ describe("ComboboxField", () => {
 
     // The caret opens the list to show the options, but a click on another one keeps the value.
     await userEvent.click(roleNamed("button", "Toggle options"));
-    await userEvent.click(roleNamed("option", "Cherry"));
+    // The locator waits for the list, which opens a frame after the press.
+    await userEvent.click(page.getByRole("option", { name: "Cherry", exact: true }));
     expect(input().value).toBe("Banana");
     await userEvent.keyboard("{Escape}");
     await expect.poll(() => page.getByRole("listbox").query()).toBeNull();

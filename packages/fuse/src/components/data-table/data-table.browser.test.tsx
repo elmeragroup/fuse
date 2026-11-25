@@ -18,6 +18,7 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { axNodes, axProperty } from "../../../test/ax-tree";
 import {
   appColumns,
@@ -66,6 +67,20 @@ function RegisteredTable({ data = ORDERS }: { readonly data?: Order[] }): ReactE
 
 function columnHeader(name: string): HTMLElement {
   return roleNamed("columnheader", name);
+}
+
+/**
+ * Clicks the button that opens a dropdown menu and waits until the button reports the menu open and
+ * the menu, which takes the button's name, is in the document. Base UI opens a menu in the next
+ * animation frame after a mouse press, and a starved runner delivers that frame after the click
+ * returns. A menu still closing from an earlier press stays in the document, so the menu alone
+ * does not show that this press opened it.
+ */
+async function openMenu(trigger: string): Promise<void> {
+  const button = page.getByRole("button", { name: trigger, exact: true });
+  await userEvent.click(button);
+  await expect.element(button).toHaveAttribute("aria-expanded", "true");
+  await expect.element(page.getByRole("menu", { name: trigger, exact: true })).toBeInTheDocument();
 }
 
 describe("DataTable sorting", () => {
@@ -307,7 +322,8 @@ describe("DataTable column toggle", () => {
     expect(roleNamed("cell", "No results.").getAttribute("colspan")).toBe("2");
 
     await userEvent.click(roleNamed("button", "Columns"));
-    await userEvent.click(roleNamed("menuitemcheckbox", "Amount"));
+    // The locator waits for the menu, which opens a frame after the press.
+    await userEvent.click(page.getByRole("menuitemcheckbox", { name: "Amount", exact: true }));
     await expect.element(page.getByRole("columnheader", { name: "Amount" })).not.toBeInTheDocument();
     expect(roleNamed("cell", "No results.").getAttribute("colspan")).toBe("1");
 
@@ -656,14 +672,14 @@ describe("DataTable row press through a portal", () => {
       />
     );
 
-    await userEvent.click(roleNamed("button", "Order actions"));
+    await openMenu("Order actions");
     const item = roleNamed("menuitem", "Archive");
     expect(item.closest("tr")).toBeNull();
     await userEvent.click(item);
     expect(archived).toEqual([1]);
     expect(pressed).toEqual([]);
 
-    await userEvent.click(roleNamed("button", "Order actions"));
+    await openMenu("Order actions");
     const again = roleNamed("menuitem", "Archive");
     again.focus();
     await userEvent.keyboard("{Enter}");
@@ -737,13 +753,14 @@ describe("DataTable row actions", () => {
     log.length = 0;
     renderInEnglish(<ActionsTable />);
 
+    await openMenu("Actions for Alta");
     const trigger = roleNamed("button", "Actions for Alta");
-    await userEvent.click(trigger);
     const menu = roleNamed("menu", "Actions for Alta");
     await expect.element(page.getByRole("menu")).toBeVisible();
-    expect(Math.abs(menu.getBoundingClientRect().right - trigger.getBoundingClientRect().right)).toBeLessThan(
-      1
-    );
+    // The menu can show at its first coordinates before Base UI positions it.
+    await expect
+      .poll(() => Math.abs(menu.getBoundingClientRect().right - trigger.getBoundingClientRect().right))
+      .toBeLessThan(1);
 
     await userEvent.click(roleNamed("menuitem", "Edit"));
     expect(log).toEqual(["Edited Alta"]);
@@ -916,7 +933,9 @@ describe("DataTable controlled popups", () => {
   }
 
   // Oracle: a controlled popup shows exactly when its owner's `open` is true, and a press on
-  // the trigger only asks the owner, through the change callback with Base UI's reason.
+  // the trigger only asks the owner, through the change callback with Base UI's reason. Base UI
+  // asks in the next animation frame after a mouse press, so each test polls the record, then
+  // checks it again two frames later so a repeated request fails.
   it("opens and closes table.ColumnToggle's menu from open, and reports a trigger press", async () => {
     const changes: OpenChange[] = [];
     const record = (change: OpenChange) => {
@@ -929,6 +948,8 @@ describe("DataTable controlled popups", () => {
     await expect.element(page.getByRole("menu")).not.toBeInTheDocument();
 
     await userEvent.click(roleNamed("button", "Columns"));
+    await expect.poll(() => changes).toEqual([{ open: true, reason: "trigger-press" }]);
+    await nextFrames(2);
     expect(changes).toEqual([{ open: true, reason: "trigger-press" }]);
     expect(page.getByRole("menu").query()).toBeNull();
   });
@@ -945,6 +966,8 @@ describe("DataTable controlled popups", () => {
     await expect.element(page.getByRole("listbox")).not.toBeInTheDocument();
 
     await userEvent.click(roleNamed("combobox", "Rows per page"));
+    await expect.poll(() => changes).toEqual([{ open: true, reason: "trigger-press" }]);
+    await nextFrames(2);
     expect(changes).toEqual([{ open: true, reason: "trigger-press" }]);
     expect(page.getByRole("listbox").query()).toBeNull();
   });
