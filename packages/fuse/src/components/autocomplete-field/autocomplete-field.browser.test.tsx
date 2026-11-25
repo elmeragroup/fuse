@@ -93,7 +93,11 @@ describe("AutocompleteField", () => {
 
     await userEvent.type(input(), "K");
     expect(input().getAttribute("aria-invalid")).toBeNull();
-    expect(page.getByText("We are out of that fruit.", { exact: true }).query()).toBeNull();
+    expect(input().getAttribute("aria-describedby")).toBeNull();
+    // Base UI removes Field.Error a frame after the edit that clears it.
+    await expect
+      .element(page.getByText("We are out of that fruit.", { exact: true }))
+      .not.toBeInTheDocument();
   });
 
   it("submits the typed text once under its name, and the text of a picked suggestion", async () => {

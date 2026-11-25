@@ -100,7 +100,10 @@ describe("ComboboxField", () => {
 
     await choose("Cherry");
     expect(input().getAttribute("aria-invalid")).toBeNull();
-    expect(page.getByText("We are out of that fruit.", { exact: true }).query()).toBeNull();
+    // Base UI removes Field.Error a frame after the edit that clears it.
+    await expect
+      .element(page.getByText("We are out of that fruit.", { exact: true }))
+      .not.toBeInTheDocument();
   });
 
   it("submits the selected value once under its name", async () => {

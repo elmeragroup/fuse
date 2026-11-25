@@ -341,7 +341,10 @@ describe("Autocomplete", () => {
 
     await userEvent.type(input, "N");
     expect(input.getAttribute("aria-invalid")).toBeNull();
-    expect(page.getByText("Enter the registered name.", { exact: true }).query()).toBeNull();
+    // Base UI removes Field.Error a frame after the edit that clears it.
+    await expect
+      .element(page.getByText("Enter the registered name.", { exact: true }))
+      .not.toBeInTheDocument();
   });
 
   it("keeps the Field label and description on the input when a wrapper forwards id and ARIA props as undefined", async () => {
