@@ -2,9 +2,11 @@ import type { ComponentProps, ReactElement, ThHTMLAttributes, TdHTMLAttributes }
 
 import { tv } from "tailwind-variants";
 
+import { SCROLLER_FOCUS_RING } from "./scroller-focus-ring";
+
 const docsTable = tv({
   slots: {
-    wrap: "not-prose mb-[1.2rem] overflow-x-auto",
+    wrap: ["not-prose mb-[1.2rem] overflow-x-auto", SCROLLER_FOCUS_RING],
     root: "text-sm w-full border-collapse",
     headerCell:
       "text-xs font-medium border-b border-border py-2 pl-0 align-top text-muted-foreground normal-case",
@@ -30,7 +32,10 @@ const docsTable = tv({
 
 const { wrap, root, caption } = docsTable();
 
-type DocsTableWrapProps = ComponentProps<"div">;
+type DocsTableWrapProps = ComponentProps<"div"> & {
+  /** The id of the heading the table sits under, which names the scroller for screen readers. */
+  "aria-labelledby": string;
+};
 type DocsTableRootProps = ComponentProps<"table">;
 type DocsTableCaptionProps = ComponentProps<"caption">;
 type DocsTableHeaderCellProps = ThHTMLAttributes<HTMLTableCellElement> & {
@@ -41,7 +46,12 @@ type DocsTableBodyCellProps = TdHTMLAttributes<HTMLTableCellElement> & {
 };
 
 function DocsTableWrap({ className, ...props }: DocsTableWrapProps): ReactElement {
-  return <div className={wrap({ className })} {...props} />;
+  // A wide table scrolls sideways at phone width, so the wrap is a tab stop that arrow keys scroll.
+  // The stop stays at every width, as on the code blocks, because the server cannot know whether
+  // the table will overflow. It takes `group` rather than `region` so a page with several tables
+  // gains no landmarks.
+  // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the tab stop lets keyboard users scroll the table sideways
+  return <div tabIndex={0} role="group" className={wrap({ className })} {...props} />;
 }
 
 function DocsTableRoot({ className, ...props }: DocsTableRootProps): ReactElement {

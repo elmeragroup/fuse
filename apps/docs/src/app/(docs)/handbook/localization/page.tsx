@@ -9,6 +9,8 @@ import { DocsTable } from "../../../../components/docs-table";
 import { MarketTimeZone } from "./demos/market-time-zone";
 
 const HREF = "/handbook/localization";
+/** The id of the heading that names the supported-locales table. */
+const SUPPORTED_LOCALES_ID = "supported-locales";
 
 export const metadata = pageMetadata(HREF);
 
@@ -80,11 +82,11 @@ export default function LocalizationPage(): ReactElement {
         hand-written message functions.
       </p>
 
-      <h2 id="supported-locales">Supported locales</h2>
+      <h2 id={SUPPORTED_LOCALES_ID}>Supported locales</h2>
       <p>
         The <code>SupportedLocale</code> union is exactly four members, and all four ship eagerly:
       </p>
-      <DocsTable.Wrap>
+      <DocsTable.Wrap aria-labelledby={SUPPORTED_LOCALES_ID}>
         <DocsTable.Root>
           <thead>
             <tr>

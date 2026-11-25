@@ -5,6 +5,8 @@ import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 import { DocsTable } from "../../../../components/docs-table";
 
 const HREF = "/handbook/fonts";
+/** The id of the heading that names the brand-site fonts table. */
+const BRAND_SITES_ID = "brand-sites";
 
 export const metadata = pageMetadata(HREF);
 
@@ -163,9 +165,9 @@ export default function FontsPage(): ReactElement {
         identity and scope rules.
       </p>
 
-      <h2 id="brand-sites">Fonts on the brand sites</h2>
+      <h2 id={BRAND_SITES_ID}>Fonts on the brand sites</h2>
       <p>The brand sites drew these fonts on 2026-11-03. Fuse names none of them.</p>
-      <DocsTable.Wrap>
+      <DocsTable.Wrap aria-labelledby={BRAND_SITES_ID}>
         <DocsTable.Root>
           <thead>
             <tr>

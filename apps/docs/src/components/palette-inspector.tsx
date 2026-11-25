@@ -27,6 +27,7 @@ import type {
 } from "../lib/palettes";
 import { COLOR_SCHEME_LABELS, IDENTITY_LABELS, SEGMENT_LABELS } from "../lib/theme";
 import { usePreviewTheme } from "./preview-theme";
+import { SCROLLER_FOCUS_RING } from "./scroller-focus-ring";
 import { SingleToggle } from "./single-toggle";
 
 const paletteInspector = tv({
@@ -34,10 +35,11 @@ const paletteInspector = tv({
     root: "not-prose flex min-w-0 flex-col gap-3",
     switches: "flex-wrap",
     // The region is the table's scroller, one tab stop a keyboard scrolls with the arrow keys. Fuse's
-    // own table container stops clipping, so the sticky row names stick to this box. The ring is
-    // inset, so no ancestor clips it.
-    scroller:
-      "overflow-x-auto rounded-md focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring *:data-[slot=table-container]:overflow-visible",
+    // own table container stops clipping, so the sticky row names stick to this box.
+    scroller: [
+      "overflow-x-auto rounded-md *:data-[slot=table-container]:overflow-visible",
+      SCROLLER_FOCUS_RING,
+    ],
     // From `sm` the row names stay in view while the brands scroll. Below it they scroll away with
     // the row, since a pinned name would cover most of a phone's width.
     table:

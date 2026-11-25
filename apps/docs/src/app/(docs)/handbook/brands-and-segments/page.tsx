@@ -9,6 +9,8 @@ import { DocsPage, pageMetadata } from "../../../../components/docs-page";
 import { DocsTable } from "../../../../components/docs-table";
 
 const HREF = "/handbook/brands-and-segments";
+/** The id of the heading that names the brands table. */
+const BRANDS_ID = "brands";
 
 const brandsAndSegments = tv({
   slots: {
@@ -31,13 +33,13 @@ const ILLEGAL_SLUGS = [
 export default function BrandsAndSegmentsPage(): ReactElement {
   return (
     <DocsPage href={HREF}>
-      <h2 id="brands">Brands</h2>
+      <h2 id={BRANDS_ID}>Brands</h2>
       <p>
         Seven brand codes, each four characters, fixed. The code is what appears in types, attributes, slugs
         and every line of code; the display name is what a customer sees. The two differ deliberately for{" "}
         <code>fkse</code>, which renders under the trade name Telinet while keeping its code everywhere.
       </p>
-      <DocsTable.Wrap>
+      <DocsTable.Wrap aria-labelledby={BRANDS_ID}>
         <DocsTable.Root>
           <thead>
             <tr>

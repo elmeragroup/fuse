@@ -2,6 +2,8 @@ import type { ComponentProps, ReactElement } from "react";
 
 import { tv } from "tailwind-variants";
 
+import { SCROLLER_FOCUS_RING } from "./scroller-focus-ring";
+
 const docsCodeBlock = tv({
   slots: {
     pre: "[tab-size:2] text-sh-identifier [&_.sh__line]:block [&_.sh__line]:min-h-[1lh]",
@@ -9,10 +11,9 @@ const docsCodeBlock = tv({
   },
   variants: {
     scrolls: {
-      // The code keeps its longest line whole, so that line scrolls the block. The ring is inset,
-      // as on the palette inspector's scroller, so no clipping ancestor hides it.
+      // The code keeps its longest line whole, so that line scrolls the block.
       true: {
-        pre: "overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+        pre: ["overflow-x-auto", SCROLLER_FOCUS_RING],
         code: "min-w-max",
       },
     },

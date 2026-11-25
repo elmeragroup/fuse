@@ -6,6 +6,8 @@ import { DocsPage, pageMetadata } from "../../../components/docs-page";
 import { DocsTable } from "../../../components/docs-table";
 
 const HREF = "/accessibility";
+/** The id of the heading that names the responsibility split table. */
+const RESPONSIBILITY_SPLIT_ID = "responsibility-split";
 
 export const metadata = pageMetadata(HREF);
 
@@ -21,9 +23,9 @@ export default function AccessibilityPage(): ReactElement {
         legal floor.
       </p>
 
-      <h2 id="responsibility-split">Responsibility split</h2>
+      <h2 id={RESPONSIBILITY_SPLIT_ID}>Responsibility split</h2>
       <p>The line between what the library owns and what your app owns is fixed:</p>
-      <DocsTable.Wrap>
+      <DocsTable.Wrap aria-labelledby={RESPONSIBILITY_SPLIT_ID}>
         <DocsTable.Root>
           <thead>
             <tr>

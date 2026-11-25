@@ -9,6 +9,10 @@ import { DENSITY_CATALOG } from "../../../../generated/density-catalog";
 import { COLOR_TOKENS } from "../../../../generated/token-reference";
 
 const HREF = "/handbook/tokens";
+/** The id of the heading that names the density metrics table. */
+const DENSITY_METRICS_ID = "density-metrics";
+/** The id of the heading that names the density parts table. */
+const DENSITY_PARTS_ID = "density-parts";
 
 export const metadata = pageMetadata(HREF);
 
@@ -71,9 +75,9 @@ export default function TokensPage(): ReactElement {
         the same tier from the corner it hands its inner parts, so padding and inner corner cannot drift
         apart. Outer corners do not change with density.
       </p>
-      <h3 id="density-metrics">Metrics by role</h3>
+      <h3 id={DENSITY_METRICS_ID}>Metrics by role</h3>
       <DensityMetricsTable />
-      <h3 id="density-parts">Parts by role</h3>
+      <h3 id={DENSITY_PARTS_ID}>Parts by role</h3>
       <DensityPartsTable />
     </DocsPage>
   );
@@ -82,7 +86,7 @@ export default function TokensPage(): ReactElement {
 /** Every density metric, grouped by the role that reads it, in px per density. */
 function DensityMetricsTable(): ReactElement {
   return (
-    <DocsTable.Wrap>
+    <DocsTable.Wrap aria-labelledby={DENSITY_METRICS_ID}>
       <DocsTable.Root>
         <thead>
           <tr>
@@ -118,7 +122,7 @@ function DensityMetricsTable(): ReactElement {
 /** Every part's declared role, by `data-slot` or a `slot[data-x=y]` override. */
 function DensityPartsTable(): ReactElement {
   return (
-    <DocsTable.Wrap>
+    <DocsTable.Wrap aria-labelledby={DENSITY_PARTS_ID}>
       <DocsTable.Root>
         <thead>
           <tr>
