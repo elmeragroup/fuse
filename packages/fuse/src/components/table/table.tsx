@@ -1,20 +1,31 @@
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { cn } from "../../styles/cn";
-import {
-  frameTableBodyShellClass,
-  frameTableContainerShellClass,
-  frameVerticalTableShellClass,
-} from "../../styles/inner-corner/frame";
+import { frameTableBodyShellClass, frameVerticalTableShellClass } from "../../styles/inner-corner/frame";
 import { Skeleton } from "../skeleton/skeleton";
 import { TableCell } from "./table-cell";
 import { TABLE_EDGE_PADDING_CLASSES } from "./table-cell-classes";
+import { TableContainer } from "./table-container";
 import { verticalTableCellText } from "./vertical-table-cell-text";
 import { VerticalTableHeader } from "./vertical-table-header";
 import { VerticalTableKey } from "./vertical-table-key";
 
 /** Props for `Table.Root`, a native `table`'s props. */
-export type TableRootProps = ComponentProps<"table">;
+export type TableRootProps = Omit<ComponentProps<"table">, "aria-label" | "tabIndex"> & {
+  /**
+   * The table's accessible name. While the table is wider than its container, the container is a
+   * tab stop that the browser's scrolling keys scroll. The stop is a group named by the table's
+   * `aria-labelledby` and `aria-label`, else by its `Table.Caption`. Name a table that may scroll
+   * with `aria-label`, `aria-labelledby` or a `Table.Caption`, since the stop of an unnamed table
+   * has no name.
+   */
+  "aria-label"?: ComponentProps<"table">["aria-label"];
+  /**
+   * The table's own tab index. Set it when the table handles its own focus. The container then
+   * adds no stop, and the browser's scrolling keys scroll it while the table has focus.
+   */
+  tabIndex?: ComponentProps<"table">["tabIndex"];
+};
 /** Props for `Table.Header`, a native `thead`'s props. */
 export type TableHeaderProps = ComponentProps<"thead">;
 /** Props for `Table.Body`, a native `tbody`'s props. */
@@ -102,16 +113,18 @@ export type VerticalTableValueProps = ComponentProps<"td"> & {
 };
 
 /**
- * A semantic `<table>` in a container that scrolls sideways. The compound is server-safe. It has
- * no state, no handlers and no browser APIs. `VerticalTable.Header` and `VerticalTable.Key` are
- * client `useRender` parts, so a host can pick another outline level or a row-header cell without
- * turning this module into a client boundary.
+ * A semantic `<table>` in a container that scrolls sideways. This module has no state, no handlers
+ * and no browser APIs, so it stays server-safe. The container renders in its own client module,
+ * which measures the overflow. `VerticalTable.Header` and `VerticalTable.Key` are client `useRender`
+ * parts, so a host can pick another outline level or a row-header cell without turning this module
+ * into a client boundary.
  */
 function TableRoot({ className, ...props }: TableRootProps): ReactElement {
   return (
-    <div
-      data-slot="table-container"
-      className={cn(frameTableContainerShellClass, "relative w-full overflow-x-auto")}>
+    <TableContainer
+      aria-label={props["aria-label"]}
+      aria-labelledby={props["aria-labelledby"]}
+      tableTabIndex={props.tabIndex}>
       <table
         data-slot="table"
         className={cn(
@@ -120,7 +133,7 @@ function TableRoot({ className, ...props }: TableRootProps): ReactElement {
         )}
         {...props}
       />
-    </div>
+    </TableContainer>
   );
 }
 

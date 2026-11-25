@@ -220,7 +220,7 @@
           {
             "tag": "div",
             "attributes": {"data-slot":"table-container"},
-            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto"],
+            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto","focus-visible:outline-2","focus-visible:-outline-offset-2","focus-visible:outline-ring"],
             "text": "",
             "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73,74,75],
             "initial": [64,67,68,69],
@@ -334,7 +334,7 @@
           {
             "tag": "div",
             "attributes": {"data-slot":"table-container"},
-            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto"],
+            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto","focus-visible:outline-2","focus-visible:-outline-offset-2","focus-visible:outline-ring"],
             "text": "",
             "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73,74,75],
             "initial": [64,67,68,69],
@@ -448,7 +448,7 @@
           {
             "tag": "div",
             "attributes": {"data-slot":"table-container"},
-            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto"],
+            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto","focus-visible:outline-2","focus-visible:-outline-offset-2","focus-visible:outline-ring"],
             "text": "",
             "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73,74,75],
             "initial": [64,67,68,69],
@@ -562,7 +562,7 @@
           {
             "tag": "div",
             "attributes": {"data-slot":"table-container"},
-            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto"],
+            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto","focus-visible:outline-2","focus-visible:-outline-offset-2","focus-visible:outline-ring"],
             "text": "",
             "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73,74,75],
             "initial": [64,67,68,69],
@@ -676,7 +676,7 @@
           {
             "tag": "div",
             "attributes": {"data-slot":"table-container"},
-            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto"],
+            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto","focus-visible:outline-2","focus-visible:-outline-offset-2","focus-visible:outline-ring"],
             "text": "",
             "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73,74,75],
             "initial": [64,67,68,69],
@@ -790,7 +790,7 @@
           {
             "tag": "div",
             "attributes": {"data-slot":"table-container"},
-            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto"],
+            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto","focus-visible:outline-2","focus-visible:-outline-offset-2","focus-visible:outline-ring"],
             "text": "",
             "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73,74,75],
             "initial": [64,67,68,69],
@@ -904,7 +904,7 @@
           {
             "tag": "div",
             "attributes": {"data-slot":"table-container"},
-            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto"],
+            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto","focus-visible:outline-2","focus-visible:-outline-offset-2","focus-visible:outline-ring"],
             "text": "",
             "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73,74,75],
             "initial": [64,67,68,69],
@@ -1018,7 +1018,7 @@
           {
             "tag": "div",
             "attributes": {"data-slot":"table-container"},
-            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto"],
+            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto","focus-visible:outline-2","focus-visible:-outline-offset-2","focus-visible:outline-ring"],
             "text": "",
             "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73,74,75],
             "initial": [64,67,68,69],
@@ -1132,7 +1132,7 @@
           {
             "tag": "div",
             "attributes": {"data-slot":"table-container"},
-            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto"],
+            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto","focus-visible:outline-2","focus-visible:-outline-offset-2","focus-visible:outline-ring"],
             "text": "",
             "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73,74,75],
             "initial": [64,67,68,69],
@@ -1246,7 +1246,7 @@
           {
             "tag": "div",
             "attributes": {"data-slot":"table-container"},
-            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto"],
+            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto","focus-visible:outline-2","focus-visible:-outline-offset-2","focus-visible:outline-ring"],
             "text": "",
             "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73,74,75],
             "initial": [64,67,68,69],
@@ -1360,7 +1360,7 @@
           {
             "tag": "div",
             "attributes": {"data-slot":"table-container"},
-            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto"],
+            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto","focus-visible:outline-2","focus-visible:-outline-offset-2","focus-visible:outline-ring"],
             "text": "",
             "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73,74,75],
             "initial": [64,67,68,69],
@@ -1474,7 +1474,7 @@
           {
             "tag": "div",
             "attributes": {"data-slot":"table-container"},
-            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto"],
+            "classes": ["[--frame-corner:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-caption-align:initial]","[&:not(:where([data-slot=vertical-table]>*))]:[--table-edge-px:initial]","relative","w-full","overflow-x-auto","focus-visible:outline-2","focus-visible:-outline-offset-2","focus-visible:outline-ring"],
             "text": "",
             "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73,74,75],
             "initial": [64,67,68,69],
