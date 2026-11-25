@@ -858,8 +858,9 @@ export type ChartTooltipItemsProps = ChartDomProps<"div">;
 function ChartTooltipLabel(input: ChartTooltipLabelProps): ReactElement;
 
 // @beta
-export type ChartTooltipLabelProps = ChartDomProps<"span"> & {
+export type ChartTooltipLabelProps = Omit<ChartDomProps<"span">, "render"> & {
     format?: XFormat;
+    render?: useRender.ComponentProps<"span">["render"];
 };
 
 // @beta

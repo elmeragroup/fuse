@@ -102,9 +102,9 @@ export function partSelector(...names: readonly [ChartPartName, ...ChartPartName
 const DEFAULT_LABEL_ATTRIBUTE = "data-chart-default-label";
 
 /**
- * The marker a TooltipLabel writes on its element while its generated text is the active item's
- * label in Root's format. It holds that label, so a polar popup sizes its lane for the widest label
- * any item prints only while the element still reads as the label.
+ * The marker a TooltipLabel writes on its element while Fuse prints the element's text and that text
+ * is the active item's label in Root's format. It holds that label, so a polar popup sizes its lane
+ * for the widest label any item prints.
  *
  * @param label - The active item's label in Root's format.
  * @returns The marker's props.
