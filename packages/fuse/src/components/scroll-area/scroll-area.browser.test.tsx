@@ -139,8 +139,14 @@ describe("ScrollArea", () => {
     expect(arrow.defaultPrevented).toBe(false);
     expect(pageDown.defaultPrevented).toBe(false);
 
+    const wheels: WheelEvent[] = [];
+    viewport.addEventListener("wheel", (event) => wheels.push(event), { passive: true });
     await userEvent.wheel(viewport, { delta: { y: 160 } });
-    expect(viewport.scrollTop).toBeGreaterThan(0);
+    // userEvent.wheel can resolve before Chromium updates scrollTop.
+    await expect.poll(() => viewport.scrollTop).toBeGreaterThan(0);
+    expect(wheels.map(({ isTrusted, defaultPrevented }) => ({ isTrusted, defaultPrevented }))).toEqual([
+      { isTrusted: true, defaultPrevented: false },
+    ]);
   });
 
   it("holds a vertical area's content to the viewport so a truncated line ellipsizes at its edge", () => {
