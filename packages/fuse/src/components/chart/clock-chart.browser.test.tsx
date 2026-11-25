@@ -13,11 +13,13 @@
 // and its clipping ancestors leave it. That rule is checked in a scroll panel far smaller than the
 // dial, a dial that grows or shrinks in such a panel with no scroll, a scaled panel, a panel in a
 // shadow root, and for a fixed dial whose wrapper does not clip it, including a wrapper that will
-// change `transform-origin` and a style without a `backdropFilter` accessor. The popup takes the
-// bottom or top lane that `laneRest` documents, and the default applies when rows that hold its
-// hour first arrive after mount. Last, a side lane rests clear of a reference line's label past the
-// rim.
-import type { ReactNode } from "react";
+// change `transform-origin`. Two more fixed dials sit in a wrapper whose style names the backdrop
+// filter only with its `-webkit-` prefix. One wrapper sets no filter, and the other sets one that
+// makes the wrapper clip the dial. The popup takes the bottom or top lane that `laneRest`
+// documents, and the default applies when rows that hold its hour first arrive after mount. Last, a
+// side lane rests clear of a reference line's label past the rim.
+import type { ReactNode, RefObject } from "react";
+import { createRef } from "react";
 
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
@@ -992,14 +994,18 @@ describe("the default item's popup while its dial is out of view", () => {
    * `overflow: hidden` wrapper 2,000 px down the page, and checks that the whole dial is in view.
    *
    * @param wrapper - Extra style for the wrapper, none of it a containing block for fixed boxes.
+   * @param ref - Receives the wrapper element.
    * @returns Once the dial has painted.
    */
-  async function renderFixedDialBelowWrapper(wrapper: React.CSSProperties = {}) {
+  async function renderFixedDialBelowWrapper(
+    wrapper: React.CSSProperties = {},
+    ref?: RefObject<HTMLDivElement | null>
+  ) {
     await page.viewport(800, 700);
     const { host } = renderThemed(
       <>
         <div style={{ height: 2000 }} />
-        <div data-testid="fixed-wrapper" style={{ height: 50, overflow: "hidden", ...wrapper }}>
+        <div ref={ref} style={{ height: 50, overflow: "hidden", ...wrapper }}>
           <div style={{ position: "fixed", top: 0, left: 0 }}>
             <DefaultDial />
           </div>
@@ -1030,24 +1036,33 @@ describe("the default item's popup while its dial is out of view", () => {
     expect(label()).toBe("17–18");
   });
 
-  it("opens the popup of a fixed dial below a wrapper where the style has no backdropFilter accessor", async () => {
-    // Safari 16.4 and 17 name the property only `-webkit-backdrop-filter`, so a computed style has
-    // no `backdropFilter` accessor there and reads the unprefixed name as empty. Chromium answers
-    // that name through the declaration's named-property getter, which a script cannot remove, so
-    // for the test's duration the wrapper's computed style is a view without it. The wrapper sets
-    // no backdrop filter, so the oracle is the one above.
+  /**
+   * Makes the computed style of the referenced element read as Safari 16.4 and 17 give it, for the
+   * test's duration. Those versions name the property only `-webkit-backdrop-filter`. For that
+   * element, `"backdropFilter" in style` and `"backdrop-filter" in style` are false and both
+   * accessors return undefined, `getPropertyValue("backdrop-filter")` returns an empty string, and
+   * `getPropertyValue("-webkit-backdrop-filter")` returns the element's real backdrop filter. Every
+   * other property read and `getPropertyValue` call, and every read of another element, goes to
+   * Chromium's computed style. Methods other than `getPropertyValue`, such as `item`, are not
+   * bound to the real declaration and throw on the stand-in. Chromium answers the unprefixed names
+   * through the declaration's named-property getter, which a script cannot remove, so the
+   * element's style is a view without them.
+   *
+   * @param ref - Holds the element once it renders.
+   */
+  function standInSafariBackdropFilter(ref: RefObject<HTMLElement | null>): void {
+    const hidden: ReadonlySet<PropertyKey> = new Set(["backdropFilter", "backdrop-filter"]);
     const computed = window.getComputedStyle;
     window.getComputedStyle = (element, pseudo) => {
       const style = computed.call(window, element, pseudo);
-      if (!(element instanceof HTMLElement) || element.dataset.testid !== "fixed-wrapper") return style;
+      if (element !== ref.current) return style;
       return new Proxy(style, {
-        has: (target, key) => key !== "backdropFilter" && key in target,
+        has: (target, key) => !hidden.has(key) && key in target,
         get: (target, key) => {
-          if (key === "backdropFilter") return undefined;
+          if (hidden.has(key)) return undefined;
           if (key === "getPropertyValue")
             return (name: string): string => {
               if (name === "backdrop-filter") return "";
-              // Safari answers the prefixed name with the filter's value, `none` here.
               if (name === "-webkit-backdrop-filter") return target.getPropertyValue("backdrop-filter");
               return target.getPropertyValue(name);
             };
@@ -1060,9 +1075,67 @@ describe("the default item's popup while its dial is out of view", () => {
     onTestFinished(() => {
       window.getComputedStyle = computed;
     });
-    await renderFixedDialBelowWrapper();
+  }
+
+  /**
+   * Returns the element a ref holds, and checks that its computed style now reads as the Safari
+   * stand-in gives it, so a stand-in that misses the element fails the test.
+   *
+   * @param ref - The ref passed to `standInSafariBackdropFilter`.
+   * @returns The element.
+   */
+  function stoodIn(ref: RefObject<HTMLElement | null>): HTMLElement {
+    const element = ref.current;
+    if (element === null) throw new Error("the stand-in's element did not render");
+    const style = window.getComputedStyle(element);
+    expect("backdrop-filter" in style).toBe(false);
+    expect("backdropFilter" in style).toBe(false);
+    expect(style.backdropFilter).toBeUndefined();
+    expect(style.getPropertyValue("backdrop-filter")).toBe("");
+    return element;
+  }
+
+  it("opens the popup of a fixed dial below a wrapper where the style has no backdropFilter accessor", async () => {
+    // The wrapper's style reads as Safari 16.4 and 17 give it. The wrapper sets no backdrop filter,
+    // so its prefixed name reads `none`, and the oracle is the one above.
+    const wrapper = createRef<HTMLDivElement>();
+    standInSafariBackdropFilter(wrapper);
+    await renderFixedDialBelowWrapper({}, wrapper);
+    stoodIn(wrapper);
     await expect.poll(popup).not.toBeNull();
     expect(label()).toBe("17–18");
+  });
+
+  it("opens the popup of a fixed dial whose wrapper has an active backdrop filter only under its prefixed name", async () => {
+    // The wrapper's real `backdrop-filter` makes it the fixed box's containing block, so it holds
+    // the box and cuts the dial to 80 px. The stand-in shows that value only under the prefixed
+    // name, as Safari 16.4 and 17 do. With the wrapper as the clipping ancestor, the rule asks for
+    // half of its 80 px, and the dial fills all of it, so the popup opens. A gate that misses the
+    // prefixed name still sees 80 px of the dial, but it leaves the wrapper out of the dial's
+    // containing-block chain. The cutoff is then half the smaller of the dial's height and the
+    // viewport's, and the dial is shorter than the 700 px viewport, so it is half the dial's
+    // height. The visible 80 px is less than that, so the popup stays closed.
+    const wrapper = createRef<HTMLDivElement>();
+    standInSafariBackdropFilter(wrapper);
+    await page.viewport(800, 700);
+    const { host } = renderThemed(
+      <>
+        <div style={{ height: 100 }} />
+        <div ref={wrapper} style={{ height: 80, overflow: "hidden", backdropFilter: "blur(1px)" }}>
+          <div style={{ position: "fixed", top: 0, left: 0 }}>
+            <DefaultDial />
+          </div>
+        </div>
+      </>
+    );
+    await expect.poll(() => surfaceBox(host).height).toBeGreaterThan(0);
+    const element = stoodIn(wrapper);
+    expect(window.getComputedStyle(element).getPropertyValue("-webkit-backdrop-filter")).toBe("blur(1px)");
+    const box = element.getBoundingClientRect();
+    const dial = surfaceBox(host);
+    expect(dial.top).toBeGreaterThanOrEqual(box.top);
+    expect(dial.height).toBeGreaterThan(2 * box.height);
+    await expect.poll(popup).not.toBeNull();
   });
 
   it("opens the popup once a panel scaled to 40% shows the dial over its whole height", async () => {
