@@ -6,7 +6,8 @@
  */
 import { useState } from "react";
 
-import { describe, expect, it } from "vitest";
+import { createPortal } from "react-dom";
+import { describe, expect, it, onTestFinished } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -403,6 +404,42 @@ describe("SkeletonReveal outgoing content", () => {
     expect(
       checked.map((radio) => `${radio.closest("form")?.getAttribute("aria-label")}: ${radio.value}`)
     ).toEqual(["Plan, fixed first: fixed", "Plan, spot first: spot"]);
+  });
+
+  // A form named `host` is a named property of its document, so `document.host` is that form.
+  it("keeps the selection in its native radios while it leaves, in a document with a form named host", async () => {
+    const frame = document.createElement("iframe");
+    document.body.append(frame);
+    onTestFinished(() => {
+      frame.remove();
+    });
+    const frameDocument = frame.contentDocument;
+    if (frameDocument === null) throw new Error("expected a same-origin frame");
+    const host = frameDocument.createElement("form");
+    host.name = "host";
+    frameDocument.body.append(host);
+    const view = (loading: boolean) =>
+      createPortal(
+        <SkeletonReveal loading={loading} label="Henter" reveal="smart">
+          <PlanRadios radios="uncontrolled" remount={false} name="plan" />
+        </SkeletonReveal>,
+        frameDocument.body
+      );
+    const { rerender } = renderThemed(view(false));
+    await nextFrames(2);
+    // The frame's nodes come from its own realm, which the fixtures' `instanceof` checks reject.
+    const spot = frameDocument.querySelector<HTMLInputElement>('input[value="spot"]');
+    if (spot === null) throw new Error("expected the Spot radio");
+    spot.click();
+
+    rerender(view(true));
+    // The reveal is loading, and the radio the user picked is still on the page, checked and
+    // enabled. The ghost's copy sits in a disabled fieldset, so it cannot pass for it.
+    const busy = frameDocument.querySelector('[aria-busy="true"]');
+    expect(busy?.contains(spot)).toBe(true);
+    expect(spot.isConnected).toBe(true);
+    expect(spot.checked).toBe(true);
+    expect(spot.matches(":enabled")).toBe(true);
   });
 });
 
