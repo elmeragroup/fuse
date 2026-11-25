@@ -9,6 +9,21 @@ import { cn } from "../../styles/cn";
 import { frameTableContainerShellClass } from "../../styles/inner-corner/frame";
 import { insetFocusOutlineClass } from "../../styles/utils";
 
+/**
+ * Puts the table below the box's inset focus outline while the box has keyboard focus. Chromium
+ * paints the box's outline below a positioned descendant, such as a framed `tbody`, which paints its
+ * frame from a `::before`, or a sticky cell. The focused box isolates its own stacking context and
+ * the table sits at `z-index` -1 in it, so the table and every positioned part inside it paint
+ * after the box's background and before its outline. Pointer hits still reach the cells, since
+ * nothing in the box paints above them. Lowering only the `tbody` makes Chromium hit the table
+ * instead of a cell, so the rule lowers the whole table. Neither property moves the box, the table
+ * or a cell. The focused table becomes the containing block of an absolute descendant that has no
+ * positioned ancestor inside it, in place of the box.
+ */
+const focusOutlineAboveTableClass = cn(
+  "focus-visible:isolate focus-visible:[&>table]:relative focus-visible:[&>table]:-z-1"
+);
+
 /** The `overflow-x` values that let a box scroll. `visible` and `clip` never do. */
 const SCROLLING_OVERFLOW = new Set(["auto", "scroll"]);
 
@@ -127,7 +142,8 @@ export function TableContainer({
       className={cn(
         frameTableContainerShellClass,
         "relative w-full overflow-x-auto",
-        insetFocusOutlineClass
+        insetFocusOutlineClass,
+        focusOutlineAboveTableClass
       )}>
       {children}
     </div>
