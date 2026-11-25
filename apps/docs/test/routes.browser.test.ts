@@ -5,13 +5,14 @@ import { AxeBuilder } from "@axe-core/playwright";
 // apart from the subtrees `AXE_EXCLUSIONS_BY_RULE` excludes from one listed rule.
 // The route list is the build's own prerender manifest, so a new page joins the sweep the moment
 // it exists, and routes that serve no HTML page (API, Open Graph images, text endpoints) stay out.
+// The block at the end checks the routes whose docs table scrolls at 320px again at that width.
 import type { Page } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { DESKTOP_VIEWPORT, waitForBlockPreviewHydration, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl, prerenderedRoutes } from "./docs-server";
 import { collectPageErrors, waitForLandingHydration } from "./landing-page";
-import { waitForStudioReady } from "./studio/page";
+import { isFocused, waitForStudioReady } from "./studio/page";
 import { launchSuiteBrowser } from "./suite-browser";
 
 /** Resources a demo requests on purpose to show its fallback, such as Avatar's broken image. */
@@ -109,6 +110,17 @@ async function waitForSettledReveals(page: Page): Promise<void> {
   );
 }
 
+/**
+ * An axe scan of the page with no rules picked yet. Frames stay out of the scan: the only framed
+ * content, the block previews under /blocks/<block>/preview, is in ROUTES and checked as a route of
+ * its own. Legacy mode runs one axe.run in the page, which honours iframes: false; the partial
+ * runner descends into every frame whatever the options say. The frame element itself is still
+ * checked. `options` replaces the whole option object, so it comes before the tags and the rules.
+ */
+function axeScan(page: Page): AxeBuilder {
+  return new AxeBuilder({ page }).options({ iframes: false }).setLegacyMode();
+}
+
 describe("every docs route", () => {
   const browser = launchSuiteBrowser();
 
@@ -136,16 +148,10 @@ describe("every docs route", () => {
       expect(response?.status(), route).toBeLessThan(400);
       await waitForHydration(page, route);
       await waitForSettledReveals(page);
-      // Frames stay out of the scan: the only framed content, the block previews under
-      // /blocks/<block>/preview, is in ROUTES and checked as a route of its own. Legacy mode runs
-      // one axe.run in the page, which honours iframes: false; the partial runner descends into
-      // every frame whatever the options say. The frame element itself is still checked here.
-      // `options` replaces the whole option object, so it comes before the tags and the rules.
-      const scan = (): AxeBuilder => new AxeBuilder({ page }).options({ iframes: false }).setLegacyMode();
       const scans = [
-        scan().withTags(AXE_TAGS).disableRules(Object.keys(AXE_EXCLUSIONS_BY_RULE)),
+        axeScan(page).withTags(AXE_TAGS).disableRules(Object.keys(AXE_EXCLUSIONS_BY_RULE)),
         ...Object.entries(AXE_EXCLUSIONS_BY_RULE).map(([rule, selectors]) =>
-          selectors.reduce((builder, selector) => builder.exclude(selector), scan().withRules(rule))
+          selectors.reduce((builder, selector) => builder.exclude(selector), axeScan(page).withRules(rule))
         ),
       ];
       // The scans run one after another, because axe-core refuses to start a run while another is
@@ -161,4 +167,59 @@ describe("every docs route", () => {
       await context.close();
     }
   });
+});
+
+// The sweep runs at 1280px, where no docs table is wider than the column. This block reruns the
+// routes whose docs table overflows at 320 CSS px, the width WCAG 1.4.10 Reflow names, which
+// is narrower than any phone viewport the other suites use. Unit under test: each table's
+// scroller, `DocsTable.Wrap`. Oracles: the heading the page author wrote above the table names the
+// scroller, a keyboard user scrolls it with ArrowRight, and axe-core's
+// `scrollable-region-focusable` finds every other scroller on the route reachable by keyboard too.
+const REFLOW_VIEWPORT = { width: 320, height: 844 } as const;
+
+/**
+ * Each route that holds a docs table wider than {@link REFLOW_VIEWPORT}, with that table's heading
+ * and whether its overflow is wide enough to check scrolling. Measured on 2026-11-25, two tables
+ * overflow at 320 and the rest fit.
+ */
+const OVERFLOWING_TABLES = [
+  // The fonts table overflows by about 300px, so it carries the scroll check.
+  { route: "/handbook/fonts", heading: "Fonts on the brand sites", scrolls: true },
+  // The tokens table overflows by about 12px and would fit after a small layout change, so it
+  // checks only that its scroller is named and reachable.
+  { route: "/handbook/tokens", heading: "Parts by role", scrolls: false },
+] as const;
+
+describe("a docs table wider than the 320px reflow width", () => {
+  const browser = launchSuiteBrowser();
+
+  it.for(OVERFLOWING_TABLES)(
+    "names the scroller under $heading on $route and reaches it by keyboard",
+    async ({ route, heading, scrolls }) => {
+      const page = await browser().newPage({ viewport: REFLOW_VIEWPORT, reducedMotion: "reduce" });
+      try {
+        await page.goto(`${docsBaseUrl()}${route}`, { waitUntil: "load" });
+        await waitForHydration(page, route);
+        const scroller = page.getByRole("group", { name: heading, exact: true });
+        expect(await scroller.getByRole("table").count()).toBe(1);
+        // The named group must be the table's own scroller, not an ancestor of it.
+        expect(await scroller.evaluate((element) => getComputedStyle(element).overflowX)).toBe("auto");
+        // `focus()` also lands on tabindex -1, which Tab skips.
+        expect(await scroller.getAttribute("tabindex")).toBe("0");
+        await scroller.focus();
+        expect(await isFocused(scroller)).toBe(true);
+        if (scrolls) {
+          expect(await scroller.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+          expect(await scroller.evaluate((element) => element.scrollLeft)).toBe(0);
+          await page.keyboard.press("ArrowRight");
+          // The browser scrolls after the trusted keydown resolves.
+          await expect.poll(() => scroller.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+        }
+        const { violations } = await axeScan(page).withRules("scrollable-region-focusable").analyze();
+        expect(violations.flatMap(({ nodes }) => nodes.map((node) => node.target.join(" ")))).toEqual([]);
+      } finally {
+        await page.context().close();
+      }
+    }
+  );
 });
