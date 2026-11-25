@@ -2,6 +2,7 @@ import type { CDPSession, Page, Route } from "playwright";
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_THEME, DOCUMENT_COLOR_SCHEME } from "../src/lib/theme";
+import { waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import {
   COLOR_SCHEME_BOOTSTRAP_FAILURE_SENTINEL,
@@ -238,7 +239,7 @@ describe("docs picker vs document theme", () => {
         hydrationWarnings.push(text);
       }
     });
-    await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "networkidle" });
+    await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "load" });
     await page.getByRole("heading", { name: "Button", exact: true, level: 1 }).waitFor();
 
     const initial = await page.evaluate(() => {
@@ -268,6 +269,9 @@ describe("docs picker vs document theme", () => {
     expect(initial.stageSegment).toBe(DEFAULT_THEME.segment);
     expect(initial.documentToken).not.toBe(initial.stageToken);
 
+    // The server renders the Theme settings trigger before React attaches its handler,
+    // so a press before hydration opens nothing.
+    await waitForDocsShellHydration(page);
     await page.getByRole("button", { name: "Theme settings", exact: true }).click();
     await page.getByRole("menuitemradio", { name: "TrøndelagKraft", exact: true }).click();
 
