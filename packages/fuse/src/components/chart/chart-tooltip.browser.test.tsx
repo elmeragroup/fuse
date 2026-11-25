@@ -2,7 +2,7 @@
 // committed Elhub rows.
 import type { ReactElement } from "react";
 
-import { afterEach, describe, expect, it, onTestFinished } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -23,11 +23,20 @@ import {
   surfaceBox,
   visible,
 } from "../../../test/chart/marks";
+import {
+  adoptPageStyles,
+  CROSS_ORIGIN,
+  SAME_ORIGIN,
+  frameRoot,
+  navigableFrame,
+} from "../../../test/navigable-frame";
 import { renderIn, restoreDocumentThemeAroundEach, srgb, surfaceAt } from "../../../test/surface-paint";
-import { fkasBranded } from "../../../test/theme-fixtures";
+import { fkasBranded, fkasPrivate } from "../../../test/theme-fixtures";
 import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { LocaleProvider } from "../../intl/locale-context";
+import { ThemeScope } from "../../theme/theme-scope";
 import { Chart } from "./chart-namespace";
+import { createTooltipGlider } from "./chart-tooltip-glide";
 import type { ChartConfig } from "./chart-types";
 import "./chart.css";
 import { useChartPoint } from "./use-chart-point";
@@ -593,5 +602,101 @@ describe("the frosted tooltip", () => {
     if (beneath === null) throw new Error("expected the popup's portal container");
     expect(srgb(surfaceAt(beneath))).not.toEqual(srgb(cssVarColor(open, "--popover")));
     expect(srgb(surfaceAt(open))).toEqual(srgb(surfaceAt(beneath)));
+  });
+});
+
+describe("the tooltip in a frame that navigates", () => {
+  it("unmounts without an error after the frame that showed a chart with a default item navigates to another origin", async () => {
+    const navigate = navigableFrame();
+    const first = await navigate(SAME_ORIGIN);
+    // The frame's document takes the page's stylesheets, so the plot has the box the chart lays out.
+    await adoptPageStyles(first);
+    const chart = frameRoot(first);
+    // The plot sits below the frame's fold, so the default item's popup stays shut while the chart
+    // watches whether the plot comes into view. The scope is the frame's, so the popup would portal
+    // into the frame's document.
+    const popupMounted = await framesThroughReport(
+      () => first.document.querySelector('[data-slot="chart-tooltip"]') !== null,
+      () => {
+        chart.render(
+          <ThemeScope theme={fkasPrivate} style={{ width: 280, paddingTop: 1000 }}>
+            <LocaleProvider locale="en-US">
+              <Chart.Root
+                data={[
+                  { name: "a", v: 1 },
+                  { name: "b", v: 2 },
+                ]}
+                config={{ v: { label: "V", color: "chart-1" } }}
+                xKey="name"
+                defaultActiveX="b"
+                aria-label="Framed">
+                <Chart.Bar dataKey="v" />
+                <Chart.Tooltip />
+              </Chart.Root>
+            </LocaleProvider>
+          </ThemeScope>
+        );
+        const plot = first.document.querySelector('[role="listbox"]');
+        if (plot === null) throw new Error("expected the plot in the frame");
+        const box = plot.getBoundingClientRect();
+        expect(box.width * box.height, "the plot's area").toBeGreaterThan(0);
+        expect(box.top, "the plot's top, against the frame's height").toBeGreaterThanOrEqual(
+          first.innerHeight
+        );
+        return plot;
+      }
+    );
+    // The Root writes the active source on data-active, "default" for the default slot.
+    expect(first.document.querySelector('[data-slot="chart"]')?.getAttribute("data-active")).toBe("default");
+    expect(popupMounted, "frames with the popup mounted, through the plot's in-view report").not.toContain(
+      true
+    );
+    // As the document leaves its frame, a resize requests the frame that observes the plot again.
+    // The leaving document never runs that frame, so the watch still holds its id at the unmount.
+    const requestAnimationFrame = vi.spyOn(first, "requestAnimationFrame");
+    first.addEventListener(
+      "pagehide",
+      () => {
+        requestAnimationFrame.mockClear();
+        first.dispatchEvent(new Event("resize"));
+      },
+      { once: true }
+    );
+    await navigate(CROSS_ORIGIN);
+    expect(requestAnimationFrame, "frames the resize requested").toHaveBeenCalledOnce();
+    chart.unmount();
+    expect(chart.uncaught, "errors thrown by the chart's cleanup").toEqual([]);
+  });
+
+  it("cancels a glide still running when the glider stops watching after the frame that showed the popup navigates to another origin", async () => {
+    // Base UI's positioner runs cleanup of its own that throws after a cross-origin navigation
+    // (#1134), so the glider runs on a positioner of the test's own, which only the glider's
+    // cleanup touches.
+    const navigate = navigableFrame();
+    const first = await navigate(SAME_ORIGIN);
+    const positioner = first.document.createElement("div");
+    positioner.style.setProperty("--_glide", "1000ms");
+    positioner.style.transform = "translate(0px, 0px)";
+    first.document.body.append(positioner);
+    const glider = createTooltipGlider(positioner, null);
+    glider.arm(() => ({ kind: "straight" }));
+    // Observers hear a mutation in the order they were created, so this one, created after the
+    // glider's, hears the write once the glider has started the glide.
+    const heard = new Promise<void>((resolve) => {
+      new MutationObserver((_, observer) => {
+        observer.disconnect();
+        resolve();
+      }).observe(positioner, { attributes: true, attributeFilter: ["style"] });
+    });
+    // The next place written after an arming glides there.
+    positioner.style.transform = "translate(100px, 0px)";
+    await heard;
+    const [glide, ...others] = positioner.getAnimations();
+    if (glide === undefined || others.length > 0) throw new Error("expected the positioner's glide");
+    // Paused before anything renders, the glide stays unfinished however long the navigation takes.
+    glide.pause();
+    await navigate(CROSS_ORIGIN);
+    expect(() => glider.dispose(), "the glider's dispose").not.toThrow();
+    expect(glide.playState, "the glide after the dispose").toBe("idle");
   });
 });

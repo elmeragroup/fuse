@@ -432,6 +432,7 @@ export default defineConfig({
         "fuse/no-base-ui-preview-menu": "error",
         "fuse/no-data-slot-selector": "error",
         "fuse/no-host-in-check": "error",
+        "fuse/no-kept-window-cleanup": "error",
         "fuse/overlay-root-override-last": "error",
         "fuse/skeleton-part-marker": [
           "error",

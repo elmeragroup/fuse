@@ -73,6 +73,7 @@
  * a scroll event has come, and input that never scrolls, such as a tap, leaves the end owed to the
  * same scroll.
  */
+import { windowShowing } from "../../internal/dom-node";
 import { createCarouselInput } from "./carousel-input";
 import { measureCarousel, scrollPositionOf } from "./carousel-measure";
 import type { CarouselOrientation, CarouselReading, Size } from "./carousel-measure";
@@ -238,7 +239,11 @@ export function createCarouselEngine(
   members: ReadonlySet<HTMLElement>,
   listener: CarouselEngineListener
 ): CarouselEngine {
-  const view = viewport.ownerDocument.defaultView;
+  // The viewport's window constructs the observers. Animation frames come from the window that
+  // still shows the viewport's document, so after an iframe navigates, its next document gets no
+  // request or cancel meant for this one.
+  const { ownerDocument } = viewport;
+  const view = ownerDocument.defaultView;
   const vertical = orientation === "vertical";
   // The slides the resize observer watches, and the size each box had at the last measurement.
   const observed = new Set<HTMLElement>();
@@ -331,12 +336,13 @@ export function createCarouselEngine(
     }
     // The sizes are forgotten, so a box that comes back reads as a resize.
     sizes.clear();
-    if (retry === "next frame" && retryFrame === null && view !== null) {
+    if (retry === "next frame") {
       // A transform changes no box size, so no observer reports the scale growing back or resting.
-      retryFrame = view.requestAnimationFrame(() => {
-        retryFrame = null;
-        invalidate();
-      });
+      retryFrame ??=
+        windowShowing(ownerDocument)?.requestAnimationFrame(() => {
+          retryFrame = null;
+          invalidate();
+        }) ?? null;
     }
     return "unmeasurable";
   }
@@ -734,12 +740,11 @@ export function createCarouselEngine(
         page = clampIndex(committed.index, count);
       }
     }
-    if (frame === null && view !== null) {
-      frame = view.requestAnimationFrame(() => {
+    frame ??=
+      windowShowing(ownerDocument)?.requestAnimationFrame(() => {
         frame = null;
         track();
-      });
-    }
+      }) ?? null;
     // A scroll event starts the spell over. Without `scrollend` a spell ends every scroll; with it,
     // a spell counts only for a scroll end that was deferred or arrived short.
     if (owed === null && !hasScrollEnd) {
@@ -874,11 +879,12 @@ export function createCarouselEngine(
       viewport.removeEventListener("scroll", onScroll);
       viewport.removeEventListener("scrollend", settle);
       input.destroy();
+      const shown = windowShowing(ownerDocument);
       if (frame !== null) {
-        view?.cancelAnimationFrame(frame);
+        shown?.cancelAnimationFrame(frame);
       }
       if (retryFrame !== null) {
-        view?.cancelAnimationFrame(retryFrame);
+        shown?.cancelAnimationFrame(retryFrame);
       }
       forgive();
     },

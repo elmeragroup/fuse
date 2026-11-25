@@ -11,6 +11,7 @@ import { page } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames, pollFrames, useFakeFrames, useFakeTimeouts } from "../../../test/animation-frames";
+import { CROSS_ORIGIN, frameRoot, navigableFrame, reuseId } from "../../../test/navigable-frame";
 import { holdRequest } from "../../../test/request-hold";
 import {
   InvoiceCard,
@@ -35,29 +36,6 @@ import { Button } from "../button/button";
 import { SkeletonReveal } from "./skeleton-reveal";
 
 failOnResizeObserverLoop();
-
-/**
- * Appends an iframe for the rest of the test.
- *
- * @returns Navigates the frame to a `srcdoc` or a `src`, and settles with its window once the
- *   next document loads.
- */
-function navigableFrame(): (target: { srcdoc: string } | { src: string }) => Promise<Window> {
-  const frame = document.createElement("iframe");
-  document.body.append(frame);
-  onTestFinished(() => {
-    frame.remove();
-  });
-  return async (target) => {
-    const loaded = new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
-    // A `srcdoc` attribute wins over `src`, so a frame that showed one drops it first.
-    if ("src" in target) frame.removeAttribute("srcdoc");
-    Object.assign(frame, target);
-    await loaded;
-    if (frame.contentWindow === null) throw new Error("expected the frame's window");
-    return frame.contentWindow;
-  };
-}
 
 /** A frame still showing its initial about:blank while a same-origin document loads into it. */
 type BlankFrame = {
@@ -739,16 +717,7 @@ describe("fonts", () => {
     const next = await navigate({ srcdoc: '<!doctype html><body data-page="next"></body>' });
     const pending = setTimeout.mock.results.at(-1);
     if (pending?.type !== "return") throw new Error("expected the watch's pending timeout");
-    // Each document numbers its timers from the start, so the next document gives out the pending
-    // timeout's id again once it has given out the ids before it. Timeouts with one delay run in the
-    // order they were set, so the timeout after the reused one settles the promise first only when
-    // the unmount cleared the reused one.
-    const { promise: ran, resolve } = Promise.withResolvers<boolean>();
-    let reserved = 0;
-    while (reserved < pending.value - 1) reserved = next.setTimeout(() => undefined, 0);
-    const reused = next.setTimeout(() => resolve(true), 0);
-    if (reused !== pending.value) throw new Error("expected the next document to reuse the timeout's id");
-    next.setTimeout(() => resolve(false), 0);
+    const ran = reuseId((callback) => next.setTimeout(callback, 0), pending.value);
     root.unmount();
     expect(await ran).toBe(true);
   });
@@ -809,27 +778,18 @@ describe("frame navigation", () => {
    * @returns Shows `data` in the reveal, unmounts it, and lists the errors its cleanup threw.
    */
   function mountReveal(view: Window) {
-    const uncaught: unknown[] = [];
-    const root = createRoot(view.document.body.appendChild(view.document.createElement("div")), {
-      onUncaughtError: (error) => uncaught.push(error),
-    });
+    const root = frameRoot(view);
     const show = (data: string | null): void => {
-      flushSync(() => {
-        root.render(
-          <SkeletonReveal data={data} sample="Faktura 4711" reveal="together" label="Henter">
-            {(text) => (
-              <p style={{ width: 320, height: text === "Faktura 4711" ? 20 : 80, margin: 0 }}>{text}</p>
-            )}
-          </SkeletonReveal>
-        );
-      });
+      root.render(
+        <SkeletonReveal data={data} sample="Faktura 4711" reveal="together" label="Henter">
+          {(text) => (
+            <p style={{ width: 320, height: text === "Faktura 4711" ? 20 : 80, margin: 0 }}>{text}</p>
+          )}
+        </SkeletonReveal>
+      );
     };
-    // A second unmount does nothing, so a test that unmounts itself is left as it was.
-    onTestFinished(() => {
-      root.unmount();
-    });
     show(null);
-    return { show, unmount: () => root.unmount(), uncaught };
+    return { show, unmount: root.unmount, uncaught: root.uncaught };
   }
 
   it("leaves the animation frames of a frame's next document pending when a skeleton the frame showed before measures or unmounts", async () => {
@@ -851,17 +811,7 @@ describe("frame navigation", () => {
     const next = await navigate({ srcdoc: '<!doctype html><body data-page="next"></body>' });
     const paneFrame = requestAnimationFrame.mock.results.at(-1);
     if (paneFrame?.type !== "return") throw new Error("expected the pane's frame");
-    // Each document numbers its animation frames from the start, so the next document gives out the
-    // pane's frame id again once it has given out the ids before it. Frames run in the order they
-    // were requested, so the frame after the reused one settles the promise first only when the
-    // reveal canceled the reused one.
-    const { promise: ran, resolve } = Promise.withResolvers<boolean>();
-    let reserved = 0;
-    while (reserved < paneFrame.value - 1) reserved = next.requestAnimationFrame(() => undefined);
-    const reused = next.requestAnimationFrame(() => resolve(true));
-    if (reused !== paneFrame.value)
-      throw new Error("expected the next document to reuse the pane's frame id");
-    next.requestAnimationFrame(() => resolve(false));
+    const ran = reuseId((callback) => next.requestAnimationFrame(callback), paneFrame.value);
     const nextRequests = vi.spyOn(next, "requestAnimationFrame");
     const nextCancels = vi.spyOn(next, "cancelAnimationFrame");
     // Chromium delivers no event or observer record to a document that left its frame, so the test
@@ -897,8 +847,7 @@ describe("frame navigation", () => {
     // The pane's observers are the frame's, and its cleanup disconnects them after the window calls.
     const disconnect = vi.spyOn(windowOf(first.document).MutationObserver.prototype, "disconnect");
     const reveal = mountReveal(first);
-    // A data URL's document has an opaque origin, so the frame's window turns cross-origin.
-    await navigate({ src: "data:text/html,<!doctype html><body></body>" });
+    await navigate(CROSS_ORIGIN);
     reveal.unmount();
     expect(reveal.uncaught, "errors thrown by the reveal's cleanup").toEqual([]);
     expect(disconnect, "the pane's MutationObserver disconnect").toHaveBeenCalledOnce();

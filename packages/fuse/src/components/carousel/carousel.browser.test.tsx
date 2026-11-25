@@ -16,6 +16,7 @@ import {
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import { whileKeyHeld } from "../../../test/key-hold";
 import { withLocale } from "../../../test/locale-matrix";
+import { CROSS_ORIGIN, SAME_ORIGIN, frameRoot, navigableFrame, reuseId } from "../../../test/navigable-frame";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { CarouselIndexChangeReason } from "./carousel-context";
 import { useCarousel } from "./carousel-context";
@@ -809,5 +810,70 @@ describe("paging", () => {
         ]);
       }
     );
+  });
+});
+
+describe("Carousel in a frame that navigates", () => {
+  /**
+   * Renders the fixture into a new root in a new frame's first document.
+   *
+   * @returns Navigates the frame, and gives the frame's first window, the root and the carousel's
+   *   viewport.
+   */
+  async function mountInFrame() {
+    const navigate = navigableFrame();
+    const first = await navigate(SAME_ORIGIN);
+    const carousel = frameRoot(first);
+    carousel.render(<Fixture />);
+    const region = first.document.querySelector<HTMLElement>("[aria-roledescription='carousel']");
+    if (region === null) throw new Error("expected the carousel in the frame");
+    return { navigate, first, carousel, viewport: carouselViewport(region) };
+  }
+
+  it("unmounts without an error, and stops counting the quiet spell, after the frame that showed it navigates to another origin under held input", async () => {
+    useFakeTimeouts();
+    const { navigate, first, carousel, viewport } = await mountInFrame();
+    // As the document leaves its frame, a wheel turn along the axis scrolls the viewport, and the
+    // scroll ends while the turn is held. The turn and the scroll each request a frame the leaving
+    // document never runs, and the end under held input owes the scroll a quiet spell.
+    first.addEventListener(
+      "pagehide",
+      () => {
+        viewport.dispatchEvent(new WheelEvent("wheel", { deltaX: 40 }));
+        viewport.dispatchEvent(new Event("scroll"));
+        viewport.dispatchEvent(new Event("scrollend"));
+      },
+      { once: true }
+    );
+    await navigate(CROSS_ORIGIN);
+    expect(vi.getTimerCount(), "timeouts counting before the unmount").toBe(1);
+    carousel.unmount();
+    expect(carousel.uncaught, "errors thrown by the carousel's cleanup").toEqual([]);
+    expect(vi.getTimerCount(), "timeouts counting after the unmount").toBe(0);
+  });
+
+  it("leaves the animation frame of a frame's next same-origin document pending when a carousel the frame showed before unmounts", async () => {
+    const { navigate, first, carousel, viewport } = await mountInFrame();
+    // The frames the mount requested run first, so the scroll below requests a frame of its own.
+    await nextFrames(2);
+    const requestAnimationFrame = vi.spyOn(first, "requestAnimationFrame");
+    // As the document leaves its frame, a scroll requests the frame that tracks it. The leaving
+    // document never runs that frame, so the engine still holds its id at the unmount.
+    first.addEventListener(
+      "pagehide",
+      () => {
+        requestAnimationFrame.mockClear();
+        viewport.dispatchEvent(new Event("scroll"));
+      },
+      { once: true }
+    );
+    const next = await navigate(SAME_ORIGIN);
+    const [trackFrame, ...others] = requestAnimationFrame.mock.results;
+    if (trackFrame?.type !== "return" || others.length > 0)
+      throw new Error("expected the scroll to request one frame");
+    const ran = reuseId((callback) => next.requestAnimationFrame(callback), trackFrame.value);
+    carousel.unmount();
+    expect(carousel.uncaught, "errors thrown by the carousel's cleanup").toEqual([]);
+    expect(await ran, "the next document's frame with the engine's id ran").toBe(true);
   });
 });

@@ -13,6 +13,7 @@ import { noDataSlotSelector } from "./rules/no-data-slot-selector.ts";
 import { noDisplayNameAssignment } from "./rules/no-display-name-assignment.ts";
 import { noHookCalls } from "./rules/no-hook-calls.ts";
 import { noHostInCheck } from "./rules/no-host-in-check.ts";
+import { noKeptWindowCleanup } from "./rules/no-kept-window-cleanup.ts";
 import { noRingShadowRead } from "./rules/no-ring-shadow-read.ts";
 import { noThemeColorWrite } from "./rules/no-theme-color-write.ts";
 import { noUseClient } from "./rules/no-use-client.ts";
@@ -47,6 +48,7 @@ const plugin: Plugin = {
     "no-display-name-assignment": noDisplayNameAssignment,
     "no-hook-calls": noHookCalls,
     "no-host-in-check": noHostInCheck,
+    "no-kept-window-cleanup": noKeptWindowCleanup,
     "no-ring-shadow-read": noRingShadowRead,
     "no-theme-color-write": noThemeColorWrite,
     "no-use-client": noUseClient,

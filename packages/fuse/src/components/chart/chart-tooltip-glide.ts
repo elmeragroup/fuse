@@ -13,6 +13,7 @@
  * onto it. The stylesheet sets `--_glide` from it only while the reader has no preference for
  * reduced motion, so under reduced motion every place shows at once.
  */
+import { windowShowing } from "../../internal/dom-node";
 import { clientScale, writeStyle } from "./chart-dom";
 import { springTiming } from "./chart-spring";
 import { CHART_SPRINGS } from "./layout/motion";
@@ -129,24 +130,28 @@ export function createTooltipGlider(positioner: HTMLElement, chart: HTMLElement 
     };
   });
   written.observe(positioner, { attributes: true, attributeFilter: ["style"] });
-  const view = positioner.ownerDocument.defaultView;
-  view?.addEventListener("scroll", stop, { capture: true, passive: true });
-  view?.addEventListener("resize", stop, { passive: true });
+  const { ownerDocument } = positioner;
+  // Any call on an iframe's window throws once it shows a cross-origin document. Aborting the
+  // signal removes these listeners without a call on the window.
+  const listening = new AbortController();
+  const { signal } = listening;
+  const view = ownerDocument.defaultView;
+  view?.addEventListener("scroll", stop, { capture: true, passive: true, signal });
+  view?.addEventListener("resize", stop, { passive: true, signal });
   return {
     arm: (route) => {
       const own = { side: positioner.getAttribute("data-side"), route };
       armed = own;
       // Base UI writes the step's place before the next frame. A step whose place moves nothing
       // starts no glide, and its arming ends there, so a later placement shows at once.
-      view?.requestAnimationFrame(() => {
+      windowShowing(ownerDocument)?.requestAnimationFrame(() => {
         if (armed === own && running === null) armed = null;
       });
     },
     stop,
     dispose: () => {
       written.disconnect();
-      view?.removeEventListener("scroll", stop, { capture: true });
-      view?.removeEventListener("resize", stop);
+      listening.abort();
       stop();
     },
   };

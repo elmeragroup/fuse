@@ -57,13 +57,15 @@ import { staticText } from "./static-text.ts";
  *     operation needs an exact value and is `opaque` on a `text`; a member read off one is a
  *     `member` as for any other value (step 4). By default no `text` exists, so a rule that judges
  *     exact values sees the same alternatives, and as many, as it would without step 11.
+ * 12. A call to an imported function (step 7) to a `call` that keeps the import and the call
+ *     node. Its value is not known, and step 4 reads members off it as `member`s, as off `opaque`.
  *
  * Every walk carries its active path, the bindings and nodes it is inside right now. A step back
  * onto that path is `unknown`, so a self-referencing binding stops, and a call back into a function
  * whose returns are being read is `opaque` (the call itself). Within one file an expression is
  * evaluated once: its alternatives are kept for every later read unless its walk cut a cycle, since
  * only a cut makes a result depend on the path that reached it. A parameter, a `for…of` or
- * `for…in` binding, a regular expression, a call the evaluator does not follow, and anything else
+ * `for…in` binding, a regular expression, a call no step follows, and anything else
  * the list does not name is `opaque`: a value that exists but is not known, whose members step 4
  * still reads as `member`s. `unknown` is what the evaluator gave up on, and every member of it is
  * `unknown` too.
@@ -136,6 +138,11 @@ export type Alt =
   | { readonly kind: "global"; readonly name: string }
   | { readonly kind: "import"; readonly source: string; readonly imported: string }
   | { readonly kind: "member"; readonly object: Alt; readonly key: string }
+  | {
+      readonly kind: "call";
+      readonly callee: Extract<Alt, { kind: "import" }>;
+      readonly node: ESTree.CallExpression;
+    }
   | { readonly kind: "opaque" }
   | { readonly kind: "unknown" };
 
@@ -462,7 +469,7 @@ function evaluator(context: Context, strings: Strings, memo: Memo) {
   const returnsOf = (fn: ESTree.Node): Alt[] =>
     step(fn, () => alternatives(...returnedValues(context, fn).map((value) => evaluateNode(value))));
 
-  /** One callee alternative called with the call's arguments (steps 5, 6 and 10). */
+  /** One callee alternative called with the call's arguments (steps 5, 6, 10 and 12). */
   const callOne = (call: ESTree.CallExpression, callee: Alt): Alt[] => {
     if (callee.kind === "function") {
       // Checked here, not by `step`, so a memoized value of the callee cannot turn the cut `unknown`.
@@ -472,6 +479,7 @@ function evaluator(context: Context, strings: Strings, memo: Memo) {
       }
       return returnsOf(callee.fn);
     }
+    if (callee.kind === "import" && callee.imported !== "*") return [{ kind: "call", callee, node: call }];
     if (callee.kind !== "member") return [OPAQUE];
     const receiver = callee.object;
     if (EVALUATES.has(callee.key)) {
