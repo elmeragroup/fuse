@@ -62,7 +62,7 @@
           "type": "\"always\" | \"hover\" | \"none\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"always\"",
-          "description": "How a user tells the link from its sentence. `always` underlines at rest in a dimmed line and draws it in the full color under the pointer. Keep it in running text, where nothing else marks the link. `hover` underlines only under the pointer, for a place that already reads as links, such as a row of footer links. `none` never underlines and fades the text under the pointer, for a link a container marks, such as a card's title.",
+          "description": "How a user tells the link from its sentence. `always` underlines at rest in a dimmed line and draws it in the full color under the pointer. Keep it in running text, where nothing else marks the link. Some themes set the `primary` variant to the text color, so keep the underline wherever color is the only other difference. `hover` underlines only under the pointer, for a place that already reads as links, such as a row of footer links. `none` drops the underline and fades the text under the pointer, for a link a container marks, such as a card's title. A `brand` link with `none` underlines under the pointer instead of fading.",
           "required": false,
           "values": [
             "always",
@@ -76,7 +76,7 @@
           "type": "\"brand\" | \"default\" | \"error\" | \"foreground\" | \"muted\" | \"primary\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "The text color. `default` takes the color of the text around it, so a link in an error message is the error color. The others set a text role. Some themes set `primary` to the text color, so keep the underline wherever color is the only other difference.",
+          "description": "The text color. `default` takes the color of the text around it, so text in an error message is the error color. The others set a text role. `brand` sets the brand color as text at 4.5:1 or more on the page and on a Card in every theme. On another surface, such as a filled panel or the Sidebar, check its contrast. To recolor brand text, override `--brand-ink`, not `--brand`, on the element that carries the theme attributes. Some themes declare `--brand-ink` as its own color, and a `--brand` override leaves that color unchanged.",
           "required": false,
           "values": [
             "brand",

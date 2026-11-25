@@ -7,11 +7,13 @@ import { useRender } from "@base-ui/react/use-render";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import type { TextColorProps } from "../../styles/typography-fragments";
 import { spanVariants } from "./span-variants";
 
 /** Props for `Span`: a native span's props, the recipe axes and `render`. */
 export type SpanProps = ComponentPropsWithoutRef<"span"> &
-  Omit<VariantProps<typeof spanVariants>, "leading" | "weight"> & {
+  Omit<VariantProps<typeof spanVariants>, "variant" | "leading" | "weight"> &
+  TextColorProps<VariantProps<typeof spanVariants>["variant"]> & {
     /**
      * The line height. Span defaults to `snug`, Tailwind's 1.375 ratio. It does not take the
      * theme's paragraph line height, as a Text without `leading` does.

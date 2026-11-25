@@ -7,7 +7,14 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
 import { flightLazyElement } from "../../../test/flight-lazy-element";
-import { cssVarColor, px, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import {
+  computedContrast,
+  cssVarColor,
+  effectiveOpacity,
+  px,
+  renderThemed,
+  roleNamed,
+} from "../../../test/themed-browser-render";
 import { Link } from "./link";
 
 /** The underline thickness in px, or 0 while the link draws no underline. */
@@ -51,6 +58,25 @@ describe("Link underline", () => {
     const link = roleNamed("link", "Hover");
     expect(getComputedStyle(link).textDecorationLine).toBe("none");
     await userEvent.hover(link);
+    expect(getComputedStyle(link).textDecorationLine).toBe("underline");
+  });
+
+  it("keeps a brand link with no underline at 4.5:1 under the pointer, and underlines it there", async () => {
+    // Fjordkraft's neutral light `--brand-ink` reads 4.66:1 on the page. The test checks that the
+    // hovered link keeps full opacity, reaches 4.5:1 there and underlines.
+    renderThemed(
+      <Link href="#brand" variant="brand" underline="none">
+        Brand
+      </Link>
+    );
+    const link = roleNamed("link", "Brand");
+    expect(getComputedStyle(link).textDecorationLine).toBe("none");
+    await userEvent.hover(link);
+    await Promise.all(link.getAnimations().map((animation) => animation.finished));
+    expect(effectiveOpacity(link)).toBe(1);
+    expect(
+      computedContrast(getComputedStyle(link).color, cssVarColor(link, "--background"))
+    ).toBeGreaterThanOrEqual(4.5);
     expect(getComputedStyle(link).textDecorationLine).toBe("underline");
   });
 });

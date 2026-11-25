@@ -60,6 +60,7 @@
   --secondary-soft-foreground: oklch(0.16 0 0);
   --brand: oklch(0.16 0 0);
   --brand-foreground: oklch(1 0 0);
+  --brand-ink: var(--brand);
   --error: oklch(0.4526 0.17845 30.42);
   --error-foreground: oklch(1 0 0);
   --error-soft: oklch(0.9352 0.02195 14.08);
@@ -203,6 +204,7 @@
 [data-theme-brand="fkas"] {
   --brand: var(--brand-fkas);
   --brand-foreground: var(--brand-fkas-foreground);
+  --brand-ink: oklch(0.58 0.1866254 38.8);
   --sidebar-brand: oklch(0.57 0.1834077 38.8);
   --sidebar-brand-foreground: var(--brand-foreground);
   --brand-neutral-50: oklch(0.985 0.0074756 36.96);
@@ -243,6 +245,7 @@
 [data-theme-brand="tkas"] {
   --brand: var(--brand-tkas);
   --brand-foreground: var(--brand-tkas-foreground);
+  --brand-ink: oklch(0.55 0.0946548 191.11);
   --sidebar-brand: oklch(0.54 0.0929338 191.11);
   --sidebar-brand-foreground: var(--brand-foreground);
   --brand-neutral-50: oklch(0.985 0.01 191.06);
@@ -283,6 +286,7 @@
 [data-theme-brand="guen"] {
   --brand: var(--brand-guen);
   --brand-foreground: var(--brand-guen-foreground);
+  --brand-ink: var(--brand);
   --sidebar-brand: var(--brand);
   --sidebar-brand-foreground: var(--brand-foreground);
   --brand-neutral-50: oklch(0.985 0.0069829 270.38);
@@ -323,6 +327,7 @@
 [data-theme-brand="fkab"] {
   --brand: var(--brand-fkab);
   --brand-foreground: var(--brand-fkab-foreground);
+  --brand-ink: oklch(0.58 0.1866254 38.8);
   --sidebar-brand: oklch(0.57 0.1834077 38.8);
   --sidebar-brand-foreground: var(--brand-foreground);
   --brand-neutral-50: oklch(0.985 0.01 216.27);
@@ -363,6 +368,7 @@
 [data-theme-brand="fkse"] {
   --brand: var(--brand-fkse);
   --brand-foreground: var(--brand-fkse-foreground);
+  --brand-ink: var(--brand);
   --sidebar-brand: var(--brand);
   --sidebar-brand-foreground: var(--brand-foreground);
   --brand-neutral-50: oklch(0.985 0.0089106 229.37);
@@ -403,6 +409,7 @@
 [data-theme-brand="elma"] {
   --brand: var(--brand-elma);
   --brand-foreground: var(--brand-elma-foreground);
+  --brand-ink: var(--brand);
   --sidebar-brand: var(--brand);
   --sidebar-brand-foreground: var(--brand-foreground);
   --brand-neutral-50: oklch(0.985 0.01 218.5);
@@ -443,6 +450,7 @@
 [data-theme-brand="ngfi"] {
   --brand: var(--brand-ngfi);
   --brand-foreground: var(--brand-ngfi-foreground);
+  --brand-ink: var(--brand);
   --sidebar-brand: var(--brand);
   --sidebar-brand-foreground: var(--brand-foreground);
   --brand-neutral-50: oklch(0.985 0.01 169.5466991);
@@ -644,6 +652,12 @@
   color-scheme: light;
 }
 
+:where([data-theme-identity="branded"])[data-theme-brand="fkas"] {
+  --brand-ink: oklch(0.55 0.1769724 38.8);
+  --sidebar-brand: oklch(0.57 0.1834077 38.8);
+  --sidebar-brand-foreground: var(--brand-foreground);
+}
+
 [data-theme-identity="branded"][data-theme-brand="fkas"][data-theme-segment="company"] {
   --background: oklch(0.9823 0.01428 213.1);
   --foreground: oklch(0.30579 0.03693 215.45);
@@ -662,6 +676,12 @@
   --secondary-soft: oklch(0.95328 0.03401 215.01);
   --secondary-soft-foreground: oklch(0.25285 0.03792 212.52);
   color-scheme: light;
+}
+
+:where([data-theme-identity="branded"][data-theme-segment="company"])[data-theme-brand="fkas"] {
+  --brand-ink: oklch(0.57 0.1834077 38.8);
+  --sidebar-brand: oklch(0.57 0.1834077 38.8);
+  --sidebar-brand-foreground: var(--brand-foreground);
 }
 
 [data-theme-identity="branded"][data-theme-brand="tkas"] {
@@ -728,6 +748,12 @@
   color-scheme: light;
 }
 
+:where([data-theme-identity="branded"])[data-theme-brand="tkas"] {
+  --brand-ink: oklch(0.54 0.0929338 191.11);
+  --sidebar-brand: oklch(0.54 0.0929338 191.11);
+  --sidebar-brand-foreground: var(--brand-foreground);
+}
+
 [data-theme-identity="branded"][data-theme-brand="guen"] {
   --background: oklch(0.95469 0.01887 279.53);
   --foreground: oklch(0.19922 0.12072 268.2);
@@ -790,6 +816,12 @@
   --heading-3-leading: 2rem;
   --heading-3-weight: 700;
   color-scheme: light;
+}
+
+:where([data-theme-identity="branded"])[data-theme-brand="guen"] {
+  --brand-ink: var(--brand);
+  --sidebar-brand: var(--brand);
+  --sidebar-brand-foreground: var(--brand-foreground);
 }
 
 [data-theme-identity="branded"][data-theme-brand="fkab"] {
@@ -856,6 +888,12 @@
   color-scheme: light;
 }
 
+:where([data-theme-identity="branded"])[data-theme-brand="fkab"] {
+  --brand-ink: oklch(0.57 0.1834077 38.8);
+  --sidebar-brand: oklch(0.57 0.1834077 38.8);
+  --sidebar-brand-foreground: var(--brand-foreground);
+}
+
 [data-theme-identity="branded"][data-theme-brand="fkse"] {
   --background: oklch(0.98014 0.01729 210.19);
   --foreground: oklch(0.36735 0.09417 249.17);
@@ -918,6 +956,12 @@
   --heading-3-leading: 2rem;
   --heading-3-weight: 700;
   color-scheme: light;
+}
+
+:where([data-theme-identity="branded"])[data-theme-brand="fkse"] {
+  --brand-ink: var(--brand);
+  --sidebar-brand: var(--brand);
+  --sidebar-brand-foreground: var(--brand-foreground);
 }
 
 [data-theme-identity="branded"][data-theme-brand="elma"] {
@@ -984,6 +1028,12 @@
   color-scheme: light;
 }
 
+:where([data-theme-identity="branded"])[data-theme-brand="elma"] {
+  --brand-ink: var(--brand);
+  --sidebar-brand: var(--brand);
+  --sidebar-brand-foreground: var(--brand-foreground);
+}
+
 [data-theme-identity="branded"][data-theme-brand="ngfi"] {
   --background: oklch(0.9817261 0.0061352 137.7733593);
   --foreground: oklch(0.2214543 0.0071419 164.2694873);
@@ -1046,6 +1096,12 @@
   --heading-3-leading: 2rem;
   --heading-3-weight: 700;
   color-scheme: light;
+}
+
+:where([data-theme-identity="branded"])[data-theme-brand="ngfi"] {
+  --brand-ink: var(--brand);
+  --sidebar-brand: var(--brand);
+  --sidebar-brand-foreground: var(--brand-foreground);
 }
 
 [data-theme-identity="neutral"] {
@@ -1219,42 +1275,49 @@
 
 :where([data-theme="dark"][data-theme-identity="neutral"])[data-theme-brand="fkas"],
 :where([data-theme="dark"] [data-theme-identity="neutral"])[data-theme-brand="fkas"] {
+  --brand-ink: var(--brand);
   --sidebar-brand: var(--brand);
   --sidebar-brand-foreground: var(--sidebar);
 }
 
 :where([data-theme="dark"][data-theme-identity="neutral"])[data-theme-brand="tkas"],
 :where([data-theme="dark"] [data-theme-identity="neutral"])[data-theme-brand="tkas"] {
+  --brand-ink: var(--brand);
   --sidebar-brand: var(--brand);
   --sidebar-brand-foreground: var(--sidebar);
 }
 
 :where([data-theme="dark"][data-theme-identity="neutral"])[data-theme-brand="guen"],
 :where([data-theme="dark"] [data-theme-identity="neutral"])[data-theme-brand="guen"] {
+  --brand-ink: oklch(0.6 0.0399 265.73);
   --sidebar-brand: oklch(0.6 0.0399 265.73);
   --sidebar-brand-foreground: var(--sidebar);
 }
 
 :where([data-theme="dark"][data-theme-identity="neutral"])[data-theme-brand="fkab"],
 :where([data-theme="dark"] [data-theme-identity="neutral"])[data-theme-brand="fkab"] {
+  --brand-ink: var(--brand);
   --sidebar-brand: var(--brand);
   --sidebar-brand-foreground: var(--sidebar);
 }
 
 :where([data-theme="dark"][data-theme-identity="neutral"])[data-theme-brand="fkse"],
 :where([data-theme="dark"] [data-theme-identity="neutral"])[data-theme-brand="fkse"] {
+  --brand-ink: oklch(0.6016 0.0908 240.16);
   --sidebar-brand: oklch(0.6016 0.0908 240.16);
   --sidebar-brand-foreground: var(--sidebar);
 }
 
 :where([data-theme="dark"][data-theme-identity="neutral"])[data-theme-brand="elma"],
 :where([data-theme="dark"] [data-theme-identity="neutral"])[data-theme-brand="elma"] {
+  --brand-ink: oklch(0.59898 0.051828 217.7);
   --sidebar-brand: oklch(0.59898 0.051828 217.7);
   --sidebar-brand-foreground: var(--sidebar);
 }
 
 :where([data-theme="dark"][data-theme-identity="neutral"])[data-theme-brand="ngfi"],
 :where([data-theme="dark"] [data-theme-identity="neutral"])[data-theme-brand="ngfi"] {
+  --brand-ink: oklch(0.5971893 0.072708 169.9789644);
   --sidebar-brand: oklch(0.5971893 0.072708 169.9789644);
   --sidebar-brand-foreground: var(--sidebar);
 }
@@ -1366,6 +1429,7 @@
 
 :where([data-theme="dark"][data-theme-identity="branded"])[data-theme-brand="fkas"],
 :where([data-theme="dark"] [data-theme-identity="branded"])[data-theme-brand="fkas"] {
+  --brand-ink: var(--brand);
   --sidebar-brand: var(--brand);
   --sidebar-brand-foreground: var(--sidebar);
 }
@@ -1477,6 +1541,7 @@
 
 :where([data-theme="dark"][data-theme-identity="branded"][data-theme-segment="company"])[data-theme-brand="fkas"],
 :where([data-theme="dark"] [data-theme-identity="branded"][data-theme-segment="company"])[data-theme-brand="fkas"] {
+  --brand-ink: var(--brand);
   --sidebar-brand: var(--brand);
   --sidebar-brand-foreground: var(--sidebar);
 }
@@ -1588,6 +1653,7 @@
 
 :where([data-theme="dark"][data-theme-identity="branded"])[data-theme-brand="tkas"],
 :where([data-theme="dark"] [data-theme-identity="branded"])[data-theme-brand="tkas"] {
+  --brand-ink: var(--brand);
   --sidebar-brand: var(--brand);
   --sidebar-brand-foreground: var(--sidebar);
 }
@@ -1699,6 +1765,7 @@
 
 :where([data-theme="dark"][data-theme-identity="branded"])[data-theme-brand="guen"],
 :where([data-theme="dark"] [data-theme-identity="branded"])[data-theme-brand="guen"] {
+  --brand-ink: oklch(0.65 0.0399 265.73);
   --sidebar-brand: oklch(0.6 0.0399 265.73);
   --sidebar-brand-foreground: var(--sidebar);
 }
@@ -1810,6 +1877,7 @@
 
 :where([data-theme="dark"][data-theme-identity="branded"])[data-theme-brand="fkab"],
 :where([data-theme="dark"] [data-theme-identity="branded"])[data-theme-brand="fkab"] {
+  --brand-ink: var(--brand);
   --sidebar-brand: var(--brand);
   --sidebar-brand-foreground: var(--sidebar);
 }
@@ -1921,6 +1989,7 @@
 
 :where([data-theme="dark"][data-theme-identity="branded"])[data-theme-brand="fkse"],
 :where([data-theme="dark"] [data-theme-identity="branded"])[data-theme-brand="fkse"] {
+  --brand-ink: oklch(0.6116 0.0908 240.16);
   --sidebar-brand: oklch(0.5916 0.0908 240.16);
   --sidebar-brand-foreground: var(--sidebar);
 }
@@ -2032,6 +2101,7 @@
 
 :where([data-theme="dark"][data-theme-identity="branded"])[data-theme-brand="elma"],
 :where([data-theme="dark"] [data-theme-identity="branded"])[data-theme-brand="elma"] {
+  --brand-ink: oklch(0.63898 0.051828 217.7);
   --sidebar-brand: oklch(0.58898 0.051828 217.7);
   --sidebar-brand-foreground: var(--sidebar);
 }
@@ -2143,6 +2213,7 @@
 
 :where([data-theme="dark"][data-theme-identity="branded"])[data-theme-brand="ngfi"],
 :where([data-theme="dark"] [data-theme-identity="branded"])[data-theme-brand="ngfi"] {
+  --brand-ink: oklch(0.6171893 0.072708 169.9789644);
   --sidebar-brand: oklch(0.5871893 0.072708 169.9789644);
   --sidebar-brand-foreground: var(--sidebar);
 }

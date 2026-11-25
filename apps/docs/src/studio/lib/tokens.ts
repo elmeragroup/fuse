@@ -95,6 +95,7 @@ export const TOKEN_TABLE = {
   "secondary-soft-foreground": color("actions"),
   brand: color("actions"),
   "brand-foreground": color("actions"),
+  "brand-ink": color("actions"),
   error: color("status"),
   "error-foreground": color("status"),
   "error-soft": color("status"),

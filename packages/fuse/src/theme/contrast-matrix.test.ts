@@ -14,12 +14,10 @@ import {
   CONTROL_SURFACES,
   DARK_PANEL_TEXT_PAIRS,
   FEATURE_TEXT_PAIRS,
-  SIDEBAR_BRAND_PAIRS,
   TEXT_GRADE_PAIRS,
   TOGGLE_PRESSED_PAIRS,
   tokenLiteral,
 } from "./contrast";
-import { resolveThemeCatalog } from "./resolve-theme-catalog";
 import { LEGAL_THEMES, themeSlug } from "./theme-input";
 import type { ThemeInput } from "./theme-input";
 import { literalContrast, tokenOklch } from "./token-color";
@@ -235,6 +233,29 @@ const CONTRAST_POLICIES: readonly ContrastPolicy[] = [
   },
 ];
 
+/**
+ * The text-grade pairs a neutral theme colors with its brand. The neutral identity takes each
+ * brand's own `--brand` and sidebar brand, so these ratios differ per brand while the rest of the
+ * neutral dark palette is one shared body.
+ */
+const BRAND_COLORED_PAIRS: ReadonlySet<string> = new Set([
+  "brand-ink/background",
+  "brand-ink/card",
+  "sidebar-brand/sidebar",
+  "sidebar-brand-foreground/sidebar-brand",
+]);
+
+/** One theme's matrix row, split into the brand-independent pairs and the brand-colored ones. */
+function splitBrandPairs(
+  row: Readonly<Record<string, number>>
+): readonly [Record<string, number>, Record<string, number>] {
+  const entries = Object.entries(row);
+  return [
+    Object.fromEntries(entries.filter(([pair]) => !BRAND_COLORED_PAIRS.has(pair))),
+    Object.fromEntries(entries.filter(([pair]) => BRAND_COLORED_PAIRS.has(pair))),
+  ];
+}
+
 describe("contrast matrix", () => {
   const lightMatrix = buildContrastMatrix();
   const darkMatrix = buildContrastMatrix("dark");
@@ -248,16 +269,21 @@ describe("contrast matrix", () => {
   it("snapshots the twelve neutral dark permutations as one shared body", async () => {
     const themes = LEGAL_THEMES.filter((theme) => theme.identity === "neutral");
     expect(themes).toHaveLength(12);
-    const [firstTheme] = themes;
-    if (firstTheme === undefined) {
+    const rows = themes.map((theme) => {
+      const [shared, brandColored] = splitBrandPairs(darkMatrix[themeSlug(theme)]);
+      return { slug: themeSlug(theme), shared, brandColored };
+    });
+    const [first] = rows;
+    if (first === undefined) {
       throw new Error("No neutral themes are legal");
     }
-    const body = darkMatrix[themeSlug(firstTheme)];
-    for (const theme of themes) {
+    for (const { slug, shared } of rows) {
       // Neutral themes share one dark palette; a body that differs per brand fails.
-      expect(darkMatrix[themeSlug(theme)], themeSlug(theme)).toEqual(body);
+      expect(shared, slug).toEqual(first.shared);
     }
-    await expect({ themes: themes.map(themeSlug), body }).toMatchFileSnapshot(
+    const body = first.shared;
+    const brand = Object.fromEntries(rows.map(({ slug, brandColored }) => [slug, brandColored]));
+    await expect({ themes: rows.map(({ slug }) => slug), body, brand }).toMatchFileSnapshot(
       "./__snapshots__/neutral-dark-contrast-matrix.json"
     );
   });
@@ -311,22 +337,6 @@ describe("contrast matrix", () => {
               )
               .toBeGreaterThanOrEqual(4.5);
           }
-        }
-      }
-    }
-  });
-
-  it("holds the sidebar brand pair at 4.5:1 for every theme and color scheme", () => {
-    for (const theme of resolveThemeCatalog().themes) {
-      for (const scheme of ["light", "dark"] as const) {
-        const tokens = theme.schemes[scheme].tokens;
-        for (const [foreground, background] of SIDEBAR_BRAND_PAIRS) {
-          expect
-            .soft(
-              getOrThrow(Wcag.contrastRatio(tokens[foreground].value, tokens[background].value)),
-              `${scheme} ${theme.slug} ${foreground}/${background}`
-            )
-            .toBeGreaterThanOrEqual(4.5);
         }
       }
     }

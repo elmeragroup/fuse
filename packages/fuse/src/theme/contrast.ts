@@ -4,8 +4,9 @@ import { cssVarReference } from "./css-values";
 import { LEGAL_THEMES, themeSlug } from "./theme-input";
 import type { ThemeSlug } from "./theme-input";
 import { literalContrast } from "./token-color";
-import { TOKEN_KINDS } from "./tokens/contract";
+import { isTokenName } from "./tokens/contract";
 import type { TokenContract, TokenName } from "./tokens/contract";
+import { isPrimitiveName, PRIMITIVES } from "./tokens/primitives";
 
 /**
  * The surfaces a chart, syntax or control role must separate itself from: the page, the cards,
@@ -49,6 +50,12 @@ export const TEXT_GRADE_PAIRS = [
   ["success-soft-foreground", "success-soft"],
   ["warning-foreground", "warning"],
   ["warning-soft-foreground", "warning-soft"],
+  // Brand text, the `brand` variant of Heading, Text, Link and Span, on the page and on a Card.
+  ["brand-ink", "background"],
+  ["brand-ink", "card"],
+  // `text-sidebar-brand` on the sidebar, and text on a `bg-sidebar-brand` fill.
+  ["sidebar-brand", "sidebar"],
+  ["sidebar-brand-foreground", "sidebar-brand"],
 ] as const satisfies readonly (readonly [TokenName, TokenName])[];
 
 /**
@@ -61,16 +68,6 @@ export const DARK_PANEL_TEXT_PAIRS = [
   ["sidebar-foreground", "sidebar"],
   ["sidebar-accent-foreground", "sidebar-accent"],
   ["right-panel-foreground", "right-panel"],
-] as const satisfies readonly (readonly [TokenName, TokenName])[];
-
-/**
- * The sidebar's brand pair: `text-sidebar-brand` on the sidebar, and text on a
- * `bg-sidebar-brand` fill. Either role may alias another, so the gate reads them resolved and
- * holds each at 4.5:1 in every theme and scheme.
- */
-export const SIDEBAR_BRAND_PAIRS = [
-  ["sidebar-brand", "sidebar"],
-  ["sidebar-brand-foreground", "sidebar-brand"],
 ] as const satisfies readonly (readonly [TokenName, TokenName])[];
 
 /**
@@ -116,7 +113,6 @@ export const CHART_ON_COLOR_PAIRS = [
 export const ROLE_TEXT_PAIRS = [
   ...DARK_PANEL_TEXT_PAIRS,
   ...FEATURE_TEXT_PAIRS,
-  ...SIDEBAR_BRAND_PAIRS,
   ...ACCORDION_MUTED_PAIRS,
   ...TOGGLE_PRESSED_PAIRS,
   ...CHART_ON_COLOR_PAIRS,
@@ -130,30 +126,31 @@ type ContrastMatrix = {
   };
 };
 
-function isTokenName(name: string): name is TokenName {
-  return Object.hasOwn(TOKEN_KINDS, name);
-}
-
 /**
  * The literal at the end of a role's `var()` chain within one composed theme. Contrast reads
- * literals, and a role such as `dialog` aliases another, such as `var(--background)`.
+ * literals, and a role aliases another role, such as `dialog` taking `var(--background)`, or a
+ * primitive, such as a branded `brand-foreground` taking `var(--brand-fkas-foreground)`.
  *
  * @param tokens - One theme's composed tokens in one scheme.
  * @param name - The role to read.
- * @returns The role's value, or the value of the role its alias chain ends on.
- * @throws When the chain names a property that is not a role, or loops.
+ * @returns The role's value, or the value of the role or primitive its alias chain ends on.
+ * @throws When the chain names a property that is neither a role nor a primitive, or loops.
  */
 export function tokenLiteral(tokens: TokenContract, name: TokenName): string {
-  const seen = new Set<TokenName>();
-  let current = name;
-  let value = tokens[current];
+  const seen = new Set<string>([name]);
+  let value: string = tokens[name];
   for (let target = cssVarReference(value); target !== undefined; target = cssVarReference(value)) {
-    if (!isTokenName(target) || seen.has(current)) {
-      throw new Error(`--${name} does not resolve to a role literal: ${value}`);
+    if (seen.has(target)) {
+      throw new Error(`--${name} does not resolve to a literal: its chain loops at --${target}`);
     }
-    seen.add(current);
-    current = target;
-    value = tokens[current];
+    seen.add(target);
+    if (isTokenName(target)) {
+      value = tokens[target];
+    } else if (isPrimitiveName(target)) {
+      value = PRIMITIVES[target];
+    } else {
+      throw new Error(`--${name} does not resolve to a literal: ${value}`);
+    }
   }
   return value;
 }

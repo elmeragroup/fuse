@@ -79,11 +79,11 @@
         },
         {
           "name": "variant",
-          "origin": "recipe-axis",
+          "origin": "declared",
           "type": "\"brand\" | \"default\" | \"destructive\" | \"foreground\" | \"inherit\" | \"muted\" | \"primary\" | \"secondary\" | \"success\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"default\"",
-          "description": "",
+          "description": "The text color. `default` takes the color of the text around it, so text in an error message is the error color. The others set a text role. `brand` sets the brand color as text at 4.5:1 or more on the page and on a Card in every theme. On another surface, such as a filled panel or the Sidebar, check its contrast. To recolor brand text, override `--brand-ink`, not `--brand`, on the element that carries the theme attributes. Some themes declare `--brand-ink` as its own color, and a `--brand` override leaves that color unchanged.",
           "required": false,
           "values": [
             "brand",

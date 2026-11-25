@@ -7,6 +7,7 @@ import { useRender } from "@base-ui/react/use-render";
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import type { TextColorProps } from "../../styles/typography-fragments";
 import { headingClass } from "./heading-class";
 import type { HeadingLevel } from "./heading-class";
 import type { headingVariants } from "./heading-variants";
@@ -15,7 +16,8 @@ type HeadingTag = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 
 /** Props for `Heading`, which takes a native heading's props plus the recipe axes and the outline `level`. */
 export type HeadingProps = useRender.ComponentProps<"h2"> &
-  Omit<VariantProps<typeof headingVariants>, "size" | "font"> & {
+  Omit<VariantProps<typeof headingVariants>, "variant" | "size" | "font"> &
+  TextColorProps<VariantProps<typeof headingVariants>["variant"]> & {
     /**
      * The outline level, `1` to `6`, which picks the rendered `h1` to `h6`. For levels 1 to 3 it
      * also picks the theme's size, line height and weight: `--heading-<level>-size` and

@@ -9,7 +9,7 @@ describe("typographyFragments", () => {
     [{ variant: "foreground" }, "text-foreground"],
     [{ variant: "primary" }, "text-primary"],
     [{ variant: "secondary" }, "text-foreground"],
-    [{ variant: "brand" }, "text-brand"],
+    [{ variant: "brand" }, "text-brand-ink"],
     [{ variant: "muted" }, "text-muted-foreground"],
     [{ variant: "inherit" }, "text-inherit"],
     [{ variant: "destructive" }, "text-error"],

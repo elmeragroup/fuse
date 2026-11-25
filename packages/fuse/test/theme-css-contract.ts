@@ -1,5 +1,18 @@
+import type { TokenName } from "../src/theme/tokens/contract";
+
 /** The secondary hover as the themes declare it, a live mix of the scope's own roles. */
 export const SECONDARY_HOVER_CSS = "color-mix(in oklch, var(--secondary), var(--foreground) 5%)";
+
+/**
+ * The derived roles that read the brand pointer, listed from the spec rather than from the
+ * emitter. Outside `:root`, only the brand pointer and the brand-scoped companions declare them,
+ * and a host restyles them at the pointer's weight.
+ */
+export const BRAND_SCOPED_ROLES: readonly TokenName[] = [
+  "brand-ink",
+  "sidebar-brand",
+  "sidebar-brand-foreground",
+];
 
 /**
  * The value a theme rule declares for a composed role, written from the spec rather than

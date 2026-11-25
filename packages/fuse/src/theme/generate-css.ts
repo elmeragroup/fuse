@@ -46,46 +46,29 @@ function cssRule(
 }
 
 /**
- * A light rule targets one selector. A dark rule lists the direct and the descendant form in one
- * selector list, so the emitter writes a palette body once, not twice.
+ * A rule's selectors in one scheme. A light rule targets one selector. A dark rule lists the
+ * direct and the descendant form in one selector list, so the emitter writes a palette body once,
+ * not twice.
  */
+function schemeSelectors(selector: string, colorScheme: ResolvedColorScheme): string[] {
+  return colorScheme === "dark"
+    ? [`[data-theme="dark"]${selector}`, `[data-theme="dark"] ${selector}`]
+    : [selector];
+}
+
+/** A theme rule in one scheme, which also sets `color-scheme`. */
 function themeRule(
   selector: string,
   declarations: readonly (readonly [string, string])[],
   colorScheme: ResolvedColorScheme
 ): string {
-  if (colorScheme === "dark") {
-    return cssRule(
-      [`[data-theme="dark"]${selector}`, `[data-theme="dark"] ${selector}`],
-      declarations,
-      "dark"
-    );
-  }
-  return cssRule([selector], declarations, "light");
+  return cssRule(schemeSelectors(selector, colorScheme), declarations, colorScheme);
 }
 
 function rootDeclarations(): (readonly [string, string])[] {
   const primitives = PRIMITIVE_NAMES.map((name) => [name, PRIMITIVES[name]] as const);
   const roles = TOKEN_NAMES.map((name) => [name, cssValue(name, DEFAULTS[name])] as const);
   return [...primitives, ...roles];
-}
-
-/**
- * Light layers declare `LIGHT_RESET_KEYS` only, so a host override of a role no palette sets, such
- * as `--popover` or `--chart-*`, inherits through the scope. Dark layers declare all of
- * `DARK_RESET_KEYS`, which is every key any light or dark palette can change except the light-only
- * keys. The light rule of the same element declares those in both schemes, so a host override of
- * one at the light rule's weight holds in dark.
- */
-function resetDeclarations(
-  overrides: Partial<TokenContract>,
-  keys: readonly TokenName[]
-): (readonly [string, string])[] {
-  return keys.map((key) => [key, cssValue(key, overrides[key] ?? DEFAULTS[key])] as const);
-}
-
-function resetKeys(colorScheme: ResolvedColorScheme): readonly TokenName[] {
-  return colorScheme === "dark" ? DARK_RESET_KEYS : LIGHT_RESET_KEYS;
 }
 
 function emitRoot(): string {
@@ -100,9 +83,9 @@ const POINTER_KEYS: ReadonlySet<TokenName> = new Set([
 /**
  * The derived roles that read the brand pointer. A host restyles a brand at the pointer's
  * weight, one attribute such as `.app[data-theme-brand="tkas"]`, so no rule declares these
- * roles at more than that weight. The brand pointer carries their light values, and every
- * dark palette rule leaves them to a companion rule that puts its scheme and identity
- * qualifiers in `:where()`.
+ * roles at more than that weight. The brand pointer carries their neutral light values, and
+ * no palette rule declares them: every branded and every dark palette rule leaves them to a
+ * companion rule that puts its scheme and identity qualifiers in `:where()`.
  */
 const BRAND_SCOPED_KEYS = TOKEN_NAMES.filter(
   (name) => isDerivedTokenName(name) && derivedRoleSources(name).some((source) => POINTER_KEYS.has(source))
@@ -112,27 +95,53 @@ function brandScopedDeclarations(tokens: TokenContract): (readonly [string, stri
   return BRAND_SCOPED_KEYS.map((key) => [key, cssValue(key, tokens[key])] as const);
 }
 
-/** A dark palette rule's declarations: its reset keys, less the brand-scoped roles. */
-function darkPaletteDeclarations(tokens: TokenContract): (readonly [string, string])[] {
-  return resetDeclarations(
-    tokens,
-    resetKeys("dark").filter((key) => !BRAND_SCOPED_KEYS.includes(key))
-  );
+/**
+ * The keys the brand rules and the companions declare: the pointer and the ramps, which
+ * `emitBrandPointers` declares per brand and segment, and the brand-scoped roles. A palette rule
+ * never declares them, so each keeps one override weight.
+ */
+const BRAND_RULE_KEYS: ReadonlySet<TokenName> = new Set<TokenName>([
+  ...POINTER_KEYS,
+  ...BRAND_RAMP_TOKEN_NAMES,
+  ...BRAND_SCOPED_KEYS,
+]);
+
+/**
+ * A full palette rule's declarations in one scheme, less `BRAND_RULE_KEYS`. A light segment rule
+ * takes its keys from `changedKeys`, which leaves them out as well.
+ *
+ * Light layers declare `LIGHT_RESET_KEYS` only, so a host override of a role no palette sets, such
+ * as `--popover` or `--chart-*`, inherits through the scope. Dark layers declare all of
+ * `DARK_RESET_KEYS`, which is every key any light or dark palette can change except the light-only
+ * keys. The light rule of the same element declares those in both schemes, so a host override of
+ * one at the light rule's weight holds in dark.
+ */
+function paletteDeclarations(
+  overrides: Partial<TokenContract>,
+  colorScheme: ResolvedColorScheme
+): (readonly [string, string])[] {
+  const resetKeys = colorScheme === "dark" ? DARK_RESET_KEYS : LIGHT_RESET_KEYS;
+  return resetKeys
+    .filter((key) => !BRAND_RULE_KEYS.has(key))
+    .map((key) => [key, cssValue(key, overrides[key] ?? DEFAULTS[key])] as const);
 }
 
 /**
- * The companion of a dark palette rule: the brand-scoped roles for one brand, with the
- * scheme and the palette's other qualifiers weighing nothing. It ties the brand pointer and
- * follows it, so it wins over the pointer's light values, and a host override at the
- * pointer's weight that comes later wins over it.
+ * The companion of a palette rule: the brand-scoped roles for one brand, with the scheme and
+ * the palette's other qualifiers weighing nothing. It ties the brand pointer and follows it, so
+ * it wins over the pointer's values. Every companion has that one weight, so the last one that
+ * matches wins: the dark companions follow the light ones, and a segment's follows its base's.
+ * A host override at the pointer's weight that comes later wins over all of them.
  */
-function darkBrandScopedRule(qualifiers: string, brand: BrandCode, tokens: TokenContract): string {
+function brandScopedRule(
+  qualifiers: string,
+  brand: BrandCode,
+  tokens: TokenContract,
+  colorScheme: ResolvedColorScheme
+): string {
   const subject = themeAxisSelector("brand", brand);
   return cssRule(
-    [
-      `:where([data-theme="dark"]${qualifiers})${subject}`,
-      `:where([data-theme="dark"] ${qualifiers})${subject}`,
-    ],
+    schemeSelectors(qualifiers, colorScheme).map((selector) => `:where(${selector})${subject}`),
     brandScopedDeclarations(tokens)
   );
 }
@@ -199,11 +208,7 @@ function emitBrandPointers(): string {
 }
 
 function emitNeutralReset(): string {
-  return themeRule(
-    themeAxisSelector("identity", "neutral"),
-    resetDeclarations({}, resetKeys("light")),
-    "light"
-  );
+  return themeRule(themeAxisSelector("identity", "neutral"), paletteDeclarations({}, "light"), "light");
 }
 
 /**
@@ -219,12 +224,12 @@ function emitNeutralDarkPalette(): string {
   const identity = themeAxisSelector("identity", "neutral");
   const palette = themeRule(
     identity,
-    darkPaletteDeclarations(composeTheme(neutralDarkTheme(), "dark")),
+    paletteDeclarations(composeTheme(neutralDarkTheme(), "dark"), "dark"),
     "dark"
   );
   // The shared palette is brand-agnostic, but the brand-scoped roles follow the brand.
   const brandScoped = BRAND_CODES.map((code) =>
-    darkBrandScopedRule(identity, code, composeTheme(neutralTheme(code), "dark"))
+    brandScopedRule(identity, code, composeTheme(neutralTheme(code), "dark"), "dark")
   );
   return [palette, ...brandScoped].join("\n\n");
 }
@@ -235,16 +240,6 @@ function emitCorners(): string {
     .map((rule) => cssRule([rule.selector], rule.declarations))
     .join("\n\n");
 }
-
-/**
- * The keys the brand rules declare: the pointer and the ramps, which `emitBrandPointers` declares
- * per brand and segment. A palette rule never declares them, so only brand and segment rules set
- * these keys, each with one override weight.
- */
-const BRAND_RULE_KEYS: ReadonlySet<TokenName> = new Set<TokenName>([
-  ...POINTER_KEYS,
-  ...BRAND_RAMP_TOKEN_NAMES,
-]);
 
 /**
  * The roles a segment changes against its brand base, leaving out the keys the brand rules declare.
@@ -296,12 +291,10 @@ function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
     const lightBase = colorScheme === "dark" ? composeTheme(baseTheme, "light") : base;
     const identity = themeAxisSelector("identity", "branded");
     const selector = `${identity}${themeAxisSelector("brand", brand)}`;
-    if (colorScheme === "dark") {
-      rules.push(themeRule(selector, darkPaletteDeclarations(base), "dark"));
-      rules.push(darkBrandScopedRule(identity, brand, base));
-    } else {
-      rules.push(themeRule(selector, resetDeclarations(base, resetKeys("light")), "light"));
-    }
+    rules.push(
+      themeRule(selector, paletteDeclarations(base, colorScheme), colorScheme),
+      brandScopedRule(identity, brand, base, colorScheme)
+    );
     for (const theme of themes.filter((candidate) => candidate !== baseTheme)) {
       const lightTokens = composeTheme(theme, "light");
       const lightDeparts = differsFrom(lightBase, lightTokens);
@@ -313,16 +306,15 @@ function emitBrandPalettes(colorScheme: ResolvedColorScheme): string {
       // either scheme.
       if (!departs) continue;
       const segment = themeAxisSelector("segment", theme.segment);
-      if (colorScheme === "dark") {
-        rules.push(themeRule(`${selector}${segment}`, darkPaletteDeclarations(tokens), "dark"));
+      const declarations =
+        colorScheme === "dark"
+          ? paletteDeclarations(tokens, "dark")
+          : changedKeys(base, tokens).map((key) => [key, cssValue(key, tokens[key])] as const);
+      rules.push(
+        themeRule(`${selector}${segment}`, declarations, colorScheme),
         // It follows the base companion at the same weight, so the segment's values win.
-        rules.push(darkBrandScopedRule(`${identity}${segment}`, brand, tokens));
-      } else {
-        const declarations = changedKeys(base, tokens).map(
-          (key) => [key, cssValue(key, tokens[key])] as const
-        );
-        rules.push(themeRule(`${selector}${segment}`, declarations, "light"));
-      }
+        brandScopedRule(`${identity}${segment}`, brand, tokens, colorScheme)
+      );
     }
   }
   return rules.join("\n\n");

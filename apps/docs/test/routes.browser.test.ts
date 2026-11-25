@@ -26,11 +26,6 @@ const EXPECTED_MISSING = ["/this-avatar-does-not-exist.png"];
  */
 const AXE_EXCLUSIONS_BY_RULE = {
   "color-contrast": [
-    // #1038: variant="brand" text in a component demo.
-    '[data-demo-stage] [data-slot="heading"].text-brand',
-    '[data-demo-stage] [data-slot="text"].text-brand',
-    '[data-demo-stage] [data-slot="span"].text-brand',
-    '[data-demo-stage] [data-slot="link"].text-brand',
     // WCAG 1.4.3 exempts the text of an inactive control.
     '[data-slot="file-upload"][data-disabled] [data-slot="file-upload-description"]',
     '[data-slot="input-group"]:has(> [data-slot="input-group-control"]:disabled) [data-slot="input-group-text"]',

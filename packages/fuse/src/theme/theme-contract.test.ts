@@ -8,7 +8,7 @@ import * as Oklch from "@elmeragroup/color/oklch";
 import { getOrThrow } from "@elmeragroup/color/result";
 
 import { parseStyleRules } from "../../test/css-rules";
-import { declaredThemeValue, SECONDARY_HOVER_CSS } from "../../test/theme-css-contract";
+import { BRAND_SCOPED_ROLES, declaredThemeValue, SECONDARY_HOVER_CSS } from "../../test/theme-css-contract";
 import { assertMustOverrideCoverage, composeTheme } from "./compose-theme";
 import { tokenLiteral } from "./contrast";
 import { cssVarReference } from "./css-values";
@@ -93,14 +93,15 @@ const RAMP_OWNER_SELECTORS = [
 const EXPECTED_SELECTORS = [
   ...RAMP_OWNER_SELECTORS,
   '[data-theme-identity="neutral"]',
+  // Each branded light palette rule is followed by its brand-scoped companion.
   '[data-theme-identity="branded"][data-theme-brand="fkas"]',
+  lightBrandScoped('[data-theme-identity="branded"]', "fkas"),
   '[data-theme-identity="branded"][data-theme-brand="fkas"][data-theme-segment="company"]',
-  '[data-theme-identity="branded"][data-theme-brand="tkas"]',
-  '[data-theme-identity="branded"][data-theme-brand="guen"]',
-  '[data-theme-identity="branded"][data-theme-brand="fkab"]',
-  '[data-theme-identity="branded"][data-theme-brand="fkse"]',
-  '[data-theme-identity="branded"][data-theme-brand="elma"]',
-  '[data-theme-identity="branded"][data-theme-brand="ngfi"]',
+  lightBrandScoped('[data-theme-identity="branded"][data-theme-segment="company"]', "fkas"),
+  ...["tkas", "guen", "fkab", "fkse", "elma", "ngfi"].flatMap((brand) => [
+    `[data-theme-identity="branded"][data-theme-brand="${brand}"]`,
+    lightBrandScoped('[data-theme-identity="branded"]', brand),
+  ]),
   // The corner rules, light-only and never restated by a dark rule.
   '[data-theme-identity="neutral"]',
   '[data-theme-identity="branded"][data-theme-brand="fkas"]',
@@ -118,6 +119,11 @@ const CORNER_DECLARATIONS = ["radius", "radius-button", "radius-field", "radius-
 /** Whether a light rule is a corner rule: it declares the corner roles and nothing else. */
 function isCornerRule(rule: ReturnType<typeof parseStyleRules>[number]): boolean {
   return rule.declarations.some((entry) => entry.name === "radius-step");
+}
+
+/** A light brand-scoped companion: the qualifiers weigh nothing, the brand one attribute. */
+function lightBrandScoped(qualifiers: string, brand: string): string {
+  return `:where(${qualifiers})[data-theme-brand="${brand}"]`;
 }
 
 /** A dark palette body's direct/descendant selector pair. */
@@ -155,9 +161,6 @@ const EXPECTED_DARK_SELECTORS = [
   ]),
 ];
 
-/** The derived roles that read the brand pointer, which only companion rules declare in dark. */
-const BRAND_SCOPED_ROLES = ["sidebar-brand", "sidebar-brand-foreground"];
-
 /** The generated themes.css, and its style rules, parsed once for every suite that reads them. */
 const THEMES_CSS = generateThemesCss();
 const THEME_RULES = parseStyleRules(THEMES_CSS);
@@ -183,6 +186,13 @@ describe("theme contract", () => {
     for (const rule of rules.filter((entry) => !entry.selector.includes('[data-theme="dark"]'))) {
       if (rule.selector === ":root") continue;
       if (rule.selector.startsWith("[data-theme-brand=")) continue;
+      if (rule.selector.startsWith(":where(")) {
+        expect(
+          rule.declarations.map((declaration) => declaration.name),
+          rule.selector
+        ).toEqual(BRAND_SCOPED_ROLES);
+        continue;
+      }
       if (rule.selector.includes("[data-theme-segment=")) continue;
       if (isCornerRule(rule)) {
         expect(
@@ -231,10 +241,10 @@ describe("theme contract", () => {
         const slug = themeSlug(theme);
         const brand = `[data-theme-brand="${theme.brand}"]`;
         const segment = `[data-theme-segment="${theme.segment}"]`;
-        // Each slot pairs a palette rule's selector with its qualifiers without the brand. In
-        // dark, the palette rule's brand-scoped companion follows it. The light rules match a
-        // dark scope too, and every dark rule outweighs or follows them, so in dark they come
-        // first and the dark rules overlay them.
+        // Each slot pairs a palette rule's selector with its qualifiers without the brand. A
+        // branded light palette rule's brand-scoped companion follows it, and so does each dark
+        // palette rule's. The light rules match a dark scope too, and every dark rule outweighs
+        // or follows them, so in dark they come first and the dark rules overlay them.
         const slots: (readonly [string, string])[] =
           theme.identity === "neutral"
             ? [[NEUTRAL, NEUTRAL]]
@@ -244,7 +254,9 @@ describe("theme contract", () => {
               ];
         // The brand rule and its segment rule come first: they declare the ramps, which no
         // palette rule restates, in both schemes.
-        const lightSlots = slots.map(([selector]) => selector);
+        const lightSlots = slots.flatMap(([selector, qualifiers]) =>
+          theme.identity === "neutral" ? [selector] : [selector, lightBrandScoped(qualifiers, theme.brand)]
+        );
         const slotted = [
           brand,
           `${brand}${segment}`,
@@ -270,10 +282,10 @@ describe("theme contract", () => {
           expect(composedValue, `${colorScheme} ${slug} ${name} is composed`).toBeDefined();
           expect(value, `${colorScheme} ${slug} ${name}`).toBe(declaredThemeValue(name, composedValue ?? ""));
         }
-        // The brand pointer serves both schemes' brand pair and the light brand-scoped roles
-        // from one rule; its values must still equal what composition resolves, or a nested
-        // scope would inherit a pointer the composed theme never had. A dark companion
-        // declares its own brand-scoped roles over the pointer's.
+        // The brand pointer serves both schemes' brand pair and the neutral light brand-scoped
+        // roles from one rule; its values must still equal what composition resolves, or a nested
+        // scope would inherit a pointer the composed theme never had. A branded light companion
+        // and a dark companion declare their own brand-scoped roles over the pointer's.
         const pointer = byDirectSelector.get(brand)?.[0];
         expect(pointer, `${slug} brand pointer`).toBeDefined();
         if (colorScheme === "dark") {
@@ -281,7 +293,8 @@ describe("theme contract", () => {
             expect(declared.has(name), `${colorScheme} ${slug} declares ${name}`).toBe(true);
           }
         }
-        const pointerNames = colorScheme === "light" ? BRAND_SCOPED_ROLES : [];
+        const pointerNames =
+          colorScheme === "light" && theme.identity === "neutral" ? BRAND_SCOPED_ROLES : [];
         for (const name of ["brand", "brand-foreground", ...pointerNames] as const) {
           expect(
             pointer?.declarations.find((declaration) => declaration.name === name)?.value,

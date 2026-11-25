@@ -24,7 +24,7 @@ const STYLESHEETS = new Map([
 ]);
 
 /** The entry of a standalone consumer that imports Tailwind's sheets and `fuse.css`. */
-const STANDALONE_ENTRY =
+export const STANDALONE_ENTRY =
   '@import "tailwindcss/theme.css";\n@import "tailwindcss/utilities.css" source(none);\n@import "./fuse.css";';
 
 /**

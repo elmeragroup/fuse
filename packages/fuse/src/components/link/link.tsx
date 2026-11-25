@@ -10,63 +10,61 @@ import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
+import type { TextColorProps } from "../../styles/typography-fragments";
 import { linkVariants } from "./link-variants";
 
 type LinkVariantProps = VariantProps<typeof linkVariants>;
 
 /** `Link` takes a native `a` element's props, the recipe's axes and a `render` element. */
-export type LinkProps = Omit<useRender.ComponentProps<"a">, "href" | "target" | "render" | "children"> & {
-  /**
-   * The destination: another page, a section of this page, or a file. For an action, such as
-   * opening a dialog or saving a form, use a Button. A screen reader announces a link as a link,
-   * and Space does not activate it.
-   */
-  href?: useRender.ComponentProps<"a">["href"];
-  /**
-   * Set `_blank`, with `rel="noreferrer"`, to open another site in a new tab. Say that the link
-   * opens a new tab in text a screen reader reads, such as an `sr-only` span in `children`.
-   */
-  target?: useRender.ComponentProps<"a">["target"];
-  /**
-   * The link text. Name the destination, as in "Read the invoice help articles", not "click
-   * here". An inline SVG after the text, marked `data-icon="inline-end"`, draws one `em` square in
-   * the link's color and stays on the last word's line. Mark one before the text
-   * `data-icon="inline-start"`.
-   */
-  children?: ReactNode;
-  /**
-   * The router's link element, with its own destination prop, such as
-   * `<NextLink href="/invoices/1042" />` or React Router's `<RouterLink to="/invoices/1042" />`.
-   * Link merges its classes, `data-slot` and props onto it, and the router handles the click. A
-   * `className` on the element, a string or a state callback, merges after Link's classes and
-   * wins a conflict.
-   */
-  render?: useRender.ComponentProps<"a">["render"];
-  /**
-   * The text color. `default` takes the color of the text around it, so a link in an error
-   * message is the error color. The others set a text role. Some themes set `primary` to the
-   * text color, so keep the underline wherever color is the only other difference.
-   */
-  variant?: LinkVariantProps["variant"];
-  /**
-   * How a user tells the link from its sentence. `always` underlines at rest in a dimmed line
-   * and draws it in the full color under the pointer. Keep it in running text, where nothing
-   * else marks the link. `hover` underlines only under the pointer, for a place that already
-   * reads as links, such as a row of footer links. `none` never underlines and fades the text
-   * under the pointer, for a link a container marks, such as a card's title.
-   */
-  underline?: LinkVariantProps["underline"];
-  /**
-   * The link's own weight. Unset, the link takes the weight of its sentence, as it always takes
-   * the sentence's font, size and line height.
-   */
-  weight?: LinkVariantProps["weight"];
-  /**
-   * Cuts a long link to its container's width with an ellipsis. Give the link a box to fit, such
-   * as a flex row with a set width, and keep the full text in reach, such as on the page it opens.
-   */
-  truncate?: LinkVariantProps["truncate"];
-};
+export type LinkProps = Omit<useRender.ComponentProps<"a">, "href" | "target" | "render" | "children"> &
+  TextColorProps<LinkVariantProps["variant"]> & {
+    /**
+     * The destination: another page, a section of this page, or a file. For an action, such as
+     * opening a dialog or saving a form, use a Button. A screen reader announces a link as a link,
+     * and Space does not activate it.
+     */
+    href?: useRender.ComponentProps<"a">["href"];
+    /**
+     * Set `_blank`, with `rel="noreferrer"`, to open another site in a new tab. Say that the link
+     * opens a new tab in text a screen reader reads, such as an `sr-only` span in `children`.
+     */
+    target?: useRender.ComponentProps<"a">["target"];
+    /**
+     * The link text. Name the destination, as in "Read the invoice help articles", not "click
+     * here". An inline SVG after the text, marked `data-icon="inline-end"`, draws one `em` square in
+     * the link's color and stays on the last word's line. Mark one before the text
+     * `data-icon="inline-start"`.
+     */
+    children?: ReactNode;
+    /**
+     * The router's link element, with its own destination prop, such as
+     * `<NextLink href="/invoices/1042" />` or React Router's `<RouterLink to="/invoices/1042" />`.
+     * Link merges its classes, `data-slot` and props onto it, and the router handles the click. A
+     * `className` on the element, a string or a state callback, merges after Link's classes and
+     * wins a conflict.
+     */
+    render?: useRender.ComponentProps<"a">["render"];
+    /**
+     * How a user tells the link from its sentence. `always` underlines at rest in a dimmed line
+     * and draws it in the full color under the pointer. Keep it in running text, where nothing
+     * else marks the link. Some themes set the `primary` variant to the text color, so keep the
+     * underline wherever color is the only other difference. `hover` underlines only under the
+     * pointer, for a place that already reads as links, such as a row of footer links. `none`
+     * drops the underline and fades the text under the pointer, for a link a container marks, such
+     * as a card's title. A `brand` link with `none` underlines under the pointer instead of fading.
+     */
+    underline?: LinkVariantProps["underline"];
+    /**
+     * The link's own weight. Unset, the link takes the weight of its sentence, as it always takes
+     * the sentence's font, size and line height.
+     */
+    weight?: LinkVariantProps["weight"];
+    /**
+     * Cuts a long link to its container's width with an ellipsis. Give the link a box to fit, such
+     * as a flex row with a set width, and keep the full text in reach, such as on the page it opens.
+     */
+    truncate?: LinkVariantProps["truncate"];
+  };
 
 /**
  * A render element's `className`, a string or a state callback such as React Router's `NavLink`
