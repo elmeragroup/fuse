@@ -393,6 +393,12 @@ export type PolarContextValue = {
   readonly commit: PolarCommitSource;
   /** Root's `aria-labelledby`, which the listbox's name joins. */
   readonly labelledBy: string | undefined;
+  /**
+   * The option the family's `defaultActive*` prop names in the current model, or null while the
+   * model holds none. The listbox's option follows it in the render for a new model, while the
+   * default is pending or active.
+   */
+  readonly defaultActive: number | null;
 };
 
 /**

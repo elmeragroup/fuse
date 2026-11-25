@@ -11,7 +11,7 @@ import { pointerSlot } from "./chart-pick";
 import { useRootFrame } from "./chart-plot";
 import { ChartSelectionContext } from "./chart-readout-port";
 import type { PointerSlot } from "./chart-readout-port";
-import { useChartStore } from "./chart-store";
+import { defaultApplies, useChartStore } from "./chart-store";
 import { useTapLift } from "./chart-tap-lift";
 import { optionName } from "./chart-text";
 import type { OptionOrder } from "./chart-text";
@@ -120,14 +120,18 @@ export function ChartSurface({
   const emphasis = useChartStore(store, (snapshot) => snapshot.emphasis);
   // The surface keeps one active identity. When new data or a new window drops the option's slot, the
   // option takes the slot Root falls back to, as Root's store does, and a focused series that
-  // leaves the config gives way to all series.
+  // leaves the config gives way to all series. While the default is pending, the option names the
+  // default slot of the new model, which Root's model effect makes active in the same commit, so a
+  // focus that lands in that commit activates the default.
+  const pending = useChartStore(store, (snapshot) => defaultApplies(snapshot, "pending"));
+  const pendingSlot = pending ? context.defaultSlot : null;
   const [seen, setSeen] = useState(() => ({ model, keys: model.series.map(({ key }) => key) }));
   if (seen.model !== model) {
     const keys = model.series.map(({ key }) => key);
     setSeen({ model, keys });
     const latest = handoff.current;
     if (latest !== undefined && model.window !== null) {
-      const x = slotX(model.domain, keepSlot(model.domain, model.window, latest.x));
+      const x = slotX(model.domain, pendingSlot ?? keepSlot(model.domain, model.window, latest.x));
       const focusKey = latest.focus === -1 ? undefined : seen.keys[latest.focus];
       const focus = focusKey === undefined ? -1 : keys.indexOf(focusKey);
       if (!sameX(x, latest.x) || focus !== latest.focus) handoff.revise({ x, focus, order: latest.order });

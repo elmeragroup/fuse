@@ -2,7 +2,7 @@
 // committed Elhub rows.
 import type { ReactElement } from "react";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, onTestFinished } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
@@ -338,6 +338,62 @@ describe("the default item's popup while its plot is out of view", () => {
     const closing = recordFrames(popupFrame, () => !popupFrame().open);
     reveal(120);
     expect((await closing).at(-1)).toEqual({ open: false, painted: false });
+  });
+
+  /** A chart 1,500 px down the page, with `b` active by default. */
+  function BelowFold({ data }: { readonly data: readonly { readonly name: string; readonly v: number }[] }) {
+    return (
+      <>
+        <div style={{ height: 1500 }} />
+        <div style={{ width: 400 }}>
+          <LocaleProvider locale="en-US">
+            <Chart.Root
+              data={data}
+              config={{ v: { label: "V", color: "chart-1" } }}
+              xKey="name"
+              defaultActiveX="b"
+              data-intro="none"
+              aria-label="Below">
+              <Chart.Bar dataKey="v" />
+              <Chart.Tooltip />
+            </Chart.Root>
+          </LocaleProvider>
+        </div>
+        <div style={{ height: 1500 }} />
+      </>
+    );
+  }
+
+  it("keeps the popup of a default whose rows arrive below the fold closed, and opens it once the plot scrolls into view", async () => {
+    // The chart mounts with no rows below a 700 px viewport, and rows that hold b arrive there. The
+    // oracle is the rule that a default applies when its rows first arrive, and that its popup
+    // shows only while the plot is in view.
+    await page.viewport(800, 700);
+    onTestFinished(() => {
+      window.scrollTo(0, 0);
+    });
+    const { host, rerender } = renderThemed(<BelowFold data={[]} />);
+    // Each frame records whether the popup is open, so one that opens and has not faded in yet counts.
+    const arrived = await framesThroughReport(
+      () => popup() !== null,
+      () => {
+        rerender(
+          <BelowFold
+            data={[
+              { name: "a", v: 1 },
+              { name: "b", v: 2 },
+            ]}
+          />
+        );
+        return surface(host);
+      }
+    );
+    // Root writes the active source on data-active, "default" for the default slot.
+    expect(host.querySelector('[data-slot="chart"]')?.getAttribute("data-active")).toBe("default");
+    expect(arrived.filter(Boolean)).toEqual([]);
+    surface(host).scrollIntoView({ block: "center" });
+    await expect.poll(popupPaints).toBe(true);
+    expect(label()).toBe("b");
   });
 });
 

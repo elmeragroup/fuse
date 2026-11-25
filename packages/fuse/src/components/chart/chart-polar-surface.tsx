@@ -17,7 +17,7 @@ import { PolarContext } from "./chart-polar-context";
 import type { PolarModel } from "./chart-polar-context";
 import { ChartSelectionContext } from "./chart-readout-port";
 import type { ClientPoint, PointerSlot } from "./chart-readout-port";
-import { useChartStore } from "./chart-store";
+import { defaultApplies, useChartStore } from "./chart-store";
 import { useTapLift } from "./chart-tap-lift";
 import type { OptionOrder } from "./chart-text";
 import { corridorOf } from "./chart-tooltip-corridor";
@@ -132,13 +132,18 @@ export function PolarSurface(): ReactElement | null {
     },
     []
   );
-  // New data keeps the option on its index while it exists, and the series focus while the series does.
+  // New data keeps the option on its index while it exists, and the series focus while the series
+  // does. While the default is pending or active, the option names the default's index in the new
+  // model, which Root's model effect makes active in the same commit, so a focus that lands in that
+  // commit activates the default.
+  const applies = useChartStore(store, (snapshot) => defaultApplies(snapshot, "follow"));
+  const defaultIndex = applies ? polar.defaultActive : null;
   const [seen, setSeen] = useState(model);
   if (seen !== model) {
     setSeen(model);
     const latest = handoff.current;
     if (latest !== undefined && model.count > 0) {
-      const index = Math.min(latest.index, model.count - 1);
+      const index = defaultIndex ?? Math.min(latest.index, model.count - 1);
       const focus = latest.focus < model.series ? latest.focus : -1;
       if (index !== latest.index || focus !== latest.focus)
         handoff.revise({ index, focus, order: latest.order });

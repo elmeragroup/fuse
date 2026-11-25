@@ -35,8 +35,8 @@ import { paintedOf } from "./chart-polar-painted";
 import { PolarSurface } from "./chart-polar-surface";
 import { ChartReadoutContext, ChartSelectionContext } from "./chart-readout-port";
 import { leapSpring, stepSpring } from "./chart-spring";
-import { useChartStore } from "./chart-store";
-import type { ChartSnapshot, ChartStore } from "./chart-store";
+import { applyDefault, useChartStore } from "./chart-store";
+import type { ChartSnapshot, ChartStore, PaintedStep } from "./chart-store";
 import type { ChartChangeEventDetails, ChartFigureProps, ChartSelectionChangeReason } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import { POLAR_STRINGS } from "./format/polar-strings";
@@ -63,8 +63,14 @@ export type PolarRootProps = {
     readonly "aria-labelledby"?: string;
     readonly "data-intro"?: "none";
   };
-  /** The option active before any pointer or key moves, or null. */
-  readonly defaultActive: number | null;
+  /**
+   * Finds the option a family's `defaultActive*` prop names in a model, or -1 while the model holds
+   * none. Root keeps the function it gets at mount, so the prop's value at mount is the one that
+   * counts, and calls it on each model. An option the data first holds after mount turns active
+   * then, and while the default stays active, a new model keeps the same item active at its new
+   * index.
+   */
+  readonly resolveDefault: (model: PolarModel) => number;
   readonly selectedKey: string | null | undefined;
   readonly defaultSelectedKey: string | null | undefined;
   readonly onSelectedKeyChange:
@@ -131,13 +137,13 @@ function markActive(figure: HTMLElement, snapshot: ChartSnapshot, active: Active
  * @returns The figure.
  */
 export function PolarRoot(props: PolarRootProps): ReactElement {
-  const { model, kernel, motion, commit, figureRef, cellRef, selected, strings, figureProps } =
+  const { model, kernel, motion, commit, figureRef, cellRef, selected, strings, figureProps, defaultActive } =
     usePolarRoot(props);
   const box = useMemo(() => sweepBox(model.sweep), [model.sweep]);
   const labelledBy = props.figure["aria-labelledby"];
   const context = useMemo(
-    (): PolarContextValue => ({ model, kernel, motion, box, commit, labelledBy }),
-    [model, kernel, motion, box, commit, labelledBy]
+    (): PolarContextValue => ({ model, kernel, motion, box, commit, labelledBy, defaultActive }),
+    [model, kernel, motion, box, commit, labelledBy, defaultActive]
   );
   const width = box.right - box.left;
   const height = box.bottom - box.top;
@@ -224,6 +230,8 @@ type PolarRootState = {
   readonly selected: string | null;
   readonly strings: (typeof CHART_STRINGS)[SupportedLocale];
   readonly figureProps: Omit<ChartFigureProps, "ref">;
+  /** The default option in the current model, or null while it holds none. */
+  readonly defaultActive: number | null;
 };
 
 /**
@@ -235,6 +243,10 @@ type PolarRootState = {
  */
 function usePolarRoot(props: PolarRootProps): PolarRootState {
   const { model, locale } = props;
+  // Root reads the family's default at mount alone, as `defaultValue` works.
+  const [resolveDefault] = useState(() => props.resolveDefault);
+  const resolved = resolveDefault(model);
+  const defaultActive = resolved === -1 ? null : resolved;
   const { ref, ...figure } = props.figure;
   const figureProps = definedProps(figure);
   const name = props.figure["aria-label"];
@@ -248,7 +260,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
     data: model,
     intro: figureProps["data-intro"] !== "none",
     ref,
-    defaultActive: props.defaultActive,
+    defaultActive,
     span: (pace) => entranceSpan(entranceItems(model), ENTRANCE_SPRINGS, pace),
     refresh,
   });
@@ -271,11 +283,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
   const latestModel = useRef(model);
   // The active option, series and source last painted. A key that takes over the option a pointer
   // turns to still paints, and lands it.
-  const paintedRef = useRef<readonly [number | null, number | null, ChartSnapshot["source"]]>([
-    null,
-    null,
-    null,
-  ]);
+  const paintedRef = useRef<PaintedStep>([null, null, null]);
   useLayoutEffect(() => {
     const cell = cellRef.current;
     if (cell === null) return undefined;
@@ -303,11 +311,12 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
       paintedRef.current = [kept, snapshot.near, snapshot.source];
       store.set({ active: kept });
     }
+    applyDefault(store, paintedRef, defaultActive, "follow");
     const active = activeOf(store.get(), model.count);
     if (rootRef.current) markActive(rootRef.current, store.get(), active);
     follow.retarget(rayAngle(model, active), "commit");
     followers.paint(active, "commit");
-  }, [model, store, followers, follow, rootRef]);
+  }, [model, store, followers, follow, rootRef, defaultActive]);
   useLayoutEffect(
     () =>
       store.subscribe(() => {
@@ -447,6 +456,7 @@ function usePolarRoot(props: PolarRootProps): PolarRootState {
     selected,
     strings,
     figureProps,
+    defaultActive,
   };
 }
 

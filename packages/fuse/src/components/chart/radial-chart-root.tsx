@@ -79,7 +79,9 @@ export type RadialChartRootProps<
      */
     endAngle?: number;
     /**
-     * The ring that is active before any pointer or key moves. While the ring is active by default,
+     * The ring that is active before any pointer or key moves. Root reads the key once, at mount.
+     * If the data has no ring for the key yet, the ring turns active when the data first has one,
+     * unless a reader has already moved the active ring. While the ring is active by default,
      * `RadialChart.Tooltip` opens only while at least half of the plot's box is in view. Width and
      * height are checked separately, and on an axis where the plot is larger than the viewport,
      * half of the viewport's extent is enough. The rule ends when a reader takes over: a pointer
@@ -204,12 +206,13 @@ export function RadialChartRoot<
     maxKey,
     innerRadius,
   ]);
-  const defaultActive = defaultActiveKey === undefined ? -1 : model.keys.indexOf(defaultActiveKey);
   return (
     <PolarRoot
       model={model}
       figure={figure}
-      defaultActive={defaultActive === -1 ? null : defaultActive}
+      resolveDefault={(current) =>
+        defaultActiveKey === undefined ? -1 : current.keys.indexOf(defaultActiveKey)
+      }
       selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectedKeyChange={onSelectedKeyChange}
