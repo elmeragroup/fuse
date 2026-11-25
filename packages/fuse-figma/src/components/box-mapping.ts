@@ -14,6 +14,7 @@ import type { BoxCascade } from "./box-cascade";
 import { readCorner, setsCorner } from "./box-corners";
 import type { MarkerReading } from "./box-flow";
 import {
+  FULL_WIDTH_COLUMN_DETAIL,
   HUGGING_ROWS_DETAIL,
   isPlainBlock,
   negativeRowSpacing,
@@ -245,6 +246,7 @@ function readDisplay(
       lays
     );
     reader.mark("column-gap", "dropped", ONE_COLUMN_GAP, []);
+    reader.mark("grid-template-columns", "dropped", FULL_WIDTH_COLUMN_DETAIL, []);
     // `readFlow` took the grid as one column only where these leave each row its item's height.
     reader.mark("grid-auto-rows", "dropped", HUGGING_ROWS_DETAIL, []);
     reader.mark("align-items", "dropped", HUGGING_ROWS_DETAIL, []);

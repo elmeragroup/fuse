@@ -129,7 +129,11 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
   useRender.ComponentProps<"div", DateRangePickerRootState>,
   "defaultValue" | "onChange" | "className" | "aria-label"
 > & {
-  /** Extra classes, or a callback of the Root's state that returns them. */
+  /**
+   * Extra classes, or a callback of the Root's state that returns them. The Root is a grid of one
+   * column, so pass `justify-items-center` to center its label, field box, error and description
+   * across it. `items-center` aligns each part down its own row and moves nothing.
+   */
   className?: DatePickerClassName<DateRangePickerRootState>;
   /**
    * The range, when the parent owns it: each end a Temporal value of `T`'s kind from any

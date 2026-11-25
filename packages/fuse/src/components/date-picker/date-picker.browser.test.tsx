@@ -4,7 +4,9 @@
  * computed faces of the trigger, the group and a checked preset. Names, typing, popup naming and
  * preset radios follow React Aria's DatePicker. In a box narrower than its segments, each segment
  * focus reaches lies whole inside the box, and a press at the trigger's center opens the calendar.
- * Expectations are literals: ISO values, accessible names, reasons.
+ * In a content-sized parent inside a clipping panel narrower than its one line, the trigger stays
+ * inside that parent and the panel, and a description wider than a block parent leaves the trigger
+ * inside the parent. Expectations are literals: ISO values, accessible names, reasons.
  */
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import type { FocusEvent, ReactElement } from "react";
@@ -25,6 +27,7 @@ import {
   atEachDensity,
   expectArrowedSegmentsShow,
   expectFocusedSegmentShows,
+  expectInside,
   expectTriggerPressOpens,
 } from "../../../test/date-row-reach";
 import { freezeToday } from "../../../test/freeze-today";
@@ -409,6 +412,72 @@ describe("DatePickerField in a narrow box", () => {
       await nextFrames(2);
       expectFocusedSegmentShows(minute, `${density} at 180px`);
       minute.blur();
+    });
+  });
+});
+
+// A minute value in Oslo shows its zone, so its one line is wider than a 256px panel that clips, at
+// either density. The inline-block in the panel asks the picker for its width and takes the
+// panel's, so the inline-block holds the field box, the trigger lies inside both, and nothing
+// overflows the panel.
+describe("DatePickerField in a clipping panel narrower than one line", () => {
+  it("keeps the trigger inside the inline-block and the panel", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div data-testid="panel" style={{ width: 256, overflow: "hidden" }}>
+          <div data-testid="parent" style={{ display: "inline-block" }}>
+            <DatePickerField
+              label="Due"
+              granularity="minute"
+              defaultValue={Temporal.ZonedDateTime.from("2026-10-05T08:00[Europe/Oslo]")}
+            />
+          </div>
+        </div>
+      )
+    );
+    const panel = page.getByTestId("panel").element();
+    const parent = page.getByTestId("parent").element();
+    const group = roleNamed("group", "Due");
+    const trigger = roleNamed("button", "Calendar Due");
+    await atEachDensity((density) => {
+      expectInside(group, parent, `${density}: the field box in the inline-block`);
+      expectInside(trigger, panel, `${density}: the trigger in the panel`);
+      expect(panel.scrollWidth, `${density}: nothing overflows the panel`).toBeLessThanOrEqual(
+        panel.clientWidth
+      );
+    });
+  });
+});
+
+// An email address is one unbreakable word, wider than a 216px parent at comfortable density. The
+// Root's one column is the parent's width whatever its items' least widths (CSS Grid 1 §7.2.1), so
+// the description overflows its own row and the field box and its trigger stay inside the parent.
+describe("DatePicker with a description wider than its block parent", () => {
+  it("keeps the trigger inside the parent", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div data-testid="parent" style={{ width: 216 }}>
+          <Field.Root>
+            <Field.Label>Due</Field.Label>
+            <DatePicker.Root
+              granularity="minute"
+              defaultValue={Temporal.ZonedDateTime.from("2026-10-05T08:00[Europe/Oslo]")}>
+              <DatePicker.Group>
+                <DatePicker.Input />
+                <DatePicker.Trigger />
+              </DatePicker.Group>
+              <Field.Description>customer-support-scheduling@elmeragroup.example</Field.Description>
+            </DatePicker.Root>
+          </Field.Root>
+        </div>
+      )
+    );
+    const parent = page.getByTestId("parent").element();
+    const trigger = roleNamed("button", "Calendar Due");
+    await atEachDensity((density) => {
+      expectInside(trigger, parent, `${density}: the trigger in the parent`);
     });
   });
 });

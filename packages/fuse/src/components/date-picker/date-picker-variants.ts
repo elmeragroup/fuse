@@ -13,6 +13,17 @@ import { dateRowScrollClass } from "../date-field/date-input-variants";
  * The date pickers' module-private recipe, shared by DatePicker and DateRangePicker. No entry
  * exports it.
  *
+ * - `root` is a grid of one `100%` column whose rows pack at its top, as a flex column's would.
+ *   While a parent measures the Root's content, the percentage track sizes as `auto` (CSS Grid 1
+ *   §7.2.1), so the field box adds only its `min-width` to the Root's least width. A parent that
+ *   sizes to its content, such as an inline-block, with less room than the box's one line gives the
+ *   Root the width it has, down to that minimum. The range box wraps its rows when one line does not
+ *   fit, and a row scrolls its segments only when they are wider than the row. In layout the column
+ *   is the Root's width, so a wider item, such as a description holding an email address, overflows
+ *   its row and leaves the box at the Root's width. A flex direction or wrap passed to the Root
+ *   changes nothing. A gap applies as a grid's. `items-center` aligns each item down its own row,
+ *   which is as tall as the item, so it moves nothing, and `justify-items-center` centers the items
+ *   across.
  * - `group` is the field box around the trigger and the segment rows: the shared field chrome at
  *   the field height of its `size`, with the data-target state face (`data-invalid="true"`,
  *   `data-disabled`) and the muted read-only fill (`data-readonly`). The `range` axis lays out two
@@ -43,7 +54,7 @@ import { dateRowScrollClass } from "../date-field/date-input-variants";
  */
 export const datePickerVariants = tv({
   slots: {
-    root: "flex min-w-0 flex-col",
+    root: "grid min-w-0 auto-rows-min grid-cols-[100%]",
     group: cn(
       fieldBoxChromeClass,
       fieldReads.height(),
@@ -90,11 +101,11 @@ export const datePickerVariants = tv({
      * the trigger follows. A row is never wider than the box less one trigger, so the separator
      * stays on the start row's line and the trigger fits beside the end row. A row narrower than
      * its segments scrolls. The box is as tall as its lines, and never shorter than the field
-     * height. The range Root is not a size container, so it gives its parent its content's width. A
-     * parent that sizes to its content, such as an inline-block, takes one line where it has room.
-     * With less room and no width limit of its own, the parent is never narrower than the box's
-     * widest row of segments, or 208px where that is wider. The Root holds its label, error and description itself, so it takes a field root's
-     * gap and error-colored label.
+     * height. The range Root is no size container, so a parent that sizes to its content, such as
+     * an inline-block, takes one line where it has room. In a block parent narrower than the box's
+     * 208px minimum, the error and description keep the Root's column, which is the parent's width,
+     * and the box draws past it. The Root holds its label, error and description itself, so it takes
+     * a field root's gap and error-colored label.
      */
     range: {
       true: {

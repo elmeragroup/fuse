@@ -36,7 +36,7 @@
           "type": "DatePickerClassName<DatePickerRootState> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Extra classes, or a callback of the Root's state that returns them.",
+          "description": "Extra classes, or a callback of the Root's state that returns them. The Root is a grid of one column, so pass `justify-items-center` to center its parts across it. `items-center` aligns each part down its own row and moves nothing.",
           "required": false
         },
         {

@@ -29,14 +29,21 @@ function paddingBox(box: Element, scale: number) {
   return { left, top, right: left + box.clientWidth * scale, bottom: top + box.clientHeight * scale };
 }
 
-/** Asserts that `part` lies inside `box`'s padding box, so nothing of it is cut off. */
-function expectInside(part: Element, box: Element, at: string, scale: number): void {
+/**
+ * Asserts that `part` lies whole inside `box`'s padding box, so `box` cuts none of it off.
+ *
+ * @param part - The element that should show whole, such as a segment, the field box or the trigger.
+ * @param box - The element around it that clips or holds it, such as a row, a parent or a panel.
+ * @param label - The assertion label.
+ * @param scale - The scale a transform on an ancestor paints the field at.
+ */
+export function expectInside(part: Element, box: Element, label: string, scale = 1): void {
   const rect = part.getBoundingClientRect();
   const clip = paddingBox(box, scale);
-  expect(rect.left, `${at}, left`).toBeGreaterThanOrEqual(clip.left - EPSILON);
-  expect(rect.top, `${at}, top`).toBeGreaterThanOrEqual(clip.top - EPSILON);
-  expect(rect.right, `${at}, right`).toBeLessThanOrEqual(clip.right + EPSILON);
-  expect(rect.bottom, `${at}, bottom`).toBeLessThanOrEqual(clip.bottom + EPSILON);
+  expect(rect.left, `${label}, left`).toBeGreaterThanOrEqual(clip.left - EPSILON);
+  expect(rect.top, `${label}, top`).toBeGreaterThanOrEqual(clip.top - EPSILON);
+  expect(rect.right, `${label}, right`).toBeLessThanOrEqual(clip.right + EPSILON);
+  expect(rect.bottom, `${label}, bottom`).toBeLessThanOrEqual(clip.bottom + EPSILON);
 }
 
 /** The row and the field box around a segment, failing when either is missing. */
