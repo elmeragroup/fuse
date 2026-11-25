@@ -7,6 +7,16 @@ import { tv } from "../../styles/tv";
 import { dateBoxFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 
 /**
+ * A segment row's inline overflow, shared by DateField's box and a picker's rows. A row narrower
+ * than its segments scrolls inline without a scrollbar, so a swipe, a trackpad or a focused segment
+ * reaches the hidden ones; see `date-input-row-scroll.ts`. A disabled row has no focusable segment,
+ * and a browser may make a scroller with nothing to focus a tab stop of its own, so it clips.
+ */
+export const dateRowScrollClass = cn(
+  "no-scrollbar overflow-x-auto overflow-y-hidden data-disabled:overflow-x-hidden"
+);
+
+/**
  * DateInput's module-private recipe. No entry exports it.
  *
  * - `root` is the field box around the segments, the box React Aria's DateInput paints:
@@ -19,9 +29,9 @@ import { dateBoxFocusRingClass, withinFocusRingControlClass } from "../../styles
  *   italic while it shows its placeholder, muted while disabled. A focusable segment is a target of
  *   its own, so its `segmentKind` variant floors it at 24 CSS pixels on each side, the fixed WCAG
  *   2.5.8 floor, and centers its text. The floor does not scale with the host root. A consumer's
- *   `min-w-*` or `min-h-*` class replaces it. A focusable segment does not shrink: a row too narrow
- *   for the segments clips at its end, as an input does. A literal is not a target and takes none
- *   of the floor. It keeps zero inline padding and its block padding.
+ *   `min-w-*` or `min-h-*` class replaces it. A focusable segment does not shrink, so a row too
+ *   narrow for the segments scrolls inline through {@link dateRowScrollClass}. A literal is not a
+ *   target and takes none of the floor. It keeps zero inline padding and its block padding.
  */
 export const dateInputVariants = tv({
   slots: {
@@ -30,7 +40,8 @@ export const dateInputVariants = tv({
       fieldReads.height(),
       fieldEntryClass,
       dateInputShellClass,
-      "flex w-full min-w-[150px] cursor-text items-center overflow-hidden whitespace-nowrap",
+      "flex w-full min-w-[150px] cursor-text items-center whitespace-nowrap",
+      dateRowScrollClass,
       dataStateFaceClass,
       dateBoxFocusRingClass,
       "data-readonly:bg-muted"

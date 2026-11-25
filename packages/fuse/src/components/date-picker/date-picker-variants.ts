@@ -7,6 +7,7 @@ import { dataStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
 import { dateBoxFocusRingClass } from "../../styles/utils";
 import { buttonVariants } from "../button/button-variants";
+import { dateRowScrollClass } from "../date-field/date-input-variants";
 
 /**
  * The date pickers' module-private recipe, shared by DatePicker and DateRangePicker. No entry
@@ -18,7 +19,8 @@ import { buttonVariants } from "../button/button-variants";
  *   rows. The box rings through {@link dateBoxFocusRingClass} while a segment in one of its `input`
  *   rows matches `:focus-visible`.
  * - `input` is a `DateInput.Root` inside the box: no chrome of its own, the md control inset and the
- *   text-entry type, so the segments line up with DateField's.
+ *   text-entry type, so the segments line up with DateField's. It scrolls inline as DateField's box
+ *   does, beside the trigger.
  * - `trigger` is the calendar button flush against the box's border: it reads the box's inner
  *   corner and the field's inner square, which keeps it above the 24px target-size floor at both
  *   densities.
@@ -53,7 +55,8 @@ export const datePickerVariants = tv({
     input: cn(
       fieldEntryClass,
       dateInputShellClass,
-      "flex min-w-0 flex-1 cursor-text items-center self-stretch overflow-hidden whitespace-nowrap"
+      "flex min-w-0 flex-1 cursor-text items-center self-stretch whitespace-nowrap",
+      dateRowScrollClass
     ),
     separator: "px-1 text-foreground forced-colors:text-[ButtonText]",
     trigger: cn("shrink-0 rounded-inner", fieldReads.inner()),
@@ -82,15 +85,20 @@ export const datePickerVariants = tv({
       sm: { group: fieldSize({ size: "sm" }).box() },
     },
     /**
-     * Two segment rows and a separator: one row from 24rem, stacked beside the trigger below it.
-     * The range Root is the size container those rows lay out by. It holds its label, error and
-     * description itself, so it takes a field root's gap and error-colored label.
+     * Two segment rows and a separator, on one line while they and the trigger fit. Otherwise the
+     * line breaks before the first part that does not fit: the trigger alone, or the end row, which
+     * the trigger follows. A row is never wider than the box less one trigger, so the separator
+     * stays on the start row's line and the trigger fits beside the end row. A row narrower than
+     * its segments scrolls. The box is as tall as its lines, and never shorter than the field
+     * height. The range Root is a size container, so its own width, not its segments', decides the
+     * track it takes. It holds its label, error and description itself, so it takes a field root's
+     * gap and error-colored label.
      */
     range: {
       true: {
         root: "group/field @container/picker w-full gap-1 data-invalid:text-error",
-        group: "min-w-[208px] flex-wrap @max-[24rem]/picker:h-auto",
-        input: "flex-none",
+        group: cn("h-auto min-w-[208px] flex-wrap", fieldReads.minHeight()),
+        input: cn("box-border", fieldReads.besideInner(), "flex-none"),
         calendar: "p-(--surface-pad-sm)",
       },
     },

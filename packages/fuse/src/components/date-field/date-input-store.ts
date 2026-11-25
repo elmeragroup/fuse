@@ -148,8 +148,13 @@ export type SessionActions = {
   readonly rootHandlers: SessionRootHandlers;
 };
 
-/** Whether focus moves between the group's own segments rather than entering or leaving it. */
-function staysInside(event: FocusEvent<HTMLElement>): boolean {
+/**
+ * Whether focus moves between the group's own segments rather than entering or leaving it.
+ *
+ * @param event - A focus or blur event on the Root element.
+ * @returns Whether the event's `relatedTarget` is inside the Root element.
+ */
+export function staysInside(event: FocusEvent<HTMLElement>): boolean {
   return isNode(event.relatedTarget) && event.currentTarget.contains(event.relatedTarget);
 }
 

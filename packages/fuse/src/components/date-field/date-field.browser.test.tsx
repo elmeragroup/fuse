@@ -6,7 +6,9 @@
  * name and slot, the bound copy, mixed-kind bounds and time segments. The editing rules cover the
  * keys and locales the harness does not. The Form and Field contracts cover errors by name, focus
  * on the first invalid control and `onFormSubmit` values. Every scenario runs under a clock frozen
- * at local noon on June 15, 2030, so an arrow key on an empty segment reads that day.
+ * at local noon on June 15, 2030, so an arrow key on an empty segment reads that day. In a box
+ * narrower than its segments, each segment focus reaches lies whole inside the box, measured
+ * against the box's own rect.
  */
 import { useState } from "react";
 import type { ReactElement } from "react";
@@ -17,11 +19,19 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
 import { expectFocusRing } from "../../../test/assert-focus-ring";
 import { expectInvalidFocusRing } from "../../../test/assert-invalid-ring";
 import { expectRenderTypeError } from "../../../test/caught-error";
+import {
+  atEachDensity,
+  expectArrowedSegmentsShow,
+  expectFocusedSegmentShows,
+  expectRowRestsWhenFocusLeaves,
+  lastSegmentOf,
+} from "../../../test/date-row-reach";
 import { withLocale } from "../../../test/locale-matrix";
-import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { formNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import { segmentWithCustomSlot, wrappedSegment } from "../../../test/wrapped-date-segment";
 import type { SupportedLocale } from "../../intl/locale-context";
 import "../../temporal-polyfill";
@@ -326,6 +336,232 @@ function LoadHarness({
     </>
   );
 }
+
+describe("DateField in a narrow box", () => {
+  const dateTime = Temporal.PlainDateTime.from("2030-12-28T11:59:59");
+
+  // 150px is the box's floor, narrower than a date and time to the second at either density.
+  it("scrolls each focused segment whole into view and back to its start when focus leaves, left to right and right to left", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          {(["ltr", "rtl"] as const).map((dir) => (
+            <div key={dir} data-case={dir} dir={dir} style={{ width: 150 }}>
+              <DateField label={`Due ${dir}`} granularity="second" defaultValue={dateTime} />
+            </div>
+          ))}
+          <button type="button">Outside</button>
+        </>
+      )
+    );
+    const outside = roleNamed("button", "Outside");
+    await atEachDensity(async (density) => {
+      for (const dir of ["ltr", "rtl"]) {
+        const scope = document.querySelector<HTMLElement>(`[data-case="${dir}"]`);
+        if (scope === null) throw new Error(`expected the ${dir} case`);
+        // Month, day, year, hour, minute, second and AM/PM.
+        await expectArrowedSegmentsShow(scope, 7, `${dir} ${density}`);
+        const last = lastSegmentOf(scope, 7, `${dir} ${density}`);
+        expectRowRestsWhenFocusLeaves(last, outside, `${dir} ${density}`);
+      }
+    });
+  });
+
+  // A scale transform paints the box at 3/4 of its layout size, while the row scrolls in layout
+  // pixels.
+  it("scrolls each focused segment whole into view under a scaled ancestor", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div data-testid="box" style={{ width: 150, transform: "scale(0.75)", transformOrigin: "0 0" }}>
+          <DateField label="Due" granularity="second" defaultValue={dateTime} />
+        </div>
+      )
+    );
+    const box = page.getByTestId("box").element();
+    if (!(box instanceof HTMLElement)) throw new Error("expected the box");
+    await atEachDensity(async (density) => {
+      await expectArrowedSegmentsShow(box, 7, `scale(0.75) ${density}`, 0.75);
+    });
+  });
+
+  // Pasting a date in 2030 over one in year 1 widens the year from one digit to four, ahead of the
+  // focused second. At 32px field text the year grows by more than the row's end padding.
+  it("keeps the focused segment whole in view when a paste widens the segments ahead of it", async () => {
+    await atEachDensity(async (density) => {
+      const { unmount } = renderThemed(
+        withLocale(
+          "en-US",
+          <div style={{ width: 150, "--control-text": "32px" }}>
+            <DateField
+              label="Due"
+              granularity="second"
+              defaultValue={Temporal.PlainDateTime.from("0001-12-28T11:01:59")}
+            />
+          </div>
+        )
+      );
+      const second = spin("second, Due");
+      // Arrowing from the month scrolls the row the least distance, so the second ends flush with
+      // the row's end, where `focus()` would let the browser scroll it to the middle.
+      spin("month, Due").focus();
+      await userEvent.keyboard("{ArrowRight}".repeat(5));
+      expectFocusedSegmentShows(second, `${density} before the paste`);
+      const data = new DataTransfer();
+      data.setData("text/plain", "2030-12-28T11:01:59");
+      second.dispatchEvent(
+        new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true })
+      );
+      await expect.element(page.getByRole("spinbutton", { name: "year, Due" })).toHaveTextContent("2030");
+      await nextFrames(2);
+      expectFocusedSegmentShows(second, `${density} after the paste`);
+      unmount();
+    });
+  });
+
+  // At 248px the whole date and time to the second fits. Dropping the second hands focus to the
+  // minute, and narrowing the box to the 150px floor then moves the minute past the row's end.
+  it("keeps the segment that took focus from a removed one in view when the box narrows", async () => {
+    const field = (granularity: "second" | "minute", width: number) =>
+      withLocale(
+        "en-US",
+        <div style={{ width }}>
+          <DateField label="Due" granularity={granularity} defaultValue={dateTime} />
+        </div>
+      );
+    const { rerender } = renderThemed(field("second", 248));
+    spin("second, Due").focus();
+    rerender(field("minute", 248));
+    const minute = spin("minute, Due");
+    await expect.poll(() => document.activeElement).toBe(minute);
+    rerender(field("minute", 150));
+    await nextFrames(2);
+    expectFocusedSegmentShows(minute, "minute at 150px");
+  });
+
+  // Disabling the field takes focus from its segment with no blur event, so the row must scroll
+  // back to its start as it does when focus leaves. The frames after focus let the row's first
+  // resize reports arrive while the segment still has focus. A pointer user can scroll the row
+  // without focusing a segment, and a disabled row takes no more scrolling, so it must not stay
+  // where the user left it either.
+  it.each([
+    [
+      "while it had focus",
+      async (row: HTMLElement) => {
+        lastSegmentOf(row, 7, "at 150px").focus();
+        await nextFrames(2);
+      },
+    ],
+    [
+      "without focus",
+      (row: HTMLElement) => {
+        row.scrollLeft = row.scrollWidth;
+        return Promise.resolve();
+      },
+    ],
+  ] as const)("scrolls the row of a field disabled %s back to its start", async (_case, scroll) => {
+    const field = (isDisabled: boolean) =>
+      withLocale(
+        "en-US",
+        <div style={{ width: 150 }}>
+          <DateField label="Due" granularity="second" defaultValue={dateTime} isDisabled={isDisabled} />
+        </div>
+      );
+    const { rerender } = renderThemed(field(false));
+    const row = roleNamed("group", "Due");
+    await scroll(row);
+    expect(Math.abs(row.scrollLeft), "the row scrolled before it was disabled").toBeGreaterThan(1);
+    rerender(field(true));
+    await nextFrames(2);
+    expect(row.scrollLeft).toBe(0);
+  });
+
+  // The row's own inline padding grows inside the 150px box, which shrinks the row's content box
+  // and leaves its border box as it was. The frames before the change let the observer's first
+  // reports arrive, so only a report of the change itself can scroll the row again.
+  it("keeps the focused segment whole in view when the row's own padding grows", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div data-testid="box" style={{ width: 150, "--control-px-md": "10px" }}>
+          <DateField label="Due" granularity="second" defaultValue={dateTime} />
+        </div>
+      )
+    );
+    const box = page.getByTestId("box").element();
+    if (!(box instanceof HTMLElement)) throw new Error("expected the box");
+    const second = spin("second, Due");
+    spin("month, Due").focus();
+    await userEvent.keyboard("{ArrowRight}".repeat(5));
+    await nextFrames(2);
+    expectFocusedSegmentShows(second, "before the padding grows");
+    box.style.setProperty("--control-px-md", "34px");
+    await nextFrames(2);
+    expectFocusedSegmentShows(second, "after the padding grows");
+  });
+
+  // Padding that grows on a consumer's wrapper widens its border box and leaves its content box as
+  // it was. The frames before the change let the observer's first reports arrive, so only a report
+  // of the change itself can scroll the row again.
+  it("keeps the focused segment whole in view when padding grows on a wrapper ahead of it", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div data-testid="box" style={{ width: 150 }}>
+          <DateInput.Root aria-label="Due" granularity="second" defaultValue={dateTime}>
+            {(segment) =>
+              segment.type === "month" ? (
+                <span key={segment.index} style={{ paddingInline: "var(--month-pad, 0px)" }}>
+                  <DateInput.Segment segment={segment} />
+                </span>
+              ) : (
+                <DateInput.Segment key={segment.index} segment={segment} />
+              )
+            }
+          </DateInput.Root>
+        </div>
+      )
+    );
+    const box = page.getByTestId("box").element();
+    if (!(box instanceof HTMLElement)) throw new Error("expected the box");
+    const second = spin("second, Due");
+    spin("month, Due").focus();
+    await userEvent.keyboard("{ArrowRight}".repeat(5));
+    await nextFrames(2);
+    expectFocusedSegmentShows(second, "before the padding grows");
+    box.style.setProperty("--month-pad", "45px");
+    await nextFrames(2);
+    expectFocusedSegmentShows(second, "after the padding grows");
+  });
+
+  it("keeps a bare DateInput.Root with seconds inside its half of a two-column grid", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div data-testid="grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", width: 360 }}>
+          <DateInput.Root aria-label="Due" granularity="second" defaultValue={dateTime} />
+          <span>Beside</span>
+        </div>
+      )
+    );
+    const grid = page.getByTestId("grid").element();
+    if (!(grid instanceof HTMLElement)) throw new Error("expected the grid");
+    const neighbor = textNamed("Beside");
+    await atEachDensity((density) => {
+      const box = roleNamed("group", "Due").getBoundingClientRect();
+      const beside = neighbor.getBoundingClientRect();
+      expect(grid.scrollWidth, `${density} grid overflow`).toBeLessThanOrEqual(grid.clientWidth);
+      // Two `1fr` tracks share the grid alike while neither item's minimum outgrows its half.
+      expect(box.width, `${density} box width`).toBeCloseTo(beside.width, 0);
+      expect(box.right, `${density} box end`).toBeLessThanOrEqual(beside.left + 0.5);
+      const last = lastSegmentOf(grid, 7, density);
+      last.focus();
+      expectFocusedSegmentShows(last, `${density} AM/PM`);
+      last.blur();
+    });
+  });
+});
 
 describe("DateField kind-change warning", () => {
   function kindWarnings(warn: { readonly mock: { readonly calls: unknown[][] } }): unknown[][] {

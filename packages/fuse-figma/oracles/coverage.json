@@ -587,6 +587,27 @@
       "className": "gap-y-[max(var(--field-gap,var(--control-gap-md)),calc(24px-var(--chip-h)))]",
       "property": "row-gap",
       "reason": "The row gap spaces the lines the chips box's wrap makes when the input's 64px `min-w-16` breaks the line beside the chips (CSS Flexbox 1 §9.3 step 1, CSS Box Alignment 3 §8). A Figma row never wraps, so it has no second line to space. Chromium sets one line in every captured cell, where the row gap adds nothing, and the build draws that one line."
+    },
+    {
+      "set": "date-range-picker",
+      "part": "field-group",
+      "className": "flex-wrap",
+      "property": "flex-wrap",
+      "reason": "The range's field box wraps its row and grows to its lines above its `min-height`. The build drops a wrap only in a row of a fixed height, where `align-content` stretches the one line to the row's height (CSS Flexbox 1 §9.4), so this wrap stays unmapped. Chromium sets one line at the 384px sample in every mode, and the kit draws that line as a row that does not wrap."
+    },
+    {
+      "set": "date-range-picker",
+      "part": "button",
+      "className": "ms-auto",
+      "property": "margin-left",
+      "reason": "The trigger's auto start margin sets it at the end of the field box. The box hugs its height above its `min-height` and its segment rows set `self-stretch`, so a frame around the rows and the separator would hug them where CSS stretches them to the line (PF), and the build reads no auto margin in such a row. The kit draws the trigger right after the end segment row."
+    },
+    {
+      "set": "date-range-picker",
+      "part": "date-picker-input",
+      "className": "self-stretch",
+      "property": "align-self",
+      "reason": "Each segment row stretches across the field box's one line, which the box's `min-height` sets in every captured cell (CSS Flexbox 1 §9.4). The box hugs its height, and a Figma layer cannot fill a frame that hugs it, so each row hugs its segments and the box centers it with `items-center`. Its segments sit at the same height either way."
     }
   ],
   "unbound": [
@@ -4937,10 +4958,6 @@
       {
         "part": "day-separator",
         "className": "forced-colors:focus:text-[HighlightText]"
-      },
-      {
-        "part": "field-group",
-        "className": "@max-[24rem]/picker:h-auto"
       },
       {
         "part": "field-group",
