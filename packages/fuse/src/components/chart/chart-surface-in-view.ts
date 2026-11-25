@@ -7,9 +7,11 @@
  * and any clipping ancestor leave it. A plot wider or taller than twice the viewport therefore
  * counts once it fills half the viewport on that axis, and a plot in a scroll panel less than half
  * its height counts once it fills half the panel's height. A surface with no box, as under
- * `display: none`, is out of view. The answer is read on each observer report, and again within a
- * frame of a window resize, a clipping ancestor's resize, or a scroll of the document or of an
- * element that contains the surface.
+ * `display: none`, is out of view. The answer is read on each observer report. A window resize, a
+ * resize of a clipping ancestor, a resize that leaves the surface a box, and a scroll of the
+ * document or of an element that contains the surface each request a fresh report, whose callback
+ * lands in a later task. A resize that leaves the surface no box marks it out of view at once,
+ * before the next paint.
  */
 import { useEffect, useState } from "react";
 
@@ -86,10 +88,11 @@ export function useSurfaceInView(id: string, figure: () => HTMLElement | null, w
     let disposed = false;
     const { ownerDocument } = root;
     const view = ownerDocument.defaultView ?? window;
-    // The observer reports only as the surface's visible area crosses a threshold. A scroll or
-    // resize can move the clip region without that, and a panel far smaller than the surface
-    // crosses none. Observing the surface again makes the observer report it afresh, at most once
-    // per frame.
+    // The observer reports only as the surface's visible area crosses a threshold. A scroll, or a
+    // resize of the window, of a clipping ancestor or of the surface, can move the shown part across
+    // the cutoff while the visible share stays between the same two thresholds, as it does in a
+    // panel far smaller than the surface. Observing the surface again makes the observer report it
+    // afresh, at most once per frame.
     let frame = 0;
     const refresh = (): void => {
       if (disposed || frame !== 0) return;
@@ -147,10 +150,12 @@ export function useSurfaceInView(id: string, figure: () => HTMLElement | null, w
     // and a surface that lost its box closes the popup in it.
     const sizes = new ResizeObserver((entries) => {
       const last = entries.at(-1);
-      if (last?.target === observed && (last.contentRect.width === 0 || last.contentRect.height === 0))
+      if (last?.target !== observed) return;
+      if (last.contentRect.width === 0 || last.contentRect.height === 0)
         flushSync(() => {
           setInView(false);
         });
+      else refresh();
     });
     const mounts = new MutationObserver(() => {
       follow();

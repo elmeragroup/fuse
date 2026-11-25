@@ -11,11 +11,12 @@
 // `defaultActiveX`, shown in its lane at rest and on the first pointer pass, painted only
 // while each axis shows at least half of the smaller of the dial's extent and the room the viewport
 // and its clipping ancestors leave it. That rule is checked in a scroll panel far smaller than the
-// dial, a scaled panel, a panel in a shadow root, and for a fixed dial whose wrapper does not clip
-// it, including a wrapper that will change `transform-origin` and a style without a
-// `backdropFilter` accessor. The popup takes the bottom or top lane that `laneRest` documents, and
-// the default applies when rows that hold its hour first arrive after mount. Last, a side lane
-// rests clear of a reference line's label past the rim.
+// dial, a dial that grows or shrinks in such a panel with no scroll, a scaled panel, a panel in a
+// shadow root, and for a fixed dial whose wrapper does not clip it, including a wrapper that will
+// change `transform-origin` and a style without a `backdropFilter` accessor. The popup takes the
+// bottom or top lane that `laneRest` documents, and the default applies when rows that hold its
+// hour first arrive after mount. Last, a side lane rests clear of a reference line's label past the
+// rim.
 import type { ReactNode } from "react";
 
 import { flushSync } from "react-dom";
@@ -644,15 +645,18 @@ describe("the default item's popup while its dial is out of view", () => {
   function DefaultDial({
     data,
     size,
+    width = size,
   }: {
     readonly data?: readonly Record<string, number | string | null>[];
-    /** The dial's width and `--chart-polar-size`, in CSS pixels. */
+    /** The dial's `--chart-polar-size`, in CSS pixels. */
     readonly size?: number;
+    /** The width of the box the Root fills, in CSS pixels, `size` by default. */
+    readonly width?: number;
   }) {
     return (
       <Dial
         data={data}
-        width={size}
+        width={width}
         size={size === undefined ? undefined : `${String(size)}px`}
         defaultActiveX={DAY + 17 * HOUR}>
         <ClockChart.Column dataKey="kwh" />
@@ -916,6 +920,72 @@ describe("the default item's popup while its dial is out of view", () => {
     await expect.poll(popup).not.toBeNull();
     expect(label()).toBe("17–18");
   });
+
+  /** How many CSS pixels of the dial's height an unscaled panel's client box shows. */
+  function shownHeight(host: HTMLElement, panel: HTMLElement): number {
+    const dial = surfaceBox(host);
+    const top = panel.getBoundingClientRect().top + panel.clientTop;
+    return Math.max(0, Math.min(dial.bottom, top + panel.clientHeight) - Math.max(dial.top, top));
+  }
+
+  it.each([
+    {
+      outcome: "opens the popup when the dial grows",
+      from: 950,
+      to: 1000,
+      before: 10,
+      after: 60,
+      open: true,
+    },
+    {
+      outcome: "closes the popup when the dial shrinks",
+      from: 1000,
+      to: 950,
+      before: 60,
+      after: 10,
+      open: false,
+    },
+  ])(
+    "$outcome in a 120 × 60 panel with no scroll, from $before px shown to $after",
+    async ({ from, to, before, after, open }) => {
+      // The panel shows the dial's bottom edge, then the dial's size changes by 50 px while the
+      // panel keeps its scroll, so the shown part goes from a 10 px sliver to the full panel or
+      // back. Either share is under 1% of the dial's area, so no area threshold of an intersection
+      // observer lies between them. The oracle is the rule with the panel as the clipping
+      // ancestor: 10 px is under half the panel's 60 px height, and 60 px is over it.
+      const { host, panel } = await renderInPanel(
+        <div data-testid="panel" style={{ width: 120, height: 60, overflow: "auto", scrollbarWidth: "none" }}>
+          <DefaultDial size={from} width={1000} />
+          <div style={{ height: 400 }} />
+        </div>
+      );
+      // A scrollbar that takes layout space would cut the panel's client height, as in a headed run.
+      expect([panel.clientWidth, panel.clientHeight]).toEqual([120, 60]);
+      const at = dialOffset(host, panel);
+      const scrollEnded = new Promise((resolve) => {
+        panel.addEventListener("scrollend", resolve, { once: true });
+      });
+      await scrollPanel(host, panel, at.top + surfaceBox(host).height - before, at.left);
+      expect(shownHeight(host, panel)).toBeCloseTo(before, 0);
+      // The scroll queues a refresh. A report taken after the scroll has ended lands no earlier
+      // than the refresh's own, so a resize after it is not read by that refresh.
+      await scrollEnded;
+      await framesThroughReport(
+        () => null,
+        () => surface(host)
+      );
+      await expect.poll(() => popup() !== null).toBe(!open);
+      const dial = surface(host);
+      const scrollTop = panel.scrollTop;
+      // The dial's 1,000 px wrapper holds either size. Nothing renders again, so only the resize
+      // can ask for a new report.
+      polarFigure(host).style.setProperty("--chart-polar-size", `${String(to)}px`);
+      await expect.poll(() => shownHeight(host, panel)).toBeCloseTo(after, 0);
+      expect(surface(host)).toBe(dial);
+      expect(panel.scrollTop).toBe(scrollTop);
+      await expect.poll(() => popup() !== null).toBe(open);
+    }
+  );
 
   /**
    * Renders the dial in a `position: fixed` box at the viewport's top-left, inside a 50 px
