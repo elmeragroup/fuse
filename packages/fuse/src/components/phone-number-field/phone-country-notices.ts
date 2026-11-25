@@ -6,12 +6,15 @@ import type { PhoneCountryCode, PhoneNumberCountry } from "./phone-engine";
  * controlled `countryCode`, each observation ordered by a version.
  *
  * The notice contract under a controlled `countryCode` follows. The field's current country is the
- * country of a proposal that waits for the parent, else the shown one. A disagreement is a current
- * country that differs from `countryCode`, and that pair identifies it. The notices announce it once,
- * as it starts. It continues while the pair holds, such as when the parent's props show the waiting
- * proposal or a new proposal keeps its country. It ends when the current country is `countryCode`
- * again or another country, or when `countryCode` changes. A pair that starts again after an end is
- * announced again. Without a controlled country, a commit that shows another country announces it.
+ * country of a proposal that waits for the parent, else the shown one. When the controlled `value`
+ * already showed a proposal's number in the proposal's country as the proposal was made, the editor
+ * keeps the proposal for adoption, and the shown country is current. A disagreement is a current
+ * country that differs from `countryCode`, and that pair identifies it. The notices announce it
+ * once, as it starts. It continues while the pair holds, such as when the parent's props show the
+ * waiting proposal or a new proposal keeps its country. It ends when the current country is
+ * `countryCode` again or another country, or when `countryCode` changes. A pair that starts again
+ * after an end is announced again. Without a controlled country, a commit that shows another
+ * country announces it.
  */
 
 /** The field at one moment, as the notices read it. */
@@ -27,6 +30,13 @@ export type CountryObservation = {
   readonly shown: Readonly<PhoneNumberCountry>;
   /** The country of a proposal that waits for the parent, or `null`. */
   readonly proposed: Readonly<PhoneNumberCountry> | null;
+  /**
+   * Whether the field already showed that proposal's number in the proposal's country when the
+   * proposal was made, under a controlled `value` and a `countryCode` other than that country.
+   * The editor keeps such a proposal for adoption, and the notices read the shown country as the
+   * current one.
+   */
+  readonly alreadyShown: boolean;
 };
 
 /** What `onCountryChange` has told the parent. */
@@ -49,7 +59,7 @@ type CountryStep = {
 
 function step(
   notices: CountryNotices,
-  { version, countryCode, shown, proposed }: CountryObservation,
+  { version, countryCode, shown, proposed, alreadyShown }: CountryObservation,
   moment: "publish" | "commit"
 ): CountryStep {
   // An observation older than one the notices took in, as the first commit's passive effect
@@ -61,7 +71,7 @@ function step(
     const changed = moment === "commit" && shown.code !== notices.shown;
     return { notices: { shown: shownAfter, disagreement: null, version }, country: changed ? shown : null };
   }
-  const current = proposed ?? shown;
+  const current = proposed !== null && !alreadyShown ? proposed : shown;
   const disagreement = current.code === countryCode ? null : `${countryCode}>${current.code}`;
   const starts = disagreement !== null && disagreement !== notices.disagreement;
   return { notices: { shown: shownAfter, disagreement, version }, country: starts ? current : null };

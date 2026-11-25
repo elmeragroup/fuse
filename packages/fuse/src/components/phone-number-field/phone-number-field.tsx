@@ -155,9 +155,13 @@ export type PhoneNumberFieldProps = {
   /**
    * Called when the selected country changes. With `countryCode` set, it is called instead once as
    * each disagreement starts, with the country of a proposal waiting for the parent, else the one
-   * shown, when it differs from `countryCode`. It never hears the code the parent just set. A
-   * proposal that moves the country calls it before `onChange`, so a parent that takes both at
-   * once reads the number in the new country.
+   * shown, when it differs from `countryCode`. When `value` is set and the field already shows the
+   * proposed number in the proposal's country as the user makes the proposal, it is called with the
+   * shown country instead. A proposal the field first shows in its country after a later render does not count,
+   * such as a pick made with `autoDetectCountry` off whose kept digits show its country once
+   * detection turns on. It never hears the code the parent just set. A proposal that moves the
+   * country calls it before `onChange`, so a parent that takes both at once reads the number in the
+   * new country.
    */
   onCountryChange?: (country: { code: Extract<CountryCode, FlagAssetCode>; dialCode: string }) => void;
   /** The visible label, rendered as `Field.Label`. Without it, name the field with `aria-label`. */

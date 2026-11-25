@@ -434,14 +434,25 @@ export function readAsNumber(
   configuration: Configuration
 ): Snapshot | null {
   const read = readValueIn(value, country, configuration);
-  // The canonical E.164 number when both make one, so a number written with an international
-  // trunk zero ("+44 (0)20…") matches its national form ("020…"); the written digits otherwise,
-  // as for a partial number.
-  if (read.values.number !== undefined && number.values.number !== undefined) {
-    return read.values.number === number.values.number ? read : null;
+  return isSameNumber(read, number) ? read : null;
+}
+
+/**
+ * Whether two snapshots hold the same complete or partial number: the canonical E.164 number
+ * when both make one, so a number written with an international trunk zero ("+44 (0)20…")
+ * matches its national form ("020…"), else the written digits in their international form, as
+ * for a partial number.
+ *
+ * @param left - A snapshot.
+ * @param right - The snapshot to compare `left` with.
+ * @returns `true` when both hold the same number.
+ */
+export function isSameNumber(left: Snapshot, right: Snapshot): boolean {
+  if (left.values.number !== undefined && right.values.number !== undefined) {
+    return left.values.number === right.values.number;
   }
-  const written = internationalForm(read);
-  return written !== "" && written === internationalForm(number) ? read : null;
+  const written = internationalForm(left);
+  return written !== "" && written === internationalForm(right);
 }
 
 /**

@@ -9,6 +9,7 @@ import {
   carry,
   catalogReplaced,
   configure,
+  isSameNumber,
   moveInto,
   offeredCountry,
   pinReads,
@@ -265,10 +266,30 @@ function shownCountry(record: EditorRecord, held: Snapshot | null, number: Snaps
  * waits on.
  */
 function shows(record: EditorRecord): boolean {
-  const { value, waiting, accepted } = record;
-  if (waiting === null) return false;
-  const held = value === undefined || value === waiting.reading.output;
-  return held && shownCountry(record, waiting.proposal, accepted).code === waiting.proposal.country.code;
+  const { waiting } = record;
+  return waiting !== null && showsProposal(record, waiting.proposal, waiting.reading.output);
+}
+
+/** Whether `record` would show `proposal`, whose reading's output is `output`, as {@link shows} says. */
+function showsProposal(record: EditorRecord, proposal: Snapshot, output: string): boolean {
+  const { value, accepted } = record;
+  const held = value === undefined || value === output;
+  return held && shownCountry(record, proposal, accepted).code === proposal.country.code;
+}
+
+/**
+ * Whether the field already shows the number of `proposal`, a new proposal over `record`, in the
+ * proposal's country, under a controlled `value` and a `countryCode` other than that country. The
+ * field shows the proposal itself, or the accepted number when that is the same number in the
+ * same country. It compares the `countryCode` the parent gives, as the country notices do, not
+ * the country it resolves to: a code the catalog does not offer still differs from the proposal's.
+ */
+function alreadyShows(record: EditorRecord, proposal: Snapshot): boolean {
+  const { value, countryCode, accepted } = record;
+  const { country } = proposal;
+  if (value === undefined || countryCode === undefined || countryCode === country.code) return false;
+  if (showsProposal(record, proposal, proposal.values.outputValue)) return true;
+  return accepted.country.code === country.code && isSameNumber(accepted, proposal);
 }
 
 function visibleSnapshot(record: EditorRecord): Snapshot {
@@ -315,10 +336,14 @@ function caretOffset(text: string, after: number, side: CaretSide): number {
  */
 function propose(stored: EditorRecord, proposal: Snapshot, caret: EditCaret | null): PhoneEditorState {
   const accepted = visibleSnapshot(stored);
+  const start = {
+    outputBefore: accepted.values.outputValue,
+    alreadyShown: alreadyShows({ ...stored, accepted }, proposal),
+  };
   return succeed(stored, {
     ...stored,
     accepted,
-    waiting: waitingFor(proposal, stored.configuration, accepted.values.outputValue),
+    waiting: waitingFor(proposal, stored.configuration, start),
     caret,
     steered: null,
   });
@@ -631,7 +656,11 @@ function pick(
   return {
     ...record,
     accepted: read,
-    waiting: picked === read ? null : waitingFor(picked, configuration, before.values.outputValue),
+    // The pick clears the digits, so the field never showed its number.
+    waiting:
+      picked === read
+        ? null
+        : waitingFor(picked, configuration, { outputBefore: before.values.outputValue, alreadyShown: false }),
     // As a pick through the picker: nothing for `onChange` only when the output is the value the
     // parent holds. A parent that stores another form of the number hears it.
     steered: output === value ? record.steered : { value: output },
@@ -838,12 +867,15 @@ export function steeredValue(state: PhoneEditorState): ValueNotice | null {
 
 /**
  * The state as the country notices observe it: its version, the controlled code, the country it
- * shows and the country of a proposal waiting for the parent.
+ * shows, the country of a proposal waiting for the parent, and whether the field already showed
+ * that proposal's number in its country when the proposal was made.
  *
  * @param state - The state to observe.
  * @returns The observation for `phone-country-notices`.
  */
 export function observeCountry(state: PhoneEditorState): CountryObservation {
   const { version, countryCode, waiting } = state[OPEN]();
-  return { version, countryCode, shown: view(state).country, proposed: waiting?.proposal.country ?? null };
+  const proposed = waiting?.proposal.country ?? null;
+  const alreadyShown = waiting?.reading.alreadyShown ?? false;
+  return { version, countryCode, shown: view(state).country, proposed, alreadyShown };
 }
