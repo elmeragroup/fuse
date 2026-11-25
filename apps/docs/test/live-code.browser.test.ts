@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import * as CssColor from "@elmeragroup/color/css-color";
+import { getOrThrow } from "@elmeragroup/color/result";
+import * as Srgb from "@elmeragroup/color/srgb";
+import * as Wcag from "@elmeragroup/color/wcag";
+
 import { readDemoSource } from "../src/lib/demo-source";
 import { DESKTOP_VIEWPORT, waitForDemoHydration, waitForDocsShellHydration } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
@@ -7,13 +12,52 @@ import { closeContext, launchSuiteBrowser } from "./suite-browser";
 
 const browser = launchSuiteBrowser();
 
+/** A token the Code view renders: its text, its computed color, and every computed fill under it. */
+type RenderedToken = {
+  readonly text: string;
+  readonly color: string;
+  /** The computed `background-color` of the token, then of each ancestor inside the `pre`. */
+  readonly fillsInBlock: readonly string[];
+  /** The computed `background-color` of the `pre`, then of each ancestor up to the root element. */
+  readonly fillsBeneath: readonly string[];
+};
+
+/** A computed color in sRGB. */
+function toSrgb(serialized: string): Srgb.Srgb {
+  return CssColor.toSrgb(getOrThrow(CssColor.parse(serialized)));
+}
+
+/** No paint at all, the start of a composite. */
+const NOTHING = toSrgb("rgba(0, 0, 0, 0)");
+
+/**
+ * The color the browser paints under a token: its fills composited from the token outward, down to
+ * the first opaque one. It mirrors `paintedFill` in `packages/fuse/test/surface-paint.tsx`, which
+ * reads the fills inside the page; here they come back from the page as computed strings, and
+ * Fuse's test helpers are not a package the docs app imports.
+ */
+function paintedFill(fills: readonly string[]): Srgb.Srgb {
+  let painted = NOTHING;
+  for (const fill of fills) {
+    painted = Srgb.compositeOver(painted, toSrgb(fill));
+    if (painted.alpha === 1) return painted;
+  }
+  throw new Error(`No opaque fill under the token: ${fills.join(", ")}`);
+}
+
+function isTranslucentFill(fill: string): boolean {
+  const { alpha } = toSrgb(fill);
+  return alpha > 0 && alpha < 1;
+}
+
 describe("Live code", () => {
   it("edits a part through the stage control: reveal, preview, commit, toggle, copy, reset and close", async () => {
-    // Oracle: the Small example's own file, with `isPending` written in after the tag name, as
-    // the serializer adds a prop the source does not write, and `size="sm"` written as `size="lg"`.
+    // Oracle: the Small example's own file, with `isPending={false}` written in after the tag name,
+    // as the serializer adds a prop the source does not write and spells a cleared boolean, and
+    // `size="sm"` written as `size="lg"`.
     const source = readDemoSource({ section: "components", slug: "button", file: "button-small.tsx" }).source;
     expect(source).toContain('<Button size="sm">');
-    const edited = source.replace('<Button size="sm">', '<Button isPending size="lg">');
+    const edited = source.replace('<Button size="sm">', '<Button isPending={false} size="lg">');
     const context = await browser().newContext({
       colorScheme: "light",
       reducedMotion: "reduce",
@@ -113,12 +157,15 @@ describe("Live code", () => {
     expect(await menu.isVisible()).toBe(true);
     expect(await part.getAttribute("data-size")).toBe("lg");
 
-    // A boolean toggles in place.
+    // A boolean toggles in place, on and back off.
     const pending = menu.getByRole("menuitemcheckbox", { name: "isPending" });
     await pending.click();
     await expect.poll(async () => part.getAttribute("aria-busy")).toBe("true");
     expect(await pending.getAttribute("aria-checked")).toBe("true");
     expect(await menu.isVisible()).toBe(true);
+    await pending.click();
+    await expect.poll(async () => part.getAttribute("aria-busy")).toBeNull();
+    expect(await pending.getAttribute("aria-checked")).toBe("false");
 
     // Copy, the Code view and the Sheet carry the committed edits.
     await menu.getByRole("menuitem", { name: "Copy code" }).click();
@@ -129,6 +176,45 @@ describe("Live code", () => {
     await frame.getByRole("tab", { name: "Code" }).click();
     const code = frame.locator("[data-demo-source] pre");
     await expect.poll(async () => code.textContent()).toBe(edited);
+    // The tokens an edit writes sit on a translucent tint over the view's fill, and each reads at
+    // 4.5:1 on what the browser paints under it. Oracle: the edit wrote `isPending={false}` and
+    // `size="lg"`, so the tinted runs spell those two attributes, with a property, a sign, a
+    // keyword and a string among them, and WCAG 1.4.3 sets the floor. The view shows plain text
+    // until the highlighted markup loads, so the read waits for the tinted tokens.
+    const readTokens = async (): Promise<readonly RenderedToken[]> =>
+      code.evaluate((pre) => {
+        const fillsUpTo = (from: Element | null, end: Element | null): string[] => {
+          const fills: string[] = [];
+          for (let node = from; node !== null && node !== end; node = node.parentElement) {
+            fills.push(getComputedStyle(node).backgroundColor);
+          }
+          return fills;
+        };
+        const fillsBeneath = fillsUpTo(pre, null);
+        return [...pre.querySelectorAll("code span")]
+          .filter((span) => span.children.length === 0)
+          .map((span) => ({
+            text: span.textContent,
+            color: getComputedStyle(span).color,
+            fillsInBlock: fillsUpTo(span, pre),
+            fillsBeneath,
+          }));
+      });
+    let editedTokens: readonly RenderedToken[] = [];
+    await expect
+      .poll(async () => {
+        editedTokens = (await readTokens()).filter(({ fillsInBlock }) =>
+          fillsInBlock.some(isTranslucentFill)
+        );
+        return editedTokens.map(({ text }) => text).join("");
+      })
+      .toBe('isPending={false}size="lg"');
+    for (const { text, color, fillsInBlock, fillsBeneath } of editedTokens) {
+      const ratio = getOrThrow(
+        Wcag.contrastRatio(toSrgb(color), paintedFill([...fillsInBlock, ...fillsBeneath]))
+      );
+      expect.soft(ratio, `${text} in ${color}`).toBeGreaterThanOrEqual(4.5);
+    }
     await frame.getByRole("button", { name: "Open code" }).click();
     const sheet = page.getByRole("dialog", { name: "Small" });
     expect(await sheet.locator("pre").textContent()).toBe(edited);

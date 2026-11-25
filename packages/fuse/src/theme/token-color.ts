@@ -1,8 +1,9 @@
 /**
  * Readers for color token literals. Token modules write colors as `oklch()` or six-digit
- * `#rrggbb` hex, and the theme pipeline's own math reads only `oklch()`.
+ * `#rrggbb` hex. The theme pipeline's own math reads only `oklch()`, and contrast reads both.
  */
 
+import * as CssColor from "@elmeragroup/color/css-color";
 import type { InvalidColor } from "@elmeragroup/color/css-color";
 import * as Hex from "@elmeragroup/color/hex";
 import * as Oklch from "@elmeragroup/color/oklch";
@@ -38,19 +39,21 @@ export function tokenOklch(literal: string): Oklch.Oklch {
 }
 
 /**
- * The WCAG contrast ratio between two `oklch()` token literals. A translucent foreground composites
- * over the background. The background must be opaque, and every surface the theme contract measures
- * is opaque. A translucent surface would need an explicit backdrop to composite against, so
- * measuring one throws.
+ * The WCAG contrast ratio between two color token literals, each `oklch()` or `#rrggbb` hex. A
+ * translucent foreground composites over the background. The background must be opaque, and every
+ * surface the theme contract measures is opaque. A translucent surface would need an explicit
+ * backdrop to composite against, so measuring one throws.
  *
- * @param foreground - The foreground's `oklch()` literal.
- * @param background - The background's `oklch()` literal, opaque.
+ * @param foreground - The foreground's literal.
+ * @param background - The background's literal, opaque.
  * @returns The ratio, from 1 to 21.
- * @throws The parser's `InvalidColor` for a literal that is not `oklch()`, or the WCAG error for a
+ * @throws The parser's `InvalidColor` for a literal in neither form, or the WCAG error for a
  *   translucent background.
  */
 export function literalContrast(foreground: string, background: string): number {
-  return getOrThrow(
-    Wcag.contrastRatio(Oklch.toSrgb(tokenOklch(foreground)), Oklch.toSrgb(tokenOklch(background)))
-  );
+  return getOrThrow(Wcag.contrastRatio(literalSrgb(foreground), literalSrgb(background)));
+}
+
+function literalSrgb(literal: string): Srgb {
+  return CssColor.toSrgb(getOrThrow(readTokenColor(literal)));
 }
