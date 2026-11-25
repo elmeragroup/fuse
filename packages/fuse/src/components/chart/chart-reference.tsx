@@ -639,7 +639,7 @@ export function ChartReferenceLine({
       <svg aria-hidden="true">
         {ruleAttributes === null ? null : <line {...chartPart("reference-rule")} {...ruleAttributes} />}
       </svg>
-      <span ref={labelRef} data-slot="chart-reference-label" aria-hidden="true">
+      <span ref={labelRef} {...chartPart("reference-label")} aria-hidden="true">
         {label === undefined ? null : text.text}
       </span>
       <span data-slot="chart-reference-text">{text.spoken}</span>
@@ -754,7 +754,7 @@ export function ChartReferenceArea({
       <svg aria-hidden="true">
         {band === null ? null : <rect {...chartPart("reference-band")} {...band} />}
       </svg>
-      <span ref={labelRef} data-slot="chart-reference-label" aria-hidden="true">
+      <span ref={labelRef} {...chartPart("reference-label")} aria-hidden="true">
         {label === undefined ? null : text.text}
       </span>
       <span data-slot="chart-reference-text">{text.spoken}</span>

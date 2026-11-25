@@ -296,9 +296,9 @@ export function ScatterChartTooltipLabel({
   return useRender({
     defaultTagName: "span",
     render,
-    props: {
-      "data-slot": "chart-tooltip-label",
-      ...mergeProps<"span">(
+    props: chartPart(
+      "tooltip-label",
+      mergeProps<"span">(
         {
           className,
           children:
@@ -311,8 +311,8 @@ export function ScatterChartTooltipLabel({
             )),
         },
         props
-      ),
-    },
+      )
+    ),
   });
 }
 

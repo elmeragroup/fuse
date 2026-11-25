@@ -9,7 +9,8 @@
 // the 25-hour 26 October 2025, where "06" sits at 100.8°; the seam where the arrows wrap; Now at
 // 11:30, 172.5°; the clock key map, where PageDown moves six hours; and the Tooltip under
 // `defaultActiveX`, shown in its lane at rest and on the first pointer pass, and painted only while
-// at least half of the dial is in view, in the bottom or top lane that `laneRest` documents.
+// at least half of the dial is in view, in the bottom or top lane that `laneRest` documents; and a
+// side lane, which rests clear of a reference line's label past the rim.
 import type { ReactNode } from "react";
 
 import { flushSync } from "react-dom";
@@ -66,6 +67,7 @@ function Dial({
   now,
   defaultActiveX,
   size,
+  width = 320,
   children,
 }: {
   readonly data?: readonly Record<string, number | string | null>[];
@@ -77,11 +79,13 @@ function Dial({
   readonly defaultActiveX?: number;
   /** The dial's `--chart-polar-size`, as a consumer sets it. */
   readonly size?: string;
+  /** The width of the box the Root fills, in CSS pixels. */
+  readonly width?: number;
   readonly children: React.ReactNode;
 }) {
   return (
     <LocaleProvider locale="nb-NO" timeZone="Europe/Oslo">
-      <div style={{ width: 320 }}>
+      <div style={{ width }}>
         <ClockChart.Root
           data={data}
           config={config}
@@ -511,6 +515,51 @@ describe("the tooltip under defaultActiveX", () => {
     await expect.poll(() => getComputedStyle(open).opacity).toBe("1");
     expect(visible(open)).toBe(true);
     expect(laneMiss(shown(host))).toBeNull();
+  });
+});
+
+describe("a side lane beside a reference line's label", () => {
+  afterEach(async () => {
+    await page.viewport(414, 896);
+  });
+
+  /** Whether two boxes share any area. */
+  const overlap = (a: DOMRect, b: DOMRect): boolean =>
+    a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
+  it("rests the popup clear of the label past the rim", async () => {
+    // An 800 px figure leaves room for the side lanes. The spoke at 17:00 starts slot 17 at 255°,
+    // and its label sits past the rim on the left, beside the popup of slot 17. The oracle is the
+    // lane rule that a side lane rests clear of every label past the rim, so no painted frame of
+    // the popup's positioner shares any area with the label.
+    await page.viewport(1024, 768);
+    await expect.poll(() => window.innerWidth).toBe(1024);
+    const { host } = renderThemed(
+      <Dial width={800} defaultActiveX={DAY + 17 * HOUR}>
+        <ClockChart.Column dataKey="kwh" />
+        <ClockChart.ReferenceLine x={DAY + 17 * HOUR} label="Topptariff fra {value}" />
+        <ClockChart.Tooltip />
+      </Dial>
+    );
+    // The reference line renders its label as the line's own child.
+    const text = host.querySelector('[data-slot="clock-chart-reference-line"] > [data-part="label"]');
+    if (text === null) throw new Error("no reference label");
+    await expect.poll(label).toBe("17–18");
+    // Every frame until the popup has painted for 20 frames.
+    let paintedCount = 0;
+    const frames = await recordFrames(
+      () => ({
+        ...shown(host),
+        side: mountedPopup()?.parentElement?.getAttribute("data-side") ?? null,
+        text: text.getBoundingClientRect(),
+      }),
+      () => (shown(host).painted ? (paintedCount += 1) : paintedCount) >= 20
+    );
+    const painted = frames.filter((frame) => frame.painted);
+    // The label sits past the rim, left of the dial, where the left lane would rest.
+    expect(painted[0]?.text.left).toBeLessThan(surfaceBox(host).left);
+    expect(new Set(painted.map((frame) => frame.side))).toEqual(new Set(["left"]));
+    expect(painted.filter((frame) => overlap(frame.placed, frame.text))).toEqual([]);
   });
 });
 

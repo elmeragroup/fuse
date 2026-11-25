@@ -8,6 +8,7 @@
 import type { ReactElement } from "react";
 
 import { useLabelWidths } from "./chart-label-widths";
+import { chartPart } from "./chart-part-marker";
 import { radarDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ChartLayerProps } from "./chart-types";
 import { labelWidth } from "./layout/label-width";
@@ -52,7 +53,7 @@ export function RadarChartAngleAxis({ className, style }: RadarChartAngleAxisPro
         return (
           <span
             key={index}
-            data-slot="radar-chart-angle-label"
+            {...chartPart("radar-angle-label")}
             data-min={min === "always" || min === "none" ? undefined : min}
             data-hidden={min === "none" ? "" : undefined}
             style={{

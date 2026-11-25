@@ -19,6 +19,7 @@ import { Button } from "../button/button";
 import { pageStatus } from "../data-table/data-table-pagination-status";
 import { dataTableStrings } from "../data-table/intl";
 import { Table } from "../table/table";
+import { chartPart } from "./chart-part-marker";
 import type { ChartStrings } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
 
@@ -226,7 +227,7 @@ export function ChartTableShell({
   return (
     <div data-slot="chart-table" className={className} style={style}>
       <Button
-        data-slot="chart-table-toggle"
+        {...chartPart("table-toggle")}
         variant="outline"
         size="xs"
         aria-controls={tableId}

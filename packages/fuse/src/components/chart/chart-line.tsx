@@ -6,6 +6,7 @@ import { useSeriesPart } from "./chart-context";
 import { PATH_GLOW, plotGlowRegion, valueGlow } from "./chart-glow-filter";
 import type { MarkValues } from "./chart-motion";
 import { useFirstDraw } from "./chart-motion-mark";
+import { chartPart } from "./chart-part-marker";
 import { placeOf, topologyAt, writePath } from "./chart-path-draw";
 import type { PathLook } from "./chart-path-draw";
 import { PathPaint, hasPathPaint } from "./chart-path-paint";
@@ -125,7 +126,7 @@ export function ChartLine({
   const glow = valueGlow(paint, prefix, PATH_GLOW);
   return (
     <svg
-      data-slot="chart-line-series"
+      {...chartPart("line-series")}
       data-orientation={context.orientation}
       data-variant={variant}
       data-series={seriesIndex}

@@ -1,17 +1,19 @@
 "use client";
 
+import { isValidElement, use } from "react";
+import type { ReactElement } from "react";
+
 /**
  * The tooltip's content parts every chart family shares: the active datum's label, the row
  * template, the value and the share. Each reads its Root through the readout port, so a family's
  * Tooltip and its content ship no other family's code.
  */
-import { use } from "react";
-import type { ReactElement } from "react";
-
+import { unwrapLazyRenderProp } from "@base-ui/react/internals/useRenderElement";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
 import { useActiveIndex } from "./chart-active-point";
+import { chartPart, defaultLabelMarker } from "./chart-part-marker";
 import { shareDigits, shareText, useActiveItem, useChartReadout, useReadoutKey } from "./chart-readout";
 import { ChartSelectionContext } from "./chart-readout-port";
 import { ChartRowContext } from "./chart-scope-contexts";
@@ -75,16 +77,25 @@ export function ChartTooltipLabel({
 }: ChartTooltipLabelProps): ReactElement {
   const readout = useChartReadout("Chart.TooltipLabel");
   const active = useActiveIndex(readout);
+  const text = active === null ? null : readout.activeLabel(active, format);
+  // The marker holds the item's label in Root's format, which a polar popup's width estimate prints.
+  // A `format` the readout ignores keeps it. `children`, or a `render` element's own, replace the
+  // text on every step, and fixed text that reads as one item's label would take the estimate on
+  // that step, so they drop it. A `render` function's text is checked in the DOM.
+  // A server-rendered `render` element arrives lazy, so it is unwrapped before its children are read.
+  const element = unwrapLazyRenderProp(render);
+  const replaced =
+    props.children !== undefined ||
+    (isValidElement<{ readonly children?: unknown }>(element) && element.props.children !== undefined);
+  const marked =
+    active !== null && !replaced && text === readout.activeLabel(active, undefined)
+      ? defaultLabelMarker(text)
+      : {};
+  const merged = mergeProps<"span">({ className, children: text }, props);
   return useRender({
     defaultTagName: "span",
     render,
-    props: {
-      "data-slot": "chart-tooltip-label",
-      ...mergeProps<"span">(
-        { className, children: active === null ? null : readout.activeLabel(active, format) },
-        props
-      ),
-    },
+    props: chartPart("tooltip-label", { ...merged, ...marked }),
   });
 }
 

@@ -12,6 +12,7 @@ import { use, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FocusEvent, KeyboardEvent, MouseEvent, PointerEvent, ReactElement } from "react";
 
 import { listboxProps, SurfaceName, useGestureEnd, useOptionHandoff } from "./chart-listbox";
+import { partSelector } from "./chart-part-marker";
 import { PolarContext } from "./chart-polar-context";
 import type { PolarModel } from "./chart-polar-context";
 import { ChartSelectionContext } from "./chart-readout-port";
@@ -278,7 +279,7 @@ export function PolarSurface(): ReactElement | null {
     const surface = listbox.current;
     const move = (event: globalThis.PointerEvent): void => {
       const target = event.target instanceof Element ? event.target : null;
-      if (target?.closest('[data-slot="chart-tooltip"]') != null || (surface?.contains(target) ?? false)) {
+      if (target?.closest(partSelector("tooltip")) != null || (surface?.contains(target) ?? false)) {
         stop();
         return;
       }
@@ -355,7 +356,7 @@ export function PolarSurface(): ReactElement | null {
       onPointerLeave={(event) => {
         const intoPopup =
           event.relatedTarget instanceof Element &&
-          event.relatedTarget.closest('[data-slot="chart-tooltip"]') !== null;
+          event.relatedTarget.closest(partSelector("tooltip")) !== null;
         if (intoPopup || event.pointerType !== "mouse") return;
         const snapshot = store.get();
         // A pointer that leaves toward the popup keeps the part across the gap to it.

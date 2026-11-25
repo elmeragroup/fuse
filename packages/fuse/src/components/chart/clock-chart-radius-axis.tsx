@@ -9,6 +9,7 @@ import { useMemo } from "react";
 import type { ReactElement } from "react";
 
 import { useLocale } from "../../intl/locale-context";
+import { chartPart } from "./chart-part-marker";
 import { clockDrawingIn, usePolarContext } from "./chart-polar-context";
 import type { ClockDrawing } from "./chart-polar-context";
 import type { ChartLayerProps, ValueFormat } from "./chart-types";
@@ -112,7 +113,7 @@ export function ClockChartRadiusAxis({ format, className, style }: ClockChartRad
         return (
           <span
             key={tick}
-            data-slot="clock-chart-radius-label"
+            {...chartPart("clock-radius-label")}
             data-min={min === "none" ? undefined : min}
             data-hidden={min === "none" ? "" : undefined}
             style={{ "--_x": left, "--_y": top }}>

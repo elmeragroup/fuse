@@ -6,6 +6,7 @@
  */
 import type { ReactElement, ReactNode } from "react";
 
+import { chartPart } from "./chart-part-marker";
 import type { LabelPlace } from "./clock-chart-dial";
 
 /**
@@ -14,22 +15,22 @@ import type { LabelPlace } from "./clock-chart-dial";
  */
 export function PlacedLabel({
   place,
-  dataSlot,
+  part,
   min,
   hidden,
   children,
 }: {
   readonly place: LabelPlace;
-  readonly dataSlot?: string;
+  /** The part an angle label marks. A reference's or Now's label leaves it out and marks none. */
+  readonly part?: "clock-angle-label";
   readonly min?: number | undefined;
   readonly hidden?: boolean;
   readonly children: ReactNode;
 }): ReactElement {
   return (
     <span
-      data-slot={dataSlot}
+      {...(part === undefined ? { "data-part": "label" } : chartPart(part))}
       aria-hidden="true"
-      data-part={dataSlot === undefined ? "label" : undefined}
       data-min={min}
       data-hidden={hidden === true ? "" : undefined}
       style={{ "--_x": place.x, "--_y": place.y, "--_align-x": place.alignX, "--_align-y": place.alignY }}>

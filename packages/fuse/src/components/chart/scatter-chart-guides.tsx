@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type { ReactElement } from "react";
 
+import { chartPart } from "./chart-part-marker";
 import type { ChartLayerProps, ChartTone, ValueFormat } from "./chart-types";
 import { CHART_STRINGS } from "./format/chart-strings";
 import type { FormattedText } from "./format/formatted-text";
@@ -341,7 +342,7 @@ export function ScatterChartReferenceLine({
         style={frame === null ? undefined : { "--_rule-width": `${String(hairline(frame.box))}px` }}>
         {rule === null ? null : <line data-slot="chart-reference-rule" {...rule} />}
       </svg>
-      <span data-slot="chart-reference-label" aria-hidden="true">
+      <span {...chartPart("reference-label")} aria-hidden="true">
         {visible}
       </span>
       <span data-slot="chart-reference-text">{strings.referenceLine(shown)}</span>

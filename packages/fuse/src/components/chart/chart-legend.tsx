@@ -8,6 +8,7 @@ import { useRender } from "@base-ui/react/use-render";
 
 import { ToggleGroupItem, ToggleGroupRoot } from "../toggle-group/toggle-group";
 import { useActiveIndex } from "./chart-active-point";
+import { chartPart } from "./chart-part-marker";
 import { shareDigits, shareText, useChartReadout, useReadoutKey } from "./chart-readout";
 import { ChartSelectionContext } from "./chart-readout-port";
 import type { ChartReadout } from "./chart-readout-port";
@@ -130,11 +131,10 @@ export function ChartLegend({
   return useRender({
     defaultTagName: "ul",
     render,
-    props: {
-      "data-slot": "chart-legend",
+    props: chartPart("legend", {
       "data-side": side,
       ...mergeProps<"ul">({ className, children: items }, props),
-    },
+    }),
   });
 }
 
@@ -307,7 +307,7 @@ export function ChartLegendToggleGroup({
   useEffect(() => registerToggleGroup(), [registerToggleGroup]);
   return (
     <ToggleGroupRoot
-      data-slot="chart-legend-toggle-group"
+      {...chartPart("legend-toggle-group")}
       data-side={side}
       aria-label={ariaLabel ?? readout.toggleGroupName}
       size="xs"

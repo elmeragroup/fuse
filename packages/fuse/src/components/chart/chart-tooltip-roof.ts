@@ -13,6 +13,7 @@
  * read without a paint between, so the popup clears every frame without a read per frame.
  */
 import type { ChartMotion, MarkValues, MarkWriter, ValueAxis } from "./chart-motion";
+import { partSelector } from "./chart-part-marker";
 import type { ChartRiders } from "./chart-riders";
 import { glideShown } from "./chart-spring";
 import type { PlotFrame } from "./layout/plot-frame";
@@ -30,13 +31,10 @@ import {
 import type { MarkPiece, PieceBounds, RoofMark, RoofProfile } from "./layout/tooltip-roof";
 
 /** The layers that draw series marks: bars, lines, areas, dots and markers. */
-const LAYERS = [
-  '[data-slot="chart-bar-series"]',
-  '[data-slot="chart-line-series"]',
-  '[data-slot="chart-area-series"]',
-  '[data-slot="chart-dots"]',
-  '[data-slot="chart-marker"]',
-].join(",");
+const LAYERS = partSelector("bar-series", "line-series", "area-series", "dots", "marker");
+
+/** The active dots' layers. */
+const ACTIVE_DOT = partSelector("active-dot");
 
 /**
  * The active dots that show. They follow the pointer, so every read takes them afresh, where they
@@ -45,7 +43,7 @@ const LAYERS = [
  * under the popup as long as it reaches no farther from the line than the popup's gap above the
  * roof, and `riderExcess` raises the roof by whatever it reaches beyond.
  */
-const ACTIVE_DOTS = '[data-slot="chart-active-dot"][data-value]';
+const ACTIVE_DOTS = `${ACTIVE_DOT}[data-value]`;
 
 const DRAWINGS = "path, polyline, line, polygon, rect, circle, ellipse";
 
@@ -53,8 +51,7 @@ const DRAWINGS = "path, polyline, line, polygon, rect, circle, ellipse";
  * Drawings that draw nothing of their own, inside a paint server, a clip or a mask, and the active
  * bar's overlay, which redraws a bar the series layer draws too and follows the pointer.
  */
-const UNDRAWN =
-  'defs, clipPath, mask, pattern, linearGradient, radialGradient, [data-slot="chart-bar-active"]';
+const UNDRAWN = `defs, clipPath, mask, pattern, linearGradient, radialGradient, ${partSelector("bar-active")}`;
 
 /**
  * How far above and below the plot the canvas reaches, in plot pixels, for a stroke or a curve
@@ -262,7 +259,7 @@ function seriesRoof(view: RoofView): RoofProfile {
  */
 function riddenMarks(view: RoofView): RoofMark[] {
   const vertical = view.frame.orientation === "vertical";
-  return [...view.root.querySelectorAll('[data-slot="chart-active-dot"]')].flatMap((layer) =>
+  return [...view.root.querySelectorAll(ACTIVE_DOT)].flatMap((layer) =>
     (view.riders.track(layer) ?? []).map(({ along, across }) => ({
       pieces: polyline(
         Array.from(along, (place, index): [number, number] =>
@@ -514,7 +511,7 @@ function markOf(drawing: SVGGraphicsElement, view: RoofView): RoofMark | null {
  */
 function riderExcess(root: Element): number {
   let reach = 0;
-  for (const dot of root.querySelectorAll<SVGCircleElement>('[data-slot="chart-active-dot"] circle')) {
+  for (const dot of root.querySelectorAll<SVGCircleElement>(`${ACTIVE_DOT} circle`)) {
     const style = getComputedStyle(dot);
     const stroke = style.stroke === "none" ? 0 : Number.parseFloat(style.strokeWidth) || 0;
     reach = Math.max(reach, dot.r.baseVal.value * widestScale(dot) + stroke / 2);
@@ -544,7 +541,7 @@ function widestScale(element: Element): number {
  */
 function restingMatrix(drawing: SVGGraphicsElement): DOMMatrix | null {
   const matrix = drawing.getScreenCTM();
-  const layer = drawing.closest<SVGSVGElement>('[data-slot="chart-active-dot"]');
+  const layer = drawing.closest<SVGSVGElement>(ACTIVE_DOT);
   const shown = layer === null ? null : glideShown(layer);
   const scale = layer?.getScreenCTM();
   if (matrix === null || shown === null || scale === null || scale === undefined) return matrix;
