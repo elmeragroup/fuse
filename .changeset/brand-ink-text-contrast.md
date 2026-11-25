@@ -17,8 +17,7 @@ pairs, among the pairs held at 4.5:1 in every theme and color scheme.
 `text-brand`, so brand text passes 4.5:1. Its color changes in Fjordkraft, Fjordkraft Företag and
 TrøndelagKraft light themes, which get a darker tone, and in Gudbrandsdal Energi, Telinet, Elmera
 and Nordic Green Energy dark themes, which get a lighter one. `--brand` keeps the brand color for
-fills. A brand `Link` with `underline="none"` now underlines under the pointer instead of fading,
-so the fade cannot take its text under 4.5:1 on the page or a card.
+fills.
 
 **Breaking:** in the themes listed above, and under a `--brand` override on a plain wrapper inside
 a theme element in any theme, `--brand` no longer recolors `variant="brand"` text. Set

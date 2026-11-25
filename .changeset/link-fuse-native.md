@@ -10,8 +10,8 @@ never thinner than 1px.
 
 The new `underline` prop sets the cue: `"always"` (the default) underlines at rest in a dimmed line,
 the link's colour at 35% in a light scheme and 65% in a dark one, and draws it in the full colour
-on hover; `"hover"` underlines only on hover; and `"none"` never underlines and fades the text
-on hover. `variant` takes `default`, which inherits the text colour, `foreground`, `primary`, `brand`,
+on hover; `"hover"` underlines only on hover; and `"none"` draws no underline at rest or on hover and
+keeps the text at full opacity. `variant` takes `default`, which inherits the text colour, `foreground`, `primary`, `brand`,
 `muted` or `error`. `weight` and `truncate` stay. An SVG child marked `data-icon="inline-end"` or
 `data-icon="inline-start"`, such as an external-link icon, is drawn one `em` square in the link's
 colour, and keeps the link on one line. The entry exports the `linkVariants` recipe.

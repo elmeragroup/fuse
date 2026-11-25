@@ -7955,6 +7955,12 @@
       "reason": "`default` is `text-inherit`, which takes the host's color, and the capture's host page sets `--foreground`, the color `foreground` sets. Figma has no parent color for a component to inherit."
     },
     {
+      "set": "link",
+      "axis": "underline",
+      "values": ["hover", "none"],
+      "reason": "Both draw no line at rest or in focus. Only hover tells them apart, and a `none` link has no hover cell, since it draws as it rests."
+    },
+    {
       "set": "navigation-menu-bar-link",
       "axis": "active",
       "values": ["false", "true"],

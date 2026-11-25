@@ -62,7 +62,7 @@
           "type": "\"always\" | \"hover\" | \"none\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"always\"",
-          "description": "How a user tells the link from its sentence. `always` underlines at rest in a dimmed line and draws it in the full color under the pointer. Keep it in running text, where nothing else marks the link. Some themes set the `primary` variant to the text color, so keep the underline wherever color is the only other difference. `hover` underlines only under the pointer, for a place that already reads as links, such as a row of footer links. `none` drops the underline and fades the text under the pointer, for a link a container marks, such as a card's title. A `brand` link with `none` underlines under the pointer instead of fading.",
+          "description": "How a user tells the link from its sentence. `\"always\"` underlines at rest in a dimmed line and draws it in the full color on hover. Keep it in running text, where nothing else marks the link. Some themes set the `\"primary\"` variant to the text color, so keep the underline wherever color is the only other difference. `\"hover\"` underlines only on hover, for a place that already reads as links, such as a row of footer links. `\"none\"` draws no underline at rest or on hover and keeps the text at full opacity on hover. Use it for a link its place marks at rest, such as a card title or a nav item.",
           "required": false,
           "values": [
             "always",

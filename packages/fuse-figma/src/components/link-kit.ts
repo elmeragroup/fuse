@@ -1,6 +1,7 @@
 /**
  * Link, as one component set on the Link page: each color variant at each underline and weight, in
- * three states, 108 cells. `Link` renders an `<a data-slot="link">`. A link has no disabled state.
+ * three states, 96 cells. `Link` renders an `<a data-slot="link">`. A link has no disabled state,
+ * and a `none` link has no hover look, so the set has no hover cell for it.
  *
  * The set crosses the axes the docs demos vary, `variant` and `underline`, with `weight`. A link
  * with no `weight` takes its sentence's weight, the host page's 400, which `normal` sets too, so the
@@ -82,6 +83,12 @@ export const LINK_MANIFEST: SetManifest = {
     { name: "underline", values: UNDERLINES },
     { name: "weight", values: WEIGHTS },
     { name: "state", values: ["rest", "hover", "focus"] },
+  ],
+  impossible: [
+    {
+      where: { underline: "none", state: "hover" },
+      fact: "`linkVariants`' `none` underline is a bare `no-underline` with no `enabled-hover:` class, so a hovered `none` link draws as it rests.",
+    },
   ],
   // The weight axis came after the set's first release, so a `normal` link keeps the key it had then.
   addedAxes: new Set(["weight"]),

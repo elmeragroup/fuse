@@ -87,7 +87,7 @@ export type CaptureTarget = {
   /** The `data-slot` the root carries in a cell where it is not `slot`, as a family stamps its own. */
   readonly elementSlot?: (cell: Readonly<Record<string, string>>) => string;
   readonly axes: readonly AxisSpec[];
-  /** The axis values the component cannot show together, whose cells the capture leaves out. */
+  /** The axis values the set leaves out together, whose cells the capture does not render. */
   readonly impossible?: readonly ImpossibleCells[];
   readonly addedAxes?: ReadonlySet<string>;
   readonly statePart?: string;

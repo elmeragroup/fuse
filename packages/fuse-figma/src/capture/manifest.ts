@@ -1,8 +1,8 @@
 /**
  * A set's manifest: the intent the capture-backed build reads beside the capture. A manifest is an
  * allowlist. It names the props matrix, the sample content and the host it renders in, the property
- * names, the instance boundaries and keys, and the valid state combinations, by naming the ones the
- * component cannot show and the Fuse or Base UI behavior that rules each out. For an open composite
+ * names, the instance boundaries and keys, and the state combinations the set holds, by naming the
+ * ones it leaves out and the Fuse or Base UI behavior behind each. For an open composite
  * it names the elements its cells measure and the placement props its component declares. It holds
  * no CSS knowledge: no classes, no selectors, no layout values, no facts and no omissions, since the
  * capture holds what the browser made of them. The one exception is the place Accordion item's
@@ -136,9 +136,8 @@ export type SetManifest = BoxManifest & {
   readonly elementSlot?: (cell: Cell) => string;
   readonly axes: readonly AxisSpec[];
   /**
-   * The axis values no state of the component can show together, each with the Fuse or Base UI fact
-   * that rules it out. The set leaves those cells out, so it holds only the states the component
-   * reaches.
+   * The axis values the set leaves out together, each with the Fuse or Base UI fact behind it. The
+   * component cannot show them, or draws them as another cell does. The set holds every other cell.
    */
   readonly impossible?: readonly ImpossibleCells[];
   readonly addedAxes?: ReadonlySet<string>;
