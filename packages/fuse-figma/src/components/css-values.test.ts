@@ -138,6 +138,44 @@ describe("readNumber with a target floor", () => {
     expect(readNumber("max(var(--control-h-xs), 24px)", indexWithMinimum(20))).toBeUndefined();
   });
 
+  // Oracle: CSS Values 4 `max()`, which picks the larger argument. A variable between 24px and
+  // 32px in every mode never beats 32px, so the max() is 32px in every mode.
+  it("reads the length when the variable never rises above it in any mode", () => {
+    const index = makeVariableIndex([
+      { ref: controlHXs, webSyntax: "var(--control-h-xs)", minimum: 24, maximum: 32 },
+    ]);
+    expect(readNumber("max(calc(0.25rem * 8), var(--control-h-xs))", index)).toEqual({
+      kind: "literal",
+      value: 32,
+    });
+    expect(readNumber("max(calc(0.25rem * 7), var(--control-h-xs))", index)).toBeUndefined();
+  });
+
+  // The Sidebar group label's height, `--spacing(8)` floored at the xs control square, itself
+  // floored at 24px, and the collapsed rail's margin that pulls the rows up by that height.
+  it("settles a floor of a floor, inside a calc() too", () => {
+    const index = makeVariableIndex([
+      { ref: controlHXs, webSyntax: "var(--control-h-xs)", minimum: 24, maximum: 32 },
+    ]);
+    const height = "max(calc(0.25rem * 8), max(var(--control-h-xs), 24px))";
+    expect(readNumber(height, index)).toEqual({ kind: "literal", value: 32 });
+    expect(readNumber(`calc(${height} * -1)`, index)).toEqual({ kind: "literal", value: -32 });
+    expect(readNumber("max(var(--control-h-xs), max(24px, 1rem))", index)).toEqual({
+      kind: "variable",
+      variable: controlHXs,
+    });
+  });
+
+  // Oracle: the Figma variable model, where a FLOAT holds a length in px and an opacity in percent.
+  // An opacity of 0.2 to 0.4 syncs as 20 to 40, which says nothing about CSS's `max()` with 0.5.
+  it("leaves a max() of a variable and a unitless number as it is", () => {
+    const opacity = { collection: "Fuse", name: "opacity/muted" };
+    const index = makeVariableIndex([
+      { ref: opacity, webSyntax: "var(--opacity-muted)", minimum: 20, maximum: 40 },
+    ]);
+    expect(readNumber("max(var(--opacity-muted), 0.5)", index)).toBeUndefined();
+  });
+
   // Oracle: CSS Values 4, where a percentage resolves against the containing block, so a floor of
   // `100%` is not a length the variable can be compared with.
   it("leaves a percentage floor unmapped", () => {

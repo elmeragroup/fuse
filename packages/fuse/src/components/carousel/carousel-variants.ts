@@ -35,10 +35,12 @@ export const carouselVariants = tv({
     indicators: "flex flex-wrap items-center justify-center gap-1",
     // The button is the 24px target and draws the shared ring around the mark, which its
     // `::after` paints: an 8px dot, and a 28px pill for the current page. With the 4px gap the
-    // dots' centers sit 28px apart, and the targets never overlap. The pill's width follows the
-    // current page with a transition the central reduced-motion rule removes.
+    // dots' centers sit 28px apart, and the targets never overlap. The box follows the root font
+    // size, and its 24px minimum holds the target when a host root below 16px shrinks the dot and
+    // its padding. The pill's width follows the current page with a transition the central
+    // reduced-motion rule removes.
     indicator: cn(
-      "m-0 inline-flex h-6 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent px-2 py-0 aria-disabled:cursor-default",
+      "m-0 inline-flex h-6 min-h-[24px] min-w-[24px] shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent px-2 py-0 aria-disabled:cursor-default",
       // The round ring would leave the target's corners to its neighbor's hit test, so the
       // square `::before` of `hit-area-0` keeps the whole 24px box the button's.
       "hit-area-0",
@@ -49,7 +51,7 @@ export const carouselVariants = tv({
     // An indicator with its own content, such as a thumbnail, keeps the ring, the reset and the
     // 24px target floor, so small content still gets a whole target at both densities.
     indicatorContent: cn(
-      "m-0 inline-flex min-h-6 min-w-6 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-inherit aria-disabled:cursor-default",
+      "m-0 inline-flex min-h-[max(--spacing(6),24px)] min-w-[max(--spacing(6),24px)] shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-inherit aria-disabled:cursor-default",
       selfFocusRingClass
     ),
     // The page count beside the controls reads the label text, as a field's description does.

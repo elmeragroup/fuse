@@ -24,32 +24,62 @@ const sidebarRowCollapsedClass = cn(
 export const sidebarRowBoxClass = cn("box-border h-(--row-h) px-(--row-px)", sidebarRowCollapsedClass);
 
 /**
- * The top of a menu row's 20px badge: 10px above the middle of a default row, which centers it on
- * `--row-h` at either density. The `sm` and `lg` rail rows are fixed, so they keep fixed offsets.
+ * The row lengths a menu row's action and badge read. Each part sets them on itself from the size
+ * of the menu button before it, through `peer-data-[size=…]/menu-button`. They repeat the lengths
+ * each `sidebarMenuButtonVariants` size sets on the button:
+ * - `--menu-row-h`, the row's height: `--row-h` on a default row, and on the `sm` and `lg` rail
+ *   rows `--spacing(7)` and `--spacing(12)`, each floored at the row's action.
+ * - `--menu-action-size`, the action's square: the xs control square on a default row and
+ *   `--spacing(6)` on a rail row, each floored at the 24px target.
+ * - `--menu-row-mid`, the line the action and the badge center on: the row's middle, or
+ *   `--spacing(5)` down on the `lg` row, clamped so the action stays inside the row.
+ *
+ * A default row's `--row-h` is at least its action's square at both densities from a 12px root.
+ */
+const sidebarMenuRowLengthsClass = cn(
+  "[--menu-action-size:max(var(--control-h-xs),24px)] [--menu-row-h:var(--row-h)] [--menu-row-mid:calc(var(--menu-row-h)/2)]",
+  "peer-data-[size=sm]/menu-button:[--menu-action-size:max(--spacing(6),24px)] peer-data-[size=sm]/menu-button:[--menu-row-h:max(--spacing(7),var(--menu-action-size))]",
+  "peer-data-[size=lg]/menu-button:[--menu-action-size:max(--spacing(6),24px)] peer-data-[size=lg]/menu-button:[--menu-row-h:max(--spacing(12),var(--menu-action-size))] peer-data-[size=lg]/menu-button:[--menu-row-mid:clamp(var(--menu-action-size)/2,--spacing(5),var(--menu-row-h)-var(--menu-action-size)/2)]"
+);
+
+/**
+ * The lengths a group label and its group action each set: `--group-action-size`, the xs control
+ * square floored at the 24px target, and `--group-label-h`, `--spacing(8)` floored at that square,
+ * so the action never reaches past the label.
+ */
+export const sidebarGroupLengthsClass = cn(
+  "[--group-action-size:max(var(--control-h-xs),24px)] [--group-label-h:max(--spacing(8),var(--group-action-size))]"
+);
+
+/**
+ * The top of a menu row's `--spacing(5)` badge: half its height above the `--menu-row-mid` line, so
+ * the badge shares the row's middle, or the `lg` row's action line.
  */
 export const sidebarMenuBadgeOffsetClass = cn(
-  "top-[calc(var(--row-h)/2-0.625rem)] peer-data-[size=lg]/menu-button:top-2.5 peer-data-[size=sm]/menu-button:top-1"
+  sidebarMenuRowLengthsClass,
+  "top-[calc(var(--menu-row-mid)-(--spacing(5))/2)]"
 );
 
 /**
- * A menu row's action box: on a default row, the xs control square, floored at the 24px target,
- * centered on `--row-h` at either density. Its menu button reserves the same square plus 8px at its
- * end, so a truncated label stops before the action. The `sm` and `lg` rail rows are fixed, so their
- * action is a fixed 24px square, centered on the `sm` row and sharing the badge's middle on the `lg` row.
+ * A menu row's action box: the `--menu-action-size` square, centered on the `--menu-row-mid` line.
+ * Its `::after` hit area spans the `--menu-row-h` row from top to bottom, and the menu button's end
+ * padding, the square plus `--spacing(2)`. It reaches neither the next row's action nor the label.
  */
 export const sidebarMenuActionBoxClass = cn(
-  controlMetrics({ size: "xs" }).square(),
-  "top-[calc(var(--row-h)/2-max(var(--control-h-xs),24px)/2)] peer-data-[size=lg]/menu-button:top-2 peer-data-[size=lg]/menu-button:size-6 peer-data-[size=sm]/menu-button:top-0.5 peer-data-[size=sm]/menu-button:size-6"
+  sidebarMenuRowLengthsClass,
+  "top-[calc(var(--menu-row-mid)-var(--menu-action-size)/2)] size-(--menu-action-size) after:absolute after:-inset-x-1 after:top-[calc(var(--menu-action-size)/2-var(--menu-row-mid))] after:bottom-[calc(var(--menu-row-mid)+var(--menu-action-size)/2-var(--menu-row-h))]"
 );
 
 /**
- * A group action's box: the xs control square, floored at the 24px target, centered on the 32px
- * group label, which sits at the group's row inset, or the small surface tier in a floating
- * Sidebar.
+ * A group action's box: the `--group-action-size` square, centered on the `--group-label-h` group
+ * label, which sits at the group's row inset, or the small surface tier in a floating Sidebar.
+ * Its `::after` hit area reaches 8px past the square's sides and spans the label from top to
+ * bottom, so it never covers the first menu row.
  */
 export const sidebarGroupActionBoxClass = cn(
-  controlMetrics({ size: "xs" }).square(),
-  "top-[calc(var(--row-px)+1rem-max(var(--control-h-xs),24px)/2)] in-data-[slot=sidebar-inner]:group-data-[variant=floating]:top-[calc(var(--surface-pad-sm)+1rem-max(var(--control-h-xs),24px)/2)]"
+  sidebarGroupLengthsClass,
+  "top-[calc(var(--row-px)+var(--group-label-h)/2-var(--group-action-size)/2)] size-(--group-action-size) in-data-[slot=sidebar-inner]:group-data-[variant=floating]:top-[calc(var(--surface-pad-sm)+var(--group-label-h)/2-var(--group-action-size)/2)]",
+  "after:absolute after:-inset-x-2 after:inset-y-[calc(var(--group-action-size)/2-var(--group-label-h)/2)]"
 );
 
 /**
@@ -60,16 +90,19 @@ export const sidebarGroupActionBoxClass = cn(
  * `ring-sidebar-ring` focus literals are the shared `focusRing`.
  *
  * The default row reads the row metrics, as menu rows do: `--row-h` tall, padded inline with
- * `--row-px`. The `h-7` and `h-12` sizes are shell-local navigation-rail geometry, `fixed`
- * at both densities. Collapse motion animates color and shadow only. The
- * shell width is the one sidebar layout transition.
+ * `--row-px`. The `sm` and `lg` sizes are shell-local navigation-rail geometry, `fixed` at both
+ * densities. Each size sets its own `--menu-action-size`, and the `sm` and `lg` sizes their
+ * `--menu-row-h` height, the lengths `sidebarMenuRowLengthsClass` gives the action and badge. A row
+ * with a `Sidebar.MenuAction` pads its end by `--menu-action-size` plus `--spacing(2)`, so a
+ * truncated label stops before the action's hit area. Collapse motion animates color and shadow
+ * only. The shell width is the one sidebar layout transition.
  * The row is a native `<button>` or a `render`ed link, so the state face composes the
  * `native` target, whose `aria-disabled` arm covers a link row, and hover and press sit
  * behind the `enabled-*` gate.
  */
 export const sidebarMenuButtonVariants = tv({
   base: [
-    "peer/menu-button group/menu-button text-sm data-active:font-medium flex w-full items-center gap-2 overflow-hidden border-0 p-2 text-left transition-[color,background-color,box-shadow] group-has-data-[slot=sidebar-menu-action]/menu-item:pr-[calc(max(var(--control-h-xs),24px)+0.5rem)] data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground data-open:enabled-hover:bg-sidebar-accent data-open:enabled-hover:text-sidebar-accent-foreground enabled-active:bg-sidebar-accent enabled-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
+    "peer/menu-button group/menu-button text-sm data-active:font-medium flex w-full items-center gap-2 overflow-hidden border-0 p-2 text-left transition-[color,background-color,box-shadow] group-has-data-[slot=sidebar-menu-action]/menu-item:pr-[calc(var(--menu-action-size)+(--spacing(2)))] data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground data-open:enabled-hover:bg-sidebar-accent data-open:enabled-hover:text-sidebar-accent-foreground enabled-active:bg-sidebar-accent enabled-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
     sidebarRowCollapsedClass,
     sidebarRowShellClass,
     selfFocusRingClass,
@@ -82,11 +115,11 @@ export const sidebarMenuButtonVariants = tv({
         "bg-background shadow-[0_0_0_1px_var(--sidebar-border)] enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground enabled-hover:shadow-[0_0_0_1px_var(--sidebar-accent)]",
     },
     size: {
-      default: ["text-sm", sidebarRowBoxClass],
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- navigation-rail row height and the 32px its fixed 24px action reserves, not a control size
-      sm: "text-xs h-7 group-has-data-[slot=sidebar-menu-action]/menu-item:pr-8",
-      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- navigation-rail row height and the 32px its fixed 24px action reserves, not a control size
-      lg: "text-sm h-12 group-has-data-[slot=sidebar-menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:p-0!",
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the row metrics' type; `--control-h-xs` here sizes the action's square the row reserves, not this row
+      default: ["text-sm", sidebarRowBoxClass, "[--menu-action-size:max(var(--control-h-xs),24px)]"],
+      sm: "text-xs h-(--menu-row-h) [--menu-action-size:max(--spacing(6),24px)] [--menu-row-h:max(--spacing(7),var(--menu-action-size))]",
+      // oxlint-disable-next-line elmera/no-hardcoded-density-metrics -- the navigation-rail row's type, fixed at both densities, not a control size
+      lg: "text-sm h-(--menu-row-h) [--menu-action-size:max(--spacing(6),24px)] [--menu-row-h:max(--spacing(12),var(--menu-action-size))] group-data-[collapsible=icon]:p-0!",
     },
   },
   defaultVariants: { variant: "default", size: "default" },
