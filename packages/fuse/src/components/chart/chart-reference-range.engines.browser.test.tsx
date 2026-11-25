@@ -4,9 +4,10 @@
 // prints a time of day runs from the first slot's start to the last slot's end, each end a complete
 // label, in its visible and its spoken text. Any other range joins its first and last labels, or,
 // for a Chart.ReferenceArea band or a Chart.Table caption over one slot, prints that slot's label
-// once. Date, time and category ranges join with CLDR's date interval fallback, ` – ` in en-US and
-// `–` in nb-NO. An en-US week axis prints ISO week 2 as `W2` and speaks it as "week 2", with
-// U+00A0 between the word and the number.
+// once. A linear caption whose two ends print alike also prints one label. Date, time and
+// category ranges join with CLDR's date interval fallback, ` – ` in en-US and `–` in nb-NO. An
+// en-US week axis prints ISO week 2 as `W2` and speaks it as "week 2", with U+00A0 between the word
+// and the number.
 // Number ranges run low to high, join with the chart's bare en dash and write a shared unit once.
 // Readers hear the dictionary's range words, "to" in en-US and "til" in nb-NO, and nb-NO speaks a
 // time after "kl.". Intl's text and the range separator write each space as U+00A0. The label
@@ -85,6 +86,35 @@ function MonthChart({
       <div style={{ width: 640 }}>
         <Chart.Root data={data} config={config} xKey="month" data-intro="none" aria-label="Usage">
           <Chart.Bar dataKey="kwh" />
+          {children}
+        </Chart.Root>
+      </div>
+    </LocaleProvider>
+  );
+}
+
+/** A linear chart over kilometers, in `xFormat`'s unit. */
+function DistanceChart({
+  kilometers,
+  xFormat,
+  children,
+}: {
+  readonly kilometers: readonly number[];
+  readonly xFormat: Intl.NumberFormatOptions;
+  readonly children: React.ReactNode;
+}) {
+  return (
+    <LocaleProvider locale="en-US">
+      <div style={{ width: 640 }}>
+        <Chart.Root
+          data={kilometers.map((km) => ({ km, kwh: 1 }))}
+          config={config}
+          xKey="km"
+          xScale="linear"
+          xFormat={xFormat}
+          data-intro="none"
+          aria-label="Usage">
+          <Chart.Line dataKey="kwh" />
           {children}
         </Chart.Root>
       </div>
@@ -372,6 +402,34 @@ describe("Chart.Table's caption", () => {
     expect(caption(host).textContent).toBe("Usage, Jan");
     expect(roleNamed("table", "Usage, Jan").tagName).toBe("TABLE");
   });
+
+  it("writes an en-US linear period's shared unit once and speaks each end's unit in words", () => {
+    // en-US prints 5 kilometers as `5 km` and speaks the long unit name, `5 kilometers`.
+    const { host } = renderThemed(
+      <DistanceChart kilometers={[5, 7.5, 10]} xFormat={{ style: "unit", unit: "kilometer" }}>
+        <Chart.Table />
+      </DistanceChart>
+    );
+    const shown = caption(host).querySelector('[aria-hidden="true"]');
+    if (shown === null) throw new Error("expected the caption's visible copy");
+    expect(shown.textContent).toBe("Usage, 5–10\u00a0km");
+    expect(roleNamed("table", "Usage, 5 kilometers to 10 kilometers").tagName).toBe("TABLE");
+  });
+
+  it("prints a linear period once when its two ends print alike", () => {
+    // With no fraction digits, en-US prints both 5.1 and 5.4 kilometers as `5 km`.
+    const { host } = renderThemed(
+      <DistanceChart
+        kilometers={[5.1, 5.4]}
+        xFormat={{ style: "unit", unit: "kilometer", maximumFractionDigits: 0 }}>
+        <Chart.Table />
+      </DistanceChart>
+    );
+    const shown = caption(host).querySelector('[aria-hidden="true"]');
+    if (shown === null) throw new Error("expected the caption's visible copy");
+    expect(shown.textContent).toBe("Usage, 5\u00a0km");
+    expect(roleNamed("table", "Usage, 5 kilometers").tagName).toBe("TABLE");
+  });
 });
 
 /** The first of each month of 2026 in Oslo, which is UTC+2 from April to October. */
@@ -433,6 +491,25 @@ describe("ClockChart.ReferenceArea's printed range in en-US", () => {
       </Dial>
     );
     expect(clockLabel(host)).toBe("Spring Sunday,\u00a0March\u00a01\u00a0–\u00a0Monday,\u00a0June\u00a01");
+  });
+
+  it("prints and speaks a year-dial sector over one month as that month once", () => {
+    // Both ends fall in the January slot. A month slot's default label is the `"month-year"`
+    // preset, Intl's long month and numeric year, which en-US writes as `January 2026`.
+    const { host } = renderThemed(
+      <Dial cycle="year">
+        <ClockChart.ReferenceArea
+          x1={Date.parse("2026-01-03T00:00:00+01:00")}
+          x2={Date.parse("2026-01-28T12:00:00+01:00")}
+          label="Peak {value}"
+        />
+      </Dial>
+    );
+    expect(clockLabel(host)).toBe("Peak January\u00a02026");
+    expect(
+      host.querySelector('[data-slot="clock-chart-reference-area"] [data-slot="chart-reference-text"]')
+        ?.textContent
+    ).toBe("Peak January\u00a02026");
   });
 
   it("writes both ends of a long day period in full", () => {

@@ -60,10 +60,10 @@ export type LinearXText = {
 /**
  * The join between the two numbers of a chart's number range, a bare en dash in every locale, such
  * as `1–2` or `1 000–2 000`. It is the chart's own convention for a value band, a linear x band and a
- * table caption over a linear axis, where each end prints in full. Date and category ranges join
- * with `rangeSeparator` instead.
+ * table caption over a linear axis, where `rangeText` prints a unit both ends share once. Date and
+ * category ranges join with `rangeSeparator` instead.
  */
-export const NUMBER_RANGE_SEPARATOR = "\u2013";
+const NUMBER_RANGE_SEPARATOR = "\u2013";
 
 /** A slot's date with its year, the `date` preset's fields plus the year. */
 const DATE_WITH_YEAR = { weekday: "long", day: "numeric", month: "long", year: "numeric" } as const;
