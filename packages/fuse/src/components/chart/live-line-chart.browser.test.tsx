@@ -19,6 +19,7 @@ import { CaughtError, caughtError } from "../../../test/caught-error";
 import { pointerAt } from "../../../test/chart/marks";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import type { SupportedLocale } from "../../intl/locale-context";
 import { LocaleProvider } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
 import "./chart.css";
@@ -48,6 +49,7 @@ function Live({
   paused = true,
   width = 300,
   windowMs = 30 * SECOND,
+  locale = "nb-NO",
   timeZone = "Europe/Oslo",
   valueFormat = WHOLE,
   children,
@@ -57,6 +59,7 @@ function Live({
   readonly paused?: boolean;
   readonly width?: number;
   readonly windowMs?: number;
+  readonly locale?: SupportedLocale;
   readonly timeZone?: string;
   readonly valueFormat?: LiveLineChartRootProps["valueFormat"];
   readonly children?: ReactNode;
@@ -65,7 +68,7 @@ function Live({
   const latest: Pick<LiveLineChartRootProps, "value"> = {};
   if (value !== undefined) latest.value = value;
   return (
-    <LocaleProvider locale="nb-NO" timeZone={timeZone}>
+    <LocaleProvider locale={locale} timeZone={timeZone}>
       <button type="button">før</button>
       <div style={{ width }}>
         <LiveLineChart.Root
@@ -379,6 +382,203 @@ describe("the axes", () => {
     const label = wide.querySelector('[data-slot="chart-x-tick"]')?.getBoundingClientRect();
     expect(label?.left).toBeGreaterThanOrEqual(axis?.left ?? Number.NaN);
     expect(label?.right).toBeLessThanOrEqual(axis?.right ?? Number.NaN);
+  });
+
+  /** Set the root font size for the rest of the test. */
+  function rootFontSize(size: string): void {
+    onTestFinished(() => {
+      document.documentElement.style.removeProperty("font-size");
+    });
+    document.documentElement.style.fontSize = size;
+  }
+
+  /** The room between neighboring time labels, left to right, in CSS pixels. */
+  function xTickGaps(host: HTMLElement): number[] {
+    const boxes = [...host.querySelectorAll<HTMLElement>('[data-slot="chart-x-tick"]')].map((tick) =>
+      tick.getBoundingClientRect()
+    );
+    return boxes.slice(1).map((next, index) => next.left - (boxes[index]?.right ?? Number.NaN));
+  }
+
+  it.each(["16px", "32px"])("keeps a still window's one time tick at a %s root", async (size) => {
+    // A paused 180 px plot ending at 14:00:32 holds 14:00:02 to 14:00:32. At a 16 px root the axis
+    // steps 15 s, and 14:00:15 sits 78 px in, out of the fade. At a 32 px root the labels draw at
+    // 24 px and leave room for one, so the axis steps 30 s, and its one tick, 14:00:30, sits 12 px
+    // from the right edge, where no label fits. The 15 s step's 14:00:15 still does: its label is
+    // at most 116 px wide at 24 px, 58 px on either side of a tick 78 px in.
+    rootFontSize(size);
+    const { host } = renderThemed(
+      <Live width={180} data={[...READINGS, { time: NOON + 32 * SECOND, value: 100 }]}>
+        <LiveLineChart.XAxis />
+      </Live>
+    );
+    await expect.poll(() => xTickOpacities(host)).toEqual([["14:00:15", 1]]);
+  });
+
+  it.each([30, 180])(
+    "keeps 32 px between time labels of a %i s window at a larger root font size",
+    async (seconds) => {
+      // A 32 px root draws the 0.75rem labels at 24 px, where "14:00:00" is 85 to 93 px wide in a
+      // common sans. On the paused 600 px plot, a 5 s step in the 30 s window, or a 30 s step in the
+      // 180 s one, puts its ticks 100 px apart, at most 15 px between labels, so the axis must step
+      // wider for the labels to keep the 32 px it plans.
+      rootFontSize("32px");
+      const { host } = renderThemed(
+        <Live width={600} windowMs={seconds * SECOND}>
+          <LiveLineChart.XAxis />
+        </Live>
+      );
+      await expect.poll(() => xTickGaps(host).length).toBeGreaterThan(0);
+      for (const gap of xTickGaps(host)) expect(gap).toBeGreaterThanOrEqual(32);
+    }
+  );
+
+  it("keeps no finer step's tick while the window scrolls at a larger root font size", async () => {
+    // A 32 px root draws the labels at 24 px, so the 240 px plot of a 20 s window steps 30 s. The
+    // window from 14:00:09.9 to 14:00:29.9 holds no tick of that step. Paused, it keeps the 15 s
+    // step's 14:00:15, 61 px in, where the label fits. Scrolling, the axis shows only its own
+    // step's ticks, which enter at the right edge in the fade, so it keeps none.
+    rootFontSize("32px");
+    const end = NOON + 29.9 * SECOND;
+    freezeWallClock(end);
+    const chart = (paused: boolean) => (
+      <Live
+        width={240}
+        windowMs={20 * SECOND}
+        paused={paused}
+        data={[...READINGS, { time: end, value: 100 }]}>
+        <LiveLineChart.XAxis />
+      </Live>
+    );
+    const { host, rerender } = renderThemed(chart(true));
+    await expect.poll(() => xTickOpacities(host)).toEqual([["14:00:15", 1]]);
+    rerender(chart(false));
+    await expect.poll(() => xTickOpacities(host)).toEqual([]);
+  });
+
+  it.each([
+    ["12px", 140],
+    ["15px", 152],
+  ])("keeps the step's own tick in the fade at a %s root when its label fits", async (size, width) => {
+    // A 12 px root draws the 0.75rem labels at 9 px, and a 15 px root at 11.25 px, so the paused
+    // plot steps 15 s, finer than the 30 s that 12 px labels take. The window from 13:59:52.5 to
+    // 14:00:22.5 puts 14:00:00 and 14:00:15 a quarter of the plot from either edge, 35 or 38 px,
+    // inside the 40 px fade. The label is at most 58 px wide at 12 px, so at most 43.5 or 54.4 px
+    // here, and fits centered on either tick.
+    rootFontSize(size);
+    const { host } = renderThemed(
+      <Live width={width} data={[...READINGS, { time: NOON + 22.5 * SECOND, value: 100 }]}>
+        <LiveLineChart.XAxis />
+      </Live>
+    );
+    await expect.poll(() => xTickOpacities(host)).toEqual([["14:00:00", 1]]);
+  });
+
+  it.each([
+    [220, 60],
+    [180, 65],
+  ])(
+    "keeps a 30 s tick, in seconds, on a paused %i px plot whose minute ticks sit at its edges",
+    async (width, end) => {
+      // A 32 px root draws the labels at 24 px, so the 60 s window steps 60 s. Ending at 14:01:00,
+      // its ticks sit on both edges; ending at 14:01:05, 14:01:00 sits 15 px from the right edge,
+      // where no label fits. The 30 s step's 14:00:30 sits 110 or 75 px in, where the label, at
+      // most 116 px wide at 24 px, fits, and it prints its seconds.
+      rootFontSize("32px");
+      const { host } = renderThemed(
+        <Live
+          width={width}
+          windowMs={60 * SECOND}
+          data={[...READINGS, { time: NOON + end * SECOND, value: 100 }]}>
+          <LiveLineChart.XAxis />
+        </Live>
+      );
+      await expect.poll(() => xTickOpacities(host)).toEqual([["14:00:30", 1]]);
+    }
+  );
+
+  it("keeps a finer step's tick in the axis's own format at a larger root font size", async () => {
+    // A 32 px root draws the labels at 24 px. The paused 150 px plot from 14:00:10 to 14:01:10 steps
+    // 60 s, and 14:01:00 sits 25 px from the right edge, where no label fits. With minute labels,
+    // the 30 s step's 14:00:30 sits 50 px in, and "14:00", at most 72 px wide at 24 px, fits
+    // centered on it. "14:00:30" would need up to 58 px on either side.
+    rootFontSize("32px");
+    const { host } = renderThemed(
+      <Live width={150} windowMs={60 * SECOND} data={[...READINGS, { time: NOON + 70 * SECOND, value: 100 }]}>
+        <LiveLineChart.XAxis format="time" />
+      </Live>
+    );
+    await expect.poll(() => xTickOpacities(host)).toEqual([["14:00", 1]]);
+  });
+
+  it("keeps a still window's 30 s tick at a 16 px root, as the 12 px step would", async () => {
+    // A 16 px root draws the labels at 12 px. The paused 150 px plot of a 50 s window from 14:00:00
+    // to 14:00:50 fits one seconds label, so it steps 60 s, and 14:00:00 sits on the left edge.
+    // The minute labels would fit the 30 s step, whose 14:00:30 sits 90 px in, where the label,
+    // at most 58 px wide, fits.
+    rootFontSize("16px");
+    const { host } = renderThemed(
+      <Live width={150} windowMs={50 * SECOND} data={[...READINGS, { time: NOON + 50 * SECOND, value: 100 }]}>
+        <LiveLineChart.XAxis />
+      </Live>
+    );
+    await expect.poll(() => xTickOpacities(host)).toEqual([["14:00:30", 1]]);
+  });
+
+  it("keeps the tick nearest the middle whose label fits when the nearest one's does not", async () => {
+    // At a 16 px root, the paused 190 px plot from 9:59:39.61 to 10:00:05.52 AM in New York steps
+    // 15 s. 10:00:00 AM sits 40.48 px from the right edge, where its label needs up to 43.56 px on
+    // either side. 9:59:45 AM sits 39.53 px from the left edge and needs up to 39.31 px. Fuse writes
+    // the space before AM as U+00A0.
+    rootFontSize("16px");
+    // 10:00 AM in New York, under summer time.
+    const ten = NOON + 2 * 3_600 * SECOND;
+    const end = ten + 5.52 * SECOND;
+    const { host } = renderThemed(
+      <Live
+        locale="en-US"
+        timeZone="America/New_York"
+        width={190}
+        windowMs={25.91 * SECOND}
+        data={[
+          { time: ten - 20 * SECOND, value: 0 },
+          { time: end, value: 100 },
+        ]}>
+        <LiveLineChart.XAxis />
+      </Live>
+    );
+    await expect.poll(() => xTickOpacities(host)).toEqual([["9:59:45\u00a0AM", 1]]);
+  });
+
+  it("reads the axis's font size again when its style changes", async () => {
+    // The paused 600 px plot of a 30 s window steps 5 s with 12 px labels. A 24 px style.fontSize
+    // leaves the axis's box the same size, and "14:00:00" is then 85 to 93 px wide, so ticks 100 px
+    // apart would leave at most 15 px between labels.
+    const chart = (fontSize: string) => (
+      <Live width={600}>
+        <LiveLineChart.XAxis style={{ fontSize }} />
+      </Live>
+    );
+    const { host, rerender } = renderThemed(chart("12px"));
+    await expect.poll(() => xTickGaps(host).length).toBeGreaterThan(3);
+    // The observer reports the axis once after it starts, so the change waits out that report.
+    await nextFrames(2);
+    rerender(chart("24px"));
+    await expect.poll(() => xTickGaps(host).every((gap) => gap >= 32)).toBe(true);
+    expect(xTickGaps(host).length).toBeGreaterThan(0);
+  });
+
+  it("leaves out a resting time tick out of the fade whose label at the axis's font size crosses the edge", async () => {
+    // A 32 px root draws the labels at 24 px, where "14:00:15" is at most 116 px wide. The paused
+    // 360 px plot from 14:00:11.4 to 14:00:41.4 steps 15 s. 14:00:15 sits 43.2 px in, out of the
+    // 40 px fade, but its label needs up to 58 px on either side. 14:00:30 sits 223.2 px in.
+    rootFontSize("32px");
+    const { host } = renderThemed(
+      <Live width={360} data={[...READINGS, { time: NOON + 41.4 * SECOND, value: 100 }]}>
+        <LiveLineChart.XAxis />
+      </Live>
+    );
+    await expect.poll(() => xTickOpacities(host)).toEqual([["14:00:30", 1]]);
   });
 
   it("leaves out a time tick in the fade while the clock holds the live window behind a decaying lead", async () => {

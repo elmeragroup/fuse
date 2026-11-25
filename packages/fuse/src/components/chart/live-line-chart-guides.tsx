@@ -16,6 +16,7 @@ import { linearScale, scaleTicks } from "./layout/linear-scale";
 import type { LiveFeed, LiveFrame, LiveMode } from "./layout/live-clock";
 import {
   edgeFade,
+  finerTickSteps,
   liveDomain,
   liveExtent,
   livePixel,
@@ -132,21 +133,48 @@ function frameValueTicks(
 }
 
 /**
- * The tick nearest the window's middle, when its label, centered on it, fits inside the plot.
+ * The tick nearest the window's middle whose label fits, of the first step that has one. It tries
+ * `step`, then each finer round step down to `finest`.
  *
- * @param measure - The width of a tick's label, in CSS pixels.
+ * @param step - The step to try first, in milliseconds.
+ * @param finest - The finest step to try, in milliseconds.
+ * @param fits - Whether a tick's label at a step, centered on it, fits inside the plot.
  */
 function centerTick(
-  ticks: readonly number[],
   window: LiveWindow,
-  width: number,
-  measure: (time: number) => number
-): number | undefined {
-  if (ticks.length === 0) return undefined;
+  offset: number,
+  step: number,
+  finest: number,
+  fits: (step: number) => (time: number) => boolean
+): { readonly step: number; readonly time: number } | undefined {
   const off = (time: number) => Math.abs(timeShare(window, time) - 0.5);
-  const nearest = ticks.reduce((best, time) => (off(time) < off(best) ? time : best));
-  const share = timeShare(window, nearest);
-  return measure(nearest) / 2 <= width * Math.min(share, 1 - share) ? nearest : undefined;
+  for (const candidate of [step, ...finerTickSteps(step).filter((finer) => finer >= finest)]) {
+    const fitting = timeTicks(window, candidate, offset).filter(fits(candidate));
+    if (fitting.length > 0) {
+      return { step: candidate, time: fitting.reduce((best, time) => (off(time) < off(best) ? time : best)) };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * The finest round step whose labels, each estimate scaled from 12 px, fit a time axis with 32 px
+ * between them. Under a minute it is the seconds labels' step, and otherwise the minute labels'
+ * step, no finer than `floor`.
+ *
+ * @param scale - The axis's font size over 12 px.
+ * @param floor - The finest step the minute labels may take, in milliseconds.
+ */
+function labelStep(
+  duration: number,
+  width: number,
+  widths: { readonly seconds: number; readonly minutes: number },
+  scale: number,
+  floor: number
+): number {
+  const room = (label: number) => Math.floor(width / (label * scale + TICK_GAP_PX));
+  const seconds = tickStep(duration, room(widths.seconds));
+  return seconds < 60_000 ? seconds : Math.max(floor, tickStep(duration, room(widths.minutes)));
 }
 
 /** An axis's labels and what they print in, so a change of either makes every label again. */
@@ -241,8 +269,9 @@ export function LiveLineChartGrid({
  * The time axis along the bottom, whose ticks land on round wall-clock times in the market's zone
  * and scroll with the window. A tick fades in as it enters at the right edge and out as it leaves at
  * the left. While the window holds still, the axis leaves out a tick inside either fade, so every
- * label it draws is opaque, and when that leaves no tick it keeps the one nearest the middle if its
- * label fits. The window holds while Root is `paused`, while the clock waits out a lead from
+ * label it draws is opaque, and a tick whose label would cross the plot's edge. When that leaves no
+ * tick, it keeps the one nearest the middle whose label fits, of its step or a finer one. The
+ * window holds while Root is `paused`, while the clock waits out a lead from
  * readings stamped ahead of the wall clock, and under reduced motion, where the window redraws on a
  * new reading and when `value` or `windowMs` changes. The axis picks the finest round step whose
  * labels fit its width. It is plot output, so it is hidden from screen readers, which read the
@@ -258,7 +287,8 @@ export function LiveLineChartXAxis({ format, className, style }: LiveLineChartXA
   const { text, mode } = context;
   // Inline Intl options that name the same fields are no change.
   const ownFormat = useSteady(format, sameShallow);
-  // The widest label a tick of each format prints, which sets how many ticks fit.
+  // An estimate of the widest label a tick of each format prints at 12 px, which, scaled to the
+  // axis's font size, sets how many ticks fit.
   const widths = useMemo(() => {
     const sample = Date.UTC(2026, 9, 16, 22, 58, 58);
     const width = (preset: LiveLineChartTimeFormat) =>
@@ -282,43 +312,68 @@ export function LiveLineChartXAxis({ format, className, style }: LiveLineChartXA
     return () => {
       sizes.disconnect();
     };
-  }, []);
+    // A change of `style` or `className` can change the font size without resizing the axis.
+  }, [className, style]);
   useLiveFrame(context, plot, (frame, geometry) => {
     const node = axis.current;
     if (node === null || geometry.width <= 0) return;
-    const { duration } = frame.feed;
-    const fine = tickStep(duration, Math.floor(geometry.width / (widths.seconds + TICK_GAP_PX)));
-    const step =
-      fine < 60_000 ? fine : tickStep(duration, Math.floor(geometry.width / (widths.minutes + TICK_GAP_PX)));
+    // The minute labels are shorter, so they may fit a finer step, but never one under a minute,
+    // which prints seconds labels the minute estimate did not size.
+    const step = labelStep(frame.feed.duration, geometry.width, widths, textScale, 60_000);
     // A step that crosses a minute changes the labels' format, which makes every label again.
-    const preset: LiveLineChartTimeFormat = ownFormat ?? (step < 60_000 ? "time-seconds" : "time");
-    const tickText = (time: number) => liveTimeText(text, time, "tick", preset).text;
+    const formatOf = (spacing: number): LiveLineChartTimeFormat =>
+      ownFormat ?? (spacing < 60_000 ? "time-seconds" : "time");
+    const tickText = (preset: LiveLineChartTimeFormat) => (time: number) =>
+      liveTimeText(text, time, "tick", preset).text;
+    // Whether a tick's label in a step's format, centered on it at the axis's font size in any
+    // common sans, stays inside the plot.
+    const fits = (spacing: number) => {
+      const label = tickText(formatOf(spacing));
+      return (time: number) => {
+        const share = timeShare(frame.window, time);
+        return (labelBound(label(time)) * textScale) / 2 <= geometry.width * Math.min(share, 1 - share);
+      };
+    };
+    const fade = TICK_FADE_PX / geometry.width;
+    const offset = offsetAt(frame.window.end, text.timeZone);
+    const all = timeTicks(frame.window, step, offset);
+    // A tick in a window that stays put rests where it is, so the axis leaves out one that would
+    // rest partly faded or whose label would cross the plot's edge. When that leaves no tick, it
+    // keeps the one nearest the middle whose label fits, opaque: of the step's ticks first, then
+    // of the finer steps down to the one 12 px labels would take, each in its own format, so a
+    // larger font size leaves no still axis blank that 12 px labels would mark.
+    const stays = mode !== "live" || frame.holds;
+    const resting = stays
+      ? all.filter((time) => edgeFade(timeShare(frame.window, time), fade) === 1).filter(fits(step))
+      : all;
+    const kept =
+      stays && resting.length === 0
+        ? centerTick(
+            frame.window,
+            offset,
+            step,
+            // The step 12 px labels take, before the minute floor, as the axis picked it before it
+            // read the font size.
+            labelStep(frame.feed.duration, geometry.width, widths, 1, 0),
+            fits
+          )
+        : undefined;
+    const preset = formatOf(kept?.step ?? step);
+    const ticks = kept === undefined ? resting : [kept.time];
     const shown = labelsFor(
       labels.current,
       node,
       text.locale,
       text.timeZone,
       preset,
-      tickText,
+      tickText(preset),
       "chart-x-tick"
     );
     labels.current = shown;
-    const fade = TICK_FADE_PX / geometry.width;
-    const all = timeTicks(frame.window, step, offsetAt(frame.window.end, text.timeZone));
-    // A tick in a window that stays put rests where it is, so the axis leaves out one that would
-    // rest partly faded. When that leaves no tick, it keeps the one nearest the middle, opaque, if
-    // its label fits at the axis's font size in any common sans.
-    const stays = mode !== "live" || frame.holds;
-    const opaque = stays ? all.filter((time) => edgeFade(timeShare(frame.window, time), fade) === 1) : all;
-    const kept =
-      opaque.length > 0
-        ? undefined
-        : centerTick(all, frame.window, geometry.width, (time) => labelBound(tickText(time)) * textScale);
-    const ticks = kept === undefined ? opaque : [kept];
     for (const [time, label] of shown.list.sync(ticks)) {
       const share = timeShare(frame.window, time);
       writeStyle(label, "--chart-at", String(share));
-      writeStyle(label, "opacity", String(time === kept ? 1 : edgeFade(share, fade)));
+      writeStyle(label, "opacity", String(time === kept?.time ? 1 : edgeFade(share, fade)));
     }
   });
   return (
