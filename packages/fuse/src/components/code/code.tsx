@@ -42,6 +42,7 @@ export function Code({ className, code, ...props }: CodeProps): ReactElement {
   return (
     <pre
       data-slot="code"
+      // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the tab stop lets keyboard users scroll overflowing code
       tabIndex={0}
       {...definedProps({
         role:

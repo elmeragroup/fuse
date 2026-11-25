@@ -183,6 +183,7 @@ type BrandTableProps = {
  */
 function BrandTable({ label, head, columns, children }: BrandTableProps): ReactElement {
   return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the tab stop lets keyboard users scroll the table sideways
     <div role="region" aria-label={label} tabIndex={0} className={styles.scroller()}>
       <Table.Root aria-label={label} className={styles.table()}>
         <Table.Header>
