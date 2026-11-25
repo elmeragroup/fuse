@@ -331,8 +331,6 @@ export type PieDrawing = {
   readonly over: boolean;
   /** A slice's share in the pie's one largest-remainder set at `digits`, or null. */
   readonly share: (index: number, digits: number) => number | null;
-  /** The slice a category draws in: its own key, or `OTHER_KEY` when it folds. */
-  readonly sliceOf: (category: string) => string;
   /** Whether a category's row folds into Other, which a category with no row never does. */
   readonly folds: (category: string) => boolean;
 };

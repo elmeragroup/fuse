@@ -1,10 +1,10 @@
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { nextFrames } from "../../../test/animation-frames";
+import { nextFrames, useFakeFrames } from "../../../test/animation-frames";
 import {
   activeSlice,
   centerText,
@@ -176,6 +176,98 @@ describe("the Other fold", () => {
         .elements()
         .map((item) => item.textContent)
     ).toEqual(["A", "B", "C", "D", "G", "Annet, 2\u00a0kategorier"]);
+  });
+});
+
+describe("a slice that leaves a folding pie", () => {
+  // Unit under test: where PieChart.Pie collapses a leaving slice. Oracle: the seam where the next
+  // slice that stays starts in the new pie, worked from the data below. The eight rows total 100.
+  // Under the default cap of 6, the five largest stay and gebyr, rente and avrunding fold into
+  // Other, so nettleie spans 36° to 180°, its middle at 108°. The new data drops nettleie's row, so
+  // nettleie does not fold. Seven rows of 60 remain: gebyr now stays, rente and avrunding fold, and
+  // avgifter, the next slice that stays, starts after strøm's 10 of 60, at 60°. Other starts after
+  // 54 of 60, at 324°. A collapse onto Other pulls the ghost's end edge up toward 324°, and a
+  // collapse onto the old middle pulls its start edge past 60° toward 108°.
+  const config = {
+    strom: { label: "Strøm", color: "chart-1" },
+    nettleie: { label: "Nettleie", color: "chart-2" },
+    avgifter: { label: "Avgifter", color: "chart-3" },
+    fast: { label: "Fastledd", color: "chart-4" },
+    mva: { label: "Mva", color: "chart-5" },
+    gebyr: { label: "Gebyr", color: "chart-6" },
+    rente: { label: "Rente", color: "chart-7" },
+    avrunding: { label: "Avrunding", color: "chart-8" },
+  } satisfies ChartConfig;
+  const before = [
+    { part: "strom", kr: 10 },
+    { part: "nettleie", kr: 40 },
+    { part: "avgifter", kr: 20 },
+    { part: "fast", kr: 10 },
+    { part: "mva", kr: 8 },
+    { part: "gebyr", kr: 6 },
+    { part: "rente", kr: 4 },
+    { part: "avrunding", kr: 2 },
+  ];
+  const after = before.filter(({ part }) => part !== "nettleie");
+  const SEAM = (10 / 60) * 360;
+  function Bill({ data }: { readonly data: typeof before }) {
+    return (
+      <LocaleProvider locale="nb-NO">
+        <div style={{ width: 320 }}>
+          <PieChart.Root
+            data={data}
+            config={config}
+            nameKey="part"
+            valueKey="kr"
+            innerRadius={0.5}
+            data-intro="none"
+            aria-label="Regning">
+            <PieChart.Pie />
+          </PieChart.Root>
+        </div>
+      </LocaleProvider>
+    );
+  }
+  /** A ghost's start and end edges, in degrees clockwise from 12 o'clock, or null with no ghost. */
+  const edges = (host: HTMLElement): readonly [number, number] | null => {
+    // The ghost is aria-hidden plot output, read by its slot.
+    const ghost = host.querySelector<SVGPathElement>('[data-slot="pie-chart-ghost"]');
+    if (ghost === null) return null;
+    const length = ghost.getTotalLength();
+    const angles = Array.from({ length: 200 }, (_, step) => {
+      const { x, y } = ghost.getPointAtLength((length * step) / 199);
+      return ((Math.atan2(x, -y) * 180) / Math.PI + 360) % 360;
+    });
+    return [Math.min(...angles), Math.max(...angles)];
+  };
+
+  // The page's frames and clock are fake, so the collapse moves 16 ms per step however slow the
+  // runner is, and the test reads every frame the ghost draws, whatever the exit lasts.
+  beforeEach(useFakeFrames);
+
+  it("collapses a category removed outright onto the next slice that stays, not onto Other", async () => {
+    const { host, rerender } = renderThemed(<Bill data={before} />);
+    await vi.advanceTimersByTimeAsync(16);
+    rerender(<Bill data={after} />);
+    // A frame paints its slices in a microtask, which the async steps let run.
+    await vi.advanceTimersByTimeAsync(16);
+    const first = edges(host);
+    let last = first;
+    // Ten seconds of frames bound the loop well past any exit.
+    for (let frame = 0; frame < 625; frame += 1) {
+      await vi.advanceTimersByTimeAsync(16);
+      const outline = edges(host);
+      if (outline === null) break;
+      last = outline;
+    }
+    expect(edges(host)).toBeNull();
+    if (first === null || last === null) throw new Error("the leaving slice drew no ghost");
+    // The start edge climbs and the end edge falls, so the ghost shrinks, and in its last frame
+    // both lie within a few degrees of the seam.
+    expect(first[0]).toBeLessThan(last[0]);
+    expect(first[1]).toBeGreaterThan(last[1]);
+    expect(Math.abs(last[0] - SEAM)).toBeLessThan(6);
+    expect(Math.abs(last[1] - SEAM)).toBeLessThan(6);
   });
 });
 

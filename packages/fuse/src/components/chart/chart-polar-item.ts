@@ -376,6 +376,9 @@ export function pieModel(input: PieInput): PolarModel {
       paint: paintOf(config, key),
     };
   });
+  const foldedCategories = new Set(
+    folded.find(({ key }) => key === OTHER_KEY)?.rows.flatMap((member) => rows[member]?.category ?? [])
+  );
   // The slices, the gauge and the drawn total read each item's weight, its readings above 0, and the
   // text and the Table keep the signed values.
   const drawn = folded.map(({ weight }) => weight);
@@ -494,12 +497,7 @@ export function pieModel(input: PieInput): PolarModel {
         }),
         over: gauge?.over ?? false,
         share: source.share,
-        sliceOf: (category) => (folded.some(({ key }) => key === category) ? category : OTHER_KEY),
-        folds: (category) =>
-          folded.some(
-            ({ key, rows: members }) =>
-              key === OTHER_KEY && members.some((member) => rows[member]?.category === category)
-          ),
+        folds: (category) => foldedCategories.has(category),
       },
       center: {
         label: (index) => items[index]?.label.text ?? null,
