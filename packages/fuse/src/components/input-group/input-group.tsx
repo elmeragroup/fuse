@@ -19,6 +19,19 @@ import {
   inputGroupRootVariants,
 } from "./input-group-variants";
 
+/**
+ * The empty attribute on the group's own control. The addon finds the control by it rather than
+ * by `data-slot`, because a consumer may give the control its own `data-slot` as a styling hook.
+ */
+const CONTROL_ATTRIBUTE = "data-input-group-control";
+
+/**
+ * Marks the group's own control for `InputGroup.Addon`. Each part that renders the control takes
+ * it after the consumer's props. A Base UI part takes it in its own props, not on its `render`
+ * element, so a consumer's `render` replacement carries it too.
+ */
+export const INPUT_GROUP_CONTROL_MARKER = { [CONTROL_ATTRIBUTE]: "" } as const;
+
 /** Props for `InputGroup.Root`. */
 export type InputGroupRootProps = Omit<ComponentProps<"div">, "children"> & {
   /**
@@ -141,18 +154,16 @@ export function InputGroupAddon({
         // The addon is an extension of the group's own control's hit area, except over a
         // nested control, such as a button, a label or a field, which keeps its own click and
         // focus, and except for a click that bubbles through React from a portaled popup.
-        // The own control is the Root's direct input-group-control child: the first input in
-        // DOM order can be a field nested in an addon or a combobox's hidden input, and a
-        // Textarea group has no input at all.
+        // The own control is the Root's direct child that carries `INPUT_GROUP_CONTROL_MARKER`.
+        // The first input in DOM order can be a field nested in an addon or a combobox's hidden
+        // input, and a Textarea group has no input at all.
         const { currentTarget, target } = event;
         if (
           target instanceof Element &&
           currentTarget.contains(target) &&
           !currentTarget.contains(target.closest(OWN_CLICK_SELECTOR))
         ) {
-          currentTarget.parentElement
-            ?.querySelector<HTMLElement>(":scope > [data-slot=input-group-control]")
-            ?.focus();
+          currentTarget.parentElement?.querySelector<HTMLElement>(`:scope > [${CONTROL_ATTRIBUTE}]`)?.focus();
         }
         onClick?.(event);
       }}
@@ -206,6 +217,7 @@ export function InputGroupInput({ className, ...props }: InputGroupInputProps): 
       data-focus-ring-control=""
       className={cn(inputClass, inputGroupInputControlClass, className)}
       {...props}
+      {...INPUT_GROUP_CONTROL_MARKER}
     />
   );
 }
@@ -222,6 +234,7 @@ export function InputGroupPlainInput({ className, ...props }: ComponentProps<"in
       data-focus-ring-control=""
       className={cn(inputClass, inputGroupInputControlClass, className)}
       {...props}
+      {...INPUT_GROUP_CONTROL_MARKER}
     />
   );
 }
@@ -236,6 +249,7 @@ export function InputGroupTextarea({ className, ...props }: InputGroupTextareaPr
       data-focus-ring-control=""
       className={cn(textareaClass, inputGroupControlClass, "resize-none py-2", className)}
       {...props}
+      {...INPUT_GROUP_CONTROL_MARKER}
     />
   );
 }

@@ -9,7 +9,7 @@ import "../../../dist/themes.css";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
 import { waitForPopupSettled } from "../../../test/popup-settled";
-import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { fieldBoxOf, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Command } from "./index";
 
 type Entry = { readonly value: string; readonly label: string; readonly page?: string };
@@ -169,6 +169,27 @@ describe("Command", () => {
     input.focus();
     await userEvent.click(roleNamed("option", "Register meter reading"));
     expect(onRun.mock.calls).toEqual([["Register meter reading"]]);
+    expect(document.activeElement).toBe(input);
+  });
+
+  // The search icon's click must find the input whatever `data-slot` or `render` element the
+  // consumer gives it.
+  it.each([
+    ["a custom data-slot", { "data-slot": "palette-search" }],
+    ["a render element with a custom data-slot", { render: <input data-slot="palette-search" /> }],
+  ] as const)("focuses an input with %s from a click on its search icon", async (_name, consumer) => {
+    renderPalette(
+      <Command.Root items={["Customers"]}>
+        <Command.Input aria-label="Commands" {...consumer} />
+      </Command.Root>
+    );
+    const input = comboboxNamed("Commands");
+    expect(input.getAttribute("data-slot")).toBe("palette-search");
+    const icon = fieldBoxOf(input).querySelector("svg");
+    if (!(icon instanceof SVGElement)) {
+      throw new Error("expected the search icon beside the input");
+    }
+    await userEvent.click(icon);
     expect(document.activeElement).toBe(input);
   });
 

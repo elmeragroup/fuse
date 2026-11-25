@@ -42,6 +42,7 @@ describe("InputGroup", () => {
     expect(textNamed("NO").getAttribute("data-slot")).toBe("input-group-text");
   });
 
+  // Query and Message carry a custom `data-slot`, so the addon must find each control without it.
   it("focuses the sibling input when the addon is clicked, but not through a nested button", async () => {
     const clicks: string[] = [];
     renderThemed(
@@ -52,7 +53,7 @@ describe("InputGroup", () => {
           }}>
           <InputGroup.Text>Search</InputGroup.Text>
         </InputGroup.Addon>
-        <InputGroup.Input aria-label="Query" />
+        <InputGroup.Input aria-label="Query" data-slot="search-query" />
         <InputGroup.Addon align="inline-end">
           <InputGroup.Button
             onClick={() => {
@@ -64,6 +65,7 @@ describe("InputGroup", () => {
       </InputGroup.Root>
     );
     const control = textboxNamed("Query");
+    expect(control.getAttribute("data-slot")).toBe("search-query");
 
     await userEvent.click(page.getByText("Search"));
     expect(document.activeElement).toBe(control);
@@ -79,7 +81,7 @@ describe("InputGroup", () => {
     renderThemed(
       <>
         <InputGroup.Root>
-          <InputGroup.Textarea aria-label="Message" />
+          <InputGroup.Textarea aria-label="Message" data-slot="message-body" />
           <InputGroup.Addon align="block-end">
             <InputGroup.Text>0/200</InputGroup.Text>
           </InputGroup.Addon>
@@ -97,6 +99,7 @@ describe("InputGroup", () => {
       </>
     );
 
+    expect(textboxNamed("Message").getAttribute("data-slot")).toBe("message-body");
     await userEvent.click(page.getByText("0/200", { exact: true }));
     expect(document.activeElement).toBe(textboxNamed("Message"));
 
