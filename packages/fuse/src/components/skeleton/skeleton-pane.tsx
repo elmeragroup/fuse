@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import { isHTMLElement, windowOf } from "../../internal/dom-node";
+import { isHTMLElement, windowOf, windowShowing } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
 import { RADIUS_RUNGS } from "../../theme/corners/radius-scale";
 import { skeletonClass } from "./skeleton-class";
@@ -126,12 +126,16 @@ export function SkeletonPane({
     const skeleton = skeletonRef.current;
     const ghost = ghostRef.current;
     if (skeleton === null || ghost === null) return undefined;
-    // The pane's own window: in a same-origin frame, the frame's frames, observers and fonts.
+    // The pane's own window, which is a same-origin frame's for a pane in one, constructs the
+    // observers. Frames come from the window that still shows the pane's document.
     const view = windowOf(skeleton);
+    const { ownerDocument } = skeleton;
     let frame = 0;
     const schedule = (): void => {
-      view.cancelAnimationFrame(frame);
-      frame = view.requestAnimationFrame(measure);
+      const shown = windowShowing(ownerDocument);
+      if (shown === null) return;
+      shown.cancelAnimationFrame(frame);
+      frame = shown.requestAnimationFrame(measure);
     };
     const resize = new view.ResizeObserver(schedule);
     resize.observe(skeleton);
@@ -144,9 +148,8 @@ export function SkeletonPane({
     skeleton.addEventListener("load", schedule, true);
     const unwatchFonts = watchFontSet(skeleton, schedule);
     return () => {
-      // First, since `view.cancelAnimationFrame` throws once the frame navigates cross-origin.
       unwatchFonts();
-      view.cancelAnimationFrame(frame);
+      windowShowing(ownerDocument)?.cancelAnimationFrame(frame);
       resize.disconnect();
       mutations.disconnect();
       mutationsRef.current = null;

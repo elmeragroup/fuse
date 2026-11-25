@@ -11,7 +11,7 @@
  * The watch requests no animation frame, so a skeleton that stays up does not wake the main thread
  * each frame while only the compositor runs its pulse.
  */
-import { windowOf } from "../../internal/dom-node";
+import { windowOf, windowShowing } from "../../internal/dom-node";
 
 /**
  * How often, in milliseconds, the timer checks the set. A face added by script is rare, and a
@@ -77,33 +77,39 @@ function changedSince(fonts: FontFaceSet, seen: FontSetSnapshot): boolean {
   return index !== seen.faces.length;
 }
 
-/**
- * Whether `view` still shows `document`. Once a frame navigates, `view` shows another document,
- * and reading `view.document` throws after a cross-origin navigation.
- */
-function showsDocument(view: Window, document: Document): boolean {
-  try {
-    return view.document === document;
-  } catch {
-    return false;
-  }
-}
-
-/** Starts the watch of `document`, shown in `view`, with no watchers yet. */
-function startWatch(view: Window, document: Document, record: FontSetRecord): FontSetWatch {
+/** Starts the watch of `document` with no watchers yet. */
+function startWatch(document: Document, record: FontSetRecord): FontSetWatch {
   const { fonts } = document;
   const watchers = new Set<() => void>();
   let seen = snapshotOf(fonts, record);
   const check = (): void => {
-    if (!showsDocument(view, document) || !changedSince(fonts, seen)) return;
+    if (windowShowing(document) === null || !changedSince(fonts, seen)) return;
     seen = snapshotOf(fonts, record);
     for (const watcher of [...watchers]) watcher();
   };
-  let timer: number | undefined;
+  let stopped = false;
+  // The pending timeout. Once the window shows another document, the watch skips the clear. When a
+  // same-origin document takes over the frame's initial about:blank, Chromium still runs the
+  // timeout and WebKit drops it. Stopping sets `pending` to `null`, so a timeout that runs after
+  // that does nothing.
+  let pending: { readonly id: number } | null = null;
+  const arm = (): void => {
+    const view = windowShowing(document);
+    if (stopped || pending !== null || view === null) return;
+    const timeout = {
+      id: view.setTimeout(() => {
+        if (pending !== timeout) return;
+        pending = null;
+        check();
+        arm();
+      }, RECHECK_MS),
+    };
+    pending = timeout;
+  };
   const pause = (): void => {
     // A navigated frame's timers reuse ids, so clearing this one there could clear one of theirs.
-    if (timer !== undefined && showsDocument(view, document)) view.clearInterval(timer);
-    timer = undefined;
+    if (pending !== null) windowShowing(document)?.clearTimeout(pending.id);
+    pending = null;
   };
   const followVisibility = (): void => {
     if (document.visibilityState !== "visible") {
@@ -111,7 +117,7 @@ function startWatch(view: Window, document: Document, record: FontSetRecord): Fo
       return;
     }
     check();
-    if (timer === undefined && showsDocument(view, document)) timer = view.setInterval(check, RECHECK_MS);
+    arm();
   };
   for (const type of FONT_SET_EVENTS) fonts.addEventListener(type, check);
   document.addEventListener("visibilitychange", followVisibility);
@@ -120,6 +126,7 @@ function startWatch(view: Window, document: Document, record: FontSetRecord): Fo
     watchers,
     check,
     stop: () => {
+      stopped = true;
       for (const type of FONT_SET_EVENTS) fonts.removeEventListener(type, check);
       document.removeEventListener("visibilitychange", followVisibility);
       pause();
@@ -138,11 +145,10 @@ function startWatch(view: Window, document: Document, record: FontSetRecord): Fo
  *   timer, stops with its last watcher. A second call does nothing.
  */
 export function watchFontSet(node: Node, onChange: () => void): () => void {
-  const view = windowOf(node);
-  const { document } = view;
+  const { document } = windowOf(node);
   const record = records.get(document) ?? { followed: new WeakSet<FontFace>(), active: null };
   records.set(document, record);
-  const watch = record.active ?? startWatch(view, document, record);
+  const watch = record.active ?? startWatch(document, record);
   record.active = watch;
   watch.watchers.add(onChange);
   return () => {

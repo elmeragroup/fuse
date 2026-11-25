@@ -320,11 +320,14 @@ export function SkeletonReveal<T>(props: SkeletonRevealProps<T>): ReactElement {
     const note = (): void => {
       lastInput.current = performance.now();
     };
-    const options = { passive: true, capture: true } as const;
+    // By the unmount, a frame's window may show another document. The window keeps these listeners
+    // when that document replaced the initial about:blank, and any call on it throws when that
+    // document is cross-origin. Aborting the signal removes them without calling the window.
+    const listening = new AbortController();
+    const options = { passive: true, capture: true, signal: listening.signal } as const;
     for (const type of ["wheel", "touchmove", "keydown"] as const) view.addEventListener(type, note, options);
     return () => {
-      for (const type of ["wheel", "touchmove", "keydown"] as const)
-        view.removeEventListener(type, note, options);
+      listening.abort();
     };
   }, [currentKind]);
 

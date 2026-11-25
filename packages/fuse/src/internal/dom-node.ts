@@ -150,6 +150,31 @@ export function windowOf(node: Node): Window & typeof globalThis {
   return view;
 }
 
+/**
+ * The window that shows `document`, while one still does. Once a frame navigates, its window shows
+ * another document, whose animation frames and timers reuse the ids the old one gave out, and
+ * calling it throws after a cross-origin navigation. Keep the document, not the window, for an
+ * animation frame that belongs to that document, and get its window from here each time the frame
+ * is requested or canceled. When a same-origin document replaces a frame's initial `about:blank`,
+ * the window keeps the listeners set on it. A pending timer may survive too. Chromium keeps it,
+ * and WebKit drops it and may give its id out again. Remove a listener on the window with an
+ * `AbortSignal`. Set a one-shot timer whose callback checks a variable that stopping clears, so a
+ * callback that survives does nothing, and clear the timer only through the window this function
+ * returns.
+ *
+ * @param document - The document the work was set up in, which may be a same-origin frame's.
+ * @returns The window, or `null` once no window shows `document`.
+ */
+export function windowShowing(document: Document): (Window & typeof globalThis) | null {
+  const view = document.defaultView;
+  if (view === null) return null;
+  try {
+    return view.document === document ? view : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Whether a node is a document, from any realm. */
 function isDocument(node: Node): node is Document {
   return node.nodeType === Node.DOCUMENT_NODE;
