@@ -42,8 +42,8 @@ export type DateFieldProps<T extends DateInputValue = Temporal.PlainDate> = {
    * client component. `null` empties it.
    *
    * Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines
-   * without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib, as
-   * `/quick-start#temporal` shows.
+   * without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib; see
+   * [Quick start](https://fuse.elmeragroup.no/quick-start#temporal).
    */
   value?: T | null;
   /**

@@ -159,7 +159,7 @@
           "type": "PlainDate | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The selected day, when the parent controls it: a `Temporal.PlainDate` from any implementation. A server component cannot pass one, since it reaches the client as ISO text, which the calendar refuses with a `TypeError`. Build the value in a client component. `null` selects nothing. Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib, as `/quick-start#temporal` shows.",
+          "description": "The selected day, when the parent controls it: a `Temporal.PlainDate` from any implementation. A server component cannot pass one, since it reaches the client as ISO text, which the calendar refuses with a `TypeError`. Build the value in a client component. `null` selects nothing. Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib; see [Quick start](https://fuse.elmeragroup.no/quick-start#temporal).",
           "required": false
         },
         {
