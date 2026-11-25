@@ -690,7 +690,6 @@ export default defineConfig({
         "packages/fuse/src/components/chart/chart-tooltip-roof.ts",
         "packages/fuse/src/components/chart/pie-chart-labels.tsx",
         "packages/fuse/src/components/chart/scatter-chart-surface.tsx",
-        "packages/fuse/src/components/chart/sparkline-hover.tsx",
       ],
       rules: {
         "fuse/no-data-slot-selector": "off",

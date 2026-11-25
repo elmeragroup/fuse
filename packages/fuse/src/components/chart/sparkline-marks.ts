@@ -9,16 +9,30 @@
  */
 import type { SparklinePoint, SparklineSpan } from "./layout/sparkline-layout";
 
-/** The `data-slot` of each Sparkline part, as the attribute a part spreads. */
+/**
+ * The private attributes `SparklineHover` finds the svg, each value group and the glide group by.
+ * Only Fuse writes them, so the lookups do not depend on `data-slot`, which CSS and the theme
+ * studio read.
+ */
+export const SPARKLINE_MARKER = {
+  root: "data-sparkline",
+  value: "data-sparkline-value",
+  glide: "data-sparkline-glide",
+} as const;
+
+/**
+ * The `data-slot` of each Sparkline part, as the attributes a part spreads. The svg, a value group
+ * and the glide group also take their `SPARKLINE_MARKER`.
+ */
 export const SPARKLINE_SLOT = {
-  root: { "data-slot": "sparkline" },
+  root: { "data-slot": "sparkline", [SPARKLINE_MARKER.root]: "" },
   path: { "data-slot": "sparkline-path" },
   bar: { "data-slot": "sparkline-bar" },
   dot: { "data-slot": "sparkline-dot" },
   reference: { "data-slot": "sparkline-reference" },
-  value: { "data-slot": "sparkline-value" },
+  value: { "data-slot": "sparkline-value", [SPARKLINE_MARKER.value]: "" },
   crosshair: { "data-slot": "sparkline-crosshair" },
-  glide: { "data-slot": "sparkline-glide" },
+  glide: { "data-slot": "sparkline-glide", [SPARKLINE_MARKER.glide]: "" },
 } as const;
 
 /**
