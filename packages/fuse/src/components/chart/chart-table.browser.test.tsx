@@ -114,7 +114,7 @@ describe("the hourly year's pages", () => {
     expect(table.getAttribute("tabindex")).toBe("-1");
     await userEvent.click(page.getByRole("button", { name: "Vis som tabell" }));
     expect(table.getAttribute("tabindex")).toBe("0");
-    // Fuse Table's scroll container holds the table.
+    // Fuse Table's container holds the table.
     expect(host.querySelector('[data-slot="table-container"]')?.contains(table)).toBe(true);
     await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
     await userEvent.keyboard("{Tab}");

@@ -35,9 +35,9 @@ const paletteInspector = tv({
     root: "not-prose flex min-w-0 flex-col gap-3",
     switches: "flex-wrap",
     // The region is the table's scroller, one tab stop a keyboard scrolls with the arrow keys. Fuse's
-    // own table container stops clipping, so the sticky row names stick to this box.
+    // own table viewport stops clipping, so the sticky row names stick to this box.
     scroller: [
-      "overflow-x-auto rounded-md *:data-[slot=table-container]:overflow-visible",
+      "overflow-x-auto rounded-md [&_[data-slot=table-viewport]]:overflow-visible",
       SCROLLER_FOCUS_RING,
     ],
     // From `sm` the row names stay in view while the brands scroll. Below it they scroll away with

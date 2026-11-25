@@ -1,6 +1,7 @@
 /* Frame's custom variants, private to `fuse.css`, which imports this file. They spell the parts a
    Frame lays out, so the composition the Frame supports changes here and in the table caption's
-   density-role key in `theme/tokens/density-roles.ts`, which spells the same paths.
+   density-role key in `theme/tokens/density-roles.ts`, which spells the same paths and continues
+   them through the container's scrolling `table-viewport` to the table.
 
    A Frame's items (`inner-corner/frame.ts`) are its panels and Table containers that are the
    root's direct children, or the direct children of a Collapsible.Content in a Collapsible.Root
@@ -134,10 +135,10 @@
     @slot;
   }
 }
-/* A part of a framed Table: a Table whose container is one of a Frame's items. This one applies on
-   the Table's own parts. It stops at a nested Table container, so a Table in a framed cell, or in
-   a Frame.Panel, is a plain table. The selector sits in `:where()`, so a rule weighs the part's
-   own class. */
+/* A part of a framed Table: a Table whose container, the outer box around its scrolling viewport,
+   is one of a Frame's items. This one applies on the Table's own parts. It stops at a nested Table
+   container, so a Table in a framed cell, or in a Frame.Panel, is a plain table. The selector sits
+   in `:where()`, so a rule weighs the part's own class. */
 @custom-variant framed-table {
   &:where(
       :is(

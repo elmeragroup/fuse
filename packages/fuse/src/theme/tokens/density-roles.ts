@@ -711,6 +711,8 @@ export const PART_DENSITY = {
   "switch-thumb": "fixed",
 
   "table-container": "layout",
+  "table-viewport": "layout",
+  "table-focus-indicator": "fixed",
   table: "layout",
   "table-header": "layout",
   "table-body": "layout",
@@ -721,7 +723,7 @@ export const PART_DENSITY = {
   "table-caption": "fixed",
   // A caption in a framed Table or a padless panel's Table pads with the `--table-edge-px` its
   // Frame or panel sets, a surface tier.
-  "table-caption:where([data-slot=frame] > [data-slot=table-container] > table > *, [data-slot=frame] > [data-slot=collapsible] > [data-slot=collapsible-content] > [data-slot=table-container] > table > *, [data-slot=frame-panel][data-sole-table=true] > [data-slot=table-container] > table > *)":
+  "table-caption:where([data-slot=frame] > [data-slot=table-container] > [data-slot=table-viewport] > table > *, [data-slot=frame] > [data-slot=collapsible] > [data-slot=collapsible-content] > [data-slot=table-container] > [data-slot=table-viewport] > table > *, [data-slot=frame-panel][data-sole-table=true] > [data-slot=table-container] > [data-slot=table-viewport] > table > *)":
     "surface",
   "vertical-table-root": "layout",
   "vertical-table": "layout",

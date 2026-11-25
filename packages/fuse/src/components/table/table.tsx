@@ -13,16 +13,16 @@ import { VerticalTableKey } from "./vertical-table-key";
 /** Props for `Table.Root`, a native `table`'s props. */
 export type TableRootProps = Omit<ComponentProps<"table">, "aria-label" | "tabIndex"> & {
   /**
-   * The table's accessible name. While the table is wider than its container, the container is a
-   * tab stop that the browser's scrolling keys scroll. The stop is a group named by the table's
-   * `aria-labelledby` and `aria-label`, else by its `Table.Caption`. Name a table that may scroll
-   * with `aria-label`, `aria-labelledby` or a `Table.Caption`, since the stop of an unnamed table
-   * has no name.
+   * The table's accessible name. When the table leaves `tabIndex` unset and the box around it,
+   * `table-viewport`, can scroll sideways, the box is a tab stop that the browser's scrolling keys
+   * scroll. The stop is a group named by the table's `aria-labelledby` and `aria-label`, else by its
+   * `Table.Caption`. Name a table that may scroll with `aria-label`, `aria-labelledby` or a
+   * `Table.Caption`, since the stop of an unnamed table has no name.
    */
   "aria-label"?: ComponentProps<"table">["aria-label"];
   /**
-   * The table's own tab index. Set it when the table handles its own focus. The container then
-   * adds no stop, and the browser's scrolling keys scroll it while the table has focus.
+   * The table's own tab index. Set it when the table handles its own focus. The box around the
+   * table then adds no stop, and the browser's scrolling keys scroll it while the table has focus.
    */
   tabIndex?: ComponentProps<"table">["tabIndex"];
 };

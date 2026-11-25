@@ -149,13 +149,17 @@ describe("Frame", () => {
       expect(getComputedStyle(panel).paddingTop, label).toBe("16px");
       expect(getComputedStyle(panel).paddingLeft, label).toBe("16px");
     }
-    const container = roleNamed("table", "Captioned by text").parentElement;
+    const container = roleNamed("table", "Captioned by text").closest<HTMLElement>(
+      '[data-slot="table-container"]'
+    );
     if (container === null) {
       throw new Error("expected the table's container");
     }
     expect(cornerRadius(container)).toBe(0);
-    const facts = roleNamed("table", "Captioned by a number").parentElement?.parentElement;
-    if (facts == null) {
+    const facts = roleNamed("table", "Captioned by a number").closest<HTMLElement>(
+      '[data-slot="vertical-table"]'
+    );
+    if (facts === null) {
       throw new Error("expected the vertical table's box");
     }
     expect(getComputedStyle(facts).borderTopWidth).toBe("1px");

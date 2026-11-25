@@ -7840,15 +7840,15 @@
       ],
       "reason": "The framed body's highlight, the <tbody>'s ::before, paints a 0 1px line in black at 6% over the last body row's bottom border. A cell or row block draws no <tbody>, so it leaves the line out, and the frame-table-body set draws it over its rows. The highlight's position, insets, corner, content and pointer events place and shape only that line, and the base layer's border, box sizing, margin and padding reset nothing it draws.",
       "at": [
-        "frame-table-cell/row=body,column=first 0/around/4::before",
-        "frame-table-cell/row=body,column=last 0/around/4::before",
-        "frame-table-cell/row=body,column=middle 0/around/4::before",
-        "frame-table-cell/row=first,column=first 0/around/4::before",
-        "frame-table-cell/row=first,column=last 0/around/4::before",
-        "frame-table-cell/row=first,column=middle 0/around/4::before",
-        "frame-table-cell/row=last,column=first 0/around/4::before",
-        "frame-table-cell/row=last,column=last 0/around/4::before",
-        "frame-table-cell/row=last,column=middle 0/around/4::before"
+        "frame-table-cell/row=body,column=first 0/around/5::before",
+        "frame-table-cell/row=body,column=last 0/around/5::before",
+        "frame-table-cell/row=body,column=middle 0/around/5::before",
+        "frame-table-cell/row=first,column=first 0/around/5::before",
+        "frame-table-cell/row=first,column=last 0/around/5::before",
+        "frame-table-cell/row=first,column=middle 0/around/5::before",
+        "frame-table-cell/row=last,column=first 0/around/5::before",
+        "frame-table-cell/row=last,column=last 0/around/5::before",
+        "frame-table-cell/row=last,column=middle 0/around/5::before"
       ]
     },
     {
@@ -7914,18 +7914,18 @@
       ],
       "reason": "The framed body's highlight, the <tbody>'s ::before, paints a 0 1px line in black at 6% over the last body row's bottom border. A cell or row block draws no <tbody>, so it leaves the line out, and the frame-table-body set draws it over its rows. The highlight's position, insets, corner, content and pointer events place and shape only that line, and the base layer's border, box sizing, margin and padding reset nothing it draws.",
       "at": [
-        "frame-table-row/row=body,selected=false,state=hover 0/around/4::before",
-        "frame-table-row/row=body,selected=false,state=rest 0/around/4::before",
-        "frame-table-row/row=body,selected=true,state=hover 0/around/4::before",
-        "frame-table-row/row=body,selected=true,state=rest 0/around/4::before",
-        "frame-table-row/row=first,selected=false,state=hover 0/around/4::before",
-        "frame-table-row/row=first,selected=false,state=rest 0/around/4::before",
-        "frame-table-row/row=first,selected=true,state=hover 0/around/4::before",
-        "frame-table-row/row=first,selected=true,state=rest 0/around/4::before",
-        "frame-table-row/row=last,selected=false,state=hover 0/around/4::before",
-        "frame-table-row/row=last,selected=false,state=rest 0/around/4::before",
-        "frame-table-row/row=last,selected=true,state=hover 0/around/4::before",
-        "frame-table-row/row=last,selected=true,state=rest 0/around/4::before"
+        "frame-table-row/row=body,selected=false,state=hover 0/around/5::before",
+        "frame-table-row/row=body,selected=false,state=rest 0/around/5::before",
+        "frame-table-row/row=body,selected=true,state=hover 0/around/5::before",
+        "frame-table-row/row=body,selected=true,state=rest 0/around/5::before",
+        "frame-table-row/row=first,selected=false,state=hover 0/around/5::before",
+        "frame-table-row/row=first,selected=false,state=rest 0/around/5::before",
+        "frame-table-row/row=first,selected=true,state=hover 0/around/5::before",
+        "frame-table-row/row=first,selected=true,state=rest 0/around/5::before",
+        "frame-table-row/row=last,selected=false,state=hover 0/around/5::before",
+        "frame-table-row/row=last,selected=false,state=rest 0/around/5::before",
+        "frame-table-row/row=last,selected=true,state=hover 0/around/5::before",
+        "frame-table-row/row=last,selected=true,state=rest 0/around/5::before"
       ]
     },
     {
