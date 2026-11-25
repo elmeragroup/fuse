@@ -1,6 +1,8 @@
 import { Activity } from "react";
 import { useState } from "react";
+import type { ReactElement } from "react";
 
+import type { ColumnFiltersState } from "@tanstack/react-table";
 import { flushSync } from "react-dom";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -10,6 +12,7 @@ import { nextFrames, recordFrames, useFakeTimeouts } from "../../../test/animati
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import {
   active,
+  AMOUNT_OVER_500,
   barWithValue,
   captureActions,
   chipStrip,
@@ -42,6 +45,8 @@ import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import type { Finger, Touchscreen } from "../../../test/touch-input";
 import { withTouchscreen } from "../../../test/touch-input";
+import "../../temporal-polyfill";
+import { DateField } from "../date-field/date-field";
 import { useDataTableFilterChip } from "./data-table-filter-context";
 import type { FilterField, FilterFieldMap } from "./filter-fields";
 import { DataTableFilter } from "./index";
@@ -704,6 +709,234 @@ describe("DataTableFilter value popover", () => {
     await finishMotion();
     expect(popoverOpen("Customer")).toBe(true);
     expect(insideStrip(strip, customerValue)).toBe(true);
+  });
+
+  const AMOUNT_WIDE = {
+    id: "amount",
+    value: { kind: "number", operator: "isGreaterThan", values: [1234567890] },
+  } as const;
+
+  /**
+   * Renders Amount, then Customer, then `after`, and types `typed` into Amount's open editor, a
+   * draft that widens Amount's chip.
+   */
+  const draftWiderAmount = async (
+    typed = "1234567890",
+    orders: { readonly after?: ColumnFiltersState; readonly children?: ReactElement } = {}
+  ) => {
+    renderOrders({
+      initial: [...AMOUNT_OVER_500, ...CUSTOMER_NORD, ...(orders.after ?? [])],
+      ...(orders.children !== undefined && { children: orders.children }),
+    });
+    await page.viewport(1024, 896);
+    await userEvent.click(roleNamed("button", "500"));
+    await finishMotion();
+    await userEvent.fill(roleNamed("textbox", "Amount"), typed);
+  };
+
+  // A press on another chip blurs Amount's open editor, and the blur and the popover's close apply
+  // its draft before the press's click. Amount's wider summary would move Customer's segments out
+  // from under the pointer, so the strip holds Amount's width until the click. A tap's mousedown,
+  // blur and click all come after its pointerup.
+  it.each([
+    {
+      segment: "Operator",
+      input: "mouse",
+      press: () => roleNamed("combobox", "Customer operator"),
+      landed: () => page.getByRole("listbox").query() !== null,
+    },
+    ...(["mouse", "touch"] as const).flatMap((input) => [
+      {
+        segment: "Value",
+        input,
+        press: () => roleNamed("button", "“nord”"),
+        landed: () => popoverOpen("Customer"),
+      },
+      {
+        segment: "Remove",
+        input,
+        press: () => roleNamed("button", "Remove Customer filter"),
+        landed: () => page.getByRole("group", { name: "Customer filter" }).query() === null,
+      },
+    ]),
+  ])(
+    "A $input press on Customer's $segment lands when applying Amount's draft widens Amount",
+    async ({ input, press, landed }) => {
+      await draftWiderAmount();
+      expect(insideStrip(chipStrip(), press())).toBe(true);
+
+      // The press holds through three frames, so a write on pointerdown draws before the release.
+      // A mouse press writes on its mousedown, so the filters read while the button is down show
+      // the write where it was before the hold.
+      const appliedWhileDown: Array<ReturnType<typeof columnFilters>> = [];
+      await (input === "mouse"
+        ? pressShownStart(press(), async () => {
+            await nextFrames(3);
+            appliedWhileDown.push(columnFilters());
+          })
+        : tapShownStart(press()));
+      await nextFrames(2);
+      // The click ends the hold, so Amount's chip shows its whole summary at once.
+      const amountChip = roleNamed("group", "Amount filter");
+      const amountWhole = amountChip.scrollWidth <= amountChip.clientWidth;
+      await finishMotion();
+      expect({
+        landed: landed(),
+        amount: page.getByRole("button", { name: "1,234,567,890" }).query() !== null,
+        amountWhole,
+        appliedWhileDown,
+      }).toEqual({
+        landed: true,
+        amount: true,
+        amountWhole: true,
+        appliedWhileDown: input === "mouse" ? [[AMOUNT_WIDE, ...CUSTOMER_NORD]] : [],
+      });
+    }
+  );
+
+  it("A tap on Customer's Value lands when its pointerup handler clicks the strip as Amount widens", async () => {
+    await draftWiderAmount();
+    const customerValue = roleNamed("button", "“nord”");
+    // The strip's own click capture sees this click, which lands off the pressed path.
+    const strip = chipStrip();
+    customerValue.addEventListener("pointerup", () => {
+      strip.click();
+    });
+
+    await tapShownStart(customerValue);
+    await finishMotion();
+    expect(popoverOpen("Customer")).toBe(true);
+  });
+
+  it("edit() reveals Status's Value during a touch on Customer that holds Amount's width", async () => {
+    const { Capture, act } = captureActions();
+    await draftWiderAmount("1234567890123", {
+      after: STATUS_THREE,
+      children: (
+        <>
+          <DataTableFilter.Bar />
+          <DataTableFilter.ValueContent />
+          <Capture />
+        </>
+      ),
+    });
+    const strip = chipStrip();
+    // Narrows the page until the bar leaves the strip no room to grow, so the wider Amount pushes
+    // Status out past the strip's end.
+    await page.viewport(window.innerWidth - 120, 896);
+    const at = shownStart(roleNamed("button", "“nord”"));
+
+    // The drag pans, so the browser cancels the touch and no click follows.
+    await withTouchscreen(async (screen) => {
+      await screen.place([at]);
+      await nextFrames(2);
+      act().edit("status");
+      await nextFrames(2);
+      for (const step of [1, 2, 3, 4, 5, 6]) {
+        await screen.move([{ x: at.x, y: at.y + step * 20 }]);
+      }
+      await screen.lift();
+    });
+    await finishMotion();
+    expect(popoverOpen("Status")).toBe(true);
+    expect(insideStrip(strip, roleNamed("button", "Paid, Pending +1"))).toBe(true);
+  });
+
+  // On a strip scrolled to its end, a later chip that shrinks shrinks the scroll range, and the
+  // strip's scroll position drops with it. That moves an earlier chip's Value out from under the
+  // pointer. Holding Amount's width keeps the range and the scroll position.
+  it("A press on Customer's Value lands when Amount's draft shrinks Amount on a strip scrolled to its end", async () => {
+    renderOrders({ initial: [...CUSTOMER_NORD, AMOUNT_WIDE] });
+    const strip = chipStrip();
+    // Widens the page until the strip hides 30px of its chips, so Customer's Value stays in view.
+    await page.viewport(window.innerWidth + strip.scrollWidth - strip.clientWidth - 30, 896);
+    await userEvent.click(roleNamed("button", "1,234,567,890"));
+    await finishMotion();
+    await userEvent.fill(roleNamed("textbox", "Amount"), "5");
+    strip.scrollLeft = strip.scrollWidth;
+    const scrolled = strip.scrollLeft;
+    const customerValue = roleNamed("button", "“nord”");
+    expect(scrolled).toBeGreaterThan(0);
+    expect(insideStrip(strip, customerValue)).toBe(true);
+
+    let scrolledWhileDown = -1;
+    await pressShownStart(customerValue, async () => {
+      await nextFrames(3);
+      scrolledWhileDown = strip.scrollLeft;
+    });
+    await finishMotion();
+    expect({
+      opened: popoverOpen("Customer"),
+      amount: page.getByRole("button", { name: "5" }).query() !== null,
+      scrolledWhileDown,
+    }).toEqual({
+      opened: true,
+      amount: true,
+      scrolledWhileDown: scrolled,
+    });
+  });
+
+  // A date field keeps a date it cannot form until it blurs, so the draft is unchanged when the
+  // press starts, and the blur writes February 28 over a one-day range, which widens Created's
+  // chip.
+  it("A press on Customer's Value lands when a date field's blur widens Created", async () => {
+    renderOrders({
+      initial: [
+        {
+          id: "created",
+          value: { kind: "date", operator: "isBetween", values: ["2026-01-31", "2026-01-31"] },
+        },
+        ...CUSTOMER_NORD,
+      ],
+      children: (
+        <>
+          <DataTableFilter.Bar />
+          <DataTableFilter.ValueContent>
+            <DataTableFilter.Editor>
+              <DataTableFilter.DateEditor>
+                {({ values: [from, to], onValueChange }) =>
+                  from === undefined || to === undefined ? null : (
+                    <DateField
+                      label="To"
+                      defaultValue={Temporal.PlainDate.from(to)}
+                      onChange={(next) => {
+                        if (next !== null) {
+                          onValueChange([from, next.toString()]);
+                        }
+                      }}
+                    />
+                  )
+                }
+              </DataTableFilter.DateEditor>
+            </DataTableFilter.Editor>
+          </DataTableFilter.ValueContent>
+        </>
+      ),
+    });
+    await page.viewport(1024, 896);
+    await userEvent.click(roleNamed("button", "Jan 31, 2026"));
+    await finishMotion();
+    await userEvent.click(roleNamed("spinbutton", "month, To"));
+    await userEvent.keyboard("02");
+
+    const appliedWhileDown: Array<ReturnType<typeof columnFilters>> = [];
+    await pressShownStart(roleNamed("button", "“nord”"), async () => {
+      await nextFrames(3);
+      appliedWhileDown.push(columnFilters());
+    });
+    await finishMotion();
+    expect({ opened: popoverOpen("Customer"), appliedWhileDown }).toEqual({
+      opened: true,
+      appliedWhileDown: [
+        [
+          {
+            id: "created",
+            value: { kind: "date", operator: "isBetween", values: ["2026-01-31", "2026-02-28"] },
+          },
+          ...CUSTOMER_NORD,
+        ],
+      ],
+    });
   });
 });
 

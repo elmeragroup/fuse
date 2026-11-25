@@ -340,13 +340,13 @@
                 {
                   "tag": "div",
                   "attributes": {"data-slot":"data-table-filter-chips"},
-                  "classes": ["-m-0.5","no-scrollbar","flex","scroll-fade-inline","scroll-px-8","gap-(--surface-gap-sm)","overflow-x-auto","overscroll-x-contain","p-0.5","not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size)","pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))]","pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]"],
+                  "classes": ["-m-0.5","no-scrollbar","flex","scroll-fade-inline","scroll-px-8","gap-(--surface-gap-sm)","overflow-x-auto","overscroll-x-contain","p-0.5","not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size)","*:data-press-held:w-(--data-table-filter-held-width)!","*:data-press-held:max-w-(--data-table-filter-held-width)!","*:data-press-held:min-w-(--data-table-filter-held-width)!","*:data-press-held:overflow-x-clip","pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))]","pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]"],
                   "text": "",
                   "declarations": [63,84,6,117,118,119,120,121,64,122,123,124,125,126,127,128,129,130,131,132],
                   "initial": [84,119,124,125,126],
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"},"--scroll-fade-end":{"_tag":"unset"},"--scroll-fade-size":{"_tag":"element","up":0},"--scroll-fade-start":{"_tag":"unset"},"--scroll-fade-toward":{"_tag":"element","up":0},"--surface-gap-sm":{"_tag":"element","up":7}},
-                  "unmatched": ["not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size)","pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))]","pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]"],
+                  "unmatched": ["not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size)","*:data-press-held:w-(--data-table-filter-held-width)!","*:data-press-held:max-w-(--data-table-filter-held-width)!","*:data-press-held:min-w-(--data-table-filter-held-width)!","*:data-press-held:overflow-x-clip","pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))]","pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]"],
                   "children": []
                 }
               ]
@@ -438,13 +438,13 @@
                 {
                   "tag": "div",
                   "attributes": {"data-slot":"data-table-filter-chips"},
-                  "classes": ["-m-0.5","no-scrollbar","flex","scroll-fade-inline","scroll-px-8","gap-(--surface-gap-sm)","overflow-x-auto","overscroll-x-contain","p-0.5","not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size)","pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))]","pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]"],
+                  "classes": ["-m-0.5","no-scrollbar","flex","scroll-fade-inline","scroll-px-8","gap-(--surface-gap-sm)","overflow-x-auto","overscroll-x-contain","p-0.5","not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size)","*:data-press-held:w-(--data-table-filter-held-width)!","*:data-press-held:max-w-(--data-table-filter-held-width)!","*:data-press-held:min-w-(--data-table-filter-held-width)!","*:data-press-held:overflow-x-clip","pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))]","pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]"],
                   "text": "",
                   "declarations": [63,84,6,117,118,119,120,121,64,122,123,124,125,126,127,128,129,130,131,132],
                   "initial": [84,119,124,125,126],
                   "pseudo": {},
                   "variables": {"--border":{"_tag":"theme"},"--scroll-fade-end":{"_tag":"unset"},"--scroll-fade-size":{"_tag":"element","up":0},"--scroll-fade-start":{"_tag":"unset"},"--scroll-fade-toward":{"_tag":"element","up":0},"--surface-gap-sm":{"_tag":"element","up":7}},
-                  "unmatched": ["not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size)","pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))]","pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]"],
+                  "unmatched": ["not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size)","*:data-press-held:w-(--data-table-filter-held-width)!","*:data-press-held:max-w-(--data-table-filter-held-width)!","*:data-press-held:min-w-(--data-table-filter-held-width)!","*:data-press-held:overflow-x-clip","pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))]","pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]"],
                   "children": [
                     {
                       "tag": "div",

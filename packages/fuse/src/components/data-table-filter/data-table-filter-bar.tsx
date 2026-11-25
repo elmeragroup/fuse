@@ -224,11 +224,13 @@ export function DataTableFilterChips({
   ref,
   ...props
 }: DataTableFilterChipsProps): ReactElement {
-  const { state } = useFilterInternals("DataTableFilter.Chips");
+  const { state, actions } = useFilterInternals("DataTableFilter.Chips");
+  const { registerPressHold } = actions;
   const stripRef = useMergedRefs(ref, scrollStripOnWheel);
   const [press] = useState(createStripPress);
   // A strip that unmounts or hides mid-press ends the press.
   useEffect(() => press.dispose, [press]);
+  useEffect(() => registerPressHold(press), [registerPressHold, press]);
   return (
     <div
       ref={stripRef}
@@ -259,7 +261,7 @@ export function DataTableFilterChips({
       }}
       onClickCapture={(event: MouseEvent<HTMLDivElement>) => {
         onClickCapture?.(event);
-        press.dropFocusPath();
+        press.takeClick(event);
       }}
       {...props}>
       {state.chips.map((chip) => (
