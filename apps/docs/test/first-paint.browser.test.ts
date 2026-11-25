@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { DEFAULT_THEME, DOCUMENT_COLOR_SCHEME } from "../src/lib/theme";
 import { waitForDocsShellHydration } from "./demo-page";
+import type { ThemeAttributes } from "./demo-page";
 import { docsBaseUrl } from "./docs-server";
 import {
   COLOR_SCHEME_BOOTSTRAP_FAILURE_SENTINEL,
@@ -229,8 +230,61 @@ describe("docs enforcing nonce", () => {
   });
 });
 
+type ThemeScope = ThemeAttributes & { density: string | null; token: string };
+
+async function readThemeScopes(page: Page): Promise<{ document: ThemeScope; stage: ThemeScope }> {
+  return await page.evaluate(() => {
+    const read = (scope: Element | null): ThemeScope => ({
+      identity: scope?.getAttribute("data-theme-identity") ?? null,
+      brand: scope?.getAttribute("data-theme-brand") ?? null,
+      segment: scope?.getAttribute("data-theme-segment") ?? null,
+      density: scope?.getAttribute("data-density") ?? null,
+      token: scope === null ? "" : getComputedStyle(scope).getPropertyValue("--brand").trim(),
+    });
+    return {
+      document: read(document.documentElement),
+      stage: read(document.querySelector("[data-demo-stage]")),
+    };
+  });
+}
+
+type BrandPrimitives = {
+  elma: string;
+  fkas: string;
+  tkas: string;
+};
+
+/**
+ * The brand primitives the root declares for every brand, read apart from any
+ * theme scope's `--brand`, so each scope's token has a value to match.
+ */
+async function readBrandPrimitives(page: Page): Promise<BrandPrimitives> {
+  const primitives = await page.evaluate(() => {
+    const styles = getComputedStyle(document.documentElement);
+    return {
+      elma: styles.getPropertyValue("--brand-elma").trim(),
+      fkas: styles.getPropertyValue("--brand-fkas").trim(),
+      tkas: styles.getPropertyValue("--brand-tkas").trim(),
+    };
+  });
+  expect(new Set(Object.values(primitives)).size, JSON.stringify(primitives)).toBe(3);
+  expect(Object.values(primitives)).not.toContain("");
+  return primitives;
+}
+
 describe("docs picker vs document theme", () => {
   it("themes only preview scopes and leaves the document on neutral/elma/private", async () => {
+    // With JavaScript off, neither hydration nor an inline script can add a theme
+    // attribute the server HTML lacks.
+    const serverPage = await browser().newPage({ javaScriptEnabled: false });
+    await serverPage.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "load" });
+    const initial = await readThemeScopes(serverPage);
+    const serverBrands = await readBrandPrimitives(serverPage);
+    await serverPage.close();
+
+    expect(initial.document).toEqual({ ...DOCUMENT_BRAND, density: "dense", token: serverBrands.elma });
+    expect(initial.stage).toEqual({ ...DEFAULT_THEME, density: "dense", token: serverBrands.fkas });
+
     const page = await browser().newPage();
     const hydrationWarnings: string[] = [];
     page.on("console", (message) => {
@@ -242,62 +296,23 @@ describe("docs picker vs document theme", () => {
     await page.goto(`${docsBaseUrl()}/components/button`, { waitUntil: "load" });
     await page.getByRole("heading", { name: "Button", exact: true, level: 1 }).waitFor();
 
-    const initial = await page.evaluate(() => {
-      const root = document.documentElement;
-      const stage = document.querySelector("[data-demo-stage]");
-      return {
-        documentBrand: root.getAttribute("data-theme-brand"),
-        documentIdentity: root.getAttribute("data-theme-identity"),
-        documentSegment: root.getAttribute("data-theme-segment"),
-        documentDensity: root.getAttribute("data-density"),
-        stageBrand: stage?.getAttribute("data-theme-brand") ?? null,
-        stageIdentity: stage?.getAttribute("data-theme-identity") ?? null,
-        stageSegment: stage?.getAttribute("data-theme-segment") ?? null,
-        stageDensity: stage?.getAttribute("data-density") ?? null,
-        documentToken: getComputedStyle(root).getPropertyValue("--brand").trim(),
-        stageToken: stage === null ? "" : getComputedStyle(stage).getPropertyValue("--brand").trim(),
-      };
-    });
-
-    expect(initial.documentIdentity).toBe(DOCUMENT_BRAND.identity);
-    expect(initial.documentBrand).toBe(DOCUMENT_BRAND.brand);
-    expect(initial.documentSegment).toBe(DOCUMENT_BRAND.segment);
-    expect(initial.documentDensity).toBe("dense");
-    expect(initial.stageDensity).toBe("dense");
-    expect(initial.stageIdentity).toBe(DEFAULT_THEME.identity);
-    expect(initial.stageBrand).toBe(DEFAULT_THEME.brand);
-    expect(initial.stageSegment).toBe(DEFAULT_THEME.segment);
-    expect(initial.documentToken).not.toBe(initial.stageToken);
-
     // The server renders the Theme settings trigger before React attaches its handler,
     // so a press before hydration opens nothing.
     await waitForDocsShellHydration(page);
+    const brands = await readBrandPrimitives(page);
+    const before = await readThemeScopes(page);
+    expect(before.stage.brand).toBe(DEFAULT_THEME.brand);
+    expect(before.document.token).toBe(brands.elma);
+    expect(before.stage.token).toBe(brands.fkas);
+
     await page.getByRole("button", { name: "Theme settings", exact: true }).click();
     await page.getByRole("menuitemradio", { name: "TrøndelagKraft", exact: true }).click();
+    await expect.poll(async () => (await readThemeScopes(page)).stage.brand).toBe("tkas");
 
-    const next = await page.evaluate(() => {
-      const root = document.documentElement;
-      const stage = document.querySelector("[data-demo-stage]");
-      return {
-        documentBrand: root.getAttribute("data-theme-brand"),
-        documentIdentity: root.getAttribute("data-theme-identity"),
-        documentSegment: root.getAttribute("data-theme-segment"),
-        documentDensity: root.getAttribute("data-density"),
-        stageBrand: stage?.getAttribute("data-theme-brand") ?? null,
-        stageDensity: stage?.getAttribute("data-density") ?? null,
-        stageToken: stage === null ? "" : getComputedStyle(stage).getPropertyValue("--brand").trim(),
-        documentToken: getComputedStyle(root).getPropertyValue("--brand").trim(),
-      };
-    });
+    const next = await readThemeScopes(page);
 
-    expect(next.documentIdentity).toBe("neutral");
-    expect(next.documentBrand).toBe("elma");
-    expect(next.documentSegment).toBe("private");
-    expect(next.documentDensity).toBe("dense");
-    expect(next.stageDensity).toBe("dense");
-    expect(next.stageBrand).toBe("tkas");
-    expect(next.stageToken).not.toBe(next.documentToken);
-    expect(next.stageToken).not.toBe(initial.stageToken);
+    expect(next.document).toEqual({ ...DOCUMENT_BRAND, density: "dense", token: before.document.token });
+    expect(next.stage).toMatchObject({ density: "dense", token: brands.tkas });
 
     expect(hydrationWarnings.filter((text) => /data-theme|mismatch/i.test(text))).toEqual([]);
     await page.close();
