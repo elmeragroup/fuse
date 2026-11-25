@@ -266,7 +266,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4","item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]"],
               "text": "",
               "declarations": [63,67,6,68,69,70,71,72,80,81,77,82,83,84,85],
@@ -328,7 +328,7 @@
               "children": [
                 {
                   "tag": "button",
-                  "attributes": {"data-size":"sm","data-slot":"button","tabindex":"0","type":"button"},
+                  "attributes": {"data-size":"sm","data-skeleton-part":"button","data-slot":"button","tabindex":"0","type":"button"},
                   "classes": ["group/button","font-medium","box-border","inline-flex","shrink-0","cursor-pointer","items-center","justify-center","rounded-(--radius-button)","border","border-transparent","p-0","whitespace-nowrap","transition-[color,background-color,border-color,box-shadow,translate,opacity]","select-none","[--button-px-floor:var(--button-label-px-min,0px)]","in-data-[slot=button-group]:rounded-md","in-data-[slot=button-group]:[--button-px-floor:0px]","enabled-active:not-aria-[haspopup]:translate-y-px","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","h-(--control-h-sm)","gap-(--control-gap-sm)","text-sm","px-[max(var(--control-px-button-sm),var(--button-px-floor))]","has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm)","has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)","bg-transparent","text-panel-foreground","enabled-hover:bg-muted","enabled-hover:text-foreground","enabled-hover:[--surface-muted-foreground:--theme(--color-muted-foreground)]","enabled-hover:[--surface:--theme(--color-muted)]"],
                   "text": "Retry",
                   "textIndex": 0,
@@ -379,7 +379,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4","item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]"],
               "text": "",
               "declarations": [63,67,6,68,69,70,71,72,80,81,77,82,83,84,149,150],
@@ -454,7 +454,7 @@
               "children": [
                 {
                   "tag": "button",
-                  "attributes": {"data-size":"sm","data-slot":"button","tabindex":"0","type":"button"},
+                  "attributes": {"data-size":"sm","data-skeleton-part":"button","data-slot":"button","tabindex":"0","type":"button"},
                   "classes": ["group/button","font-medium","box-border","inline-flex","shrink-0","cursor-pointer","items-center","justify-center","rounded-(--radius-button)","border","border-transparent","p-0","whitespace-nowrap","transition-[color,background-color,border-color,box-shadow,translate,opacity]","select-none","[--button-px-floor:var(--button-label-px-min,0px)]","in-data-[slot=button-group]:rounded-md","in-data-[slot=button-group]:[--button-px-floor:0px]","enabled-active:not-aria-[haspopup]:translate-y-px","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","h-(--control-h-sm)","gap-(--control-gap-sm)","text-sm","px-[max(var(--control-px-button-sm),var(--button-px-floor))]","has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm)","has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)","bg-transparent","text-panel-foreground","enabled-hover:bg-muted","enabled-hover:text-foreground","enabled-hover:[--surface-muted-foreground:--theme(--color-muted-foreground)]","enabled-hover:[--surface:--theme(--color-muted)]"],
                   "text": "Retry",
                   "textIndex": 0,
@@ -505,7 +505,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4","item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]"],
               "text": "",
               "declarations": [63,67,6,68,69,70,71,72,80,81,77,82,83,84,85],
@@ -567,7 +567,7 @@
               "children": [
                 {
                   "tag": "button",
-                  "attributes": {"data-size":"sm","data-slot":"button","tabindex":"0","type":"button"},
+                  "attributes": {"data-size":"sm","data-skeleton-part":"button","data-slot":"button","tabindex":"0","type":"button"},
                   "classes": ["group/button","font-medium","box-border","inline-flex","shrink-0","cursor-pointer","items-center","justify-center","rounded-(--radius-button)","border","border-transparent","p-0","whitespace-nowrap","transition-[color,background-color,border-color,box-shadow,translate,opacity]","select-none","[--button-px-floor:var(--button-label-px-min,0px)]","in-data-[slot=button-group]:rounded-md","in-data-[slot=button-group]:[--button-px-floor:0px]","enabled-active:not-aria-[haspopup]:translate-y-px","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","enabled-hover:bg-primary/80","h-(--control-h-sm)","gap-(--control-gap-sm)","text-sm","px-[max(var(--control-px-button-sm),var(--button-px-floor))]","has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm)","has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)","bg-error","text-error-foreground","hover:bg-error/90"],
                   "text": "Retry",
                   "textIndex": 0,
@@ -618,7 +618,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4","item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]"],
               "text": "",
               "declarations": [63,67,6,68,69,70,71,72,80,81,77,82,83,84,149,150],
@@ -693,7 +693,7 @@
               "children": [
                 {
                   "tag": "button",
-                  "attributes": {"data-size":"sm","data-slot":"button","tabindex":"0","type":"button"},
+                  "attributes": {"data-size":"sm","data-skeleton-part":"button","data-slot":"button","tabindex":"0","type":"button"},
                   "classes": ["group/button","font-medium","box-border","inline-flex","shrink-0","cursor-pointer","items-center","justify-center","rounded-(--radius-button)","border","border-transparent","p-0","whitespace-nowrap","transition-[color,background-color,border-color,box-shadow,translate,opacity]","select-none","[--button-px-floor:var(--button-label-px-min,0px)]","in-data-[slot=button-group]:rounded-md","in-data-[slot=button-group]:[--button-px-floor:0px]","enabled-active:not-aria-[haspopup]:translate-y-px","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","enabled-hover:bg-primary/80","h-(--control-h-sm)","gap-(--control-gap-sm)","text-sm","px-[max(var(--control-px-button-sm),var(--button-px-floor))]","has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm)","has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)","bg-error","text-error-foreground","hover:bg-error/90"],
                   "text": "Retry",
                   "textIndex": 0,
@@ -744,7 +744,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4","item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]"],
               "text": "",
               "declarations": [63,67,6,68,69,70,71,72,80,81,77,82,83,84,85],
@@ -806,7 +806,7 @@
               "children": [
                 {
                   "tag": "button",
-                  "attributes": {"data-size":"sm","data-slot":"button","tabindex":"0","type":"button"},
+                  "attributes": {"data-size":"sm","data-skeleton-part":"button","data-slot":"button","tabindex":"0","type":"button"},
                   "classes": ["group/button","font-medium","box-border","inline-flex","shrink-0","cursor-pointer","items-center","justify-center","rounded-(--radius-button)","border","border-transparent","p-0","whitespace-nowrap","transition-[color,background-color,border-color,box-shadow,translate,opacity]","select-none","[--button-px-floor:var(--button-label-px-min,0px)]","in-data-[slot=button-group]:rounded-md","in-data-[slot=button-group]:[--button-px-floor:0px]","enabled-active:not-aria-[haspopup]:translate-y-px","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","enabled-hover:bg-primary/80","h-(--control-h-sm)","gap-(--control-gap-sm)","text-sm","px-[max(var(--control-px-button-sm),var(--button-px-floor))]","has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm)","has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)","bg-warning","text-warning-foreground","hover:bg-warning/90"],
                   "text": "Retry",
                   "textIndex": 0,
@@ -857,7 +857,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4","item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]"],
               "text": "",
               "declarations": [63,67,6,68,69,70,71,72,80,81,77,82,83,84,149,150],
@@ -932,7 +932,7 @@
               "children": [
                 {
                   "tag": "button",
-                  "attributes": {"data-size":"sm","data-slot":"button","tabindex":"0","type":"button"},
+                  "attributes": {"data-size":"sm","data-skeleton-part":"button","data-slot":"button","tabindex":"0","type":"button"},
                   "classes": ["group/button","font-medium","box-border","inline-flex","shrink-0","cursor-pointer","items-center","justify-center","rounded-(--radius-button)","border","border-transparent","p-0","whitespace-nowrap","transition-[color,background-color,border-color,box-shadow,translate,opacity]","select-none","[--button-px-floor:var(--button-label-px-min,0px)]","in-data-[slot=button-group]:rounded-md","in-data-[slot=button-group]:[--button-px-floor:0px]","enabled-active:not-aria-[haspopup]:translate-y-px","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","enabled-hover:bg-primary/80","h-(--control-h-sm)","gap-(--control-gap-sm)","text-sm","px-[max(var(--control-px-button-sm),var(--button-px-floor))]","has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm)","has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)","bg-warning","text-warning-foreground","hover:bg-warning/90"],
                   "text": "Retry",
                   "textIndex": 0,
@@ -983,7 +983,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4","item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]"],
               "text": "",
               "declarations": [63,67,6,68,69,70,71,72,80,81,77,82,83,84,85],
@@ -1045,7 +1045,7 @@
               "children": [
                 {
                   "tag": "button",
-                  "attributes": {"data-size":"sm","data-slot":"button","tabindex":"0","type":"button"},
+                  "attributes": {"data-size":"sm","data-skeleton-part":"button","data-slot":"button","tabindex":"0","type":"button"},
                   "classes": ["group/button","font-medium","box-border","inline-flex","shrink-0","cursor-pointer","items-center","justify-center","rounded-(--radius-button)","border","border-transparent","p-0","whitespace-nowrap","transition-[color,background-color,border-color,box-shadow,translate,opacity]","select-none","[--button-px-floor:var(--button-label-px-min,0px)]","in-data-[slot=button-group]:rounded-md","in-data-[slot=button-group]:[--button-px-floor:0px]","enabled-active:not-aria-[haspopup]:translate-y-px","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","enabled-hover:bg-primary/80","h-(--control-h-sm)","gap-(--control-gap-sm)","text-sm","px-[max(var(--control-px-button-sm),var(--button-px-floor))]","has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm)","has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)","bg-success","text-success-foreground","hover:bg-success/90"],
                   "text": "Retry",
                   "textIndex": 0,
@@ -1096,7 +1096,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4","item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]"],
               "text": "",
               "declarations": [63,67,6,68,69,70,71,72,80,81,77,82,83,84,149,150],
@@ -1171,7 +1171,7 @@
               "children": [
                 {
                   "tag": "button",
-                  "attributes": {"data-size":"sm","data-slot":"button","tabindex":"0","type":"button"},
+                  "attributes": {"data-size":"sm","data-skeleton-part":"button","data-slot":"button","tabindex":"0","type":"button"},
                   "classes": ["group/button","font-medium","box-border","inline-flex","shrink-0","cursor-pointer","items-center","justify-center","rounded-(--radius-button)","border","border-transparent","p-0","whitespace-nowrap","transition-[color,background-color,border-color,box-shadow,translate,opacity]","select-none","[--button-px-floor:var(--button-label-px-min,0px)]","in-data-[slot=button-group]:rounded-md","in-data-[slot=button-group]:[--button-px-floor:0px]","enabled-active:not-aria-[haspopup]:translate-y-px","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","enabled-hover:bg-primary/80","h-(--control-h-sm)","gap-(--control-gap-sm)","text-sm","px-[max(var(--control-px-button-sm),var(--button-px-floor))]","has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm)","has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)","bg-success","text-success-foreground","hover:bg-success/90"],
                   "text": "Retry",
                   "textIndex": 0,
@@ -1222,7 +1222,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4","item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]"],
               "text": "",
               "declarations": [63,67,6,68,69,70,71,72,80,81,77,82,83,84,85],
@@ -1284,7 +1284,7 @@
               "children": [
                 {
                   "tag": "button",
-                  "attributes": {"data-size":"sm","data-slot":"button","tabindex":"0","type":"button"},
+                  "attributes": {"data-size":"sm","data-skeleton-part":"button","data-slot":"button","tabindex":"0","type":"button"},
                   "classes": ["group/button","font-medium","box-border","inline-flex","shrink-0","cursor-pointer","items-center","justify-center","rounded-(--radius-button)","border","border-transparent","p-0","whitespace-nowrap","transition-[color,background-color,border-color,box-shadow,translate,opacity]","select-none","[--button-px-floor:var(--button-label-px-min,0px)]","in-data-[slot=button-group]:rounded-md","in-data-[slot=button-group]:[--button-px-floor:0px]","enabled-active:not-aria-[haspopup]:translate-y-px","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","enabled-hover:bg-primary/80","h-(--control-h-sm)","gap-(--control-gap-sm)","text-sm","px-[max(var(--control-px-button-sm),var(--button-px-floor))]","has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm)","has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)","bg-info","text-info-foreground","hover:bg-info/90"],
                   "text": "Retry",
                   "textIndex": 0,
@@ -1335,7 +1335,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4","item-described:[--item-media-line:calc(var(--label-text)*var(--leading-snug))]"],
               "text": "",
               "declarations": [63,67,6,68,69,70,71,72,80,81,77,82,83,84,149,150],
@@ -1410,7 +1410,7 @@
               "children": [
                 {
                   "tag": "button",
-                  "attributes": {"data-size":"sm","data-slot":"button","tabindex":"0","type":"button"},
+                  "attributes": {"data-size":"sm","data-skeleton-part":"button","data-slot":"button","tabindex":"0","type":"button"},
                   "classes": ["group/button","font-medium","box-border","inline-flex","shrink-0","cursor-pointer","items-center","justify-center","rounded-(--radius-button)","border","border-transparent","p-0","whitespace-nowrap","transition-[color,background-color,border-color,box-shadow,translate,opacity]","select-none","[--button-px-floor:var(--button-label-px-min,0px)]","in-data-[slot=button-group]:rounded-md","in-data-[slot=button-group]:[--button-px-floor:0px]","enabled-active:not-aria-[haspopup]:translate-y-px","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","data-[pending-indicator]:[&>svg:not([data-icon=inline-end])]:hidden","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","disabled:cursor-not-allowed","disabled:opacity-50","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","enabled-hover:bg-primary/80","h-(--control-h-sm)","gap-(--control-gap-sm)","text-sm","px-[max(var(--control-px-button-sm),var(--button-px-floor))]","has-data-[icon=inline-end]:pr-(--control-px-button-icon-sm)","has-data-[icon=inline-start]:pl-(--control-px-button-icon-sm)","bg-info","text-info-foreground","hover:bg-info/90"],
                   "text": "Retry",
                   "textIndex": 0,

@@ -6,6 +6,7 @@ import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
 
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { avatarFallbackClass, avatarGroupClass, avatarImageClass, avatarRootClass } from "./avatar-class";
 
 type AvatarRootPrimitiveProps = ComponentProps<typeof AvatarPrimitive.Root>;
@@ -30,6 +31,7 @@ export function AvatarRoot({
       data-slot="avatar"
       className={mergeClassName(className, avatarRootClass)}
       {...props}
+      data-skeleton-part={"avatar" satisfies SkeletonPart}
     />
   );
 }

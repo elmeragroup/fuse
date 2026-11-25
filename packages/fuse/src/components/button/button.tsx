@@ -10,6 +10,7 @@ import { usePredictedEvents } from "../../hooks/use-predicted-events";
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { buttonVariants } from "./button-variants";
 
 /** Every Button `size`: the label sizes and the square `icon*` sizes. */
@@ -168,6 +169,7 @@ export function Button({
       // Filtered so a forwarded undefined cannot erase what Base UI's Button sets itself,
       // such as aria-disabled, type and role.
       {...definedProps(props)}
+      data-skeleton-part={"button" satisfies SkeletonPart}
       ref={mergedRef}>
       {children}
       {showsIndicator ? (

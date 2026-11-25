@@ -1,8 +1,9 @@
 /**
  * Unit under test: skeleton role lookup. Oracle: the precedence the module documents, written out
- * per element by hand: a `data-skeleton` hint naming a role, then the slot's role, then `block` for
- * a media or form tag, else a container. The table's keys are checked against `PART_DENSITY`, the
- * table of every slot the package writes, so a role never names a part that does not exist.
+ * per element by hand: a `data-skeleton` hint naming a role, then the role of the part its marker
+ * names, then `block` for a media or form tag, else a container. The table's keys are checked
+ * against `PART_DENSITY`, the table of every slot the package writes, so a role never names a part
+ * that does not exist.
  */
 import { describe, expect, it } from "vitest";
 
@@ -11,21 +12,20 @@ import { PART_SKELETON, skeletonRoleOf } from "./skeleton-roles";
 import type { SkeletonRoleSource } from "./skeleton-roles";
 
 const CASES: ReadonlyArray<readonly [string, SkeletonRoleSource, ReturnType<typeof skeletonRoleOf>]> = [
-  ["a Fuse Button", { hint: null, slot: "button", tagName: "button" }, "block"],
-  ["a Fuse Avatar", { hint: null, slot: "avatar", tagName: "span" }, "block"],
-  ["a Fuse Switch", { hint: null, slot: "switch", tagName: "button" }, "block"],
-  ["a Fuse Loader", { hint: null, slot: "loader", tagName: "div" }, "ignore"],
-  ["a Fuse Card", { hint: null, slot: "card", tagName: "div" }, undefined],
-  ["a Fuse card title", { hint: null, slot: "card-title", tagName: "div" }, undefined],
-  ["an image", { hint: null, slot: null, tagName: "img" }, "block"],
-  ["an svg icon", { hint: null, slot: null, tagName: "svg" }, "block"],
-  ["a consumer div", { hint: null, slot: null, tagName: "div" }, undefined],
-  ["a consumer chip marked block", { hint: "block", slot: null, tagName: "span" }, "block"],
-  ["a consumer image marked ignore", { hint: "ignore", slot: null, tagName: "img" }, "ignore"],
-  ["a Loader marked block", { hint: "block", slot: "loader", tagName: "div" }, "block"],
-  ["a Button marked ignore", { hint: "ignore", slot: "button", tagName: "button" }, "ignore"],
-  ["an unknown hint on an Avatar", { hint: "card", slot: "avatar", tagName: "span" }, "block"],
-  ["an empty hint on a div", { hint: "", slot: null, tagName: "div" }, undefined],
+  ["a Fuse Button", { hint: null, part: "button", tagName: "button" }, "block"],
+  ["a Fuse Avatar", { hint: null, part: "avatar", tagName: "span" }, "block"],
+  ["a Fuse Switch", { hint: null, part: "switch", tagName: "button" }, "block"],
+  ["a Fuse Loader", { hint: null, part: "loader", tagName: "div" }, "ignore"],
+  ["a marker naming a part with no role", { hint: null, part: "card", tagName: "div" }, undefined],
+  ["an image", { hint: null, part: null, tagName: "img" }, "block"],
+  ["an svg icon", { hint: null, part: null, tagName: "svg" }, "block"],
+  ["a consumer div", { hint: null, part: null, tagName: "div" }, undefined],
+  ["a consumer chip marked block", { hint: "block", part: null, tagName: "span" }, "block"],
+  ["a consumer image marked ignore", { hint: "ignore", part: null, tagName: "img" }, "ignore"],
+  ["a Loader marked block", { hint: "block", part: "loader", tagName: "div" }, "block"],
+  ["a Button marked ignore", { hint: "ignore", part: "button", tagName: "button" }, "ignore"],
+  ["an unknown hint on an Avatar", { hint: "card", part: "avatar", tagName: "span" }, "block"],
+  ["an empty hint on a div", { hint: "", part: null, tagName: "div" }, undefined],
 ];
 
 describe("skeletonRoleOf", () => {

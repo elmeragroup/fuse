@@ -4,6 +4,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { LoaderDefaultLabel } from "./loader-default-label";
 import { loaderVariants } from "./loader-variants";
 
@@ -36,7 +37,12 @@ export function Loader({
   const text = label ?? props["aria-label"];
 
   return (
-    <div data-slot="loader" role="status" className={cn(base(), className)} {...props}>
+    <div
+      data-slot="loader"
+      role="status"
+      className={cn(base(), className)}
+      {...props}
+      data-skeleton-part={"loader" satisfies SkeletonPart}>
       <SpinnerGap aria-hidden="true" className={icon()} />
       {text === undefined ? <LoaderDefaultLabel /> : <span className="sr-only">{text}</span>}
     </div>

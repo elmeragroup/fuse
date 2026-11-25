@@ -12,6 +12,7 @@ import { SpinnerGap } from "../../icons/generated/spinner-gap";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { FieldItem } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { SelectionGroupLayout, SelectionItemGroup } from "../selection-item/selection-item";
@@ -39,7 +40,8 @@ export function RadioGroupItem({
       data-slot="radio-group-item"
       value={value}
       className={mergeClassName(className, slots.root())}
-      {...definedProps(props)}>
+      {...definedProps(props)}
+      data-skeleton-part={"radio-group-item" satisfies SkeletonPart}>
       <RadioPrimitive.Indicator data-slot="radio-group-indicator" className={slots.indicator()}>
         <span className={slots.dot()} />
       </RadioPrimitive.Indicator>

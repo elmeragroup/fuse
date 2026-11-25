@@ -17,6 +17,19 @@ function skeletonElement(): HTMLElement {
 }
 
 describe("Skeleton", () => {
+  it("fills with the muted token and pulses its opacity without end", () => {
+    renderThemed(<Skeleton />);
+    const skeleton = skeletonElement();
+    expect(getComputedStyle(skeleton).backgroundColor).toBe(cssVarColor(skeleton, "--muted"));
+    const [pulse, ...others] = skeleton.getAnimations();
+    expect(others).toEqual([]);
+    const effect = pulse?.effect;
+    if (!(effect instanceof KeyframeEffect)) throw new Error("expected a keyframe pulse");
+    expect(effect.getComputedTiming().iterations).toBe(Infinity);
+    const fades = effect.getKeyframes().some(({ opacity }) => opacity !== undefined && Number(opacity) < 1);
+    expect(fades).toBe(true);
+  });
+
   it("merges consumer sizing and a winning bg-*, and forwards aria-hidden, id, data-*, handlers and ref", () => {
     const ref = createRef<HTMLDivElement>();
     let clicks = 0;

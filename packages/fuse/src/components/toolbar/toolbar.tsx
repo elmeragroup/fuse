@@ -5,6 +5,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { Toolbar as ToolbarPrimitive } from "@base-ui/react/toolbar";
 
 import { mergeClassName } from "../../styles/merge-class-name";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { toolbarVariants } from "./toolbar-variants";
 
 const slots = toolbarVariants();
@@ -132,7 +133,14 @@ export function ToolbarRoot({
 
 /** A button in the toolbar's focus order. It has no styles of its own. */
 export function ToolbarButton({ disabled = false, ...props }: ToolbarButtonProps): ReactElement {
-  return <ToolbarPrimitive.Button data-slot="toolbar-button" disabled={disabled} {...props} />;
+  return (
+    <ToolbarPrimitive.Button
+      data-slot="toolbar-button"
+      disabled={disabled}
+      {...props}
+      data-skeleton-part={"toolbar-button" satisfies SkeletonPart}
+    />
+  );
 }
 
 /** A link in the toolbar's focus order. It has no styles of its own. */

@@ -7,6 +7,7 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { useReducedMotion } from "../../hooks/use-reduced-motion";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { createDrawGate, useOpenDrawing } from "./chart-draw-gate";
 import { useIssueWarnings } from "./chart-issue-warnings";
 import { StatusRegion } from "./chart-listbox";
@@ -299,7 +300,11 @@ export function LiveLineChartRoot({
             {LIVE_STRINGS[locale].instructionsLive}
           </p>
           <div data-slot="chart-frame">
-            <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
+            <div
+              ref={plotRef}
+              data-slot="chart-plot"
+              data-skeleton-part={"chart-plot" satisfies SkeletonPart}
+              aria-hidden="true">
               {probe}
               {plot === null && points.length > 0 ? <PlotLoader /> : null}
             </div>

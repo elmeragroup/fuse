@@ -308,7 +308,7 @@
               "children": [
                 {
                   "tag": "div",
-                  "attributes": {"data-slot":"selection-item-control","data-variant":"icon"},
+                  "attributes": {"data-skeleton-part":"item-media","data-slot":"selection-item-control","data-variant":"icon"},
                   "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","item-described:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))]","[&_svg]:pointer-events-none","[&_svg:not([class*='size-'])]:size-4","self-start","pt-3.5","pb-3.5","box-content","h-(--selection-first-line)"],
                   "text": "",
                   "declarations": [63,64,6,66,67,68,136,137,70,138,78,79,80,139,140,141,142,143],
@@ -320,7 +320,7 @@
                   "children": [
                     {
                       "tag": "span",
-                      "attributes": {"aria-checked":"false","data-slot":"checkbox","data-unchecked":"","id":"base-ui-1","role":"checkbox","tabindex":"0"},
+                      "attributes": {"aria-checked":"false","data-skeleton-part":"checkbox","data-slot":"checkbox","data-unchecked":"","id":"base-ui-1","role":"checkbox","tabindex":"0"},
                       "classes": ["peer","shadow-xs","ease-out","relative","flex","size-4","max-w-4","shrink-0","items-center","justify-center","border","border-muted-foreground","bg-card","transition-[color,background-color,border-color,box-shadow]","duration-150","outline-none","after:absolute","after:-inset-x-3","after:-inset-y-2","after:content-['']","data-indeterminate:border-primary","data-indeterminate:bg-primary","data-indeterminate:text-primary-foreground","data-checked:border-primary","data-checked:bg-primary","data-checked:text-primary-foreground","rounded-[min(--theme(--radius-md),4px)]","focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","aria-disabled:cursor-not-allowed","aria-disabled:opacity-50","aria-invalid:border-error","aria-invalid:ring-3","aria-invalid:ring-error/20","aria-invalid:focus-visible:ring-3","aria-invalid:focus-visible:ring-error/20","aria-invalid:focus-visible:ring-offset-1","aria-invalid:focus-visible:ring-offset-error","data-invalid:border-error","data-invalid:ring-3","data-invalid:ring-error/20","data-invalid:focus-visible:ring-3","data-invalid:focus-visible:ring-error/20","data-invalid:focus-visible:ring-offset-1","data-invalid:focus-visible:ring-offset-error","data-disabled:cursor-not-allowed","data-disabled:opacity-50","aria-invalid:aria-checked:border-primary","data-invalid:aria-checked:border-primary"],
                       "text": "",
                       "declarations": [64,65,68,69,74,70,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94],

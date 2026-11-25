@@ -8,6 +8,7 @@ import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { toggleVariants } from "../toggle/toggle-variants";
 import { segmentedItemInset, toggleGroupVariants } from "./toggle-group-variants";
 
@@ -123,7 +124,8 @@ export function ToggleGroupItem({
         context.spacing === 0 && segmentedItemInset({ size: resolvedSize }),
         className
       )}
-      {...props}>
+      {...props}
+      data-skeleton-part={"toggle-group-item" satisfies SkeletonPart}>
       {children}
     </TogglePrimitive>
   );

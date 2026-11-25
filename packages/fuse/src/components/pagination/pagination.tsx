@@ -7,6 +7,7 @@ import { CaretLeft } from "../../icons/generated/caret-left";
 import { CaretRight } from "../../icons/generated/caret-right";
 import { DotsThree } from "../../icons/generated/dots-three";
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import type { ButtonProps } from "../button/button";
 import { buttonVariants } from "../button/button-variants";
 import { paginationStrings } from "./intl";
@@ -146,6 +147,7 @@ export function PaginationLink({
       aria-current={isActive ? "page" : undefined}
       className={cn(buttonVariants({ variant: isActive ? "outline" : "ghost", size }), link(), className)}
       {...props}
+      data-skeleton-part={"pagination-link" satisfies SkeletonPart}
     />
   );
 }

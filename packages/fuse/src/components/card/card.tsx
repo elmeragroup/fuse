@@ -3,6 +3,7 @@ import type { ComponentProps, HTMLAttributes, ReactElement, ReactNode } from "re
 import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { CardSectionButton } from "./card-section-button";
 import {
   cardDescriptionVariants,
@@ -244,7 +245,14 @@ function CardSection({ className, ...props }: HTMLAttributes<HTMLDivElement>): R
 function CardSectionMedia({ className, ...props }: CardSectionMediaProps): ReactElement {
   const { media } = cardSectionVariants();
 
-  return <span data-slot="card-section-media" className={cn(media(), className)} {...props} />;
+  return (
+    <span
+      data-slot="card-section-media"
+      className={cn(media(), className)}
+      {...props}
+      data-skeleton-part={"card-section-media" satisfies SkeletonPart}
+    />
+  );
 }
 
 CardRoot.displayName = "Card.Root";

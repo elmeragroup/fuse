@@ -7,6 +7,7 @@ import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
 import { useCheckedResetSync } from "../../hooks/use-checked-reset-sync";
 import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { switchVariants } from "./switch-variants";
 
 export type SwitchProps = Omit<ComponentProps<typeof SwitchPrimitive.Root>, "className"> & {
@@ -39,7 +40,8 @@ export function Switch({ className, size = "default", inputRef, ...props }: Swit
       data-slot="switch"
       data-size={size}
       className={cn(slots.root(), slots.control(), className)}
-      {...definedProps(props)}>
+      {...definedProps(props)}
+      data-skeleton-part={"switch" satisfies SkeletonPart}>
       <SwitchPrimitive.Thumb data-slot="switch-thumb" className={slots.thumb()} />
     </SwitchPrimitive.Root>
   );

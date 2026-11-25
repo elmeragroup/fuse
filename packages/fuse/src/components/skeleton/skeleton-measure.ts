@@ -201,7 +201,7 @@ function barOf(
 function roleOf(element: Element): SkeletonRole | undefined {
   return skeletonRoleOf({
     hint: element.getAttribute("data-skeleton"),
-    slot: element.getAttribute("data-slot"),
+    part: element.getAttribute("data-skeleton-part"),
     tagName: element.localName,
   });
 }

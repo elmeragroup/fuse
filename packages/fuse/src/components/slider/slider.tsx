@@ -10,6 +10,7 @@ import { useResetRemount } from "../../hooks/use-reset-remount";
 import { definedProps } from "../../internal/defined-props";
 import { useLocale } from "../../intl/locale-context";
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { FieldLabel } from "../field/field";
 import { FieldFrame } from "../field/field-frame";
 import { fieldFrameVariants } from "../field/field-frame-variants";
@@ -238,7 +239,8 @@ export function Slider<Value extends SliderValue = number>({
           largeStep,
           format: formatOptions,
           name,
-        })}>
+        })}
+        data-skeleton-part={"slider" satisfies SkeletonPart}>
         {/* The label sits inside Slider.Root so the value beside it can read the slider's state;
             Field.Root above still owns the label id that names a single thumb. */}
         {label || showValue ? (

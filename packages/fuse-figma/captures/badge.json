@@ -181,7 +181,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-primary","text-primary-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -203,7 +203,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-primary","text-primary-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -225,7 +225,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-primary","text-primary-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -247,7 +247,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-transparent","bg-secondary","text-secondary-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -269,7 +269,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-transparent","bg-secondary","text-secondary-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -291,7 +291,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-transparent","bg-secondary","text-secondary-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -313,7 +313,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-error","text-error-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -335,7 +335,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-error","text-error-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -357,7 +357,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-error","text-error-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -379,7 +379,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-success","text-success-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -401,7 +401,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-success","text-success-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -423,7 +423,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-success","text-success-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -445,7 +445,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-warning","text-warning-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -467,7 +467,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-warning","text-warning-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -489,7 +489,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-warning","text-warning-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -511,7 +511,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-info","text-info-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -533,7 +533,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-info","text-info-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -555,7 +555,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-info","text-info-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -577,7 +577,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-error/20","bg-error-soft","text-error-soft-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -599,7 +599,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-error/20","bg-error-soft","text-error-soft-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -621,7 +621,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-error/20","bg-error-soft","text-error-soft-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -643,7 +643,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-success/20","bg-success-soft","text-success-soft-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -665,7 +665,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-success/20","bg-success-soft","text-success-soft-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -687,7 +687,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-success/20","bg-success-soft","text-success-soft-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -709,7 +709,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-warning/20","bg-warning-soft","text-warning-soft-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -731,7 +731,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-warning/20","bg-warning-soft","text-warning-soft-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -753,7 +753,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-warning/20","bg-warning-soft","text-warning-soft-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -775,7 +775,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-info/20","bg-info-soft","text-info-soft-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -797,7 +797,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-info/20","bg-info-soft","text-info-soft-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -819,7 +819,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-info/20","bg-info-soft","text-info-soft-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -841,7 +841,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","text-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -863,7 +863,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","text-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -885,7 +885,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","text-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -907,7 +907,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-secondary","text-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -929,7 +929,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-secondary","text-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -951,7 +951,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-secondary","text-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -973,7 +973,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-error","text-error","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -995,7 +995,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-error","text-error","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -1017,7 +1017,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-error","text-error","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -1039,7 +1039,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-success","text-success","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -1061,7 +1061,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-success","text-success","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -1083,7 +1083,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-success","text-success","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -1105,7 +1105,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-warning","text-warning","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -1127,7 +1127,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-warning","text-warning","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -1149,7 +1149,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-warning","text-warning","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -1171,7 +1171,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-info","text-info","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -1193,7 +1193,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-info","text-info","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -1215,7 +1215,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","border-info","text-info","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -1237,7 +1237,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-muted","text-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -1259,7 +1259,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-muted","text-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -1281,7 +1281,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-muted","text-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -1303,7 +1303,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-accent","text-accent-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -1325,7 +1325,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-accent","text-accent-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -1347,7 +1347,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-accent","text-accent-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,
@@ -1369,7 +1369,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-card","text-card-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2.5","py-0.5"],
           "text": "Badge",
           "textIndex": 0,
@@ -1391,7 +1391,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-card","text-card-foreground","text-xs","[&>span]:text-xs","[&>span]:font-medium","px-2","py-px"],
           "text": "Badge",
           "textIndex": 0,
@@ -1413,7 +1413,7 @@
         "around": [],
         "root": {
           "tag": "span",
-          "attributes": {"data-slot":"badge"},
+          "attributes": {"data-skeleton-part":"badge","data-slot":"badge"},
           "classes": ["font-medium","inline-flex","items-center","rounded-lg","border","transition-colors","shadow-xs","border-transparent","bg-card","text-card-foreground","text-sm","[&>span]:text-sm","[&>span]:font-medium","px-3","py-1"],
           "text": "Badge",
           "textIndex": 0,

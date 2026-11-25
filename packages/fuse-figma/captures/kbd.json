@@ -152,7 +152,7 @@
         "around": [],
         "root": {
           "tag": "kbd",
-          "attributes": {"data-slot":"kbd"},
+          "attributes": {"data-skeleton-part":"kbd","data-slot":"kbd"},
           "classes": ["text-xs","font-medium","box-border","inline-flex","h-5","min-w-5","shrink-0","items-center","justify-center","gap-1","rounded-sm","border","border-border","bg-muted","px-1","font-sans","text-muted-foreground","tabular-nums","select-none","[&_svg]:pointer-events-none","[&_svg:not([class*='size-'])]:size-3"],
           "text": "K",
           "textIndex": 0,
@@ -174,7 +174,7 @@
         "around": [],
         "root": {
           "tag": "kbd",
-          "attributes": {"data-slot":"kbd"},
+          "attributes": {"data-skeleton-part":"kbd","data-slot":"kbd"},
           "classes": ["text-xs","font-medium","box-border","inline-flex","h-5","min-w-5","shrink-0","items-center","justify-center","gap-1","rounded-sm","border","border-border","bg-muted","px-1","font-sans","text-muted-foreground","tabular-nums","select-none","[&_svg]:pointer-events-none","[&_svg:not([class*='size-'])]:size-3"],
           "text": "",
           "declarations": [64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91],

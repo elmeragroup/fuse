@@ -1,6 +1,7 @@
 import type { ComponentProps, ComponentPropsWithoutRef, ReactElement } from "react";
 
 import { cn } from "../../styles/cn";
+import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { isThemeDevelopment } from "../../theme/validate-theme";
 import { Heading } from "../heading/heading";
 import { timelineListVariants } from "./timeline-list-variants";
@@ -53,7 +54,12 @@ function TimelineListRoot({ className, ...props }: TimelineListRootProps): React
 function TimelineListItem({ className, children, ...props }: TimelineListItemProps): ReactElement {
   return (
     <li data-slot="timeline-list-item" className={cn(item(), className)} {...props}>
-      <span data-slot="timeline-list-dot" aria-hidden="true" className={dot()} />
+      <span
+        data-slot="timeline-list-dot"
+        data-skeleton-part={"timeline-list-dot" satisfies SkeletonPart}
+        aria-hidden="true"
+        className={dot()}
+      />
       {children}
     </li>
   );

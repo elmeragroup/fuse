@@ -212,7 +212,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","item-described:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))]","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4"],
               "text": "",
               "declarations": [63,72,6,73,74,75,76,77,78,79,80,81,82,83,84],
@@ -299,7 +299,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","item-described:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))]","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4"],
               "text": "",
               "declarations": [63,72,6,73,74,75,76,77,78,79,80,81,82,83,84],
@@ -386,7 +386,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","item-described:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))]","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4"],
               "text": "",
               "declarations": [63,72,6,73,74,75,76,77,78,79,80,81,82,83,84],
@@ -473,7 +473,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","item-described:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))]","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4"],
               "text": "",
               "declarations": [63,72,6,73,74,75,76,77,78,79,80,81,82,83,84],
@@ -560,7 +560,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","item-described:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))]","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4"],
               "text": "",
               "declarations": [63,72,6,73,74,75,76,77,78,79,80,81,82,83,84],
@@ -647,7 +647,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","item-described:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))]","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4"],
               "text": "",
               "declarations": [63,72,6,73,74,75,76,77,78,79,80,81,82,83,84],
@@ -734,7 +734,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","item-described:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))]","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4"],
               "text": "",
               "declarations": [63,72,6,73,74,75,76,77,78,79,80,81,82,83,84],
@@ -821,7 +821,7 @@
           "children": [
             {
               "tag": "div",
-              "attributes": {"data-slot":"item-media","data-variant":"icon"},
+              "attributes": {"data-skeleton-part":"item-media","data-slot":"item-media","data-variant":"icon"},
               "classes": ["flex","shrink-0","items-center","justify-center","gap-2","[--item-media-line:auto]","item-described:self-start","item-described:[--item-media-line:calc(var(--text-sm)*var(--leading-snug))]","[&_svg]:pointer-events-none","h-(--item-media-line)","[&_svg:not([class*='size-'])]:size-4"],
               "text": "",
               "declarations": [63,72,6,73,74,75,76,77,78,79,80,81,82,83,84],
