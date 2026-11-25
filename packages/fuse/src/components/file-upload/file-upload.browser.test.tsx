@@ -281,7 +281,7 @@ describe("paste", () => {
     });
   });
 
-  it("leaves a paste alone with focus outside Root, or in a text input inside Root", () => {
+  it("leaves a paste alone with focus outside Root, though Root holds a form the document names `host`, or in a text input inside Root", async () => {
     const onSelect = vi.fn<(files: File[]) => void>();
     renderThemed(
       <>
@@ -289,16 +289,27 @@ describe("paste", () => {
         <FileUpload.Root onSelect={onSelect}>
           <FileUpload.Trigger>Add files</FileUpload.Trigger>
           <input aria-label="Caption" />
+          <form name="host" />
         </FileUpload.Root>
       </>
     );
+    // The premise: the document's named-property getter answers `host` with the form.
+    expect(document).toHaveProperty("host", document.forms.namedItem("host"));
+
     roleNamed("button", "Outside").focus();
     const outside = paste(document.body, [png("a.png")]);
     roleNamed("textbox", "Caption").focus();
     const inField = paste(roleNamed("textbox", "Caption"), [png("b.png")]);
     expect(outside.defaultPrevented).toBe(false);
     expect(inField.defaultPrevented).toBe(false);
-    expect(onSelect).not.toHaveBeenCalled();
+
+    // Root hands pasted files to onSelect in paste order, so a delivery queued for either paste
+    // above would arrive before this one from the Trigger.
+    roleNamed("button", "Add files").focus();
+    paste(document.body, [png("c.png")]);
+    await vi.waitFor(() => {
+      expect(onSelect.mock.calls.map(([files]) => files.map((file) => file.name))).toEqual([["c.png"]]);
+    });
   });
 });
 
