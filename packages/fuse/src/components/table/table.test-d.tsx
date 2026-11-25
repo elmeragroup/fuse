@@ -13,8 +13,12 @@ import type {
 import * as TableModule from "@elmeragroup/fuse/table";
 import { Table, VerticalTable } from "@elmeragroup/fuse/table";
 
+// `TableRootProps` redeclares `aria-label` and `tabIndex` with their native types to document them.
+// Flattening both sides to one object type compares the props, not the intersection's shape.
+type Flat<T> = { [K in keyof T]: T[K] };
+
 test("public API exports the namespaces and VerticalTableItem — never flat or legacy part names", () => {
-  expectTypeOf<TableRootProps>().toEqualTypeOf<ComponentProps<"table">>();
+  expectTypeOf<Flat<TableRootProps>>().toEqualTypeOf<Flat<ComponentProps<"table">>>();
   expectTypeOf<VerticalTableRootProps["variant"]>().toEqualTypeOf<
     "default" | "non-bordered-compact" | undefined
   >();

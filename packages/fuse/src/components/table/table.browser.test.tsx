@@ -5,6 +5,9 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { nextFrames } from "../../../test/animation-frames";
+import { axFocused, axNodes } from "../../../test/ax-tree";
+import { assertNoAxeViolations } from "../../../test/axe";
 import { PANEL, describePartPaint } from "../../../test/surface-paint";
 import type { Layer, PartCase } from "../../../test/surface-paint";
 import {
@@ -18,7 +21,7 @@ import {
 import { DENSITIES } from "../../theme/density";
 import { Frame } from "../frame/frame";
 import { Table, VerticalTable } from "./table";
-import type { VerticalTableItem } from "./table";
+import type { TableRootProps, VerticalTableItem } from "./table";
 
 function htmlTable(name?: string): HTMLTableElement {
   const element =
@@ -194,6 +197,227 @@ describe("VerticalTable", () => {
     expect(header.tagName).toBe("TH");
     expect(header.getAttribute("scope")).toBe("row");
     expect(page.getByRole("cell", { name: "Kari Nordmann", exact: true }).element().tagName).toBe("TD");
+  });
+});
+
+type MeterTableProps = TableRootProps & {
+  /** The width of the box around the table. The default is narrower than the table. */
+  width?: string;
+  /** Content placed before the first cell's text. */
+  control?: ReactNode;
+  /** The table's caption, rendered as `Table.Caption`. */
+  caption?: string;
+};
+
+function MeterTable({ width = "200px", control, caption, ...tableProps }: MeterTableProps): ReactElement {
+  return (
+    <div style={{ width }}>
+      <Table.Root {...tableProps}>
+        {caption === undefined ? null : <Table.Caption>{caption}</Table.Caption>}
+        <Table.Body>
+          <Table.Row>
+            <Table.Cell className="whitespace-nowrap">{control}Meter 1200 at Storgata 1, Oslo</Table.Cell>
+            <Table.Cell className="whitespace-nowrap">1200 kWh read on 24 November 2026</Table.Cell>
+          </Table.Row>
+        </Table.Body>
+      </Table.Root>
+    </div>
+  );
+}
+
+function container(): HTMLElement {
+  const element = document.querySelector('[data-slot="table-container"]');
+  if (!(element instanceof HTMLElement)) throw new Error("expected the table's container");
+  return element;
+}
+
+/** The container's role and tab index, both `null` while it is no stop. */
+function scrollStop() {
+  return { role: container().getAttribute("role"), tabIndex: container().getAttribute("tabindex") };
+}
+
+const STOP = { role: "group", tabIndex: "0" };
+const NO_STOP = { role: null, tabIndex: null };
+
+describe("Table", () => {
+  it("puts a table wider than its container in the tab order as a named group the arrow keys scroll", async () => {
+    const { host } = renderThemed(
+      <>
+        <button type="button">Before</button>
+        <MeterTable aria-label="Meter readings" />
+      </>
+    );
+    await expect.poll(scrollStop).toEqual(STOP);
+    await assertNoAxeViolations(host);
+
+    roleNamed("button", "Before").focus();
+    await userEvent.tab();
+    expect(document.activeElement).toBe(roleNamed("group", "Meter readings"));
+    await userEvent.keyboard("{ArrowRight}");
+    await expect.poll(() => container().scrollLeft).toBeGreaterThan(0);
+  });
+
+  it("stops on a scrolling table's container before the text input in its cells", async () => {
+    renderThemed(
+      <>
+        <button type="button">Before</button>
+        <MeterTable aria-label="Meter readings" control={<input aria-label="Note" />} />
+      </>
+    );
+    await expect.poll(scrollStop).toEqual(STOP);
+
+    roleNamed("button", "Before").focus();
+    await userEvent.tab();
+    expect(document.activeElement).toBe(roleNamed("group", "Meter readings"));
+    await userEvent.tab();
+    expect(document.activeElement).toBe(textboxNamed("Note"));
+  });
+
+  it.each([
+    {
+      label: "the table's aria-label when its aria-labelledby names a missing id",
+      props: { "aria-labelledby": "missing-heading", "aria-label": "Meter readings" },
+      name: "Meter readings",
+    },
+    {
+      label: "the table's aria-labelledby",
+      props: { "aria-labelledby": "meter-heading" },
+      name: "Readings in Oslo",
+    },
+    { label: "the table's caption", props: { caption: "November readings" }, name: "November readings" },
+  ])("names the scrolling container by $label", async ({ props, name }) => {
+    const { host } = renderThemed(
+      <>
+        <h2 id="meter-heading">Readings in Oslo</h2>
+        <MeterTable {...props} />
+      </>
+    );
+    await expect.poll(scrollStop).toEqual(STOP);
+    expect(roleNamed("group", name)).toBe(container());
+    await assertNoAxeViolations(host);
+  });
+
+  it.each([
+    { label: "an unnamed, uncaptioned", props: {} },
+    { label: "an empty-captioned", props: { caption: "" } },
+  ])("gives $label scrolling table's container no name in Chromium", async ({ props }) => {
+    renderThemed(<MeterTable {...props} />);
+    await expect.poll(scrollStop).toEqual(STOP);
+
+    container().focus();
+    // ARIA names a group from its author only, so Chromium must not take the cells' text.
+    const focused = axFocused(await axNodes());
+    expect(focused?.role?.value).toBe("group");
+    expect(focused?.name?.value ?? "").toBe("");
+  });
+
+  it("drops the stop when the container widens to fit the table", async () => {
+    const { rerender } = renderThemed(<MeterTable aria-label="Meter readings" />);
+    await expect.poll(scrollStop).toEqual(STOP);
+
+    rerender(<MeterTable width="1200px" aria-label="Meter readings" />);
+    await expect.poll(scrollStop).toEqual(NO_STOP);
+  });
+
+  it("drops the stop when the container stops clipping the table", async () => {
+    const style = document.createElement("style");
+    style.textContent = '.meter-unclipped [data-slot="table-container"] { overflow: visible; }';
+    document.head.append(style);
+    try {
+      const { rerender } = renderThemed(
+        <div>
+          <MeterTable aria-label="Meter readings" />
+        </div>
+      );
+      await expect.poll(scrollStop).toEqual(STOP);
+
+      rerender(
+        <div className="meter-unclipped">
+          <MeterTable aria-label="Meter readings" />
+        </div>
+      );
+      await expect.poll(scrollStop).toEqual(NO_STOP);
+    } finally {
+      style.remove();
+    }
+  });
+
+  it.each([
+    { tabIndex: 0, lands: () => htmlTable("Meter readings") },
+    { tabIndex: -1, lands: () => roleNamed("button", "After") },
+  ])("leaves focus to a scrolling table that sets its tabIndex to $tabIndex", async ({ tabIndex, lands }) => {
+    renderThemed(
+      <>
+        <button type="button">Before</button>
+        <MeterTable aria-label="Meter readings" tabIndex={tabIndex} />
+        <button type="button">After</button>
+      </>
+    );
+    // Give the container's first measurement a frame to land.
+    await nextFrames(2);
+    expect(container().scrollWidth).toBeGreaterThan(container().clientWidth);
+    roleNamed("button", "Before").focus();
+    await userEvent.tab();
+    expect(document.activeElement).toBe(lands());
+  });
+
+  it("keeps scrolling a table that sets its own tabIndex with the keys while the table has focus", async () => {
+    renderThemed(<MeterTable aria-label="Meter readings" tabIndex={0} />);
+    htmlTable("Meter readings").focus();
+    await userEvent.keyboard("{ArrowRight}");
+    await expect.poll(() => container().scrollLeft).toBeGreaterThan(0);
+  });
+
+  it.each([
+    {
+      change: "a cell's text",
+      shrink: (cell: HTMLElement) => {
+        cell.textContent = "1200 kWh";
+      },
+    },
+    {
+      change: "a cell's style",
+      shrink: (cell: HTMLElement) => {
+        cell.style.overflow = "hidden";
+      },
+    },
+  ])(
+    "drops the stop when $change stops a fixed-layout table overflowing with no box resize",
+    async ({ shrink }) => {
+      const reading = "1200 kWh read at Storgata 1, Oslo, on 24 November 2026";
+      // The change lands outside React, so the table and its container do not render.
+      renderThemed(
+        <div style={{ width: "300px" }}>
+          <Table.Root aria-label="Meter readings" className="table-fixed">
+            <Table.Body>
+              <Table.Row>
+                <Table.Cell className="whitespace-nowrap">{reading}</Table.Cell>
+              </Table.Row>
+            </Table.Body>
+          </Table.Root>
+        </div>
+      );
+      await expect.poll(scrollStop).toEqual(STOP);
+      const tableWidth = htmlTable("Meter readings").getBoundingClientRect().width;
+
+      shrink(roleNamed("cell", reading));
+      await expect.poll(scrollStop).toEqual(NO_STOP);
+      expect(htmlTable("Meter readings").getBoundingClientRect().width).toBe(tableWidth);
+    }
+  );
+
+  it("renders a plain table where the browser has no ResizeObserver", async () => {
+    const resizeObserver = Object.getOwnPropertyDescriptor(window, "ResizeObserver");
+    if (resizeObserver === undefined) throw new Error("expected a ResizeObserver to remove");
+    Reflect.deleteProperty(window, "ResizeObserver");
+    try {
+      renderThemed(<MeterTable aria-label="Meter readings" />);
+      await nextFrames(2);
+      expect(htmlTable("Meter readings").rows).toHaveLength(1);
+      expect(scrollStop()).toEqual(NO_STOP);
+    } finally {
+      Object.defineProperty(window, "ResizeObserver", resizeObserver);
+    }
   });
 });
 
