@@ -183,7 +183,7 @@ export function ScrollAreaBar({
       keepMounted={SCROLLBAR_KEEP_MOUNTED[type]}>
       <ScrollAreaPrimitive.Thumb
         data-slot="scroll-area-thumb"
-        className="relative flex-1 rounded-full bg-border"
+        className="relative flex-1 rounded-full bg-border forced-colors:bg-[CanvasText]"
       />
     </ScrollAreaPrimitive.Scrollbar>
   );

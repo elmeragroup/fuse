@@ -183,6 +183,35 @@ describe("ScrollArea", () => {
     expect(getComputedStyle(hover).pointerEvents).toBe("auto");
   });
 
+  it("paints the thumb apart from the empty track below it in forced-colors mode", async () => {
+    await withForcedColors("active", async () => {
+      render(
+        <ScrollArea.Root type="always" style={{ width: 320, height: 128 }}>
+          <TallList label="Thumb list" items={30} />
+        </ScrollArea.Root>
+      );
+      await waitForOverflow("Thumb list", "data-has-overflow-y");
+      const root = scrollRootFromText("Thumb list");
+      // The thumb has no role; locate it by the mandated data-slot.
+      const thumb = root.querySelector("[data-slot=scroll-area-thumb]");
+      if (!(thumb instanceof HTMLElement)) {
+        throw new Error("expected a scrollbar thumb");
+      }
+      // Base UI sizes the thumb after it measures the overflow.
+      await expect.poll(() => thumb.getBoundingClientRect().height).toBeGreaterThan(0);
+      const area = root.getBoundingClientRect();
+      const box = thumb.getBoundingClientRect();
+      // The viewport sits at the top, so the thumb starts there and the track below it is empty.
+      expect(box.bottom).toBeLessThan(area.bottom - 8);
+      const column = Math.round(box.left + box.width / 2 - area.left);
+      const [inThumb, inTrack] = await rows(root, column, [
+        Math.round(box.top + box.height / 2 - area.top),
+        Math.round(area.bottom - 4 - area.top),
+      ]);
+      expect(inThumb).not.toEqual(inTrack);
+    });
+  });
+
   it.each(["ArrowDown", "PageDown"])("scrolls a focused overflow viewport natively on %s", async (key) => {
     render(
       <ScrollArea.Root style={{ height: 128 }}>
