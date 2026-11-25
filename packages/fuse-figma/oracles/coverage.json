@@ -4491,6 +4491,22 @@
       },
       {
         "part": "data-table-filter-chips",
+        "className": "*:data-press-held:max-w-(--data-table-filter-held-width)!"
+      },
+      {
+        "part": "data-table-filter-chips",
+        "className": "*:data-press-held:min-w-(--data-table-filter-held-width)!"
+      },
+      {
+        "part": "data-table-filter-chips",
+        "className": "*:data-press-held:overflow-x-clip"
+      },
+      {
+        "part": "data-table-filter-chips",
+        "className": "*:data-press-held:w-(--data-table-filter-held-width)!"
+      },
+      {
+        "part": "data-table-filter-chips",
         "className": "not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size)"
       },
       {

@@ -311,7 +311,7 @@ function EditorFrame({
     },
     [setDraft]
   );
-  const { registerDraft } = actions;
+  const { registerDraft, holdWrittenChip } = actions;
   // The Root recreates its actions on every render, so settle reads the latest one. Its own
   // identity never changes, so a host's re-render never restarts the text editor's pause.
   const setValues = useRef(actions.setValues);
@@ -326,9 +326,10 @@ function EditorFrame({
     settled.current = current.draft;
     const next = draftWrite(field.kind, current.draft, current.filter, current.range);
     if (next !== undefined) {
+      holdWrittenChip(fieldId);
       setValues.current(fieldId, next.operator, next.values);
     }
-  }, [field.kind, fieldId]);
+  }, [field.kind, fieldId, holdWrittenChip]);
   const commitDraft = useCallback(
     (change: (current: DraftValues) => DraftValues) => {
       updateDraft(change);

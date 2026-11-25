@@ -528,11 +528,13 @@ export function barWithValue(value: ReactElement): ReactElement {
   );
 }
 
-/** A Customer and an Amount filter, in that order. */
-export const PEEKING_FILTERS: ColumnFiltersState = [
-  ...CUSTOMER_NORD,
+/** The amount is over 500. */
+export const AMOUNT_OVER_500: ColumnFiltersState = [
   { id: "amount", value: { kind: "number", operator: "isGreaterThan", values: [500] } },
 ];
+
+/** A Customer and an Amount filter, in that order. */
+export const PEEKING_FILTERS: ColumnFiltersState = [...CUSTOMER_NORD, ...AMOUNT_OVER_500];
 
 /** The strip, and the Amount segment that shows only its start at the strip's end. */
 export type AmountPeeking = { readonly strip: HTMLElement; readonly segment: HTMLElement };
@@ -625,7 +627,13 @@ export function insideStrip(strip: Element, element: Element): boolean {
   return inner.left >= outer.left - 0.5 && inner.right <= outer.right + 0.5;
 }
 
-const PRESS_END_TYPES: ReadonlySet<string> = new Set(["pointerup", "pointercancel", "mouseup"]);
+const PRESS_END_TYPES: ReadonlySet<string> = new Set([
+  "pointerup",
+  "pointercancel",
+  "mouseup",
+  "pointermove",
+  "pointerout",
+]);
 
 /**
  * The test document's live listeners for the events that end a press, as Chromium's DevTools
@@ -661,7 +669,7 @@ async function livePressEndListeners(): Promise<number> {
 }
 
 /**
- * Starts counting the test document's listeners for `pointerup`, `pointercancel` and `mouseup`
+ * Starts counting the test document's listeners for `pointerup`, `pointercancel`, `mouseup`, `pointermove` and `pointerout`
  * above the ones live now. Chromium only.
  *
  * @returns Reads how many more such listeners are live than at the call.

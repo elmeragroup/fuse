@@ -64,6 +64,7 @@ import { viewColumnFilters } from "./filter-parse";
 import { dataTableFilterStrings } from "./intl";
 import type { DataTableFilterStringKey } from "./intl";
 import { isListField } from "./option-list";
+import type { StripPress } from "./strip-press";
 
 /**
  * The field the user works with and the overlay that holds it, or will: the add menu for a drill
@@ -282,6 +283,15 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       owner.settle();
     }
   };
+  // Each chip strip's press. A strip holds the width of a chip a draft writes during a press, and
+  // a reveal must measure the chips' own widths.
+  const pressHolds = useRef(new Set<Pick<StripPress, "holdChip" | "releaseHold">>());
+  const registerPressHold = useCallback((press: Pick<StripPress, "holdChip" | "releaseHold">) => {
+    pressHolds.current.add(press);
+    return () => {
+      pressHolds.current.delete(press);
+    };
+  }, []);
   const discardDrafts = (keys: readonly string[] | null) => {
     for (const [key, owner] of drafts.current) {
       if (keys === null || keys.includes(key)) {
@@ -366,6 +376,21 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
     }
   }, []);
   const valueElement = useCallback((fieldId: string) => valueElements.current.get(fieldId) ?? null, []);
+  // Each Bar renders its own chip for a field, and `chipElements` keeps only the last one, so each
+  // strip also finds its chip through that field's segments.
+  const holdWrittenChip = useCallback(
+    (fieldId: string) => {
+      const elements = [chipElement(fieldId), ...(segments.current.get(fieldId) ?? [])];
+      for (const press of pressHolds.current) {
+        for (const element of elements) {
+          if (element !== null) {
+            press.holdChip(element);
+          }
+        }
+      }
+    },
+    [chipElement]
+  );
   const triggerElement = useCallback(() => triggerRef.current, []);
   const valueId = useCallback((fieldId: string) => `${rootId}value-${fieldId}`, [rootId]);
   const triggerId = `${rootId}trigger`;
@@ -484,6 +509,10 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
     }
     for (const element of [chipElement(editRequest.fieldId), valueElement(editRequest.fieldId)]) {
       if (element !== null && element.getClientRects().length > 0) {
+        // `edit()` during a held press would otherwise reveal the chip against the held widths.
+        for (const press of pressHolds.current) {
+          press.releaseHold();
+        }
         element.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
         revealedRequest.current = editRequest;
       }
@@ -696,6 +725,8 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
         }
       },
       registerDraft,
+      holdWrittenChip,
+      registerPressHold,
       registerSegment,
       registerContent,
       registerValueContent,

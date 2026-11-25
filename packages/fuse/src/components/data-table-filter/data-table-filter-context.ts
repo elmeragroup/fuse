@@ -20,6 +20,7 @@ import { resolveFocusTarget } from "./filter-focus";
 import type { DataTableFilterState, FilterKind, FilterOperator, FilterValue } from "./filter-model";
 import type { DataTableFilterStringKey } from "./intl";
 import type { ListField, OptionOrder } from "./option-list";
+import type { StripPress } from "./strip-press";
 
 export type { FacetReader } from "./filter-facets";
 
@@ -170,6 +171,16 @@ export type DataTableFilterInternals = {
     readonly registerDraft: (key: string, owner: DraftOwner) => () => void;
     /** Clears the editing field and the ghost chip once the value popover finishes closing. */
     readonly settleValue: () => void;
+    /**
+     * Runs just before an editor's draft writes `fieldId`'s filter. Each chip strip under a press
+     * holds that chip's width through the press.
+     */
+    readonly holdWrittenChip: (fieldId: string) => void;
+    /**
+     * Registers a chip strip's press, whose chip widths a draft write holds and whose hold the
+     * Root's reveal ends. Returns the cleanup.
+     */
+    readonly registerPressHold: (press: Pick<StripPress, "holdChip" | "releaseHold">) => () => void;
     /** `Content` calls it in a layout effect, and the cleanup unregisters. */
     readonly registerContent: () => () => void;
     /** `ValueContent` calls it in a layout effect, and the cleanup unregisters. */

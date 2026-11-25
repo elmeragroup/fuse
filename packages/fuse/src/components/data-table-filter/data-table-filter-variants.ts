@@ -31,14 +31,19 @@ export const dataTableFilterVariants = tv({
      * would sit without it. Where the end fade is static, the end padding widens to the fade. Under
      * a coarse pointer the block padding grows to half the gap between a chip and 44px, because the
      * scroll box clips on both axes and would cut each segment's 44px reach. It does not snap,
-     * since snapping would pull a focused segment back under a fade.
+     * since snapping would pull a focused segment back under a fade. An editor's draft that
+     * writes a chip during a press on another chip marks it with `data-press-held`, as
+     * `strip-press.ts` describes. A marked chip keeps the width in
+     * `--data-table-filter-held-width` and clips what outgrows it horizontally only, so its
+     * segments' vertical hit areas stay whole.
      */
     chips:
-      "-m-0.5 no-scrollbar flex scroll-fade-inline scroll-px-8 gap-(--surface-gap-sm) overflow-x-auto overscroll-x-contain p-0.5 not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size) pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))] pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]",
+      "-m-0.5 no-scrollbar flex scroll-fade-inline scroll-px-8 gap-(--surface-gap-sm) overflow-x-auto overscroll-x-contain p-0.5 not-supports-[animation-timeline:scroll()]:pe-(--scroll-fade-size) *:data-press-held:w-(--data-table-filter-held-width)! *:data-press-held:max-w-(--data-table-filter-held-width)! *:data-press-held:min-w-(--data-table-filter-held-width)! *:data-press-held:overflow-x-clip pointer-coarse:-my-[max(2px,calc((44px-var(--control-h-sm))/2))] pointer-coarse:py-[max(2px,calc((44px-var(--control-h-sm))/2))]",
     /**
-     * layout. A sentence of segments in one hairline border at the `rounded-md` rung. It never
-     * clips, so a segment's focus ring stays whole. A ghost chip is dashed and muted. It rests
-     * transparent, as the outline Trigger beside it does, so both show the surface beneath them.
+     * layout. A sentence of segments in one hairline border at the `rounded-md` rung. Outside a
+     * press that marks it, as `chips` describes, it never clips, so a segment's focus ring stays
+     * whole. A ghost chip is dashed and muted. It rests transparent, as the outline Trigger beside
+     * it does, so both show the surface beneath them.
      */
     chip: "text-sm shadow-xs flex h-(--control-h-sm) shrink-0 items-stretch rounded-md border border-border bg-transparent data-ghost:border-dashed data-ghost:text-muted-foreground",
     /**
