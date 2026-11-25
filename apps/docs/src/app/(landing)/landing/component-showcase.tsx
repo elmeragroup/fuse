@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 
-import Link from "next/link";
 import { tv } from "tailwind-variants";
 
 import { Badge } from "@elmeragroup/fuse/badge";
@@ -127,7 +126,7 @@ export function ComponentShowcase(): ReactElement {
           {ENTRIES.map((entry) => (
             <li key={entry.slug}>
               <NavigationMenu.Link
-                render={<Link href={entry.href} />}
+                href={entry.href}
                 className={showcaseEntry({ shown: entry.slug === active })}
                 onPointerEnter={() => setActive(entry.slug)}
                 onFocus={() => setActive(entry.slug)}>
@@ -139,7 +138,7 @@ export function ComponentShowcase(): ReactElement {
         <div className={styles.stage()}>{shown?.stage}</div>
       </div>
       <div className={styles.all()}>
-        <NavigationMenu.Link render={<Link href={HOME_PAGE.href} />}>
+        <NavigationMenu.Link href={HOME_PAGE.href}>
           {`View all ${String(FACTS.components)} components`}
         </NavigationMenu.Link>
       </div>

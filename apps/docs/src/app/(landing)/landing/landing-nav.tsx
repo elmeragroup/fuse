@@ -2,7 +2,6 @@
 
 import type { ReactElement } from "react";
 
-import Link from "next/link";
 import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
@@ -43,7 +42,7 @@ type MenuPage = Pick<StaticPage, "href" | "label" | "description">;
 function MenuCard({ page }: { page: MenuPage }): ReactElement {
   return (
     <li>
-      <NavigationMenu.Link render={<Link href={page.href} />}>
+      <NavigationMenu.Link href={page.href}>
         <MenuCardText title={page.label} description={page.description} />
       </NavigationMenu.Link>
     </li>
@@ -63,10 +62,10 @@ export function LandingNav(): ReactElement {
   return (
     <header className={styles.bar()}>
       <div className={styles.inner()}>
-        <Link href="/" className={styles.wordmark()}>
+        <a href="/" className={styles.wordmark()}>
           <ElmeraGroupLogo variant="mark" className={styles.mark()} aria-hidden />
           Fuse
-        </Link>
+        </a>
         <NavigationMenu.Root aria-label="Primary" className={styles.menu()}>
           <NavigationMenu.List>
             {PAGE_MENUS.map((menu) => (
@@ -96,7 +95,7 @@ export function LandingNav(): ReactElement {
           <Button
             size="sm"
             className={styles.cta()}
-            render={<Link href={QUICK_START.href} />}
+            render={<a href={QUICK_START.href} />}
             nativeButton={false}>
             Get started
           </Button>

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
 
-import Link from "next/link";
 import { tv } from "tailwind-variants";
 
 import { Button } from "@elmeragroup/fuse/button";
@@ -81,10 +80,10 @@ export function LandingInstall(): ReactElement {
         </p>
         <InstallCommand />
         <div className={styles.links()}>
-          <Button variant="link" render={<Link href={QUICK_START.href} />} nativeButton={false}>
+          <Button variant="link" render={<a href={QUICK_START.href} />} nativeButton={false}>
             Read the quick start ›
           </Button>
-          <Button variant="link" render={<Link href={BROWSE_COMPONENTS.href} />} nativeButton={false}>
+          <Button variant="link" render={<a href={BROWSE_COMPONENTS.href} />} nativeButton={false}>
             Browse components ›
           </Button>
         </div>

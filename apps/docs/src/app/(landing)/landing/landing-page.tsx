@@ -1,6 +1,5 @@
 import type { ReactElement } from "react";
 
-import Link from "next/link";
 import { tv } from "tailwind-variants";
 
 import { Toast } from "@elmeragroup/fuse/toast";
@@ -36,8 +35,9 @@ const FOOTER_LINKS = [
 ];
 
 /**
- * The landing, rendered once by the landing layout for every landing route, so a client navigation
- * between `/` and a shared address keeps one instance and the address alone moves its theme.
+ * The landing. The landing layout renders it for both landing routes: `/` and `themed/[theme]`,
+ * where `proxy.ts` rewrites a shared address. Picking a theme updates the mounted page, then
+ * replaces the current history entry's address with `replaceState`, so the page stays mounted.
  */
 export function LandingPage(): ReactElement {
   return (
@@ -62,9 +62,9 @@ export function LandingPage(): ReactElement {
                 </span>
                 <span className={styles.footerLinks()}>
                   {FOOTER_LINKS.map((link) => (
-                    <Link key={link.href} href={link.href} className={styles.footerLink()}>
+                    <a key={link.href} href={link.href} className={styles.footerLink()}>
                       {link.label}
-                    </Link>
+                    </a>
                   ))}
                 </span>
               </div>

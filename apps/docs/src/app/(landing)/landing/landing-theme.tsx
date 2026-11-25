@@ -156,8 +156,8 @@ function subscribeNever(): () => void {
 /**
  * Moves the theme with the address bar. Next keeps client state across a navigation that changes
  * only the query, and Back restores a picked entry with the page props it was first rendered with.
- * So the landing wears whatever `?theme=` the address bar moves to, through a link, Back or
- * Forward. A pick's own `replaceState` moves it to the theme already worn, and remounts nothing.
+ * So the landing wears whatever `?theme=` the address bar moves to, through Back or Forward. A
+ * pick's own `replaceState` moves it to the theme already worn, and remounts nothing.
  * `parseThemeSearch` reads every value, so a repeated `theme` opens on the default here as it does
  * on a fresh load. The comparison covers every value, so a second `theme` added after an unchanged
  * first still counts as a change. A layout effect applies the change before the browser paints the
@@ -258,6 +258,14 @@ function useThemeQuery(theme: ThemeInput): void {
       // No state of its own: Next then copies its router state into the entry and moves
       // `useSearchParams` to the new address, so Back to this entry restores the picked theme.
       // Handing over `window.history.state` would carry Next's marker and skip that sync.
+      // Next's patched `replaceState` runs that sync as a router restore whenever a call names a
+      // URL and its state carries neither `__NA` nor `_N`:
+      // https://github.com/vercel/next.js/blob/v16.4.5/packages/next/src/client/components/app-router.tsx#L403-L419
+      // The router's action queue then discards any navigation still loading its route:
+      // https://github.com/vercel/next.js/blob/v16.4.5/packages/next/src/client/components/app-router-instance.ts#L197-L218
+      // A pick would cancel a client navigation (#1046), so every landing link is a plain anchor
+      // and the landing palette opens other pages with `location.assign`. A pick leaves a
+      // document load alone. Lint keeps `next/link` off the landing.
       window.history.replaceState(null, "", url);
     }
   }, [theme]);

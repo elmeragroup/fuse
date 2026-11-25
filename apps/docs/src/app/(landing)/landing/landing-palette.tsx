@@ -57,13 +57,22 @@ function useLandingSettings(): SiteSettings {
 }
 
 /**
+ * Opens a docs page with a document load, as the landing's links do. A theme pick would discard a
+ * client navigation still loading its route (see `useThemeQuery`). Every page but the landing has
+ * another root layout, so the router would end in a document load anyway.
+ */
+function openDocument(href: string): void {
+  window.location.assign(href);
+}
+
+/**
  * The landing's site palette around the page. It sits inside the landing's toast provider, which
  * shows the copy actions' toasts.
  */
 export function LandingPalette({ children }: { children: ReactNode }): ReactElement {
   const toasts = Toast.useToastManager();
   return (
-    <SitePaletteProvider settings={useLandingSettings()} toasts={toasts}>
+    <SitePaletteProvider settings={useLandingSettings()} toasts={toasts} navigateToOtherPath={openDocument}>
       {children}
       <SitePaletteDialog />
     </SitePaletteProvider>

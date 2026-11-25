@@ -109,6 +109,16 @@ const APP_DEEP_IMPORT: RestrictedModule = {
     "apps consume @elmeragroup/fuse through its package exports, the way a consumer does; a deep import of packages/fuse/src skips the build and its exports map.",
 };
 
+/**
+ * Every landing link is a plain anchor. A theme pick writes the address through Next's patched
+ * `replaceState`, which discards a client navigation still loading its route (#1046).
+ */
+const LANDING_NEXT_LINK: RestrictedModule = {
+  pattern: "^next/link$",
+  message:
+    "every landing link is a plain anchor, because a theme pick discards a client navigation still loading its route (#1046).",
+};
+
 const DOCS_CHROME_SIDEBAR_MESSAGE =
   "docs chrome never composes the library Sidebar; only the Sidebar page's demos, the landing's app-shell demo and the blocks' demos demonstrate it.";
 
@@ -799,13 +809,24 @@ export default defineConfig({
       },
     },
     {
-      files: [
-        "apps/docs/src/app/(docs)/components/sidebar/**",
-        "apps/docs/src/app/(landing)/landing/app-shell/**",
-        "apps/docs/src/app/(docs)/blocks/*/demos/**",
-      ],
+      files: ["apps/docs/src/app/(landing)/**"],
+      rules: {
+        "fuse/restricted-imports": restrictModules(
+          [...DOCS_CHROME_SIDEBAR, APP_DEEP_IMPORT, LANDING_NEXT_LINK],
+          "check"
+        ),
+      },
+    },
+    {
+      files: ["apps/docs/src/app/(docs)/components/sidebar/**", "apps/docs/src/app/(docs)/blocks/*/demos/**"],
       rules: {
         "fuse/restricted-imports": restrictModules([APP_DEEP_IMPORT], "check"),
+      },
+    },
+    {
+      files: ["apps/docs/src/app/(landing)/landing/app-shell/**"],
+      rules: {
+        "fuse/restricted-imports": restrictModules([APP_DEEP_IMPORT, LANDING_NEXT_LINK], "check"),
       },
     },
     {
