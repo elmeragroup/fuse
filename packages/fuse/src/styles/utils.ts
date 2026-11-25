@@ -63,6 +63,15 @@ export const withinFocusRingClass = focusRing({ target: "within" }).root();
 export const withinFocusRingControlClass = focusRing({ target: "within" }).control();
 
 /**
+ * The keyboard focus outline drawn 2px inside the element, in the `--ring` color, for a box that a
+ * clipping parent would cut an outer ring from, such as a scrolling table. An outline paints above
+ * the element's in-flow content but below a positioned descendant, and forced-colors mode keeps it.
+ */
+export const insetFocusOutlineClass = cn(
+  "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+);
+
+/**
  * The focused invalid face for a control that carries `aria-invalid` itself. Outside the error
  * border it paints a solid 1px `--error` line flush against the box, and the resting 3px
  * `error/20` halo outside that line, reaching 4px. Tailwind's ring offset slot draws the solid
