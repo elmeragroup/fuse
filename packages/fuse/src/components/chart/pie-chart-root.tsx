@@ -102,10 +102,11 @@ export type PieChartRootProps<
      * Root reads the key once, at mount. If no row holds the category yet, its slice turns active
      * when a row first does, unless a reader has already moved the active slice. A late default
      * whose row folds into Other activates Other. While the slice is active by default,
-     * `PieChart.Tooltip` opens only while at least half of the plot's box is in view. Width and
-     * height are checked separately, and on an axis where the plot is larger than the viewport,
-     * half of the viewport's extent is enough. The rule ends when a reader takes over: a pointer
-     * pick, keyboard focus on the plot, even with the same slice still active, or a pin.
+     * `PieChart.Tooltip` opens only while enough of the plot shows. The plot's room is the overlap
+     * of the viewport and the padding box of each ancestor that clips its overflow. Fuse caps the
+     * room's width and height at the plot's, and the plot must show at least half of each. The rule
+     * ends when a reader takes over: a pointer pick, keyboard focus on the plot, even with the same
+     * slice still active, or a pin.
      */
     defaultActiveKey?: keyof TConfig & string;
     /**

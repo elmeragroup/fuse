@@ -8,10 +8,14 @@
 // pixel floor, one device pixel along the radius, and the stack's floor on its outer segment alone;
 // the 25-hour 26 October 2025, where "06" sits at 100.8°; the seam where the arrows wrap; Now at
 // 11:30, 172.5°; the clock key map, where PageDown moves six hours; and the Tooltip under
-// `defaultActiveX`, shown in its lane at rest and on the first pointer pass, painted only while
-// at least half of the dial is in view, in the bottom or top lane that `laneRest` documents, and
-// applied when rows that hold its hour first arrive after mount; and a side lane, which rests clear
-// of a reference line's label past the rim.
+// `defaultActiveX`, shown in its lane at rest and on the first pointer pass, painted only
+// while each axis shows at least half of the smaller of the dial's extent and the room the viewport
+// and its clipping ancestors leave it. That rule is checked in a scroll panel far smaller than the
+// dial, a scaled panel, a panel in a shadow root, and for a fixed dial whose wrapper does not clip
+// it, including a wrapper that will change `transform-origin` and a style without a
+// `backdropFilter` accessor. The popup takes the bottom or top lane that `laneRest` documents, and
+// the default applies when rows that hold its hour first arrive after mount. Last, a side lane
+// rests clear of a reference line's label past the rim.
 import type { ReactNode } from "react";
 
 import { flushSync } from "react-dom";
@@ -637,9 +641,20 @@ describe("the default item's popup while its dial is out of view", () => {
     return box.top + window.scrollY + share * box.height - window.innerHeight;
   }
 
-  function DefaultDial({ data }: { readonly data?: readonly Record<string, number | string | null>[] }) {
+  function DefaultDial({
+    data,
+    size,
+  }: {
+    readonly data?: readonly Record<string, number | string | null>[];
+    /** The dial's width and `--chart-polar-size`, in CSS pixels. */
+    readonly size?: number;
+  }) {
     return (
-      <Dial data={data} defaultActiveX={DAY + 17 * HOUR}>
+      <Dial
+        data={data}
+        width={size}
+        size={size === undefined ? undefined : `${String(size)}px`}
+        defaultActiveX={DAY + 17 * HOUR}>
         <ClockChart.Column dataKey="kwh" />
         <ClockChart.Tooltip />
       </Dial>
@@ -775,6 +790,255 @@ describe("the default item's popup while its dial is out of view", () => {
         panel.scrollTop = 800;
       })
     );
+  });
+
+  /** An 80 px `overflow: auto` panel that holds the dial between two 400 px spacers. */
+  function ShortPanel() {
+    return (
+      <div data-testid="panel" style={{ height: 80, overflow: "auto" }}>
+        <div style={{ height: 400 }} />
+        <DefaultDial />
+        <div style={{ height: 400 }} />
+      </div>
+    );
+  }
+
+  /**
+   * Renders a dial inside a scroll panel and records each frame through the dial's first report.
+   *
+   * @param ui - The markup that holds the panel and the dial.
+   * @param findPanel - Finds the scroll panel in the rendered host.
+   * @returns The host, the panel and the frames recorded.
+   */
+  async function renderInPanel(
+    ui: ReactNode,
+    findPanel: (host: HTMLElement) => Element | null | undefined = (host) =>
+      host.querySelector('[data-testid="panel"]')
+  ) {
+    let host: HTMLElement = document.body;
+    const frames = await framesThroughReport(
+      () => shown(host),
+      () => {
+        ({ host } = renderThemed(ui));
+        return surface(host);
+      }
+    );
+    const panel = findPanel(host);
+    if (!(panel instanceof HTMLElement)) throw new Error("no panel");
+    return { host, panel, frames };
+  }
+
+  /**
+   * Scrolls a panel and records each frame through the dial's next report.
+   *
+   * @param host - The rendered chart's host.
+   * @param panel - The scroll panel.
+   * @param top - The panel's new `scrollTop`.
+   * @param left - The panel's new `scrollLeft`.
+   * @returns The frames recorded.
+   */
+  function scrollPanel(host: HTMLElement, panel: HTMLElement, top: number, left = panel.scrollLeft) {
+    return framesThroughReport(
+      () => shown(host),
+      () => {
+        panel.scrollLeft = left;
+        panel.scrollTop = top;
+        return surface(host);
+      }
+    );
+  }
+
+  /**
+   * The scroll offsets that put a panel's top-left corner on the dial's top-left corner, in the
+   * panel's own pixels.
+   *
+   * @param host - The rendered chart's host.
+   * @param panel - The scroll panel.
+   * @returns The `scrollLeft` and `scrollTop` that do so.
+   */
+  function dialOffset(host: HTMLElement, panel: HTMLElement) {
+    const dial = surfaceBox(host);
+    const box = panel.getBoundingClientRect();
+    const scale = box.height / panel.offsetHeight;
+    return {
+      left: (dial.left - box.left - panel.clientLeft * scale) / scale + panel.scrollLeft,
+      top: (dial.top - box.top - panel.clientTop * scale) / scale + panel.scrollTop,
+    };
+  }
+
+  it("opens the popup once a panel shorter than half the dial shows the dial over half its height", async () => {
+    // The dial is more than twice the panel's height, so the panel can never show half of it. The
+    // oracle is the rule that the dial is in view while each axis shows at least half of the
+    // dial's extent, the viewport's or the visible part of the panel's, whichever is smallest: here
+    // half the panel's height. The scroll positions are worked out from the panel's and the dial's
+    // boxes: 30% of the panel's height stays closed, 70% opens, 30% closes again, the whole panel
+    // opens, and none of the dial closes.
+    const { host, panel, frames } = await renderInPanel(<ShortPanel />);
+    expect(shownFrames(frames)).toEqual([]);
+    expect(surfaceBox(host).height).toBeGreaterThan(2 * panel.clientHeight);
+    const dialTop = dialOffset(host, panel).top;
+    // The scroll that shows the dial over a share of the panel's height, from the panel's bottom up.
+    const showing = (share: number) => dialTop - (1 - share) * panel.clientHeight;
+    expect(shownFrames(await scrollPanel(host, panel, showing(0.3)))).toEqual([]);
+    panel.scrollTop = showing(0.7);
+    await expect.poll(label).toBe("17–18");
+    await expect.poll(popupPaints).toBe(true);
+    panel.scrollTop = showing(0.3);
+    await expect.poll(popup).toBeNull();
+    await expect.poll(popupPaints).toBe(false);
+    panel.scrollTop = dialTop + 100;
+    await expect.poll(popup).not.toBeNull();
+    await expect.poll(popupPaints).toBe(true);
+    panel.scrollTop = 0;
+    await expect.poll(popup).toBeNull();
+    await expect.poll(popupPaints).toBe(false);
+  });
+
+  it("opens the popup when a panel far smaller than the dial fills with it after showing a sliver", async () => {
+    // A 120 × 60 px panel holds a 1,000 px dial. The panel shows under 1% of the dial's area at
+    // any scroll, so no area threshold of an intersection observer lies between a sliver and a
+    // full panel. The oracle is the rule that each axis must show half of the smallest of the
+    // dial's extent, the viewport's and the panel's visible extent: here half the panel's width
+    // and height. A 10% sliver of the panel's height stays closed, a full panel opens.
+    const { host, panel } = await renderInPanel(
+      <div data-testid="panel" style={{ width: 120, height: 60, overflow: "auto" }}>
+        <div style={{ height: 200 }} />
+        <DefaultDial size={1000} />
+      </div>
+    );
+    const dial = surfaceBox(host);
+    expect(dial.width * dial.height).toBeGreaterThan(100 * panel.clientWidth * panel.clientHeight);
+    const at = dialOffset(host, panel);
+    expect(shownFrames(await scrollPanel(host, panel, at.top - 0.9 * panel.clientHeight, at.left))).toEqual(
+      []
+    );
+    panel.scrollTop = at.top;
+    await expect.poll(popup).not.toBeNull();
+    expect(label()).toBe("17–18");
+  });
+
+  /**
+   * Renders the dial in a `position: fixed` box at the viewport's top-left, inside a 50 px
+   * `overflow: hidden` wrapper 2,000 px down the page, and checks that the whole dial is in view.
+   *
+   * @param wrapper - Extra style for the wrapper, none of it a containing block for fixed boxes.
+   * @returns Once the dial has painted.
+   */
+  async function renderFixedDialBelowWrapper(wrapper: React.CSSProperties = {}) {
+    await page.viewport(800, 700);
+    const { host } = renderThemed(
+      <>
+        <div style={{ height: 2000 }} />
+        <div data-testid="fixed-wrapper" style={{ height: 50, overflow: "hidden", ...wrapper }}>
+          <div style={{ position: "fixed", top: 0, left: 0 }}>
+            <DefaultDial />
+          </div>
+        </div>
+      </>
+    );
+    await expect.poll(() => surfaceBox(host).height).toBeGreaterThan(0);
+    const dial = surfaceBox(host);
+    expect(dial.top).toBeGreaterThanOrEqual(0);
+    expect(dial.bottom).toBeLessThanOrEqual(window.innerHeight);
+  }
+
+  it("opens the popup of a fixed dial in view whose overflow wrapper is below the fold", async () => {
+    // The wrapper is not in the dial's containing-block chain, so it clips nothing. The oracle is
+    // the rule's in-view test on the dial's box against the viewport.
+    await renderFixedDialBelowWrapper();
+    await expect.poll(popup).not.toBeNull();
+    expect(label()).toBe("17–18");
+  });
+
+  it("opens the popup of a fixed dial whose wrapper below the fold will change other properties", async () => {
+    // `transform-origin` and a custom property contain the word `transform` or `scale`. CSS Will
+    // Change makes an element a containing block for fixed boxes only when it names a property
+    // that would do so itself, such as `transform`. Neither does, so the wrapper stays out of the
+    // dial's chain, and the oracle is the one above.
+    await renderFixedDialBelowWrapper({ willChange: "transform-origin, --scale" });
+    await expect.poll(popup).not.toBeNull();
+    expect(label()).toBe("17–18");
+  });
+
+  it("opens the popup of a fixed dial below a wrapper where the style has no backdropFilter accessor", async () => {
+    // Safari 16.4 and 17 name the property only `-webkit-backdrop-filter`, so a computed style has
+    // no `backdropFilter` accessor there and reads the unprefixed name as empty. Chromium answers
+    // that name through the declaration's named-property getter, which a script cannot remove, so
+    // for the test's duration the wrapper's computed style is a view without it. The wrapper sets
+    // no backdrop filter, so the oracle is the one above.
+    const computed = window.getComputedStyle;
+    window.getComputedStyle = (element, pseudo) => {
+      const style = computed.call(window, element, pseudo);
+      if (!(element instanceof HTMLElement) || element.dataset.testid !== "fixed-wrapper") return style;
+      return new Proxy(style, {
+        has: (target, key) => key !== "backdropFilter" && key in target,
+        get: (target, key) => {
+          if (key === "backdropFilter") return undefined;
+          if (key === "getPropertyValue")
+            return (name: string): string => {
+              if (name === "backdrop-filter") return "";
+              // Safari answers the prefixed name with the filter's value, `none` here.
+              if (name === "-webkit-backdrop-filter") return target.getPropertyValue("backdrop-filter");
+              return target.getPropertyValue(name);
+            };
+          // oxlint-disable-next-line anti-slop/no-reflect-get -- the view forwards every other CSSOM property of the real style
+          const value: unknown = Reflect.get(target, key, target);
+          return value;
+        },
+      });
+    };
+    onTestFinished(() => {
+      window.getComputedStyle = computed;
+    });
+    await renderFixedDialBelowWrapper();
+    await expect.poll(popup).not.toBeNull();
+    expect(label()).toBe("17–18");
+  });
+
+  it("opens the popup once a panel scaled to 40% shows the dial over its whole height", async () => {
+    // An 80 px panel under `scale(0.4)` shows 32 px of the dial when full. The dial, 40% of its
+    // own size, is more than twice that. The oracle is the rule on the painted boxes: half the
+    // panel's painted height, 16 px, is enough, and the full panel shows twice that.
+    const { host, panel } = await renderInPanel(
+      <div style={{ transform: "scale(0.4)", transformOrigin: "0 0" }}>
+        <ShortPanel />
+      </div>
+    );
+    expect(surfaceBox(host).height).toBeGreaterThan(2 * panel.getBoundingClientRect().height);
+    expect(popup()).toBeNull();
+    panel.scrollTop = dialOffset(host, panel).top;
+    await expect.poll(popup).not.toBeNull();
+    expect(label()).toBe("17–18");
+  });
+
+  it("opens the popup of a dial slotted into a shadow root's scroll panel once the panel fills with it", async () => {
+    // A web component's open shadow root has an 80 px `overflow: auto` panel around its slot, and
+    // the dial is the host's light-DOM child. The panel clips the dial, as the flat tree places it
+    // there. The oracle is the rule with the panel as the clipping ancestor: half its height.
+    function ShadowPanel({ children }: { readonly children: ReactNode }) {
+      return (
+        <div
+          data-testid="shadow-host"
+          ref={(node) => {
+            if (node?.shadowRoot !== null) return;
+            node.attachShadow({ mode: "open" }).innerHTML =
+              '<div style="height: 80px; overflow: auto"><div style="height: 400px"></div><slot></slot><div style="height: 400px"></div></div>';
+          }}>
+          {children}
+        </div>
+      );
+    }
+    const { host, panel } = await renderInPanel(
+      <ShadowPanel>
+        <DefaultDial />
+      </ShadowPanel>,
+      (rendered) => rendered.querySelector('[data-testid="shadow-host"]')?.shadowRoot?.firstElementChild
+    );
+    expect(surfaceBox(host).height).toBeGreaterThan(2 * panel.clientHeight);
+    expect(popup()).toBeNull();
+    panel.scrollTop = dialOffset(host, panel).top;
+    await expect.poll(popup).not.toBeNull();
+    expect(label()).toBe("17–18");
   });
 
   it("opens the popup in its lane when a sibling collapses and brings the dial into view with no scroll", async () => {
