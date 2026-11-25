@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { server, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { axNodes, axProperty } from "../../../test/ax-tree";
+import { axFocused, axNodes, axProperty } from "../../../test/ax-tree";
 import { FALL_BACK_HOURS, S06_HOURS } from "../../../test/chart/elhub-rows";
 import type { HourRow } from "../../../test/chart/elhub-rows";
 import phrases from "../../../test/chart/pattern-phrases.json" with { type: "json" };
@@ -170,7 +170,7 @@ describe("the negative control", () => {
 
 describe("the accessibility tree in Chromium", () => {
   it.runIf(server.browser === "chromium")(
-    "reports the focused node as an option with its name, inside a horizontal listbox",
+    "reports the focused node as an unselected option with its name, inside a horizontal listbox",
     async () => {
       const { host } = chart(S06_HOURS, phrases.s06["nb-NO"].labels);
       host.querySelector("button")?.focus();
@@ -180,15 +180,14 @@ describe("the accessibility tree in Chromium", () => {
       await virtual.press("ArrowRight");
       await virtual.stop();
       const nodes = await axNodes();
-      // Each document's web area reports focus too, so the focused element is the other node.
-      const focused = nodes.find(
-        (node) => axProperty(node, "focused") === true && node.role?.value !== "RootWebArea"
-      );
+      const focused = axFocused(nodes);
       // Hand-written from the third hour of `S06_HOURS`, per meter 1.1781 kWh household and 0.6535 kWh cabin.
       expect(focused?.role?.value).toBe("option");
       expect(focused?.name?.value).toBe(
         "kl. 02 til 03: Husholdning 1,18 kilowattimer, Hytte 0,65 kilowattimer"
       );
+      // vsr defaults a missing aria-selected to false, so only Chromium's tree shows the state.
+      expect(axProperty(focused ?? { nodeId: "" }, "selected")).toBe(false);
       // CDP's AX properties carry no position or set size, so the vsr logs above judge them.
       const parent = nodes.find((node) => node.nodeId === focused?.parentId);
       expect(parent?.role?.value).toBe("listbox");

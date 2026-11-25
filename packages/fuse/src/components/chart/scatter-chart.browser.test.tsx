@@ -11,6 +11,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
+import { axFocused, axNodes, axProperty } from "../../../test/ax-tree";
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import { animatedWhile, keyOpen, popup, popupFade, popupOpen } from "../../../test/chart/marks";
 import { renderThemed } from "../../../test/themed-browser-render";
@@ -249,7 +250,7 @@ describe("interaction", () => {
   }
 
   describe("the keyboard walk", () => {
-    it("walks every point by x, then y, then series, from the one option", async () => {
+    it("walks the points with ArrowRight, End and Home from the one option, which is unselected after Home", async () => {
       renderThemed(<InteractiveScatter />);
       await enterChart();
       expect(
@@ -269,6 +270,10 @@ describe("interaction", () => {
       expect(focused()[1]).toBe("1");
       // The listbox always holds exactly one option once a step settles.
       expect(page.getByRole("option").all()).toHaveLength(1);
+      // Chromium's accessibility tree reports the focused option as unselected.
+      const focusedNode = axFocused(await axNodes());
+      expect(focusedNode?.role?.value).toBe("option");
+      expect(axProperty(focusedNode ?? { nodeId: "" }, "selected")).toBe(false);
     });
 
     it("names x and y by the dictionary's words when Root names neither measure", async () => {

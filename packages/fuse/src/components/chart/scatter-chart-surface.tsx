@@ -312,8 +312,10 @@ export function ScatterSurface({
         <div
           key={option.id}
           id={option.id}
-          // oxlint-disable-next-line jsx-a11y/role-has-required-aria-props -- nothing is selectable, so options mark no selection
           role="option"
+          // A plot option is never selected. Without aria-selected, Chromium reports the focused option
+          // as selected.
+          aria-selected={false}
           data-slot="chart-scatter-option"
           data-focus-ring-control=""
           tabIndex={option === current ? 0 : -1}
