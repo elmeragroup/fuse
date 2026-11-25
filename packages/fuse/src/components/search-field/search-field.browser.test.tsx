@@ -207,7 +207,8 @@ describe("SearchField", () => {
     await userEvent.keyboard("{Escape}");
     expect(onClear).toHaveBeenCalledTimes(1);
     expect(input.value).toBe("");
-    expect(alertTexts()).toEqual([]);
+    // Base UI removes Field.Error a frame after the edit that clears it.
+    await expect.poll(alertTexts).toEqual([]);
     expect(input.getAttribute("aria-invalid")).toBeNull();
   });
 
@@ -392,13 +393,14 @@ describe("SearchField in a Form", () => {
     expect(alertTexts()).toEqual(["No meter matches."]);
 
     await userEvent.type(inputNamed("Meter search", "searchbox"), "9");
-    expect(alertTexts()).toEqual([]);
+    // Base UI removes Field.Error a frame after the edit that clears it.
+    await expect.poll(alertTexts).toEqual([]);
     expect(inputNamed("Meter search", "searchbox").getAttribute("aria-invalid")).toBeNull();
 
     // A second response is a new object, as a server action returns.
     rerender(withLocale("en-US", <Fixture errors={{ q: "No meter matches." }} />));
     await expect.element(page.getByText("No meter matches.", { exact: true })).toBeVisible();
     await userEvent.click(clearIn("Meter search"));
-    expect(alertTexts()).toEqual([]);
+    await expect.poll(alertTexts).toEqual([]);
   });
 });

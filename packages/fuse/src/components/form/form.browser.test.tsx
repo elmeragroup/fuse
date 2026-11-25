@@ -83,11 +83,12 @@ describe("Form", () => {
 
     await userEvent.type(page.getByRole("textbox", { name: "Email", exact: true }), "a");
     expect(inputNamed("Email").getAttribute("aria-invalid")).toBeNull();
-    expect(errorTexts()).toEqual(["Too short."]);
+    // Base UI removes Field.Error a frame after the edit that clears it.
+    await expect.poll(errorTexts).toEqual(["Too short."]);
     // Phone is a TextField, whose error renders through its own frame rather than a bare Field.
     await userEvent.type(page.getByRole("textbox", { name: "Phone", exact: true }), "1");
     expect(inputNamed("Phone").getAttribute("aria-invalid")).toBeNull();
-    expect(errorTexts()).toEqual([]);
+    await expect.poll(errorTexts).toEqual([]);
 
     // A second response with the same messages is a new object, as a server action returns.
     rerender(<Fixture errors={{ email: "Already registered.", phone: "Too short." }} />);
