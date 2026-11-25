@@ -1,16 +1,11 @@
-import { cdp } from "vitest/browser";
+import { commands } from "vitest/browser";
 
-type ReducedMotionCdp = {
-  send: (
-    method: "Emulation.setEmulatedMedia",
-    params: { features: { name: "prefers-reduced-motion"; value: "reduce" | "no-preference" }[] }
-  ) => Promise<void>;
-};
-
+/**
+ * Emulates the `prefers-reduced-motion` preference and leaves the page's other media emulation as
+ * it is.
+ *
+ * @param value - The preference to emulate.
+ */
 export async function emulateReducedMotion(value: "reduce" | "no-preference"): Promise<void> {
-  // SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-  const session: ReducedMotionCdp = cdp() as ReducedMotionCdp;
-  await session.send("Emulation.setEmulatedMedia", {
-    features: [{ name: "prefers-reduced-motion", value }],
-  });
+  await commands.emulateMedia({ reducedMotion: value });
 }

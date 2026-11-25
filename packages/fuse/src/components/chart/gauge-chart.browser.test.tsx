@@ -13,7 +13,7 @@ import { Activity } from "react";
 import type { ReactNode } from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cdp, page } from "vitest/browser";
+import { commands, page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
@@ -54,18 +54,6 @@ afterEach(async () => {
 
 /** Restores the document's theme a contrast case stamped. */
 let restoreTheme = (): void => undefined;
-
-/** The session the page's media emulation goes through. */
-type MediaCdp = {
-  send: (method: "Emulation.setEmulatedMedia", params: { media: "print" | "screen" }) => Promise<void>;
-};
-
-/** Emulates the print or the screen media type for the page. */
-async function emulateMedia(media: "print" | "screen"): Promise<void> {
-  // SAFETY: vitest types CDPSession as {}; Playwright's session implements send.
-  const session = cdp() as MediaCdp;
-  await session.send("Emulation.setEmulatedMedia", { media });
-}
 
 function Gauge({
   value,
@@ -740,7 +728,7 @@ describe("the cell's life", () => {
 
 describe("print", () => {
   it("runs no entrance or roll animation on the page it prints", async () => {
-    await emulateMedia("print");
+    await commands.emulateMedia({ media: "print" });
     try {
       const { host } = renderThemed(<Gauge value={3.9} />);
       // A print fires beforeprint, which draws every mark at rest; the media emulation fires none.
@@ -752,7 +740,7 @@ describe("print", () => {
       expect(reel === null ? null : getComputedStyle(reel).transitionDuration).toBe("0s");
       expect(needle(host)).toBeCloseTo(angleOf(3.9), 6);
     } finally {
-      await emulateMedia("screen");
+      await commands.emulateMedia({ media: null });
     }
   });
 });

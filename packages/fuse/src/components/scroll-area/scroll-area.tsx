@@ -7,7 +7,7 @@ import type { VariantProps } from "tailwind-variants";
 
 import { cn } from "../../styles/cn";
 import { mergeClassName } from "../../styles/merge-class-name";
-import { selfFocusRingClass } from "../../styles/utils";
+import { overlayFocusRingClass, overlayFocusRingControlClass } from "../../styles/utils";
 import { scrollbarTypeVariants } from "./scroll-area-variants";
 
 type ScrollAreaType = NonNullable<VariantProps<typeof scrollbarTypeVariants>["type"]>;
@@ -65,7 +65,7 @@ export function ScrollAreaRoot({
           like a fixed one; `size-full` would resolve to auto under a max height and the root would clip. */}
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        className={cn("min-h-0 flex-1 rounded-[inherit] transition-[color,box-shadow]", selfFocusRingClass)}>
+        className={cn("min-h-0 flex-1 rounded-[inherit]", overlayFocusRingControlClass)}>
         <ScrollAreaPrimitive.Content
           data-slot="scroll-area-content"
           // Base UI's inline `min-width: fit-content` grows the content to its widest line so it can
@@ -78,6 +78,9 @@ export function ScrollAreaRoot({
       </ScrollAreaPrimitive.Viewport>
       <ScrollAreaBar orientation={orientation} type={type} />
       <ScrollAreaPrimitive.Corner />
+      {/* The root clips, so the viewport's focus outline draws on this sibling instead. It comes last
+          so it paints above the positioned scrollbar and corner. */}
+      <span aria-hidden data-slot="scroll-area-focus-indicator" className={overlayFocusRingClass} />
     </ScrollAreaPrimitive.Root>
   );
 }

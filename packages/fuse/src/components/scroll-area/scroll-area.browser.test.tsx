@@ -4,7 +4,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { renderThemed } from "../../../test/themed-browser-render";
+import "../../../dist/themes.css";
+import { rows } from "../../../test/chart/sparkline";
+import { withForcedColors } from "../../../test/media-emulation";
+import { toSrgb } from "../../../test/surface-paint";
+import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
 import { ScrollArea } from "./index";
 
 afterEach(() => {
@@ -78,6 +82,54 @@ function TallList({ label, items }: { label: string; items: number }) {
 // Inline, so the line truncates whether or not the built stylesheet carries Tailwind's `truncate`.
 const TRUNCATED_LINE = { overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" } as const;
 const LONG_LINE = "A single line of text far longer than the narrow scroll area that holds it";
+
+/**
+ * The colors of the root's screenshot halfway across its padding box: the two rows of its top edge,
+ * then the one row just inside them.
+ */
+async function topEdge(root: HTMLElement): Promise<{ edge: number[][]; inner: number[][] }> {
+  const column = root.clientLeft + Math.round(root.clientWidth / 2);
+  const samples = await rows(
+    root,
+    column,
+    [0, 1, 2].map((row) => root.clientTop + row)
+  );
+  return { edge: samples.slice(0, 2), inner: samples.slice(2) };
+}
+
+/**
+ * Tabs into the "Focus list" area and checks what the screen shows: the viewport takes keyboard
+ * focus, and the 2px at the top of the root's padding box change color while the row below them keeps
+ * its color. Outside forced-colors mode, the changed edge is the `--ring` color.
+ */
+async function expectFocusPaint(forcedColors: "none" | "active"): Promise<void> {
+  await waitForOverflow("Focus list", "data-has-overflow-y");
+  const root = scrollRootFromText("Focus list");
+  const viewport = viewportFromText("Focus list");
+  page.getByRole("button", { name: "Before the area" }).element().focus();
+  const before = await topEdge(root);
+  await userEvent.tab();
+  expect(document.activeElement).toBe(viewport);
+  expect(viewport.matches(":focus-visible")).toBe(true);
+  const after = await topEdge(root);
+
+  for (const [index, row] of after.edge.entries()) {
+    expect(row, `edge row ${String(index)}`).not.toEqual(before.edge[index]);
+  }
+  expect(after.inner, "inner row").toEqual(before.inner);
+  if (forcedColors === "none") {
+    const { r, g, b, alpha } = toSrgb(cssVarColor(viewport, "--ring"));
+    const ring = [r, g, b, alpha].map((channel) => channel * 255);
+    for (const [index, row] of after.edge.entries()) {
+      for (const [channel, value] of ring.entries()) {
+        expect(
+          Math.abs((row[channel] ?? Number.NaN) - value),
+          `edge row ${String(index)}`
+        ).toBeLessThanOrEqual(1);
+      }
+    }
+  }
+}
 
 describe("ScrollArea", () => {
   it("keeps an always bar visible and reveals a hover bar only while its own area is hovered", async () => {
@@ -164,6 +216,127 @@ describe("ScrollArea", () => {
     expect(wheels.map(({ isTrusted, defaultPrevented }) => ({ isTrusted, defaultPrevented }))).toEqual([
       { isTrusted: true, defaultPrevented: false },
     ]);
+  });
+
+  describe.each(["none", "active"] as const)("with forced colors %s", (forcedColors) => {
+    it.each([
+      {
+        content: "a sticky header",
+        area: (
+          <ScrollArea.Root style={{ width: 320, height: 128 }}>
+            <div className="bg-background" style={{ position: "sticky", top: 0, zIndex: 20, height: 24 }}>
+              Sticky header
+            </div>
+            <TallList label="Focus list" items={30} />
+          </ScrollArea.Root>
+        ),
+      },
+      {
+        content: "an opaque raised banner",
+        area: (
+          <ScrollArea.Root style={{ width: 320, height: 128 }}>
+            <div className="bg-background" style={{ position: "relative", zIndex: 40, height: 24 }}>
+              Raised banner
+            </div>
+            <TallList label="Focus list" items={30} />
+          </ScrollArea.Root>
+        ),
+      },
+      {
+        content: "a padded area whose render wraps its parts in a contents box",
+        area: (
+          <ScrollArea.Root
+            className="p-2"
+            style={{ width: 320, height: 128 }}
+            render={(props) => (
+              <div {...props}>
+                <div style={{ display: "contents" }}>{props.children}</div>
+              </div>
+            )}>
+            <TallList label="Focus list" items={30} />
+          </ScrollArea.Root>
+        ),
+      },
+    ])("paints the keyboard focus indicator at the edge of $content", async ({ area }) => {
+      await withForcedColors(forcedColors, async () => {
+        render(
+          <>
+            <button type="button">Before the area</button>
+            {area}
+          </>
+        );
+        await expectFocusPaint(forcedColors);
+      });
+    });
+  });
+
+  it("keeps the focus indicator under a host's sticky header that covers part of the area", async () => {
+    const headerColor = "rgb(200, 30, 120)";
+    render(
+      <>
+        <button type="button">Before the area</button>
+        <div style={{ position: "sticky", top: 0, zIndex: 10, height: 40, background: headerColor }} />
+        <ScrollArea.Root style={{ width: 320, height: 128, marginTop: -20 }}>
+          <TallList label="Focus list" items={30} />
+        </ScrollArea.Root>
+      </>
+    );
+    await waitForOverflow("Focus list", "data-has-overflow-y");
+    const root = scrollRootFromText("Focus list");
+    page.getByRole("button", { name: "Before the area" }).element().focus();
+    await userEvent.tab();
+    expect(document.activeElement).toBe(viewportFromText("Focus list"));
+
+    const header = [200, 30, 120, 255];
+    const [left, right] = [root.clientLeft, root.clientLeft + root.clientWidth - 1];
+    // The top edge runs under the header's bottom 20px, and so do the first rows of the side edges.
+    expect(await topEdge(root)).toEqual({ edge: [header, header], inner: [header] });
+    for (const column of [left, right]) {
+      expect(await rows(root, column, [root.clientTop + 10]), `column ${String(column)}`).toEqual([header]);
+    }
+  });
+
+  it("lets a raised element inside an unfocused area take the pointer over a lower sibling of the area", async () => {
+    render(
+      <div style={{ position: "relative" }}>
+        <ScrollArea.Root style={{ width: 320, height: 128 }}>
+          <TallList label="Menu list" items={30} />
+          <button type="button" style={{ position: "absolute", top: 8, left: 8, zIndex: 50 }}>
+            Inline menu item
+          </button>
+        </ScrollArea.Root>
+        <div style={{ position: "absolute", inset: "0 0 auto 0", height: 48, zIndex: 10 }} />
+      </div>
+    );
+    await waitForOverflow("Menu list", "data-has-overflow-y");
+    const item = page.getByRole("button", { name: "Inline menu item" }).element();
+    const box = item.getBoundingClientRect();
+    expect(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)).toBe(item);
+  });
+
+  it("lets a raised element in an outer area take the pointer while a nested area's viewport has focus", async () => {
+    render(
+      <div style={{ position: "relative" }}>
+        <ScrollArea.Root style={{ width: 320, height: 160 }}>
+          <button type="button" style={{ position: "absolute", top: 8, left: 8, zIndex: 50 }}>
+            Inline menu item
+          </button>
+          <ScrollArea.Root style={{ width: 280, height: 96 }}>
+            <TallList label="Inner list" items={30} />
+          </ScrollArea.Root>
+          <TallList label="Outer list" items={30} />
+        </ScrollArea.Root>
+        <div style={{ position: "absolute", inset: "0 0 auto 0", height: 80, zIndex: 10 }} />
+      </div>
+    );
+    await waitForOverflow("Inner list", "data-has-overflow-y");
+    const inner = viewportFromText("Inner list");
+    inner.focus({ preventScroll: true });
+    expect(inner.matches(":focus-visible")).toBe(true);
+
+    const item = page.getByRole("button", { name: "Inline menu item" }).element();
+    const box = item.getBoundingClientRect();
+    expect(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)).toBe(item);
   });
 
   it("holds a vertical area's content to the viewport so a truncated line ellipsizes at its edge", () => {
