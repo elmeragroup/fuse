@@ -27,7 +27,7 @@ import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { Funnel } from "../../icons/generated/funnel";
 import { X } from "../../icons/generated/x";
 import { XCircle } from "../../icons/generated/x-circle";
-import { hasFocus } from "../../internal/active-element";
+import { activeElementFrom } from "../../internal/active-element";
 import { definedProps } from "../../internal/defined-props";
 import { isHTMLElement, isNode } from "../../internal/dom-node";
 import { cn } from "../../styles/cn";
@@ -218,6 +218,23 @@ function listenForPressEnd(event: PointerEvent<HTMLElement>, end: () => void): (
   };
 }
 
+/**
+ * The elements the pointerdown `event` passes through inside the strip, from its target up to the
+ * strip. The strip skips its focus scroll only for a focus on this path. The path keeps the pressed
+ * element even after a handler detaches the pressed node. A consumer handler can still focus a
+ * control outside the path, and that focus scrolls. The path leaves out the element that already
+ * has focus. The press cannot focus that element again, so a later keyboard focus on it still
+ * scrolls it into view. A press in a portaled popup reaches the strip's React handler but not its
+ * DOM path, so its path is empty.
+ */
+function pressPath(event: PointerEvent<HTMLElement>): ReadonlyArray<EventTarget> {
+  const strip = event.currentTarget;
+  const path = event.nativeEvent.composedPath();
+  const end = path.indexOf(strip);
+  const focused = activeElementFrom(strip);
+  return end === -1 ? [] : path.slice(0, end).filter((element) => element !== focused);
+}
+
 /** Props for `DataTableFilter.Chips`. */
 export type DataTableFilterChipsProps = Omit<ComponentProps<"div">, "children"> & {
   /**
@@ -232,8 +249,9 @@ export type DataTableFilterChipsProps = Omit<ComponentProps<"div">, "children"> 
  * One chip context per filter, keyed by field id, with no element per chip, in one strip that
  * scrolls sideways at every width. Its ends fade while chips hide past them. A focused segment
  * scrolls into view, since `focus()` leaves a partly visible element where it is, and a vertical
- * mouse wheel scrolls the strip until it reaches an end. A `DataTableFilter.Value` that a pointer
- * press focuses stays where it is, and its chip scrolls into view once the popover anchors to it.
+ * mouse wheel scrolls the strip until it reaches an end. The strip skips its focus scroll when a
+ * primary pointer press focuses the segment. The strip reveals a `DataTableFilter.Value`'s chip
+ * once a press opens the value popover on it or moves the popover to it.
  */
 export function DataTableFilterChips({
   className,
@@ -244,13 +262,12 @@ export function DataTableFilterChips({
   ref,
   ...props
 }: DataTableFilterChipsProps): ReactElement {
-  const { state, meta } = useFilterInternals("DataTableFilter.Chips");
+  const { state } = useFilterInternals("DataTableFilter.Chips");
   const stripRef = useMergedRefs(ref, scrollStripOnWheel);
-  // The Value a primary pointer press is on, with the function that stops listening for the press's
-  // end. The record lasts from the pointerdown until the strip's next focus or click, or until the
-  // press ends without either. A press on the Value that already has focus brings no focus, so it
-  // records nothing that a later keyboard focus could meet. Only event handlers read and write it.
-  const press = useRef<{ readonly value: HTMLElement; readonly stop: () => void } | null>(null);
+  // A primary pointer press's path through the strip, with the function that stops listening for
+  // the press's end. The record lasts from the pointerdown until the strip's next focus or click, or
+  // until the press ends without either. Only event handlers read and write it.
+  const press = useRef<{ readonly path: ReadonlyArray<EventTarget>; readonly stop: () => void } | null>(null);
   const forgetPress = () => {
     press.current?.stop();
     press.current = null;
@@ -270,10 +287,12 @@ export function DataTableFilterChips({
       className={cn(slots.chips(), className)}
       onFocus={(event: FocusEvent<HTMLDivElement>) => {
         onFocus?.(event);
-        // A press focuses a Value before its click. A scroll then would move the Value out from
-        // under the pointer, so the click would miss it, and an open popover would follow its old
-        // chip out of the strip.
-        const pressed = press.current?.value === event.target;
+        // A mouse press focuses its segment on pointerdown, before the release. A scroll then would
+        // move the segment out from under the pointer. Base UI's Select opens an Operator's list on
+        // mousedown and cancels the opening when the mouseup lands outside both the trigger and the
+        // list, which a scroll can cause. A Value's click would not land, and an open popover would
+        // follow its old chip out of the strip.
+        const pressed = press.current?.path.includes(event.target) ?? false;
         forgetPress();
         if (pressed || event.defaultPrevented || !isHTMLElement(event.target)) {
           return;
@@ -282,11 +301,11 @@ export function DataTableFilterChips({
       }}
       onPointerDownCapture={(event: PointerEvent<HTMLDivElement>) => {
         // The strip's capture runs before any handler inside it, and the consumer's capture runs
-        // after the record, so a handler that focuses the Value still meets the record.
+        // after the record, so a handler that focuses the segment still meets the record.
         forgetPress();
-        const value = isNode(event.target) ? meta.valueHolding(event.target) : null;
-        if (event.isPrimary && event.button === 0 && value !== null && !hasFocus(value)) {
-          press.current = { value, stop: listenForPressEnd(event, forgetPress) };
+        const path = pressPath(event);
+        if (event.isPrimary && event.button === 0 && path.length > 0) {
+          press.current = { path, stop: listenForPressEnd(event, forgetPress) };
         }
         onPointerDownCapture?.(event);
       }}

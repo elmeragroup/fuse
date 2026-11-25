@@ -366,10 +366,6 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
     }
   }, []);
   const valueElement = useCallback((fieldId: string) => valueElements.current.get(fieldId) ?? null, []);
-  const valueHolding = useCallback(
-    (node: Node) => [...valueElements.current.values()].find((element) => element.contains(node)) ?? null,
-    []
-  );
   const triggerElement = useCallback(() => triggerRef.current, []);
   const valueId = useCallback((fieldId: string) => `${rootId}value-${fieldId}`, [rootId]);
   const triggerId = `${rootId}trigger`;
@@ -717,7 +713,6 @@ export function DataTableFilterRoot<TFields extends FilterFieldMap>({
       triggerId,
       valueId,
       chipElement,
-      valueHolding,
       hasContent: () => contentRegistered.current,
       hasValueContent: () => valueContentRegistered.current,
       neighborOf,
