@@ -76,10 +76,11 @@ export type RadarChartRootProps<
      * The spoke that is active before any pointer or key moves. Root reads the name once, at mount.
      * If no row names the spoke yet, it turns active when a row first does, unless a reader has
      * already moved the active spoke. While the spoke is active by default, `RadarChart.Tooltip`
-     * opens only while at least half of the plot's box is in view. Width and height are checked
-     * separately, and on an axis where the plot is larger than the viewport, half of the viewport's
-     * extent is enough. The rule ends when a reader takes over: a pointer pick, keyboard focus on
-     * the plot, even with the same spoke still active, or a pin.
+     * opens only while enough of the plot shows. The plot's room is the overlap of the viewport and
+     * the padding box of each ancestor that clips its overflow. Fuse caps the room's width and
+     * height at the plot's, and the plot must show at least half of each. The rule ends when a
+     * reader takes over: a pointer pick, keyboard focus on the plot, even with the same spoke still
+     * active, or a pin.
      */
     defaultActiveName?: TRow[TNameKey];
     /**
