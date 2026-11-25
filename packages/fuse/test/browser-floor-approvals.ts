@@ -653,8 +653,6 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     property: "-webkit-mask-composite",
     value: "source-in",
     features: ["css.properties.-webkit-mask-composite"],
-    // The source declares it, and Lightning CSS writes a second one from mask-composite: intersect.
-    count: 2,
     fallback: { kind: "none" },
     reason: WEBKIT_MASK_COMPOSITE,
   },
