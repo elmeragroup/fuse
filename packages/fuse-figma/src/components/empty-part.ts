@@ -12,10 +12,11 @@
  * A part that leaves no trace, a frame or an instance, draws in no layer either: at `opacity: 0` it paints nothing of itself or
  * what it holds (CSS Color 4 §3.2), and a top margin of minus its height leaves its margin box 0 tall
  * (CSS 2.1 §8.3, §10.6), so it takes no room in a column with no gap, as the collapsed Sidebar rail's
- * group label (`h-8 -mt-8 opacity-0`) fades out and pulls the rows up.
+ * group label (`h-(--group-label-h) -mt-(--group-label-h) opacity-0`) fades out and pulls the rows up.
  */
 import type { Cell, PartDefinition } from "./component-spec";
-import { evaluateLength, evaluateNumber } from "./css-values";
+import { evaluateLength, evaluateNumber, readNumber } from "./css-values";
+import type { VariableIndex } from "./css-values";
 import type { LayerStyle } from "./layer-style";
 
 /** Why an empty part draws in no layer. */
@@ -140,20 +141,26 @@ export function vanishes(part: PartDefinition, style: LayerStyle, parent: LayerS
 /**
  * Whether a part leaves no trace, as the module comment says: it is fully transparent, its top
  * margin is minus its literal height and its bottom margin 0, and its parent stacks it down a column
- * with no gap.
+ * with no gap. A length is literal where it holds the same pixels in every mode, as the group
+ * label's `--spacing(8)` floored at the xs control square does.
  *
  * @param style - The part's style in the cell.
  * @param parent - The style of the box that holds it.
+ * @param variables - The synced variables.
  * @returns True for a part that takes no room and paints nothing.
  */
-export function leavesNoTrace(style: LayerStyle, parent: LayerStyle): boolean {
-  const height = evaluateLength(style.resolved("height") ?? "auto");
+export function leavesNoTrace(style: LayerStyle, parent: LayerStyle, variables: VariableIndex): boolean {
+  const literal = (value: string) => {
+    const spec = readNumber(value, variables);
+    return spec?.kind === "literal" ? spec.value : undefined;
+  };
+  const height = literal(style.resolved("height") ?? "auto");
   const opacity = evaluateNumber(style.resolved("opacity") ?? "1");
   return (
     opacity === 0 &&
     height !== undefined &&
     height > 0 &&
-    evaluateLength(style.resolved("margin-top") ?? "0px") === -height &&
+    literal(style.resolved("margin-top") ?? "0px") === -height &&
     isZero(style.resolved("margin-bottom")) &&
     stacksWithoutGap(parent)
   );

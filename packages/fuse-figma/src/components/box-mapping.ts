@@ -685,7 +685,9 @@ function mapBoxBeforeClip(
     if (part.kind === "frame" && vanishes(part.child, part.cascade.style, reader, scope.cell)) {
       return [{ part, reason: EMPTY_PART }];
     }
-    return leavesNoTrace(part.cascade.style, reader) ? [{ part, reason: NO_TRACE }] : [];
+    return leavesNoTrace(part.cascade.style, reader, scope.context.variables)
+      ? [{ part, reason: NO_TRACE }]
+      : [];
   });
   for (const { part, reason } of leftOut) {
     part.cascade.style.dropOwn(reason);

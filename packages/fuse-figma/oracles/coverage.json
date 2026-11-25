@@ -666,6 +666,13 @@
       "className": "text-[length:var(--field-text,var(--control-text))]",
       "property": "font-size",
       "reason": "At `sm` the field size sets `--field-text` to `--text-sm` and `--field-leading` to its line, 14px on a 20px line in every theme, and no synced variable holds either, so the input's placeholder takes those literals. The `--control-text` and `--control-leading` fallbacks apply only at the default size, where they bind."
+    },
+    {
+      "set": "sidebar-group-label",
+      "part": "sidebar-group-label",
+      "className": "[--group-action-size:max(var(--control-h-xs),24px)]",
+      "property": "--group-action-size",
+      "reason": "The label's `--group-action-size` is the xs control square floored at 24px, which its height reads as the floor of its `--spacing(8)`. The set draws no group action. In every synced mode the square is 32px or less, so the label is 32px in every mode and draws that literal height."
     }
   ],
   "unshown": {
@@ -2892,10 +2899,6 @@
       },
       {
         "part": "sidebar-group-label",
-        "className": "group-data-[collapsible=icon]:-mt-8"
-      },
-      {
-        "part": "sidebar-group-label",
         "className": "group-data-[collapsible=icon]:opacity-0"
       },
       {
@@ -2917,27 +2920,43 @@
       {
         "part": "sidebar-group-label",
         "className": "focus-visible:outline-hidden"
+      },
+      {
+        "part": "sidebar-group-label",
+        "className": "group-data-[collapsible=icon]:-mt-(--group-label-h)"
+      },
+      {
+        "part": "sidebar-group-label",
+        "className": "group-data-[collapsible=icon]:pointer-events-none"
       }
     ],
     "sidebar-menu-badge": [
       {
         "part": "sidebar-menu-badge",
-        "className": "peer-data-[size=lg]/menu-button:top-2.5"
-      },
-      {
-        "part": "sidebar-menu-badge",
-        "className": "peer-data-[size=sm]/menu-button:top-1"
-      },
-      {
-        "part": "sidebar-menu-badge",
         "className": "group-data-[collapsible=icon]:hidden"
+      },
+      {
+        "part": "sidebar-menu-badge",
+        "className": "peer-data-[size=sm]/menu-button:[--menu-action-size:max(--spacing(6),24px)]"
+      },
+      {
+        "part": "sidebar-menu-badge",
+        "className": "peer-data-[size=sm]/menu-button:[--menu-row-h:max(--spacing(7),var(--menu-action-size))]"
+      },
+      {
+        "part": "sidebar-menu-badge",
+        "className": "peer-data-[size=lg]/menu-button:[--menu-action-size:max(--spacing(6),24px)]"
+      },
+      {
+        "part": "sidebar-menu-badge",
+        "className": "peer-data-[size=lg]/menu-button:[--menu-row-h:max(--spacing(12),var(--menu-action-size))]"
+      },
+      {
+        "part": "sidebar-menu-badge",
+        "className": "peer-data-[size=lg]/menu-button:[--menu-row-mid:clamp(var(--menu-action-size)/2,--spacing(5),var(--menu-row-h)-var(--menu-action-size)/2)]"
       }
     ],
     "sidebar-menu-button": [
-      {
-        "part": "sidebar-menu-button",
-        "className": "group-has-data-[slot=sidebar-menu-action]/menu-item:pr-[calc(max(var(--control-h-xs),24px)+0.5rem)]"
-      },
       {
         "part": "sidebar-menu-button",
         "className": "data-open:enabled-hover:bg-sidebar-accent"
@@ -2996,7 +3015,7 @@
       },
       {
         "part": "sidebar-menu-button",
-        "className": "group-has-data-[slot=sidebar-menu-action]/menu-item:pr-8"
+        "className": "group-has-data-[slot=sidebar-menu-action]/menu-item:pr-[calc(var(--menu-action-size)+(--spacing(2)))]"
       }
     ],
     "sidebar-menu-sub-button": [

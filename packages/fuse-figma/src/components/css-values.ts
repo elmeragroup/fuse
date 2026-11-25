@@ -840,11 +840,16 @@ function commonUnit(quantities: readonly Quantity[]): Quantity["unit"] {
  * @returns The bound variable or the literal pixels, or undefined.
  */
 export function readNumber(value: string, index: VariableIndex): NumberSpec | undefined {
-  const variable = index.lookup(value) ?? flooredVariable(normalizeCss(value), index);
+  const variable = index.lookup(value);
   if (variable !== undefined) {
     return { kind: "variable", variable };
   }
-  const length = evaluateLength(value);
+  const settled = settledMaxima(normalizeCss(value), index);
+  const settledVariable = index.lookup(settled);
+  if (settledVariable !== undefined) {
+    return { kind: "variable", variable: settledVariable };
+  }
+  const length = evaluateLength(settled);
   return length === undefined ? undefined : { kind: "literal", value: length };
 }
 
@@ -1164,27 +1169,59 @@ export function evaluateLength(value: string): number | undefined {
 }
 
 /**
- * The variable in a `max()` of a synced variable and a length that variable never falls below
- * in any mode. The 24px target floor on `--control-h-xs` is one: the variable holds 24px or
- * more at every density, so the floor never applies and the value binds the variable.
+ * A value with each two-argument `max()` of a synced variable and a length written as the argument
+ * it picks in every mode. The variable wins where it never falls below the length in any mode, as
+ * the 24px target floor on `--control-h-xs` never applies. The length wins where the variable never
+ * rises above it, as a Sidebar group label's `--spacing(8)` stays at least the xs control square
+ * it floors at. The inner `max()` settles first, so a floor of a floor settles too. A `max()` whose
+ * pick changes by mode stays as it is.
+ *
+ * @param value - A normalized value with Tailwind's variables already substituted.
+ * @param index - The synced variables.
+ * @returns The value with those `max()`s replaced.
  */
-function flooredVariable(value: string, index: VariableIndex): VariableRef | undefined {
-  if (!value.startsWith("max(") || matchingParen(value, 3) !== value.length - 1) {
-    return undefined;
+function settledMaxima(value: string, index: VariableIndex): string {
+  let settled = value;
+  // From the last `max(` back, so an inner one settles before the one around it. Settling one
+  // rewrites the text from its own start on, so each earlier start still points at its `max(`.
+  for (const match of [...value.matchAll(/(?<![\w-])max\(/g)].reverse()) {
+    const start = match.index;
+    const end = matchingParen(settled, start + 3);
+    const pick = settledPick(settled.slice(start + 4, end), index);
+    if (pick !== undefined) {
+      settled = settled.slice(0, start) + pick + settled.slice(end + 1);
+    }
   }
-  const [first, second, ...rest] = splitTopLevel(value.slice(4, -1), ",");
+  return settled;
+}
+
+/**
+ * The argument a two-argument `max()` of a synced variable and a px length picks in every mode, or
+ * undefined where the pick changes by mode or the arguments are no such pair.
+ */
+function settledPick(argumentsText: string, index: VariableIndex): string | undefined {
+  const [first, second, ...rest] = splitTopLevel(argumentsText, ",");
   if (first === undefined || second === undefined || rest.length > 0) {
     return undefined;
   }
-  for (const [candidate, floor] of [
+  for (const [candidate, other] of [
     [first, second],
     [second, first],
   ] as const) {
     const variable = index.lookup(candidate);
-    const minimum = variable === undefined ? undefined : index.minimum(variable);
-    const length = evaluateLength(floor);
-    if (variable !== undefined && minimum !== undefined && length !== undefined && minimum >= length) {
-      return variable;
+    // A Figma FLOAT holds a length in px, but a CSS number in a scale of its own, as an opacity
+    // in percent, so only a px length compares with the variable's extremes.
+    const length = finiteQuantity(other);
+    if (variable === undefined || length?.unit !== "px") {
+      continue;
+    }
+    const least = index.minimum(variable);
+    const most = index.maximum(variable);
+    if (least !== undefined && least >= length.value) {
+      return candidate;
+    }
+    if (most !== undefined && most <= length.value) {
+      return other;
     }
   }
   return undefined;

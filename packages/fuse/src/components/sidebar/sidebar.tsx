@@ -706,7 +706,7 @@ export function SidebarGroupAction({ className, render, ...props }: SidebarGroup
       {
         className: cn(
           sidebarGroupActionBoxClass,
-          "absolute right-3 flex items-center justify-center rounded-md p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden after:absolute after:-inset-2 enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
+          "absolute right-3 flex items-center justify-center rounded-md p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
           selfFocusRingClass,
           nativeStateFaceClass,
           className
@@ -849,7 +849,7 @@ export function SidebarMenuAction({
         className: cn(
           sidebarMenuActionShellClass,
           sidebarMenuActionBoxClass,
-          "absolute right-1 flex items-center justify-center p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground after:absolute after:-inset-2 enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
+          "absolute right-1 flex items-center justify-center p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
           selfFocusRingClass,
           nativeStateFaceClass,
           showOnHover &&

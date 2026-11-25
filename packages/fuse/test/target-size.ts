@@ -26,23 +26,24 @@ function lengthOf(value: string): number {
 
 /**
  * The box a target's pointer events reach: its border box, grown by an absolutely positioned
- * `::before` that extends it, as the `hit-area-*` utility does for a chip's remove button. The
- * pseudo-element's box comes from its computed insets, which are negative where it reaches past the
- * target, so the visible glyph's size never counts as the target's.
+ * pseudo-element that extends it, as the `hit-area-*` utility's `::before` does for a chip's remove
+ * button. The pseudo-element's box comes from its computed insets, which are negative where it
+ * reaches past the target, so the visible glyph's size never counts as the target's.
  *
  * @param target - The control.
+ * @param pseudo - The pseudo-element that draws the hit area.
  * @returns The hit area's rect.
  */
-function hitAreaOf(target: Element): DOMRect {
+export function hitAreaOf(target: Element, pseudo: "::before" | "::after" = "::before"): DOMRect {
   const rect = target.getBoundingClientRect();
-  const before = getComputedStyle(target, "::before");
-  if (before.content === "none" || before.position !== "absolute") {
+  const area = getComputedStyle(target, pseudo);
+  if (area.content === "none" || area.position !== "absolute") {
     return rect;
   }
-  const left = Math.min(rect.left, rect.left + lengthOf(before.left));
-  const top = Math.min(rect.top, rect.top + lengthOf(before.top));
-  const right = Math.max(rect.right, rect.right - lengthOf(before.right));
-  const bottom = Math.max(rect.bottom, rect.bottom - lengthOf(before.bottom));
+  const left = Math.min(rect.left, rect.left + lengthOf(area.left));
+  const top = Math.min(rect.top, rect.top + lengthOf(area.top));
+  const right = Math.max(rect.right, rect.right - lengthOf(area.right));
+  const bottom = Math.max(rect.bottom, rect.bottom - lengthOf(area.bottom));
   return new DOMRect(left, top, right - left, bottom - top);
 }
 

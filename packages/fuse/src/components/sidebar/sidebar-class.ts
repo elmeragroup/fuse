@@ -7,7 +7,11 @@
 import { cn } from "../../styles/cn";
 import { sidebarRowShellClass, sidebarSectionShellClass } from "../../styles/inner-corner/sidebar";
 import { selfFocusRingClass } from "../../styles/utils";
-import { sidebarMenuBadgeOffsetClass, sidebarRowBoxClass } from "./sidebar-variants";
+import {
+  sidebarGroupLengthsClass,
+  sidebarMenuBadgeOffsetClass,
+  sidebarRowBoxClass,
+} from "./sidebar-variants";
 
 /**
  * `Sidebar.Trigger`: the `icon-sm` ghost Button, with its hit area grown by 4px on each side.
@@ -112,19 +116,21 @@ export const sidebarIconClass = cn(
 );
 
 /**
- * `Sidebar.GroupLabel`: a 32px row of muted small text at the row inset, rounded as a menu row.
- * In the collapsed icon rail it fades out and pulls the group's rows up by its own height.
+ * `Sidebar.GroupLabel`: a `--group-label-h` row of muted small text at the row inset, rounded as a
+ * menu row. In the collapsed icon rail it fades out and pulls the group's rows up by its own
+ * height. There it takes no presses, so it does not cover the previous group's last row.
  */
 export const sidebarGroupLabelClass = cn(
   sidebarRowShellClass,
-  "text-xs font-medium flex h-8 shrink-0 items-center px-(--row-px) text-sidebar-foreground/70 transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0",
+  sidebarGroupLengthsClass,
+  "text-xs font-medium flex h-(--group-label-h) shrink-0 items-center px-(--row-px) text-sidebar-foreground/70 transition-opacity duration-200 ease-linear group-data-[collapsible=icon]:pointer-events-none group-data-[collapsible=icon]:-mt-(--group-label-h) group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0",
   selfFocusRingClass
 );
 
 /**
- * `Sidebar.MenuBadge`: a 20px count at the end of its menu item, centered on the menu button's
- * row. It takes the accent text while the menu button beside it is hovered or active, and hides in
- * the collapsed icon rail.
+ * `Sidebar.MenuBadge`: a `--spacing(5)` count at the end of its menu item, centered on the menu
+ * button's row. It takes the accent text while the menu button beside it is hovered or active,
+ * and hides in the collapsed icon rail.
  */
 export const sidebarMenuBadgeClass = cn(
   sidebarMenuBadgeOffsetClass,
