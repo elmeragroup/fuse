@@ -1,12 +1,11 @@
 import type { ESTree, Rule, Scope, Visitor } from "@oxlint/plugins";
-import { dirname, resolve } from "node:path";
 
 import { moduleExportName, propertyKeyName } from "../ast-names.ts";
 import { firstViolation } from "../quantify.ts";
 import { evaluate, memberName } from "../resolve.ts";
 import type { Alt } from "../resolve.ts";
 import { requiredOptions } from "../rule-options.ts";
-import { isTestFile } from "../source-file.ts";
+import { isTestFile, relativeImportPath } from "../source-file.ts";
 import { constantString } from "../static-text.ts";
 
 /** One configured module: a pattern its normalised specifier is matched against, why, and which exports. */
@@ -107,9 +106,7 @@ export const restrictedImports: Rule = {
 
     /** A specifier as matched: a relative one resolved from the importing file, a bare one as written. */
     const normalised = (specifier: string): string =>
-      specifier.startsWith("./") || specifier.startsWith("../")
-        ? resolve(dirname(context.filename), specifier).replaceAll("\\", "/")
-        : specifier;
+      relativeImportPath(context.filename, specifier) ?? specifier;
 
     /** The restrictions a specifier falls under. */
     const restrictionsOf = (specifier: string): Restriction[] =>

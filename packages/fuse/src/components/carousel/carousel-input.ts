@@ -17,6 +17,7 @@
  * two frames after it, so a trackpad gesture is held once, from its first turn to two frames after
  * its last. The document listeners exist only while input is held, so an idle carousel adds none.
  */
+import { windowShowing } from "../../internal/dom-node";
 import type { CarouselOrientation } from "./carousel-engine";
 
 /** What the owner reports. */
@@ -58,7 +59,8 @@ export function createCarouselInput(
   let panning = false;
   const keys = new Set<string>();
   let wheelFrame: number | null = null;
-  const capture = { capture: true, passive: true } as const;
+  // The release listeners of the input held now, removed together by aborting.
+  let releases: AbortController | null = null;
   const passive = { passive: true } as const;
 
   function held(): boolean {
@@ -87,11 +89,16 @@ export function createCarouselInput(
       pointers.clear();
       panning = false;
       keys.clear();
-      if (wheelFrame !== null) {
-        view?.cancelAnimationFrame(wheelFrame);
-        wheelFrame = null;
-      }
+      dropWheel();
     }, false);
+  }
+
+  /** Forgets a held wheel turn, canceling its frame while the window still shows the document. */
+  function dropWheel(): void {
+    if (wheelFrame !== null) {
+      windowShowing(doc)?.cancelAnimationFrame(wheelFrame);
+      wheelFrame = null;
+    }
   }
 
   function onPointerDown(event: PointerEvent): void {
@@ -146,18 +153,18 @@ export function createCarouselInput(
     const along = vertical
       ? event.deltaY !== 0 && !event.shiftKey
       : event.deltaX !== 0 || (event.shiftKey && event.deltaY !== 0);
-    if (!along || view === null) {
+    const shown = windowShowing(doc);
+    if (!along || shown === null) {
       return;
     }
     change(() => {
       // A turn while the last one is held extends its hold to two frames from now, so a trackpad
       // gesture, which turns every frame or so, stays one held input with one release at its end,
       // rather than releasing and taking the document listeners again every other frame.
-      if (wheelFrame !== null) {
-        view.cancelAnimationFrame(wheelFrame);
-      }
-      wheelFrame = view.requestAnimationFrame(() => {
-        wheelFrame = view.requestAnimationFrame(() => {
+      dropWheel();
+      // An animation frame runs only while its window shows the document that requested it.
+      wheelFrame = shown.requestAnimationFrame(() => {
+        wheelFrame = shown.requestAnimationFrame(() => {
           change(() => {
             wheelFrame = null;
           }, false);
@@ -167,23 +174,24 @@ export function createCarouselInput(
   }
 
   function listen(): void {
+    // An iframe's window may show another document by the time input ends, and any call on it
+    // throws once that document is cross-origin. Aborting the signal removes the listeners without
+    // a call on the window.
+    releases = new AbortController();
+    const { signal } = releases;
+    const capture = { capture: true, passive: true, signal } as const;
     doc.addEventListener("pointerup", onPointerUp, capture);
     doc.addEventListener("pointercancel", onPointerCancel, capture);
     doc.addEventListener("lostpointercapture", onLostCapture, capture);
     doc.addEventListener("touchend", onTouchEnd, capture);
     doc.addEventListener("touchcancel", onTouchEnd, capture);
     doc.addEventListener("keyup", onKeyUp, capture);
-    view?.addEventListener("blur", endAll, passive);
+    view?.addEventListener("blur", endAll, { passive: true, signal });
   }
 
   function unlisten(): void {
-    doc.removeEventListener("pointerup", onPointerUp, capture);
-    doc.removeEventListener("pointercancel", onPointerCancel, capture);
-    doc.removeEventListener("lostpointercapture", onLostCapture, capture);
-    doc.removeEventListener("touchend", onTouchEnd, capture);
-    doc.removeEventListener("touchcancel", onTouchEnd, capture);
-    doc.removeEventListener("keyup", onKeyUp, capture);
-    view?.removeEventListener("blur", endAll);
+    releases?.abort();
+    releases = null;
   }
 
   viewport.addEventListener("pointerdown", onPointerDown, passive);
@@ -196,10 +204,7 @@ export function createCarouselInput(
       viewport.removeEventListener("pointerdown", onPointerDown);
       viewport.removeEventListener("keydown", onKeyDown);
       viewport.removeEventListener("wheel", onWheel);
-      if (wheelFrame !== null) {
-        view?.cancelAnimationFrame(wheelFrame);
-        wheelFrame = null;
-      }
+      dropWheel();
       pointers.clear();
       panning = false;
       keys.clear();

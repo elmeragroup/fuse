@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 
 import { flushSync } from "react-dom";
 
+import { windowShowing } from "../../internal/dom-node";
 import type { ClipRegion } from "./chart-clip-region";
 import { clipRegion, flatContains } from "./chart-clip-region";
 
@@ -83,7 +84,8 @@ export function useSurfaceInView(id: string, figure: () => HTMLElement | null, w
     // this and clears `observed`, and every callback checks one of them, so such a report cannot
     // listen or observe again.
     let disposed = false;
-    const view = root.ownerDocument.defaultView ?? window;
+    const { ownerDocument } = root;
+    const view = ownerDocument.defaultView ?? window;
     // The observer reports only as the surface's visible area crosses a threshold. A scroll or
     // resize can move the clip region without that, and a panel far smaller than the surface
     // crosses none. Observing the surface again makes the observer report it afresh, at most once
@@ -91,18 +93,21 @@ export function useSurfaceInView(id: string, figure: () => HTMLElement | null, w
     let frame = 0;
     const refresh = (): void => {
       if (disposed || frame !== 0) return;
-      frame = view.requestAnimationFrame(() => {
-        frame = 0;
-        if (observed === null) return;
-        visibility.unobserve(observed);
-        visibility.observe(observed);
-      });
+      // Animation frames come from the window that still shows the figure's document. An iframe's
+      // window shows another document once the iframe navigates.
+      frame =
+        windowShowing(ownerDocument)?.requestAnimationFrame(() => {
+          frame = 0;
+          if (observed === null) return;
+          visibility.unobserve(observed);
+          visibility.observe(observed);
+        }) ?? 0;
     };
     // A scroll moves the surface only when it scrolls the document or an element that contains it.
     const scrolled = (event: Event): void => {
       if (observed === null) return;
       const target = event.target;
-      if (target === root.ownerDocument || (target instanceof view.Element && flatContains(target, observed)))
+      if (target === ownerDocument || (target instanceof view.Element && flatContains(target, observed)))
         refresh();
     };
     // A scroll event in a shadow root never reaches the window, so each clipping ancestor gets its
@@ -166,8 +171,12 @@ export function useSurfaceInView(id: string, figure: () => HTMLElement | null, w
       sizes.observe(surface);
     };
     mounts.observe(root, { childList: true, subtree: true });
-    view.addEventListener("scroll", scrolled, { capture: true, passive: true });
-    view.addEventListener("resize", refresh, { passive: true });
+    // Any call on an iframe's window throws once it shows a cross-origin document. Aborting the
+    // signal removes these listeners without a call on the window.
+    const listening = new AbortController();
+    const { signal } = listening;
+    view.addEventListener("scroll", scrolled, { capture: true, passive: true, signal });
+    view.addEventListener("resize", refresh, { passive: true, signal });
     follow();
     return () => {
       disposed = true;
@@ -178,9 +187,8 @@ export function useSurfaceInView(id: string, figure: () => HTMLElement | null, w
       watchClippers([]);
       clipContentBoxes.disconnect();
       clipBorderBoxes.disconnect();
-      view.removeEventListener("scroll", scrolled, { capture: true });
-      view.removeEventListener("resize", refresh);
-      view.cancelAnimationFrame(frame);
+      listening.abort();
+      windowShowing(ownerDocument)?.cancelAnimationFrame(frame);
       setInView(false);
     };
   }, [id, figure, watching]);
