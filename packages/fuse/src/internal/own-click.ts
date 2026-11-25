@@ -25,7 +25,9 @@ export const OWN_CLICK_SELECTOR = [
  * Elements a click on a pressable region, such as a table row or a drop zone, must not also
  * press the region through. They are the shared own-click set, plus the ARIA widgets Fuse renders
  * as non-native elements that such a region can hold: Base UI's checkbox and radio spans, a slider
- * thumb and a date segment. The slider's track has no role, so its control is named by slot.
+ * thumb and a date segment. A press on a slider's bare track lands outside its thumb's
+ * `[role=slider]`, so the set also includes `[data-slider-control]`, which Slider writes on its
+ * control.
  */
 const INTERACTIVE_DESCENDANT = [
   OWN_CLICK_SELECTOR,
@@ -37,7 +39,7 @@ const INTERACTIVE_DESCENDANT = [
   "[role=textbox]",
   "[role=combobox]",
   "[role=menuitem]",
-  "[data-slot=slider-control]",
+  "[data-slider-control]",
 ].join(",");
 
 /**
