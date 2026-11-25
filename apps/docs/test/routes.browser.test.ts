@@ -39,9 +39,6 @@ const AXE_EXCLUSIONS_BY_RULE = {
     '[data-slot="input-group"]:has(> [data-slot="input-group-control"]:disabled) [data-slot="input-group-text"]',
   ],
   "target-size": [
-    // #1040: date segments under 24px at dense density. The date pages nest at most one density
-    // stage under the document, so a segment under a comfortable stage stays checked.
-    '[data-density="dense"] [data-slot="date-input-segment"]:not([data-density="dense"] [data-density="comfortable"] *)',
     // axe measures the 16px box, not the Checkbox's 38x30 `::after` hit area (#510).
     '[data-slot="data-table-select-all"]',
     // The studio canvas shows each artboard's preview scaled down to fit. axe still checks the

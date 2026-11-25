@@ -59,6 +59,7 @@ export function DateInputSegment({
   const generatedId = useId();
   const id = props.id ?? generatedId;
   const isZone = segment.type === "timeZoneName";
+  const isLiteral = segment.type === "literal";
   const editable = segment.isEditable && !root.disabled && !root.readOnly;
 
   const inputRef = useSegmentInput({
@@ -105,44 +106,45 @@ export function DateInputSegment({
     [segment.type, segment.isPlaceholder, root.disabled, root.readOnly, root.invalid, isZone]
   );
 
-  const own: ComponentProps<"span"> =
-    segment.type === "literal"
-      ? { "aria-hidden": true, suppressHydrationWarning: true }
-      : {
-          ...segmentAttributes(root, segment, id, editable),
-          ...FOCUS_RING_CONTROL,
-          onKeyDown(event: KeyboardEvent<HTMLElement>) {
-            actions.keyDown(segment, event);
-          },
-          onFocus(event: FocusEvent<HTMLElement>) {
-            actions.segmentFocused();
-            // A collapsed selection, or Chrome fires no input events into the segment.
-            event.currentTarget.ownerDocument.getSelection()?.collapse(event.currentTarget);
-          },
-        };
+  const own: ComponentProps<"span"> = isLiteral
+    ? { "aria-hidden": true, suppressHydrationWarning: true }
+    : {
+        ...segmentAttributes(root, segment, id, editable),
+        ...FOCUS_RING_CONTROL,
+        onKeyDown(event: KeyboardEvent<HTMLElement>) {
+          actions.keyDown(segment, event);
+        },
+        onFocus(event: FocusEvent<HTMLElement>) {
+          actions.segmentFocused();
+          // A collapsed selection, or Chrome fires no input events into the segment.
+          event.currentTarget.ownerDocument.getSelection()?.collapse(event.currentTarget);
+        },
+      };
 
   return useRender({
     defaultTagName: "span",
     render,
-    ref:
-      segment.type === "literal"
-        ? ref
-        : ref === undefined
-          ? [inputRef, elementRef]
-          : [inputRef, elementRef, ref],
+    ref: isLiteral ? ref : ref === undefined ? [inputRef, elementRef] : [inputRef, elementRef, ref],
     state,
     stateAttributesMapping: SEGMENT_STATE_ATTRIBUTES,
     props: {
       "data-slot": "date-input-segment",
       ...mergeProps<"span">(
-        { ...own, className: cn(dateInputVariants().segment(), className), children: segment.text },
+        {
+          ...own,
+          className: cn(
+            dateInputVariants({ segmentKind: isLiteral ? "literal" : "focusable" }).segment(),
+            className
+          ),
+          children: segment.text,
+        },
         // `undefined` from a consumer must not erase the segment's own id, name or description.
         definedProps(props)
       ),
       // The marker goes after the consumer's props, so none of them erases or replaces it. A `render`
       // element's own `data-date-segment` overrides it, and a `render` function that does not spread
       // its props drops it, as it drops the segment's `tabIndex` and handlers.
-      ...(segment.type === "literal" ? undefined : SEGMENT_MARKER),
+      ...(isLiteral ? undefined : SEGMENT_MARKER),
     },
   });
 }

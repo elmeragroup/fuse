@@ -7,19 +7,24 @@ import { ResizableAssignmentTable } from "../../test/data-table-fixtures";
 import { withLocale } from "../../test/locale-matrix";
 import { atHostRoots, expectTargetBoxes, expectTargets } from "../../test/target-size";
 import { renderThemed, roleNamed, stampDensity } from "../../test/themed-browser-render";
+import { wrappedSegment } from "../../test/wrapped-date-segment";
 import { Button } from "../components/button/button";
 import { Combobox } from "../components/combobox";
+import { DateInput } from "../components/date-field";
+import { DateField } from "../components/date-field/date-field";
 import { NumberField } from "../components/number-field/number-field";
 import { PhoneNumberField } from "../components/phone-number-field/phone-number-field";
 import { RadioGroup, RadioIconButton } from "../components/radio-group/radio-group";
 import { Toggle } from "../components/toggle/toggle";
+import "../temporal-polyfill";
 import { DENSITIES } from "../theme/density";
 
 /**
  * Unit under test: the WCAG 2.5.8 24px target floor that the control sizes set, on the smallest
  * targets Fuse draws: an icon-only inline Button, a NumberField's steppers inside the field box,
  * a Combobox chip's remove button and the resize handles of a DataTable's first column and the
- * column beside it, both at their narrowest, at both densities and at the 16px root and a 14px
+ * column beside it, both at their narrowest, and a date field's segments with their narrowest text,
+ * as flex items of the box and wrapped in a span, at both densities and at the 16px root and a 14px
  * host root.
  * Oracle: the criterion's 24px square around each target's center, which `test/target-size.ts`
  * measures.
@@ -70,6 +75,41 @@ describe("the 24px target floor", () => {
       for (const density of DENSITIES) {
         stampDensity(density);
         expectTargets(targets, `${density} ${String(root)}px`);
+      }
+    });
+  });
+
+  it("holds for each date segment, empty, filled and wrapped, at both densities and both host roots", () => {
+    const filled = Temporal.PlainDateTime.from("2030-01-01T01:01");
+    renderThemed(
+      withLocale(
+        "en-US",
+        <>
+          <DateField label="Empty" granularity="minute" />
+          <DateField label="Filled" granularity="minute" defaultValue={filled} />
+          <DateInput.Root aria-label="Wrapped" granularity="minute" defaultValue={filled}>
+            {wrappedSegment}
+          </DateInput.Root>
+        </>
+      )
+    );
+    // The six spinbuttons of an en-US date and time to the minute; the literals between them are
+    // hidden and are not targets. `roleNamed` fails on a missing one before anything is measured.
+    const fields = ["Empty", "Filled", "Wrapped"].map(
+      (field) =>
+        [
+          field,
+          ["month", "day", "year", "hour", "minute", "AM/PM"].map((unit) =>
+            roleNamed("spinbutton", `${unit}, ${field}`)
+          ),
+        ] as const
+    );
+    atHostRoots([16, 14], (root) => {
+      for (const density of DENSITIES) {
+        stampDensity(density);
+        for (const [field, segments] of fields) {
+          expectTargets(segments, `${field} ${density} ${String(root)}px`);
+        }
       }
     });
   });

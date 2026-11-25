@@ -121,7 +121,8 @@ export const PART_DENSITY = {
   "date-range-picker-separator": "fixed",
 
   // DateInput's segments are text runs inside the field box, whose `field-group` slot reads the
-  // control metrics; a segment keeps one 2px padding at both densities.
+  // control metrics. At both densities a segment keeps one 2px padding, and a focusable segment
+  // keeps one 24px target floor.
   "date-input-segment": "fixed",
 
   card: "layout",
