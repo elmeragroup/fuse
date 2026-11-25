@@ -102,12 +102,16 @@ export function ItemFooter({
   children?: ReactNode;
 }): ReactElement {
   const { root, content } = itemFooterVariants({ mode });
+  // `data-item-footer` carries the mode for SelectionItem's band and label classes, which read it
+  // in place of `data-slot` and `data-mode`. The footer writes it after the consumer's props, so
+  // a consumer value cannot replace it.
   return (
     <div
       data-slot="item-footer"
       data-mode={mode}
       className={cn(root(), className)}
       {...props}
+      data-item-footer={mode}
       inert={mode === "hidden" || Boolean(inert)}>
       <div data-slot="item-footer-content" className={content()}>
         {children}

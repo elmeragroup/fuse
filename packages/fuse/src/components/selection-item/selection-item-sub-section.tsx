@@ -4,7 +4,11 @@ import type { ComponentProps, ReactElement, ReactNode } from "react";
 
 import { ItemFooter } from "../item/item-markup";
 
-/** The attribute every rendered SubSection root carries; `partitionSubSections` looks for it. */
+/**
+ * The attribute every rendered SubSection root carries. `partitionSubSections` reads it from the
+ * element's props to move the SubSection out of the label. The SubSection writes it after the
+ * consumer's props, so a consumer value cannot remove it.
+ */
 export const SUB_SECTION_MARKER = "data-selection-item-sub-section";
 
 /**

@@ -297,13 +297,13 @@
             {
               "tag": "label",
               "attributes": {"for":"base-ui-2","id":"base-ui-3"},
-              "classes": ["contents","cursor-pointer","before:absolute","before:inset-0","before:-z-1","selection-row-disabled-part:cursor-not-allowed","[[data-selection-item]:has(>[data-slot=selection-item-sub-sections]>div>[data-slot=item-footer]:not([data-mode=hidden]))>&]:before:row-[1/2]"],
+              "classes": ["contents","cursor-pointer","before:absolute","before:inset-0","before:-z-1","selection-row-disabled-part:cursor-not-allowed","[:where([data-selection-item]:has(>[data-selection-item-band]>div>[data-item-footer]:not([data-item-footer=hidden])))>&]:before:row-[1/2]"],
               "text": "",
               "declarations": [2,3,4,5,6,165,166],
               "initial": [3,4],
               "pseudo": {"before":[167,168,169,170,171,172,173,174,175]},
               "variables": {"--border":{"_tag":"theme"},"--tw-content":{"_tag":"unset"}},
-              "unmatched": ["selection-row-disabled-part:cursor-not-allowed","[[data-selection-item]:has(>[data-slot=selection-item-sub-sections]>div>[data-slot=item-footer]:not([data-mode=hidden]))>&]:before:row-[1/2]"],
+              "unmatched": ["selection-row-disabled-part:cursor-not-allowed","[:where([data-selection-item]:has(>[data-selection-item-band]>div>[data-item-footer]:not([data-item-footer=hidden])))>&]:before:row-[1/2]"],
               "measured": {"noBox":true},
               "children": [
                 {
