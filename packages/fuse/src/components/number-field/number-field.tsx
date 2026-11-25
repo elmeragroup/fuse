@@ -208,6 +208,7 @@ export function NumberField({
             {...definedProps({ "aria-label": ariaLabel })}
             // Base UI hard-codes the English "Number field"; announce it in the provider locale.
             aria-roledescription={strings.format("roleDescription")}
+            // oxlint-disable-next-line jsx-a11y/no-autofocus -- honors the consumer's own `autoFocus`, on the initial mount only
             autoFocus={autoFocus === true && reset.isInitialMount}
             data-focus-ring-control=""
             className={slots.input()}
