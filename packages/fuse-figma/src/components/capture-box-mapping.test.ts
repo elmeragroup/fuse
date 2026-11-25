@@ -389,14 +389,14 @@ describe("a grid in one column", () => {
 // block host, reads no content, so the containment changes nothing there, and `w-auto` sets the
 // width the box takes with none, so it drops there the same way. Neither does a width of
 // the box's own that is a length, or a percentage of that host's or column's fixed width (CSS 2.1
-// §10.2): a `w-full` root in a 256px host is 256px with or without `@container`, as a Date range
-// picker's root is in its 384px host. A box that hugs, a growing flex item, a shrinkable flex item of
-// declared width, and a percentage of a parent that hugs it, which content sizes (CSS Sizing 3 §5.2),
-// read content or a share of the row, so it stays unmapped. So does a fixed width beside a minimum or
-// maximum that content sizes (CSS Sizing 3 §5.2, CSS 2.1 §10.4): Chromium lays a `w-[40px]
-// min-w-min` box around a 120px child out 120px wide without `@container` and 40px with it, and a
-// stretched box's `min-content` minimum lifts it past its column the same way. The build resolves
-// no `stretch` minimum, spelled `stretch` or `-webkit-fill-available`, so that stays unmapped too.
+// §10.2): a `w-full` root in a 256px host is 256px with or without `@container`. A box that hugs, a
+// growing flex item, a shrinkable flex item of declared width, and a percentage of a parent that
+// hugs it, which content sizes (CSS Sizing 3 §5.2), read content or a share of the row, so it stays
+// unmapped. So does a fixed width beside a minimum or maximum that content sizes (CSS Sizing 3
+// §5.2, CSS 2.1 §10.4): Chromium lays a `w-[40px] min-w-min` box around a 120px child out 120px
+// wide without `@container` and 40px with it, and a stretched box's `min-content` minimum lifts it
+// past its column the same way. The build resolves no `stretch` minimum, spelled `stretch` or
+// `-webkit-fill-available`, so that stays unmapped too.
 describe("an inline-size container", () => {
   it.each(["@container flex flex-col", "@container w-auto flex flex-col"])(
     "drops the containment on a block-level root its preview's host sets the width of: %s",

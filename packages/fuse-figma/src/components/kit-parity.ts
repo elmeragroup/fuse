@@ -193,7 +193,7 @@ export const KIT_PARITY = {
     kind: "partial",
     sets: ["date-range-picker"],
     missing:
-      "The calendar popup and its presets; the `sm` size, a range of dates and times, and the shorter box a narrower picker gets below 24rem.",
+      "The calendar popup and its presets; the `sm` size, a range of dates and times, and the two-line box a picker too narrow for one line wraps into.",
     issue: NICE_TO_HAVE,
   },
   "description-list": {
