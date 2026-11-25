@@ -186,8 +186,8 @@ describe("Alert", () => {
     },
     {
       name: "image",
-      block: <img src={PIXEL} alt="Meter photo" width={40} height={20} />,
-      find: () => roleNamed("img", "Meter photo"),
+      block: <img src={PIXEL} alt="Meter reading" width={40} height={20} />,
+      find: () => roleNamed("img", "Meter reading"),
     },
   ] as const;
 
