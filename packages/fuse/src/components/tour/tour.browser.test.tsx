@@ -12,7 +12,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { nextFrames, recordFrames } from "../../../test/animation-frames";
+import { nextFrames, pollFrames, recordFrames } from "../../../test/animation-frames";
 import { withLocale } from "../../../test/locale-matrix";
 import {
   overlayBackdropOf,
@@ -863,11 +863,13 @@ describe("Tour.Spotlight", () => {
     const storage = memoryTourStorage();
     renderThemed(
       <Tour.Provider storage={storage} onEvent={(event) => events.push(event)}>
-        <Starter tour={welcome} />
-        <Tour.Target tour={welcome} step="usage" title="Usage">
-          Usage card
-        </Tour.Target>
-        <PriceButton />
+        <div data-testid="page-controls">
+          <Starter tour={welcome} />
+          <Tour.Target tour={welcome} step="usage" title="Usage">
+            Usage card
+          </Tour.Target>
+          <PriceButton />
+        </div>
         <Tour.Popup tour={welcome} modal="trap-focus">
           <Tour.Spotlight />
           <Tour.Header>{withClose ? <Tour.Close /> : null}</Tour.Header>
@@ -888,10 +890,27 @@ describe("Tour.Spotlight", () => {
     const starter = roleNamed("button", "Take the tour");
     await userEvent.click(starter);
     const dialog = await dialogNamed("Welcome");
-    for (let press = 0; press < 4; press += 1) {
-      await userEvent.keyboard("{Tab}");
-      expect(dialog.contains(document.activeElement)).toBe(true);
-    }
+    const close = roleNamed("button", "Close");
+    const back = roleNamed("button", "Back");
+    const next = roleNamed("button", "Next");
+    // Base UI sets initial focus on the next animation frame.
+    await pollFrames(() => dialog.contains(document.activeElement), true);
+    const pageFocus: Element[] = [];
+    page
+      .getByTestId("page-controls")
+      .element()
+      .addEventListener("focusin", (event) => {
+        if (event.target instanceof Element) pageFocus.push(event.target);
+      });
+    next.focus();
+    expect(document.activeElement).toBe(next);
+    // A Tab from the last button lands on a focus guard, which moves focus to the first button on
+    // the next frame.
+    await userEvent.keyboard("{Tab}");
+    await pollFrames(() => document.activeElement === close, true);
+    await userEvent.keyboard("{Tab}");
+    await pollFrames(() => document.activeElement === back, true);
+    expect(pageFocus).toEqual([]);
     expect(starter.closest('[aria-hidden="true"]')).not.toBeNull();
   });
 
