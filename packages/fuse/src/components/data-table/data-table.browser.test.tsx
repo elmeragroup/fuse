@@ -751,12 +751,22 @@ describe("DataTable row actions", () => {
 
   it("opens the menu aligned to the trigger's end and runs an item's handler", async () => {
     log.length = 0;
-    renderInEnglish(<ActionsTable />);
+    // Near the viewport's right edge Base UI flips a start-aligned menu to the end, so the table
+    // stays narrow enough for either alignment to fit.
+    renderInEnglish(
+      <div style={{ width: 220 }}>
+        <ActionsTable />
+      </div>
+    );
 
     await openMenu("Actions for Alta");
     const trigger = roleNamed("button", "Actions for Alta");
     const menu = roleNamed("menu", "Actions for Alta");
     await expect.element(page.getByRole("menu")).toBeVisible();
+    const { left, right } = trigger.getBoundingClientRect();
+    const { width } = menu.getBoundingClientRect();
+    expect(left + width).toBeLessThan(document.documentElement.clientWidth);
+    expect(right - width).toBeGreaterThan(0);
     // The menu can show at its first coordinates before Base UI positions it.
     await expect
       .poll(() => Math.abs(menu.getBoundingClientRect().right - trigger.getBoundingClientRect().right))
