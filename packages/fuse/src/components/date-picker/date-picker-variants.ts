@@ -90,13 +90,15 @@ export const datePickerVariants = tv({
      * the trigger follows. A row is never wider than the box less one trigger, so the separator
      * stays on the start row's line and the trigger fits beside the end row. A row narrower than
      * its segments scrolls. The box is as tall as its lines, and never shorter than the field
-     * height. The range Root is a size container, so its own width, not its segments', decides the
-     * track it takes. It holds its label, error and description itself, so it takes a field root's
+     * height. The range Root is not a size container, so it gives its parent its content's width. A
+     * parent that sizes to its content, such as an inline-block, takes one line where it has room.
+     * With less room and no width limit of its own, the parent is never narrower than the box's
+     * widest row of segments, or 208px where that is wider. The Root holds its label, error and description itself, so it takes a field root's
      * gap and error-colored label.
      */
     range: {
       true: {
-        root: "group/field @container/picker w-full gap-1 data-invalid:text-error",
+        root: "group/field w-full gap-1 data-invalid:text-error",
         group: cn("h-auto min-w-[208px] flex-wrap", fieldReads.minHeight()),
         input: cn("box-border", fieldReads.besideInner(), "flex-none"),
         calendar: "p-(--surface-pad-sm)",

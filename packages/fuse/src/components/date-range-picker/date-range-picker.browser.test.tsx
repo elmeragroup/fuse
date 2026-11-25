@@ -5,7 +5,8 @@
  * presets that discard a half-picked range, a calendar showing several months, the cancelable
  * details, typing across the two ends, and the popup's time inputs. In a box narrower than its
  * segments, each segment focus reaches lies whole inside the box, a press at the trigger's center
- * opens the calendar, and the ends share a line only where their measured widths fit it.
+ * opens the calendar, and the ends share a line only where their measured widths fit it. In a parent
+ * that sizes to its content, the box is as wide as its parts on one line.
  */
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
@@ -342,6 +343,27 @@ describe("DateRangePicker wiring", () => {
   });
 });
 
+/** The range picker's group and its parts, failing when one is missing. */
+function rangeParts(label: string) {
+  const group = roleNamed("group", "Stay");
+  const [start, end] = [...group.querySelectorAll<HTMLElement>('[data-slot="date-picker-input"]')];
+  const separator = group.querySelector('[data-slot="date-range-picker-separator"]');
+  const trigger = group.querySelector('[data-slot="date-picker-trigger"]');
+  if (start === undefined || end === undefined || separator === null || trigger === null) {
+    throw new Error(`${label}: parts`);
+  }
+  return { group, start, end, separator, trigger };
+}
+
+/** The widths of the range box's borders, of its rows with the separator, and of its trigger. */
+function lineWidths({ group, start, end, separator, trigger }: ReturnType<typeof rangeParts>) {
+  return {
+    chrome: group.offsetWidth - group.clientWidth,
+    rows: start.scrollWidth + separator.getBoundingClientRect().width + end.scrollWidth,
+    trigger: trigger.getBoundingClientRect().width,
+  };
+}
+
 describe("DateRangePickerField in a narrow box", () => {
   const dateTime = Temporal.PlainDateTime.from("2030-12-28T11:59:59");
   const minutes = { start: dateTime, end: dateTime };
@@ -410,18 +432,6 @@ describe("DateRangePickerField in a narrow box", () => {
     });
   });
 
-  /** The range picker's group and its parts, failing when one is missing. */
-  function rangeParts(label: string) {
-    const group = roleNamed("group", "Stay");
-    const [start, end] = [...group.querySelectorAll<HTMLElement>('[data-slot="date-picker-input"]')];
-    const separator = group.querySelector('[data-slot="date-range-picker-separator"]');
-    const trigger = group.querySelector('[data-slot="date-picker-trigger"]');
-    if (start === undefined || end === undefined || separator === null || trigger === null) {
-      throw new Error(`${label}: parts`);
-    }
-    return { group, start, end, separator, trigger };
-  }
-
   /** Whether `inner`'s vertical center lies between `outer`'s top and bottom. */
   function onLineOf(inner: DOMRect, outer: DOMRect): boolean {
     const center = inner.top + inner.height / 2;
@@ -436,11 +446,7 @@ describe("DateRangePickerField in a narrow box", () => {
     async (granularity) => {
       await atEachDensity((density) => {
         const wide = rangeIn(1000, granularity);
-        const parts = rangeParts(`${granularity} ${density} wide`);
-        const chrome = parts.group.offsetWidth - parts.group.clientWidth;
-        const rows =
-          parts.start.scrollWidth + parts.separator.getBoundingClientRect().width + parts.end.scrollWidth;
-        const trigger = parts.trigger.getBoundingClientRect().width;
+        const { chrome, rows, trigger } = lineWidths(rangeParts(`${granularity} ${density} wide`));
         wide.unmount();
         for (const [placement, room] of [
           ["one line", rows + trigger + 8],
@@ -477,6 +483,55 @@ describe("DateRangePickerField in a narrow box", () => {
       });
     }
   );
+});
+
+// A parent that sizes to its content, as an inline-block does, asks the picker for its width. The
+// inline-block, the Root and the box each take one line of the rows, separator and trigger, measured
+// part by part, and no more. The box lies inside the Root and the inline-block, and no row scrolls.
+describe("DateRangePickerField in a parent that sizes to its content", () => {
+  it.for([
+    ["day", <DateRangePickerField key="day" label="Stay" />],
+    ["minute", <DateRangePickerField key="minute" label="Stay" granularity="minute" />],
+  ] as const)("with granularity %s, is as wide as its parts on one line", async ([granularity, picker]) => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div style={{ width: 1000 }}>
+          <div data-testid="content-sized" style={{ display: "inline-block" }}>
+            {picker}
+          </div>
+        </div>
+      )
+    );
+    const parent = page.getByTestId("content-sized").element();
+    const root = parent.querySelector('[data-slot="date-range-picker"]');
+    if (root === null) throw new Error("expected the range root");
+    await atEachDensity((density) => {
+      const label = `${granularity} ${density}`;
+      const parts = rangeParts(label);
+      const { group, start, end } = parts;
+      expect(root.contains(group), `${label}: the box sits in the Root`).toBe(true);
+      const { chrome, rows, trigger } = lineWidths(parts);
+      const box = group.getBoundingClientRect();
+      const oneLine = chrome + rows + trigger;
+      // `scrollWidth` is a whole number, which Chromium snaps by the row's position, so each row may
+      // read up to a pixel off its fractional width.
+      expect(box.width, `${label}: the box`).toBeGreaterThanOrEqual(oneLine - 2);
+      expect(box.width, `${label}: the box is no wider than one line`).toBeLessThanOrEqual(oneLine + 2);
+      for (const [name, element] of [
+        ["the inline-block", parent],
+        ["the root", root],
+      ] as const) {
+        const rect = element.getBoundingClientRect();
+        expect(rect.width, `${label}: ${name}`).toBeGreaterThanOrEqual(oneLine - 2);
+        expect(rect.width, `${label}: ${name} is no wider than one line`).toBeLessThanOrEqual(oneLine + 2);
+        expect(box.left, `${label}: the box starts inside ${name}`).toBeGreaterThanOrEqual(rect.left - 0.5);
+        expect(box.right, `${label}: the box ends inside ${name}`).toBeLessThanOrEqual(rect.right + 0.5);
+      }
+      expect(start.scrollWidth, `${label}: the start row scrolls`).toBeLessThanOrEqual(start.clientWidth);
+      expect(end.scrollWidth, `${label}: the end row scrolls`).toBeLessThanOrEqual(end.clientWidth);
+    });
+  });
 });
 
 describe("DateRangePicker calendar", () => {
