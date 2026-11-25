@@ -214,7 +214,7 @@
           "type": "T | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The value, when the parent owns it: a `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime` from any implementation. Its kind picks the segments: a `PlainDate` edits the date, the other two the date and time. A server component cannot pass one, since it reaches the client as ISO text, which the field refuses with a `TypeError`: build the value in a client component. `null` empties it. Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib, as `/quick-start#temporal` shows.",
+          "description": "The value, when the parent owns it: a `Temporal.PlainDate`, `PlainDateTime` or `ZonedDateTime` from any implementation. Its kind picks the segments: a `PlainDate` edits the date, the other two the date and time. A server component cannot pass one, since it reaches the client as ISO text, which the field refuses with a `TypeError`: build the value in a client component. `null` empties it. Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib; see [Quick start](https://fuse.elmeragroup.no/quick-start#temporal).",
           "required": false
         }
       ]
@@ -427,7 +427,7 @@
           "type": "T | null | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "The value, when the parent owns it: a Temporal value of `T`'s kind from any implementation. A server component cannot pass one, since it reaches the client as ISO text, which the input refuses with a `TypeError`: build the value in a client component. `null` empties the input. Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib, as `/quick-start#temporal` shows.",
+          "description": "The value, when the parent owns it: a Temporal value of `T`'s kind from any implementation. A server component cannot pass one, since it reaches the client as ISO text, which the input refuses with a `TypeError`: build the value in a client component. `null` empties the input. Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib; see [Quick start](https://fuse.elmeragroup.no/quick-start#temporal).",
           "required": false
         }
       ]

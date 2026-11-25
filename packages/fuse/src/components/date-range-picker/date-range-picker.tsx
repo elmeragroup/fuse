@@ -138,8 +138,8 @@ export type DateRangePickerRootProps<T extends DateInputValue = Temporal.PlainDa
    * empties both ends. Picking a range in the calendar keeps each end's time and zone.
    *
    * Import `@elmeragroup/fuse/temporal-polyfill` on the server and in the browser for engines
-   * without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib, as
-   * `/quick-start#temporal` shows.
+   * without `Temporal`, and type-check with TypeScript 6 and an `esnext` lib; see
+   * [Quick start](https://fuse.elmeragroup.no/quick-start#temporal).
    */
   value?: DateRangePickerValue<T> | null;
   /** The first range, when the picker owns its value. Takes what `value` takes. */
