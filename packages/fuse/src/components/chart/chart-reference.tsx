@@ -9,6 +9,7 @@ import { partsCache, writeAttribute, writeAttributes, writeStyle } from "./chart
 import type { ChartLabels } from "./chart-labels";
 import type { MarkValues } from "./chart-motion";
 import { placementOf, useCommitMotion, useFirstDraw, useMotionMark } from "./chart-motion-mark";
+import { chartPart, partSelector } from "./chart-part-marker";
 import { useChartFrame } from "./chart-plot";
 import type { ChartFrame } from "./chart-plot";
 import { usePlotRead } from "./chart-plot-measure";
@@ -460,7 +461,7 @@ function lineDrawn(frame: PlotFrame, axis: "value" | "slot", at: number, width: 
 
 /** A reference's rule or band, found once per commit of its mark. */
 const referencePart = partsCache((node) =>
-  node.querySelector('[data-slot="chart-reference-rule"], [data-slot="chart-reference-band"]')
+  node.querySelector(`${partSelector("reference-rule")}, ${partSelector("reference-band")}`)
 );
 
 /** Draws a line from the loop's numbers, its coordinate and its width. */
@@ -636,7 +637,7 @@ export function ChartReferenceLine({
       className={className}
       style={{ "--chart-at": `${String(at)}%`, "--chart-x": at / 100, ...style }}>
       <svg aria-hidden="true">
-        {ruleAttributes === null ? null : <line data-slot="chart-reference-rule" {...ruleAttributes} />}
+        {ruleAttributes === null ? null : <line {...chartPart("reference-rule")} {...ruleAttributes} />}
       </svg>
       <span ref={labelRef} data-slot="chart-reference-label" aria-hidden="true">
         {label === undefined ? null : text.text}
@@ -751,7 +752,7 @@ export function ChartReferenceArea({
         ...style,
       }}>
       <svg aria-hidden="true">
-        {band === null ? null : <rect data-slot="chart-reference-band" {...band} />}
+        {band === null ? null : <rect {...chartPart("reference-band")} {...band} />}
       </svg>
       <span ref={labelRef} data-slot="chart-reference-label" aria-hidden="true">
         {label === undefined ? null : text.text}

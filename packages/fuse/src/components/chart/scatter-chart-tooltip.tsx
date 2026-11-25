@@ -8,6 +8,7 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { useRender } from "@base-ui/react/use-render";
 
 import { OverlayPortal } from "../overlay/overlay-portal";
+import { chartPart } from "./chart-part-marker";
 import {
   chartTakesPress,
   TOOLTIP_POSITIONER,
@@ -188,7 +189,7 @@ export function ScatterChartTooltip({
       <OverlayPortal portal={TooltipPrimitive.Portal} keepMounted={kept}>
         <TooltipPrimitive.Positioner {...TOOLTIP_POSITIONER} anchor={anchor}>
           <TooltipPrimitive.Popup
-            data-slot="chart-tooltip"
+            {...chartPart("tooltip")}
             data-variant={variant}
             data-input={input}
             aria-hidden="true"

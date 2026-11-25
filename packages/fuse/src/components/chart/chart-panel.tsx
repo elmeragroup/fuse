@@ -8,6 +8,7 @@ import type { ChartLayoutContextValue } from "./chart-context";
 import { createChartLabels } from "./chart-labels";
 import { createFrameOwner } from "./chart-motion";
 import { colorFamilyError } from "./chart-paint";
+import { chartPart } from "./chart-part-marker";
 import { usePanelPlot } from "./chart-plot";
 import { ChartLayoutContext, ChartPlotContext, PlotReadsContext } from "./chart-scope-contexts";
 import { PlotLoader } from "./chart-skeleton";
@@ -150,7 +151,7 @@ export function ChartPanel({
   });
   return (
     <ChartLayoutContext value={layout}>
-      <div data-slot="chart-panel" className={className} style={style}>
+      <div {...chartPart("panel")} className={className} style={style}>
         <div ref={plotRef} data-slot="chart-plot" aria-hidden="true">
           {probe}
           {plot === null && !model.empty ? <PlotLoader /> : null}

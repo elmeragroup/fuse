@@ -8,6 +8,7 @@ import { useAxisFormat, useAxisTicks } from "./chart-axis-format";
 import { useChartRoot, usePlotLayout } from "./chart-context";
 import { clientScale, writeAttribute, writeStyle } from "./chart-dom";
 import { useChartFollower } from "./chart-followers";
+import { partSelector } from "./chart-part-marker";
 import { useChartFrame } from "./chart-plot";
 import { ChartCrosshairContext } from "./chart-scope-contexts";
 import { springTiming } from "./chart-spring";
@@ -349,8 +350,8 @@ function measureLabel(node: HTMLElement, rolling: Rolling | null): Measured | nu
       at.width / scale.x,
       at.height / scale.y
     );
-  const frame = node.closest('[data-slot="chart-frame"]');
-  const ticks = [...(frame?.querySelectorAll('[data-slot="chart-x-tick"]') ?? [])].flatMap((tick) => {
+  const frame = node.closest(partSelector("frame"));
+  const ticks = [...(frame?.querySelectorAll(partSelector("x-tick")) ?? [])].flatMap((tick) => {
     const at = tick.getBoundingClientRect();
     return at.width === 0 ? [] : [{ node: tick, box: local(at) }];
   });

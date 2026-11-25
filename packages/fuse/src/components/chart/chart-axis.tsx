@@ -5,6 +5,7 @@ import type { ReactElement } from "react";
 
 import { usePlotLayout, useChartRoot } from "./chart-context";
 import type { ChartRootContextValue } from "./chart-context";
+import { chartPart } from "./chart-part-marker";
 import { useRootFrame } from "./chart-plot";
 import { sameShallow, useSteady } from "./chart-steady";
 import { linearLabel } from "./chart-text";
@@ -331,7 +332,7 @@ export function ChartXAxis({
       {ticks.map((entry, index) => (
         <span
           key={keyOf(entry, index)}
-          data-slot="chart-x-tick"
+          {...chartPart("x-tick")}
           data-min={entry.visibility === "always" ? undefined : String(entry.visibility)}
           style={{ "--chart-at": entry.at }}>
           {entry.text}
