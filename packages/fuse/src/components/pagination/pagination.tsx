@@ -140,6 +140,7 @@ export function PaginationLink({
   ...props
 }: PaginationLinkProps): ReactElement {
   return (
+    // oxlint-disable-next-line jsx-a11y/anchor-has-content -- the anchor's content is the `children` this wrapper forwards in `props`
     <a
       data-slot="pagination-link"
       aria-current={isActive ? "page" : undefined}
