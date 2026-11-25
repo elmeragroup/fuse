@@ -10,7 +10,7 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { nextFrames, pollFrames, useFakeFrames, useFakeIntervals } from "../../../test/animation-frames";
+import { nextFrames, pollFrames, useFakeFrames, useFakeTimeouts } from "../../../test/animation-frames";
 import { holdRequest } from "../../../test/request-hold";
 import {
   InvoiceCard,
@@ -28,12 +28,78 @@ import {
 import type { Invoice } from "../../../test/skeleton-reveal-fixtures";
 import { heightAnimation } from "../../../test/skeleton-reveal-fixtures";
 import { effectiveOpacity, renderThemed, roleNamed, fkasPrivate } from "../../../test/themed-browser-render";
+import { windowOf } from "../../internal/dom-node";
 import { LocaleProvider } from "../../intl/locale-context";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Button } from "../button/button";
 import { SkeletonReveal } from "./skeleton-reveal";
 
 failOnResizeObserverLoop();
+
+/**
+ * Appends an iframe for the rest of the test.
+ *
+ * @returns Navigates the frame to a `srcdoc` or a `src`, and settles with its window once the
+ *   next document loads.
+ */
+function navigableFrame(): (target: { srcdoc: string } | { src: string }) => Promise<Window> {
+  const frame = document.createElement("iframe");
+  document.body.append(frame);
+  onTestFinished(() => {
+    frame.remove();
+  });
+  return async (target) => {
+    const loaded = new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
+    // A `srcdoc` attribute wins over `src`, so a frame that showed one drops it first.
+    if ("src" in target) frame.removeAttribute("srcdoc");
+    Object.assign(frame, target);
+    await loaded;
+    if (frame.contentWindow === null) throw new Error("expected the frame's window");
+    return frame.contentWindow;
+  };
+}
+
+/** A frame still showing its initial about:blank while a same-origin document loads into it. */
+type BlankFrame = {
+  /** The frame's window, which the loaded document keeps. */
+  readonly view: Window;
+  /** Waits for the document to load, and checks that it kept the initial about:blank's window. */
+  readonly load: () => Promise<void>;
+};
+
+/**
+ * Appends an iframe for the rest of the test, inserted with its `src` already set. The frame shows
+ * its initial about:blank while that same-origin document loads, and the document takes over the
+ * initial about:blank's window.
+ *
+ * @returns The frame's window, and a function that settles once the document loads. It throws when
+ *   the document got a fresh window instead.
+ */
+function blankFrameLoading(): BlankFrame {
+  const url = URL.createObjectURL(new Blob(["<!doctype html><body></body>"], { type: "text/html" }));
+  onTestFinished(() => URL.revokeObjectURL(url));
+  const frame = document.createElement("iframe");
+  frame.src = url;
+  const loaded = new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
+  document.body.append(frame);
+  onTestFinished(() => {
+    frame.remove();
+  });
+  const view = frame.contentWindow;
+  if (view === null) throw new Error("expected the frame's window");
+  // A property set on the window lives on the window behind it, so a fresh window lacks it.
+  const marker = Symbol("initial about:blank");
+  Object.defineProperty(view, marker, { value: true });
+  return {
+    view,
+    load: async () => {
+      await loaded;
+      if (view.document.URL !== url) throw new Error("expected the frame to show the loaded document");
+      if (!(marker in view))
+        throw new Error("expected the loaded document to keep the initial about:blank's window");
+    },
+  };
+}
 
 describe("SkeletonReveal", () => {
   it("is busy and labelled while loading, keeps the skeleton from assistive tech and the keyboard, and reaches the content only once it is shown", async () => {
@@ -525,7 +591,7 @@ describe("parts", () => {
 /**
  * Unit under test: how a skeleton follows the document's fonts. Oracles: the ghost line's own text,
  * whose width the browser lays out in the face, which its one bone must match once the face
- * changes; the page's pending intervals and animation frames; and the timers of a frame's next
+ * changes; the page's pending timeouts and animation frames; and the timers of a frame's next
  * document. The line sits in a fixed-size box and does not wrap, so the face changes only the
  * text's width, which no resize or mutation of the ghost reports.
  */
@@ -596,7 +662,7 @@ describe("fonts", () => {
   }
 
   it("redraws the bones when a face of the line's family loads while another request keeps the set loading", async () => {
-    useFakeIntervals();
+    useFakeTimeouts();
     await document.fonts.ready;
     const other = interFace("Fuse Font Watch Other");
     const title = interFace("Fuse Font Watch Load");
@@ -620,13 +686,13 @@ describe("fonts", () => {
     await title.face.loaded;
     const loaded = lineWidths().text;
     expect(loaded).not.toBe(fallback.text);
-    // The other request keeps the set loading, so it fires no event, and the interval never runs.
+    // The other request keeps the set loading, so it fires no event, and the timer never runs.
     expect(other.face.status).toBe("loading");
     await pollFrames(() => lineWidths().bone, loaded);
   });
 
   it("redraws the bones at the timer's next check when a face that already loaded is added, and stops the timer at unmount", async () => {
-    useFakeIntervals();
+    useFakeTimeouts();
     const added = interFace("Fuse Font Watch Add");
     await added.face.load();
     const { unmount } = renderThemed(line("Fuse Font Watch Add"));
@@ -642,7 +708,7 @@ describe("fonts", () => {
     vi.advanceTimersToNextTimer();
     await pollFrames(() => lineWidths().bone, loaded);
     unmount();
-    expect(vi.getTimerCount(), "intervals pending").toBe(0);
+    expect(vi.getTimerCount(), "timeouts pending").toBe(0);
   });
 
   it("requests no animation frame while a measured skeleton waits with nothing changing", async () => {
@@ -657,40 +723,202 @@ describe("fonts", () => {
   });
 
   it("leaves the timers of a frame's next document running when a skeleton the frame showed before unmounts", async () => {
-    const frame = document.createElement("iframe");
-    document.body.append(frame);
-    onTestFinished(() => {
-      frame.remove();
-    });
-    const navigate = async (srcdoc: string): Promise<Window> => {
-      const loaded = new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
-      frame.srcdoc = srcdoc;
-      await loaded;
-      if (frame.contentWindow === null) throw new Error("expected the frame's window");
-      return frame.contentWindow;
-    };
-    const first = await navigate('<!doctype html><body data-page="first"></body>');
-    const setInterval = vi.spyOn(first, "setInterval");
-    // The outgoing document turns hidden as the frame navigates, which would stop the interval
-    // while the frame still shows it. Stopped here, the interval is still pending at the unmount.
+    const navigate = navigableFrame();
+    const first = await navigate({ srcdoc: '<!doctype html><body data-page="first"></body>' });
+    const setTimeout = vi.spyOn(first, "setTimeout");
+    // The outgoing document turns hidden as the frame navigates, which would clear the timer while
+    // the frame still shows it. Stopped here, the timer is still pending at the unmount.
     first.addEventListener("visibilitychange", (event) => event.stopPropagation(), { capture: true });
     const root = createRoot(first.document.body.appendChild(first.document.createElement("div")));
     // A synchronous render runs its passive effects before it returns, the pane's watch among them.
     flushSync(() => {
       root.render(line("Fuse Font Watch Frame"));
     });
-    expect(setInterval, "the watch's intervals").toHaveBeenCalledOnce();
+    expect(setTimeout, "the watch's timeouts").toHaveBeenCalledOnce();
 
-    const next = await navigate('<!doctype html><body data-page="next"></body>');
-    // Each document numbers its timers from the start, so the next document's first timeout takes
-    // the interval's id. Timeouts with one delay run in the order they were set, so the second runs
-    // after it, and settles the promise first only when the unmount cleared the first.
+    const next = await navigate({ srcdoc: '<!doctype html><body data-page="next"></body>' });
+    const pending = setTimeout.mock.results.at(-1);
+    if (pending?.type !== "return") throw new Error("expected the watch's pending timeout");
+    // Each document numbers its timers from the start, so the next document gives out the pending
+    // timeout's id again once it has given out the ids before it. Timeouts with one delay run in the
+    // order they were set, so the timeout after the reused one settles the promise first only when
+    // the unmount cleared the reused one.
     const { promise: ran, resolve } = Promise.withResolvers<boolean>();
+    let reserved = 0;
+    while (reserved < pending.value - 1) reserved = next.setTimeout(() => undefined, 0);
     const reused = next.setTimeout(() => resolve(true), 0);
+    if (reused !== pending.value) throw new Error("expected the next document to reuse the timeout's id");
     next.setTimeout(() => resolve(false), 0);
-    expect(setInterval, "the interval whose id the next document reuses").toHaveReturnedWith(reused);
     root.unmount();
     expect(await ran).toBe(true);
+  });
+
+  it("stops the timer when a skeleton rendered into a frame's initial about:blank unmounts after the frame loads a same-origin document", async () => {
+    const { view, load } = blankFrameLoading();
+    // Counts the timers the frame's window sets, as timeouts or intervals, and the runs of their
+    // handlers.
+    let runs = 0;
+    const setFrameTimeout = view.setTimeout.bind(view);
+    const counted = (set: (handler: () => void, timeout?: number) => number) =>
+      vi.fn((handler: TimerHandler, timeout?: number): number => {
+        if (!(handler instanceof Function)) throw new Error("expected a function handler");
+        return set(() => {
+          runs += 1;
+          handler.call(undefined);
+        }, timeout);
+      });
+    const setTimeout = counted(setFrameTimeout);
+    const setInterval = counted(view.setInterval.bind(view));
+    vi.spyOn(view, "setTimeout").mockImplementation(setTimeout);
+    vi.spyOn(view, "setInterval").mockImplementation(setInterval);
+    // As in the test above, the timer stays pending while the initial about:blank leaves.
+    view.addEventListener("visibilitychange", (event) => event.stopPropagation(), { capture: true });
+    const root = createRoot(view.document.body.appendChild(view.document.createElement("div")));
+    flushSync(() => {
+      root.render(line("Fuse Font Watch Blank"));
+    });
+    const [timer, ...others] = [...setTimeout.mock.calls, ...setInterval.mock.calls];
+    if (timer === undefined || others.length > 0) throw new Error("expected the watch's one timer");
+    const [, period] = timer;
+    const wait = (): Promise<void> =>
+      new Promise((resolve) => {
+        setFrameTimeout(() => resolve(), period);
+      });
+
+    await load();
+    root.unmount();
+    setTimeout.mockClear();
+    setInterval.mockClear();
+    const runsAtUnmount = runs;
+    // The timeout pending at the unmount may still run once, as Chromium keeps it. Two periods,
+    // waited from now, end after it, and an interval runs in each of them.
+    await wait();
+    await wait();
+    expect(setTimeout, "timeouts set after the unmount").not.toHaveBeenCalled();
+    expect(setInterval, "intervals set after the unmount").not.toHaveBeenCalled();
+    expect(runs - runsAtUnmount, "timer runs after the unmount").toBeLessThanOrEqual(1);
+  });
+});
+
+describe("frame navigation", () => {
+  /**
+   * Renders a reveal into a new root in `view`'s document, with its passive effects run. Its
+   * content stands 20px tall for the sample and 80px for any other text, and fades in however
+   * soon it arrives.
+   *
+   * @returns Shows `data` in the reveal, unmounts it, and lists the errors its cleanup threw.
+   */
+  function mountReveal(view: Window) {
+    const uncaught: unknown[] = [];
+    const root = createRoot(view.document.body.appendChild(view.document.createElement("div")), {
+      onUncaughtError: (error) => uncaught.push(error),
+    });
+    const show = (data: string | null): void => {
+      flushSync(() => {
+        root.render(
+          <SkeletonReveal data={data} sample="Faktura 4711" reveal="together" label="Henter">
+            {(text) => (
+              <p style={{ width: 320, height: text === "Faktura 4711" ? 20 : 80, margin: 0 }}>{text}</p>
+            )}
+          </SkeletonReveal>
+        );
+      });
+    };
+    // A second unmount does nothing, so a test that unmounts itself is left as it was.
+    onTestFinished(() => {
+      root.unmount();
+    });
+    show(null);
+    return { show, unmount: () => root.unmount(), uncaught };
+  }
+
+  it("leaves the animation frames of a frame's next document pending when a skeleton the frame showed before measures or unmounts", async () => {
+    const navigate = navigableFrame();
+    const first = await navigate({ srcdoc: '<!doctype html><body data-page="first"></body>' });
+    const requestAnimationFrame = vi.spyOn(first, "requestAnimationFrame");
+    const addEventListener = vi.spyOn(windowOf(first.document).EventTarget.prototype, "addEventListener");
+    const reveal = mountReveal(first);
+    const pane = first.document.querySelector('[data-slot="skeleton-reveal-skeleton"]');
+    const paneLoad = addEventListener.mock.calls.find(
+      ([type], index) => type === "load" && addEventListener.mock.contexts[index] === pane
+    )?.[1];
+    if (paneLoad === undefined || paneLoad === null) throw new Error("expected the pane's load listener");
+    // The pane's first resize requests the frame that draws its bones. A same-origin frame renders
+    // in the page's rendering steps, so the page's frames carry it.
+    await pollFrames(() => requestAnimationFrame.mock.calls.length, 1);
+    await nextFrames(1);
+
+    const next = await navigate({ srcdoc: '<!doctype html><body data-page="next"></body>' });
+    const paneFrame = requestAnimationFrame.mock.results.at(-1);
+    if (paneFrame?.type !== "return") throw new Error("expected the pane's frame");
+    // Each document numbers its animation frames from the start, so the next document gives out the
+    // pane's frame id again once it has given out the ids before it. Frames run in the order they
+    // were requested, so the frame after the reused one settles the promise first only when the
+    // reveal canceled the reused one.
+    const { promise: ran, resolve } = Promise.withResolvers<boolean>();
+    let reserved = 0;
+    while (reserved < paneFrame.value - 1) reserved = next.requestAnimationFrame(() => undefined);
+    const reused = next.requestAnimationFrame(() => resolve(true));
+    if (reused !== paneFrame.value)
+      throw new Error("expected the next document to reuse the pane's frame id");
+    next.requestAnimationFrame(() => resolve(false));
+    const nextRequests = vi.spyOn(next, "requestAnimationFrame");
+    const nextCancels = vi.spyOn(next, "cancelAnimationFrame");
+    // Chromium delivers no event or observer record to a document that left its frame, so the test
+    // calls the pane's load listener itself. It stands for a listener or observer callback that was
+    // already running or queued when the frame navigated.
+    const load = new Event("load");
+    if ("handleEvent" in paneLoad) paneLoad.handleEvent(load);
+    else paneLoad(load);
+    expect(nextRequests, "frames the pane's measure requested in the next document").not.toHaveBeenCalled();
+    expect(nextCancels, "frames the pane's measure canceled in the next document").not.toHaveBeenCalled();
+    reveal.unmount();
+    expect(reveal.uncaught, "errors thrown by the reveal's cleanup").toEqual([]);
+    expect(await ran).toBe(true);
+  });
+
+  it("stops hearing input in a frame's window when a reveal rendered into the frame's initial about:blank unmounts after the frame loads a same-origin document", async () => {
+    const { view, load } = blankFrameLoading();
+    const reveal = mountReveal(view);
+    // The reveal notes the time of each input it hears, read off this realm's clock.
+    const now = vi.spyOn(performance, "now");
+    view.dispatchEvent(new KeyboardEvent("keydown"));
+    expect(now, "clock reads while the reveal listens").toHaveBeenCalled();
+    await load();
+    reveal.unmount();
+    now.mockClear();
+    view.dispatchEvent(new KeyboardEvent("keydown"));
+    expect(now, "clock reads after the unmount").not.toHaveBeenCalled();
+  });
+
+  it("unmounts without an error, and disconnects the pane's MutationObserver, after the frame that showed it navigates to another origin", async () => {
+    const navigate = navigableFrame();
+    const first = await navigate({ srcdoc: '<!doctype html><body data-page="first"></body>' });
+    // The pane's observers are the frame's, and its cleanup disconnects them after the window calls.
+    const disconnect = vi.spyOn(windowOf(first.document).MutationObserver.prototype, "disconnect");
+    const reveal = mountReveal(first);
+    // A data URL's document has an opaque origin, so the frame's window turns cross-origin.
+    await navigate({ src: "data:text/html,<!doctype html><body></body>" });
+    reveal.unmount();
+    expect(reveal.uncaught, "errors thrown by the reveal's cleanup").toEqual([]);
+    expect(disconnect, "the pane's MutationObserver disconnect").toHaveBeenCalledOnce();
+  });
+
+  it("cancels a height ease still running when a reveal unmounts after the frame that showed it navigates", async () => {
+    const navigate = navigableFrame();
+    const first = await navigate({ srcdoc: '<!doctype html><body data-page="first"></body>' });
+    const reveal = mountReveal(first);
+    // The content stands taller than the skeleton, so the swap eases the root's height.
+    reveal.show("Faktura 4711, betalt");
+    const root = first.document.querySelector<HTMLElement>('[data-slot="skeleton-reveal"]');
+    const ease = root === null ? undefined : heightAnimation(root);
+    if (ease === undefined) throw new Error("expected the swap to ease the root's height");
+    // Paused, the ease stays unfinished however long the navigation takes.
+    ease.pause();
+    await navigate({ srcdoc: '<!doctype html><body data-page="next"></body>' });
+    reveal.unmount();
+    expect(reveal.uncaught, "errors thrown by the reveal's cleanup").toEqual([]);
+    expect(ease.playState, "the height ease after the unmount").toBe("idle");
   });
 });
 

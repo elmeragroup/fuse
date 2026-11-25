@@ -4,7 +4,7 @@
  * it eases. It owns the one running ease, the declarations it writes on the root and puts back, and
  * the reader of the root's natural height every ease targets. `RevealMotion` runs the pane fades.
  */
-import { windowOf } from "../../internal/dom-node";
+import { windowOf, windowShowing } from "../../internal/dom-node";
 import { localHeight, ownHeight } from "./skeleton-geometry";
 import { RESIZE_EASING, RESIZE_MS } from "./skeleton-reveal-plan";
 
@@ -114,6 +114,8 @@ function restoreDeclarations(root: HTMLElement, declarations: readonly InlineDec
 type Resize = {
   /** The element the ease runs on, whose declarations it saved. Every read and restore is on it. */
   readonly root: HTMLElement;
+  /** The root's document when the ease started, whose window gives out the retarget frames. */
+  readonly document: Document;
   readonly animation: Animation;
   readonly effect: KeyframeEffect;
   /** The keyframes the ease runs, in the root's own box model. */
@@ -207,7 +209,7 @@ export class RootHeight {
     if (this.#resize !== resize) return;
     this.#resize = null;
     resize.observer.disconnect();
-    windowOf(resize.root).cancelAnimationFrame(resize.frame);
+    windowShowing(resize.document)?.cancelAnimationFrame(resize.frame);
     resize.animation.cancel();
     restoreDeclarations(resize.root, resize.declarations);
     if (how === "settled" && !this.#disposed) this.#onSettled();
@@ -252,13 +254,15 @@ export class RootHeight {
     const animation = new view.Animation(effect, root.ownerDocument.timeline);
     const observer = new view.ResizeObserver(() => {
       if (this.#resize !== resize || resize.frame !== 0) return;
-      resize.frame = view.requestAnimationFrame(() => {
-        resize.frame = 0;
-        if (this.#resize === resize && !this.#disposed) this.#retarget(resize);
-      });
+      resize.frame =
+        windowShowing(resize.document)?.requestAnimationFrame(() => {
+          resize.frame = 0;
+          if (this.#resize === resize && !this.#disposed) this.#retarget(resize);
+        }) ?? 0;
     });
     const resize: Resize = {
       root,
+      document: root.ownerDocument,
       animation,
       effect,
       frames,

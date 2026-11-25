@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect } from "vitest";
 
 import { Button } from "../src/components/button/button";
 import { SkeletonReveal } from "../src/components/skeleton/skeleton-reveal";
+import { windowOf } from "../src/internal/dom-node";
 import { renderThemed } from "./themed-browser-render";
 
 /** An invoice: a title and its lines. */
@@ -119,13 +120,17 @@ export function currentPane(name: string, within: ParentNode = document): HTMLEl
 /**
  * The root's own height animation, if one runs.
  *
- * @param root - The reveal's root.
+ * @param root - The reveal's root, which may be in a same-origin frame.
  * @returns The animation of its height, or undefined.
  */
 export function heightAnimation(root: HTMLElement): Animation | undefined {
   return root.getAnimations().find((animation) => {
     const effect = animation.effect;
-    return effect instanceof KeyframeEffect && effect.getKeyframes().some((frame) => "height" in frame);
+    // A same-origin frame's effects are made by its own window's `KeyframeEffect`.
+    return (
+      effect instanceof windowOf(root).KeyframeEffect &&
+      effect.getKeyframes().some((frame) => "height" in frame)
+    );
   });
 }
 
