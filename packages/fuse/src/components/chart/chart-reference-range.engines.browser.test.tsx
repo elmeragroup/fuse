@@ -2,8 +2,11 @@
 // Chromium and WebKit. Units under test: Chart.ReferenceArea, ClockChart.ReferenceArea and
 // Chart.Table's caption. Oracles, written by hand: a band of slots finer than a day in a format that
 // prints a time of day runs from the first slot's start to the last slot's end, each end a complete
-// label, in its visible and its spoken text. Any other range joins its first and last labels. Date,
-// time and category ranges join with CLDR's date interval fallback, ` – ` in en-US and `–` in nb-NO.
+// label, in its visible and its spoken text. Any other range joins its first and last labels, or,
+// for a Chart.ReferenceArea band or a Chart.Table caption over one slot, prints that slot's label
+// once. Date, time and category ranges join with CLDR's date interval fallback, ` – ` in en-US and
+// `–` in nb-NO. An en-US week axis prints ISO week 2 as `W2` and speaks it as "week 2", with
+// U+00A0 between the word and the number.
 // Number ranges run low to high, join with the chart's bare en dash and write a shared unit once.
 // Readers hear the dictionary's range words, "to" in en-US and "til" in nb-NO, and nb-NO speaks a
 // time after "kl.". Intl's text and the range separator write each space as U+00A0. The label
@@ -12,10 +15,11 @@ import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { expectVisuallyHidden } from "../../../test/visually-hidden";
 import { LocaleProvider } from "../../intl/locale-context";
 import type { SupportedLocale } from "../../intl/locale-context";
 import { Chart } from "./chart-namespace";
-import type { XFormat } from "./chart-types";
+import type { Interval, XFormat } from "./chart-types";
 import "./chart.css";
 import { ClockChart } from "./clock-chart-namespace";
 
@@ -30,13 +34,15 @@ const config = { kwh: { label: "kWh", color: "chart-1" } } as const;
 
 type Row = { readonly start: number; readonly kwh: number };
 
-function HourChart({
+function TimeChart({
   locale,
   data = hours,
+  interval = "hour",
   children,
 }: {
   readonly locale: SupportedLocale;
   readonly data?: readonly Row[];
+  readonly interval?: Interval;
   readonly children: React.ReactNode;
 }) {
   return (
@@ -46,7 +52,7 @@ function HourChart({
           data={data}
           config={config}
           xKey="start"
-          interval="hour"
+          interval={interval}
           timeZone="Europe/Oslo"
           data-intro="none"
           aria-label="Usage">
@@ -67,15 +73,17 @@ const months = [
 
 function MonthChart({
   locale,
+  data = months,
   children,
 }: {
   readonly locale: SupportedLocale;
+  readonly data?: readonly { readonly month: string; readonly kwh: number }[];
   readonly children: React.ReactNode;
 }) {
   return (
     <LocaleProvider locale={locale}>
       <div style={{ width: 640 }}>
-        <Chart.Root data={months} config={config} xKey="month" data-intro="none" aria-label="Usage">
+        <Chart.Root data={data} config={config} xKey="month" data-intro="none" aria-label="Usage">
           <Chart.Bar dataKey="kwh" />
           {children}
         </Chart.Root>
@@ -148,9 +156,9 @@ describe.each([
       "prints and speaks an hour band in $name from its first slot's start to its last slot's end",
       ({ area, expected, spoken }) => {
         const { host } = renderThemed(
-          <HourChart locale={locale}>
+          <TimeChart locale={locale}>
             <Chart.ReferenceArea x1={DAY + 17 * HOUR} x2={DAY + 19 * HOUR} {...area} label="Peak {value}" />
-          </HourChart>
+          </TimeChart>
         );
         expect(cartesianLabel(host)).toBe(expected);
         expect(cartesianSpoken(host)).toBe(spoken);
@@ -169,23 +177,23 @@ describe.each([
     it("writes both values of a value band in full, though they end alike", () => {
       const thousands = hours.map((row) => ({ ...row, kwh: row.kwh * 1000 }));
       const { host } = renderThemed(
-        <HourChart locale={locale} data={thousands}>
+        <TimeChart locale={locale} data={thousands}>
           <Chart.ReferenceArea y1={1000} y2={2000} label="Peak {value}" />
-        </HourChart>
+        </TimeChart>
       );
       expect(cartesianLabel(host)).toBe(valueBand);
     });
 
     it("writes a value band's shared unit once", () => {
       const { host } = renderThemed(
-        <HourChart locale={locale}>
+        <TimeChart locale={locale}>
           <Chart.ReferenceArea
             y1={1}
             y2={1.4}
             format={{ preset: "energy", unit: "kWh", maximumFractionDigits: 2 }}
             label="Peak {value}"
           />
-        </HourChart>
+        </TimeChart>
       );
       expect(cartesianLabel(host)).toBe(unitBand);
     });
@@ -199,21 +207,55 @@ describe("Chart.ReferenceArea's printed range on one axis", () => {
     const night = Date.UTC(2025, 2, 29, 23);
     const springDay = Array.from({ length: 23 }, (_, hour) => ({ start: night + hour * HOUR, kwh: 1 }));
     const { host } = renderThemed(
-      <HourChart locale="nb-NO" data={springDay}>
+      <TimeChart locale="nb-NO" data={springDay}>
         <Chart.ReferenceArea x1={night} x2={night + HOUR} format="time" label="Natt {value}" />
-      </HourChart>
+      </TimeChart>
     );
     expect(cartesianLabel(host)).toBe("Natt 00:00–03:00");
     expect(cartesianSpoken(host)).toBe("Natt kl.\u00a000:00 til kl.\u00a003:00");
+  });
+
+  it("prints and speaks an en-US category band over one slot as that slot's name", () => {
+    const { host } = renderThemed(
+      <MonthChart locale="en-US">
+        <Chart.ReferenceArea x1="Feb" x2="Feb" label="Peak {value}" />
+      </MonthChart>
+    );
+    expect(cartesianLabel(host)).toBe("Peak Feb");
+    expect(cartesianSpoken(host)).toBe("Peak Feb");
+  });
+
+  it("runs an en-US hour band over one slot from its start to its end", () => {
+    const { host } = renderThemed(
+      <TimeChart locale="en-US">
+        <Chart.ReferenceArea x1={DAY + 17 * HOUR} x2={DAY + 17 * HOUR} label="Peak {value}" />
+      </TimeChart>
+    );
+    expect(cartesianLabel(host)).toBe("Peak 5\u00a0PM\u00a0–\u00a06\u00a0PM");
+    expect(cartesianSpoken(host)).toBe("Peak 5\u00a0PM to 6\u00a0PM");
+  });
+
+  it("prints and speaks an en-US week band over one slot as that week", () => {
+    // Monday 5 January 2026 starts ISO week 2, since 1 January 2026 is a Thursday. Oslo is UTC+1
+    // all January, so the next three weeks start 7 days apart.
+    const week2 = Date.parse("2026-01-05T00:00:00+01:00");
+    const mondays = [0, 1, 2, 3].map((week) => ({ start: week2 + week * 7 * 24 * HOUR, kwh: 1 }));
+    const { host } = renderThemed(
+      <TimeChart locale="en-US" data={mondays} interval="week">
+        <Chart.ReferenceArea x1={week2} x2={week2} label="Peak {value}" />
+      </TimeChart>
+    );
+    expect(cartesianLabel(host)).toBe("Peak W2");
+    expect(cartesianSpoken(host)).toBe("Peak week\u00a02");
   });
 
   it("leads each end of an en-US hour band on a two-day axis with its date, visible and spoken", () => {
     // The dictionary's `slotOnDate` joins the date and the hour with a comma and a plain space.
     const twoDays = Array.from({ length: 48 }, (_, hour) => ({ start: DAY + hour * HOUR, kwh: 1 }));
     const { host } = renderThemed(
-      <HourChart locale="en-US" data={twoDays}>
+      <TimeChart locale="en-US" data={twoDays}>
         <Chart.ReferenceArea x1={DAY + 17 * HOUR} x2={DAY + 19 * HOUR} label="Peak {value}" />
-      </HourChart>
+      </TimeChart>
     );
     expect(cartesianLabel(host)).toBe(
       "Peak Saturday,\u00a0October\u00a017, 5\u00a0PM\u00a0–\u00a0Saturday,\u00a0October\u00a017, 8\u00a0PM"
@@ -231,33 +273,49 @@ describe("Chart.ReferenceArea's printed range on one axis", () => {
     ({ format }) => {
       const twoDays = Array.from({ length: 48 }, (_, hour) => ({ start: DAY + hour * HOUR, kwh: 1 }));
       const { host } = renderThemed(
-        <HourChart locale="en-US" data={twoDays}>
+        <TimeChart locale="en-US" data={twoDays}>
           <Chart.ReferenceArea x1={DAY} x2={DAY + 47 * HOUR} format={format} label="Weekend {value}" />
-        </HourChart>
+        </TimeChart>
       );
       expect(cartesianLabel(host)).toBe("Weekend Sat\u00a0–\u00a0Sun");
     }
   );
 
+  it('prints and speaks the weekday of an en-US hour band over one slot once in "weekday"', () => {
+    // A weekday prints no time of day, so the band names its slot rather than running across it.
+    const { host } = renderThemed(
+      <TimeChart locale="en-US">
+        <Chart.ReferenceArea
+          x1={DAY + 17 * HOUR}
+          x2={DAY + 17 * HOUR}
+          format="weekday"
+          label="Weekend {value}"
+        />
+      </TimeChart>
+    );
+    expect(cartesianLabel(host)).toBe("Weekend Sat");
+    expect(cartesianSpoken(host)).toBe("Weekend Saturday");
+  });
+
   it("writes an en-US percent band's sign once, though no space leads it", () => {
     const { host } = renderThemed(
-      <HourChart locale="en-US">
+      <TimeChart locale="en-US">
         <Chart.ReferenceArea y1={0.05} y2={0.1} format={{ style: "percent" }} label="Share {value}" />
-      </HourChart>
+      </TimeChart>
     );
     expect(cartesianLabel(host)).toBe("Share 5–10%");
   });
 
   it("keeps both closing parentheses of an en-US accounting band", () => {
     const { host } = renderThemed(
-      <HourChart locale="en-US">
+      <TimeChart locale="en-US">
         <Chart.ReferenceArea
           y1={-10}
           y2={-5}
           format={{ style: "currency", currency: "USD", currencySign: "accounting" }}
           label="Loss {value}"
         />
-      </HourChart>
+      </TimeChart>
     );
     expect(cartesianLabel(host)).toBe("Loss ($10.00)–($5.00)");
   });
@@ -266,18 +324,25 @@ describe("Chart.ReferenceArea's printed range on one axis", () => {
     // fi-FI writes a price without VAT as `0,12 €/kWh alv 0 %`, so the shared text after each
     // number is ` €/kWh alv 0 %`.
     const { host } = renderThemed(
-      <HourChart locale="fi-FI">
+      <TimeChart locale="fi-FI">
         <Chart.ReferenceArea
           y1={0.12}
           y2={0.15}
           format={{ preset: "unit-price", currency: "EUR", vat: "excluded" }}
           label="Huippu {value}"
         />
-      </HourChart>
+      </TimeChart>
     );
     expect(cartesianLabel(host)).toBe("Huippu 0,12–0,15\u00a0€/kWh\u00a0alv\u00a00\u00a0%");
   });
 });
+
+/** The table's caption. */
+function caption(host: HTMLElement): HTMLElement {
+  const node = host.querySelector('[data-slot="chart-table-content"] > caption');
+  if (!(node instanceof HTMLElement)) throw new Error("expected the table's caption");
+  return node;
+}
 
 describe("Chart.Table's caption", () => {
   it("shows an en-US category period joined as a band prints it and speaks it in words", () => {
@@ -286,13 +351,26 @@ describe("Chart.Table's caption", () => {
         <Chart.Table />
       </MonthChart>
     );
-    // The caption's visible text is everything but its screen-reader copy.
-    const caption = host.querySelector('[data-slot="chart-table-content"] > caption')?.cloneNode(true);
-    if (!(caption instanceof HTMLElement)) throw new Error("expected the table's caption");
-    for (const copy of caption.querySelectorAll(".sr-only")) copy.remove();
-    expect(caption.textContent).toBe("Usage, Jan\u00a0–\u00a0Apr");
+    // The caption shows one copy and hides the other from sight, and its spoken copy names the table.
+    const node = caption(host);
+    const shown = node.querySelector('[aria-hidden="true"]');
+    const spoken = node.querySelector(".sr-only");
+    if (shown === null || spoken === null) throw new Error("expected the caption's two copies");
+    expect(shown.textContent).toBe("Usage, Jan\u00a0–\u00a0Apr");
+    expectVisuallyHidden(spoken, "the caption's spoken copy");
     // The dictionary's range words, which the caption speaks, name the table.
     expect(roleNamed("table", "Usage, Jan to Apr").tagName).toBe("TABLE");
+  });
+
+  it("shows and speaks a one-row category period's slot once", () => {
+    const { host } = renderThemed(
+      <MonthChart locale="en-US" data={[{ month: "Jan", kwh: 3 }]}>
+        <Chart.Table />
+      </MonthChart>
+    );
+    // The visible and the spoken period match, so the caption prints one copy.
+    expect(caption(host).textContent).toBe("Usage, Jan");
+    expect(roleNamed("table", "Usage, Jan").tagName).toBe("TABLE");
   });
 });
 

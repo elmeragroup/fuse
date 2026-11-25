@@ -177,8 +177,9 @@ export function slotLabel(context: TextContext, slot: number, format?: XFormat):
  * prints it and readers hear it. On a time axis finer than a day, a format that prints a time of day
  * prints the band's ends, the first slot's start and the last slot's end, from `slotRunEnds`. A
  * default label leads each end with its date when `slotLabel` would. Any other band prints the
- * first and the last slot's labels. The visual text joins the two ends with the locale's range
- * separator, and the spoken text joins them with the dictionary's range words.
+ * first and the last slot's labels, or the slot's label once when `first` and `last` are the same
+ * slot. The visual text joins the two ends with the locale's range separator, and the spoken text
+ * joins them with the dictionary's range words.
  *
  * @param context - The model and the locale.
  * @param first - The first slot index.
@@ -194,16 +195,18 @@ export function slotRangeLabel(
   format?: XFormat
 ): FormattedText {
   const { domain } = context.model;
-  // Both labels format first, so a range preset on an axis it does not fit throws as `slotLabel` does.
-  const labels = [slotLabel(context, first, format), slotLabel(context, last, format)] as const;
+  // The first slot formats before any branch, so a range preset on an axis it does not fit throws
+  // as `slotLabel` does.
+  const head = slotLabel(context, first, format);
   const chosen = format ?? context.xFormat;
-  const [head, tail] =
+  if (
     domain.kind === "time" &&
     isClockInterval(domain.interval) &&
     printsTimeOfDay(chosen ?? LABEL_PRESETS[domain.interval])
-      ? runEnds(context, domain, first, last, chosen)
-      : labels;
-  return joinRange(context.locale, head, tail);
+  ) {
+    return joinRange(context.locale, ...runEnds(context, domain, first, last, chosen));
+  }
+  return first === last ? head : joinRange(context.locale, head, slotLabel(context, last, format));
 }
 
 /**
