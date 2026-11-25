@@ -10,7 +10,7 @@ import { useRender } from "@base-ui/react/use-render";
 import { useFormReset } from "../../hooks/use-form-reset";
 import { useMergedRefs } from "../../hooks/use-merged-refs";
 import { deepActiveElement } from "../../internal/active-element";
-import { isFocusRoot } from "../../internal/dom-node";
+import { isShadowRoot } from "../../internal/dom-node";
 import { useFieldDisabled } from "../../internal/field-set-disabled";
 import { isTextEntry } from "../../internal/text-entry";
 import { cn } from "../../styles/cn";
@@ -159,7 +159,7 @@ function nearestRoot(node: Node): Node | null {
       return current;
     }
     const parent: Node | null = current.parentNode;
-    current = parent !== null && isFocusRoot(parent) && "host" in parent ? parent.host : parent;
+    current = parent !== null && isShadowRoot(parent) ? parent.host : parent;
   }
   return null;
 }

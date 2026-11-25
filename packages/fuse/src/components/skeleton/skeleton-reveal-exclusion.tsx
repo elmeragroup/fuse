@@ -10,7 +10,7 @@ import { FormContext, useFormContext } from "@base-ui/react/internals/form-conte
 import { useLabelableContext } from "@base-ui/react/internals/labelable-provider";
 import { NOOP } from "@base-ui/react/internals/noop";
 
-import { isFocusRoot } from "../../internal/dom-node";
+import { isShadowRoot } from "../../internal/dom-node";
 import { OverlayExclusionContext, useOverlayExcluded } from "../../internal/overlay-exclusion";
 import { useOwnLabelableScope } from "./skeleton-reveal-labelable";
 import type { LabelableValue } from "./skeleton-reveal-labelable";
@@ -139,8 +139,7 @@ type PrivateRadioForm = { readonly element: HTMLFormElement; readonly id: string
 function privateRadioForm(fieldset: HTMLFieldSetElement): PrivateRadioForm {
   const { ownerDocument } = fieldset;
   const root = fieldset.getRootNode();
-  // Compared with the document, not tested for `host`, which an element named `host` puts on it.
-  const shadow = isFocusRoot(root) && root !== ownerDocument ? root : null;
+  const shadow = isShadowRoot(root) ? root : null;
   let id: string;
   do {
     radioForms += 1;

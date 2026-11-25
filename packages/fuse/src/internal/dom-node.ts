@@ -35,9 +35,23 @@ export function isHTMLElement(target: EventTarget | null): target is HTMLElement
  * @returns `true` for a document or a shadow root.
  */
 export function isFocusRoot(node: Node): node is Document | ShadowRoot {
-  return (
-    node.nodeType === Node.DOCUMENT_NODE || (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE && "host" in node)
-  );
+  return isDocument(node) || isShadowRoot(node);
+}
+
+/**
+ * Whether a node is a shadow root, from any realm. Reads the node type before `host`, because a
+ * document that exposes a `host` property through named access, as it does for one
+ * `<form name="host">`, answers `host` too. A root walk that took that document for a shadow root
+ * would step to its `host` and back to the document without end, throw when two elements make
+ * `host` an `HTMLCollection`, or count a node outside an element as inside it when that element
+ * holds the `host` element.
+ *
+ * @param node - A node, such as the result of `getRootNode()`.
+ * @returns `true` for a shadow root.
+ */
+export function isShadowRoot(node: Node): node is ShadowRoot {
+  // oxlint-disable-next-line fuse/no-host-in-check -- the node type check before it rules out a document
+  return node.nodeType === Node.DOCUMENT_FRAGMENT_NODE && "host" in node;
 }
 
 /**
@@ -63,7 +77,7 @@ export function rootNodeChain(node: Node): RootNodeLink[] {
       return chain;
     }
     chain.push({ root, innerHost });
-    if (!("host" in root)) {
+    if (!isShadowRoot(root)) {
       return chain;
     }
     innerHost = root.host;
@@ -86,7 +100,7 @@ export function containsAcrossShadowRoots(element: Element, node: Node): boolean
       return true;
     }
     const root = current.getRootNode();
-    current = isFocusRoot(root) && "host" in root ? root.host : null;
+    current = isShadowRoot(root) ? root.host : null;
   }
   return false;
 }

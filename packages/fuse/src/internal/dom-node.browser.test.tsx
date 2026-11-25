@@ -8,6 +8,7 @@ import {
   isHTMLElement,
   isNode,
   isText,
+  rootNodeChain,
   windowOf,
 } from "./dom-node";
 
@@ -111,5 +112,48 @@ describe("containsAcrossShadowRoots", () => {
     expect(containsAcrossShadowRoots(outer, outer)).toBe(true);
     expect(containsAcrossShadowRoots(sibling, field)).toBe(false);
     expect(containsAcrossShadowRoots(field, outer)).toBe(false);
+  });
+});
+
+describe("in a document that names an element `host`", () => {
+  /**
+   * A frame whose document holds `<form name="host">`, so `"host" in frameDoc` is true, and a
+   * field in a shadow root beside the form. The form's `getRootNode` throws, so a walk that steps
+   * from the document to its named `host` fails instead of hanging the browser.
+   */
+  function namedHostDocument() {
+    const frameDoc = frameDocument();
+    const form = frameDoc.createElement("form");
+    form.name = "host";
+    const shadowHost = frameDoc.createElement("div");
+    frameDoc.body.append(form, shadowHost);
+    const shadow = shadowHost.attachShadow({ mode: "open" });
+    const field = frameDoc.createElement("input");
+    shadow.append(field);
+    form.getRootNode = () => {
+      throw new Error("walked from the document to its named host");
+    };
+    // The premise: the document's named-property getter answers `host` with the form.
+    expect(frameDoc).toHaveProperty("host", form);
+    return { frameDoc, form, shadowHost, shadow, field };
+  }
+
+  it("ends the root node chain at the document", () => {
+    const { frameDoc, shadowHost, shadow, field } = namedHostDocument();
+
+    expect(rootNodeChain(field)).toEqual([
+      { root: shadow, innerHost: undefined },
+      { root: frameDoc, innerHost: shadowHost },
+    ]);
+  });
+
+  it("finds a node only in the element that holds it, not in the one that holds the form", () => {
+    const { frameDoc, form, field } = namedHostDocument();
+    const wrapper = frameDoc.createElement("div");
+    frameDoc.body.append(wrapper);
+    wrapper.append(form);
+
+    expect(containsAcrossShadowRoots(wrapper, field)).toBe(false);
+    expect(containsAcrossShadowRoots(frameDoc.body, field)).toBe(true);
   });
 });
