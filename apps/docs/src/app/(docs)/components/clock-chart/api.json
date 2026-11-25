@@ -1012,7 +1012,7 @@
           "type": "ValueFormat | XFormat | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "How `{value}` in `label` prints the range. An annulus prints its values in this value format, joined by an en dash. A sector prints its ends, the first slot's start and the last slot's end, joined by the locale's range separator, and a range preset prints each end in its point form, as \"hour-range\" does in \"hour\". By default a dial of slots shorter than a day prints a sector's ends in \"time\", and a coarser dial prints the first and the last slot's labels.",
+          "description": "How `{value}` in `label` prints the range. An annulus prints its values low to high in this value format, joined by an en dash. When both ends write the same text after the number, it prints once, as in `5–10 kWh`. A sector prints its ends, the first slot's start and the last slot's end, joined by the locale's range separator, and a range preset prints each end in its point form, as \"hour-range\" does in \"hour\". By default a dial of slots shorter than a day prints a sector's ends in \"time\", and a coarser dial prints the first and the last slot's labels.",
           "required": false
         },
         {

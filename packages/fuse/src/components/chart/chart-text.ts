@@ -26,7 +26,7 @@ import {
   wallClock,
 } from "./format/time-format";
 import type { Interval } from "./format/time-format";
-import { formatValue } from "./format/value-format";
+import { formatValue, formatValueRun } from "./format/value-format";
 import { CHART_WORDS } from "./format/words";
 import type { CartesianModel } from "./layout/cartesian-model";
 import { ownWindowSlots } from "./layout/coarse-slots";
@@ -220,6 +220,34 @@ export function joinRange(locale: SupportedLocale, head: FormattedText, tail: Fo
   return {
     text: `${head.text}${rangeSeparator(locale)}${tail.text}`,
     spoken: CHART_STRINGS[locale].valueRange(head.spoken, tail.spoken),
+  };
+}
+
+/**
+ * A number range from `low` to `high`, joined by a bare en dash in its visual form. Ends that write
+ * the same text after their numbers write it once, such as `5–10 kWh`. Each number stays whole, so
+ * nb-NO's `1 000` and `2 000` keep their digit groups. When Intl wraps a negative end in
+ * parentheses, its closing parenthesis stays with that end.
+ *
+ * @param locale - The active supported locale.
+ * @param low - The range's lower end.
+ * @param high - The range's upper end.
+ * @param format - The value format both ends print in.
+ * @returns The visual and spoken range.
+ */
+export function rangeText(
+  locale: SupportedLocale,
+  low: number,
+  high: number,
+  format: ValueFormat
+): FormattedText {
+  const from = formatValueRun(locale, low, format, "full");
+  const to = formatValueRun(locale, high, format, "full");
+  const shared = from.after !== "" && from.after === to.after && !from.before.includes("(");
+  const head = shared ? `${from.before}${from.number}` : from.text;
+  return {
+    text: `${head}${NUMBER_RANGE_SEPARATOR}${to.text}`,
+    spoken: CHART_STRINGS[locale].valueRange(from.spoken, to.spoken),
   };
 }
 

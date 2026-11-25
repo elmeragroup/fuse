@@ -4,10 +4,10 @@
 // prints a time of day runs from the first slot's start to the last slot's end, each end a complete
 // label, in its visible and its spoken text. Any other range joins its first and last labels. Date,
 // time and category ranges join with CLDR's date interval fallback, ` – ` in en-US and `–` in nb-NO.
-// Number ranges join with the chart's bare en dash and write a shared unit once. Readers hear the
-// dictionary's range words, "to" in en-US and "til" in nb-NO, and nb-NO speaks a time after "kl.".
-// Intl's text and the range separator write each space as U+00A0. The label template, the range
-// words and the dictionary's join of a date and a time write ordinary spaces.
+// Number ranges run low to high, join with the chart's bare en dash and write a shared unit once.
+// Readers hear the dictionary's range words, "to" in en-US and "til" in nb-NO, and nb-NO speaks a
+// time after "kl.". Intl's text and the range separator write each space as U+00A0. The label
+// template, the range words and the dictionary's join of a date and a time write ordinary spaces.
 import { describe, expect, it } from "vitest";
 
 import "../../../dist/styles.css";
@@ -326,8 +326,8 @@ function Dial({ cycle, children }: { readonly cycle: "day" | "year"; readonly ch
   );
 }
 
-/** The sector's label, which the first render writes. */
-function sectorLabel(host: HTMLElement): string | null | undefined {
+/** The clock band's label, which the first render writes. */
+function clockLabel(host: HTMLElement): string | null | undefined {
   return host.querySelector('[data-slot="clock-chart-reference-area"] > [data-part="label"]')?.textContent;
 }
 
@@ -339,7 +339,7 @@ describe("ClockChart.ReferenceArea's printed range in en-US", () => {
         <ClockChart.ReferenceArea x1={DAY + 17 * HOUR} x2={DAY + 19 * HOUR} label="Peak {value}" />
       </Dial>
     );
-    expect(sectorLabel(host)).toBe("Peak 5:00\u00a0PM\u00a0–\u00a08:00\u00a0PM");
+    expect(clockLabel(host)).toBe("Peak 5:00\u00a0PM\u00a0–\u00a08:00\u00a0PM");
   });
 
   it("writes both dates of a year-dial sector in full, though they end in the same day number", () => {
@@ -354,7 +354,7 @@ describe("ClockChart.ReferenceArea's printed range in en-US", () => {
         />
       </Dial>
     );
-    expect(sectorLabel(host)).toBe("Spring Sunday,\u00a0March\u00a01\u00a0–\u00a0Monday,\u00a0June\u00a01");
+    expect(clockLabel(host)).toBe("Spring Sunday,\u00a0March\u00a01\u00a0–\u00a0Monday,\u00a0June\u00a01");
   });
 
   it("writes both ends of a long day period in full", () => {
@@ -369,8 +369,40 @@ describe("ClockChart.ReferenceArea's printed range in en-US", () => {
         />
       </Dial>
     );
-    expect(sectorLabel(host)).toBe(
+    expect(clockLabel(host)).toBe(
       "Nap 2\u00a0in\u00a0the\u00a0afternoon\u00a0–\u00a04\u00a0in\u00a0the\u00a0afternoon"
     );
+  });
+
+  it.each([
+    { name: "writes a value band's shared unit once", y1: 1, y2: 2 },
+    { name: "prints a value band given high to low from low to high", y1: 2, y2: 1 },
+  ])("$name", ({ y1, y2 }) => {
+    const { host } = renderThemed(
+      <Dial cycle="day">
+        <ClockChart.ReferenceArea
+          y1={y1}
+          y2={y2}
+          format={{ preset: "energy", unit: "kWh", maximumFractionDigits: 2 }}
+          label="Peak {value}"
+        />
+      </Dial>
+    );
+    expect(clockLabel(host)).toBe("Peak 1–2\u00a0kWh");
+  });
+
+  it("writes both units of a value band given high to low whose ends name the unit differently", () => {
+    // A long unit name agrees with its number, so 1 reads `hour` and 2 `hours`.
+    const { host } = renderThemed(
+      <Dial cycle="day">
+        <ClockChart.ReferenceArea
+          y1={2}
+          y2={1}
+          format={{ style: "unit", unit: "hour", unitDisplay: "long" }}
+          label="Span {value}"
+        />
+      </Dial>
+    );
+    expect(clockLabel(host)).toBe("Span 1\u00a0hour–2\u00a0hours");
   });
 });
