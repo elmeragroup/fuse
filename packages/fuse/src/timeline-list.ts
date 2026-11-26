@@ -4,8 +4,12 @@
 // module-private.
 export { TimelineList } from "./components/timeline-list/timeline-list";
 export type {
+  TimelineListContentProps,
   TimelineListDescriptionProps,
+  TimelineListIndicatorProps,
   TimelineListItemProps,
+  TimelineListMarkProps,
+  TimelineListOppositeProps,
   TimelineListRootProps,
   TimelineListTimeProps,
   TimelineListTitleProps,

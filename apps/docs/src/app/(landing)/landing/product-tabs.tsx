@@ -239,16 +239,22 @@ export function InvoicesTab(): ReactElement {
                 </DescriptionList.Item>
               </DescriptionList.Content>
             </DescriptionList.Root>
-            <TimelineList.Root>
-              <TimelineList.Item>
-                <TimelineList.Title>Invoice issued</TimelineList.Title>
-                <TimelineList.Time date={invoice.issued.date}>{invoice.issued.label}</TimelineList.Time>
+            <TimelineList.Root indicatorSize="md">
+              <TimelineList.Item status="complete">
+                <TimelineList.Indicator />
+                <TimelineList.Content>
+                  <TimelineList.Title>Invoice issued</TimelineList.Title>
+                  <TimelineList.Time date={invoice.issued.date}>{invoice.issued.label}</TimelineList.Time>
+                </TimelineList.Content>
               </TimelineList.Item>
-              <TimelineList.Item>
-                <TimelineList.Title>
-                  {invoice.status === "paid" ? "Paid by AvtaleGiro" : "Payment scheduled"}
-                </TimelineList.Title>
-                <TimelineList.Description>{`On ${invoice.due}.`}</TimelineList.Description>
+              <TimelineList.Item status={invoice.status === "paid" ? "complete" : "upcoming"}>
+                <TimelineList.Indicator />
+                <TimelineList.Content>
+                  <TimelineList.Title>
+                    {invoice.status === "paid" ? "Paid by AvtaleGiro" : "Payment scheduled"}
+                  </TimelineList.Title>
+                  <TimelineList.Description>{`On ${invoice.due}.`}</TimelineList.Description>
+                </TimelineList.Content>
               </TimelineList.Item>
             </TimelineList.Root>
             <Button

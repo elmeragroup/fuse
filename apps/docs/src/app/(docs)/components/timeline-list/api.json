@@ -10,7 +10,49 @@
         "@types/react"
       ],
       "forwardedCount": 283,
-      "props": []
+      "props": [
+        {
+          "name": "indicatorSize",
+          "origin": "declared",
+          "type": "\"dot\" | \"lg\" | \"md\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"dot\"",
+          "description": "The size of the lane every `TimelineList.Item`'s indicator sits in: `dot` is 8.75px, `md` 24px and `lg` 32px. The status marks fill the lane, and at `md` and `lg` the complete and error marks carry a check and a cross. An Item without `status` keeps the 8.75px dot when its `TimelineList.Indicator` shows the default `TimelineList.Mark`. A node in the Indicator shows in place of the dot, and an Indicator of `null` shows no mark. In a vertical or alternate list the text moves down so a first line 22px tall centers on the mark. A `TimelineList.Title` has that line from level 3 down; a title at level 1 or 2 does not center on the mark. In a horizontal list the text sits under the rail, its start on the mark's start.",
+          "required": false,
+          "values": [
+            "dot",
+            "lg",
+            "md"
+          ]
+        },
+        {
+          "name": "layout",
+          "origin": "declared",
+          "type": "\"alternate\" | \"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"vertical\"",
+          "description": "The direction the list runs. `alternate` is a vertical list with each Item's `TimelineList.Content` and `TimelineList.Opposite` on either side of the rail, swapped on every other `TimelineList.Item`. It folds to one side, the Opposite above the Content, when the list is narrower than 32rem. It measures its own width, so give an alternate list a definite inline size, such as a block parent's width; in a parent that sizes to its content it has no width of its own. `horizontal` runs along the inline axis, with each `TimelineList.Item` at least 10rem wide. A horizontal list wider than its parent overflows and neither clips nor scrolls, so wrap it in `ScrollArea.Root` with `orientation=\"horizontal\"`.",
+          "required": false,
+          "values": [
+            "alternate",
+            "horizontal",
+            "vertical"
+          ]
+        },
+        {
+          "name": "spacing",
+          "origin": "declared",
+          "type": "\"compact\" | \"default\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "The space between the list's `TimelineList.Item`s.",
+          "required": false,
+          "values": [
+            "compact",
+            "default"
+          ]
+        }
+      ]
     },
     {
       "name": "TimelineList.Item",
@@ -19,7 +61,120 @@
       "forwardedFrom": [
         "@types/react"
       ],
-      "forwardedCount": 281,
+      "forwardedCount": 280,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The event's parts, in this order: an optional `TimelineList.Opposite`, a `TimelineList.Indicator` and a `TimelineList.Content`. An Item without an Indicator draws no rail.",
+          "required": false
+        },
+        {
+          "name": "status",
+          "origin": "declared",
+          "type": "\"complete\" | \"current\" | \"error\" | \"upcoming\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The event's status, which draws the item's `TimelineList.Mark`. `current` sets `aria-current=\"step\"` and adds no text. An `aria-current` the Item gets, `false` included, replaces it. `complete`, `upcoming` and `error` add visually hidden text as the Item's first child: \"Completed\", \"Upcoming\" or \"Error\" in the reader's locale. That text needs a `LocaleProvider` above the list. Unset, the default mark is the 8.75px dot and the Item gains no text.",
+          "required": false,
+          "values": [
+            "complete",
+            "current",
+            "error",
+            "upcoming"
+          ]
+        },
+        {
+          "name": "statusLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The visually hidden text that names the status, in place of the locale text. It also renders for `current`. An empty string renders no text. Not allowed without `status`.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "TimelineList.Opposite",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/timeline-list/timeline-list.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The content across the rail from the body, such as a `TimelineList.Time`. A vertical list then gives every Item a 7rem column before the rail, and a horizontal list puts the content above the rail; below Chrome 117, which lacks row subgrid, under it. An Opposite with no children, such as one whose condition renders `false`, takes no column or row. A `TimelineList.Time` in the `TimelineList.Content` stays inline with the body.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "TimelineList.Indicator",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/timeline-list/timeline-list.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 278,
+      "props": [
+        {
+          "name": "aria-hidden",
+          "origin": "declared",
+          "type": "Booleanish | undefined",
+          "shortType": null,
+          "defaultValue": "true",
+          "description": "Whether assistive technology skips the rail. The rail is decorative, so the Indicator hides it from assistive technology by default. Pass `false` to expose the rail and its children. A forwarded `undefined` keeps the rail hidden.",
+          "required": false
+        },
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "What shows in the lane. Unset, the default `TimelineList.Mark` for the Item's `status`. `null`, or any child that renders nothing, shows no mark, and the line runs on to the Item's text. A node shows in the lane, centered, such as a `TimelineList.Mark` around a glyph or an `Avatar`. Size the node to the lane that `indicatorSize` on `TimelineList.Root` sets. A default `Avatar` is 32px, so it needs `lg`, and it overflows a 24px `md` lane. The rail is hidden from assistive technology by default, so keep the node's meaning in the Item's text, and render no focusable control in it. Write the Indicator between an optional `TimelineList.Opposite` and the `TimelineList.Content`: a vertical list without opposite content lays the parts out in the order they are written.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "TimelineList.Mark",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/timeline-list/timeline-list.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 279,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The mark's glyph. Unset, the mark draws the Item's `status`: the 8.75px dot without one, and at `md` and `lg` a check on `complete` and a cross on `error`. With children, the mark fills the lane and holds them, in the status's colors, or on a muted fill without a `status`. The mark sizes a direct `svg` child to 60% of its content box, which a ring's border makes smaller than the lane.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "TimelineList.Content",
+      "rsc": "server",
+      "sourcePath": "packages/fuse/src/components/timeline-list/timeline-list.tsx",
+      "forwardedFrom": [
+        "@types/react"
+      ],
+      "forwardedCount": 280,
       "props": []
     },
     {

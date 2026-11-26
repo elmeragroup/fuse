@@ -15,12 +15,15 @@ const MARKER = "data-skeleton-part";
 type SkeletonPartMarkerOptions = { readonly roles: string };
 
 /**
- * A JSX attribute value or an object property value as a string literal, read through braces and
- * the wrappers `unwrap` strips, such as `satisfies`.
+ * A marker's value, read through braces and the wrappers `unwrap` strips, such as `satisfies`. It
+ * is the part a string literal names, `null` for the literal `null`, which states that the element
+ * has no role, or `undefined` for a value only a run could know.
  */
-function markerValue(value: ESTree.JSXAttribute["value"] | ESTree.Expression): string | undefined {
+function markerName(value: ESTree.JSXAttribute["value"] | ESTree.Expression): string | null | undefined {
   if (value === null) return undefined;
-  return stringLiteral(unwrap(value.type === "JSXExpressionContainer" ? value.expression : value));
+  const node = unwrap(value.type === "JSXExpressionContainer" ? value.expression : value);
+  if (node.type === "Literal" && node.value === null) return null;
+  return stringLiteral(node);
 }
 
 /**
@@ -30,7 +33,7 @@ function markerValue(value: ESTree.JSXAttribute["value"] | ESTree.Expression): s
 type PropsEntry =
   | { readonly kind: "spread" }
   | { readonly kind: "slot"; readonly slot: string; readonly node: ESTree.Node }
-  | { readonly kind: "marker"; readonly named: string | undefined; readonly node: ESTree.Node };
+  | { readonly kind: "marker"; readonly name: string | null | undefined; readonly node: ESTree.Node };
 
 const SPREAD: PropsEntry = { kind: "spread" };
 
@@ -56,7 +59,9 @@ function propsEntries(node: ESTree.Expression): PropsEntry[] {
     if (property.type === "SpreadElement") return propsEntries(property.argument);
     const name = propertyKeyName(property);
     if (property.computed && name === undefined) return [SPREAD];
-    if (name === MARKER) return [{ kind: "marker", named: markerValue(property.value), node: property }];
+    if (name === MARKER) {
+      return [{ kind: "marker", name: markerName(property.value), node: property }];
+    }
     // `slot` is `useRender` state, which cannot carry the marker, so only the attribute keys count.
     const slot = name !== undefined && SLOT_JSX_ATTRIBUTES.has(name) ? propertySlot(property) : undefined;
     return slot === undefined ? [] : [{ kind: "slot", slot, node: property }];
@@ -68,7 +73,7 @@ function attributeEntries(element: ESTree.JSXOpeningElement): PropsEntry[] {
   return element.attributes.flatMap((attribute): PropsEntry[] => {
     if (attribute.type === "JSXSpreadAttribute") return [SPREAD];
     if (attribute.name.type === "JSXIdentifier" && attribute.name.name === MARKER) {
-      return [{ kind: "marker", named: markerValue(attribute.value), node: attribute }];
+      return [{ kind: "marker", name: markerName(attribute.value), node: attribute }];
     }
     const slot = jsxAttributeSlot(attribute);
     return slot === undefined ? [] : [{ kind: "slot", slot, node: attribute }];
@@ -97,7 +102,9 @@ function isRenderElement(element: ESTree.JSXOpeningElement): boolean {
  * from that marker, so a part without it draws as text, a part with another part's name takes that
  * part's role, and a marker a spread comes after can be replaced by the consumer's props. A marker
  * the element writes always names the element's own literal slot, whether or not the slot has a
- * role. The `props` a `useRender` call takes follow the same rule, read through spread object
+ * role, or is the literal `null`: a variant of a part that has no skeleton role, such as a mark
+ * around the consumer's children that the skeleton should measure through, states so with
+ * `data-skeleton-part={null}` after its spreads, which React leaves off the element. The `props` a `useRender` call takes follow the same rule, read through spread object
  * literals and `mergeProps` calls, where every argument after the marker's counts as a spread.
  *
  * Scope: a JSX element that is a `render` attribute's value is skipped, since its props replace the
@@ -154,11 +161,11 @@ export const skeletonPartMarker: Rule = {
         }
         return;
       }
-      if (marker.named !== slot) {
+      if (marker.name !== null && marker.name !== slot) {
         context.report({
           node: marker.node,
           messageId: "mismatch",
-          data: { marker: marker.named ?? "a runtime value", slot },
+          data: { marker: marker.name ?? "a runtime value", slot },
         });
       } else if (markerIndex < entries.findLastIndex((entry) => entry.kind === "spread")) {
         context.report({ node: marker.node, messageId: "beforeSpread" });

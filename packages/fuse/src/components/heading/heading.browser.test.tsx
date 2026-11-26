@@ -165,7 +165,10 @@ describe("TimelineList title scale", () => {
       <TimelineList.Root>
         {TITLE_LEVELS.map((level) => (
           <TimelineList.Item key={level}>
-            <TimelineList.Title level={level}>{`${prefix} ${String(level)}`}</TimelineList.Title>
+            <TimelineList.Indicator />
+            <TimelineList.Content>
+              <TimelineList.Title level={level}>{`${prefix} ${String(level)}`}</TimelineList.Title>
+            </TimelineList.Content>
           </TimelineList.Item>
         ))}
       </TimelineList.Root>
@@ -192,9 +195,12 @@ describe("TimelineList title scale", () => {
       <ThemeScope theme={fkasBranded}>
         <TimelineList.Root>
           <TimelineList.Item>
-            <TimelineList.Title level={1} size={undefined} font={undefined}>
-              Forwarded
-            </TimelineList.Title>
+            <TimelineList.Indicator />
+            <TimelineList.Content>
+              <TimelineList.Title level={1} size={undefined} font={undefined}>
+                Forwarded
+              </TimelineList.Title>
+            </TimelineList.Content>
           </TimelineList.Item>
         </TimelineList.Root>
       </ThemeScope>
@@ -207,9 +213,12 @@ describe("TimelineList title scale", () => {
       <ThemeScope theme={fkasBranded}>
         <TimelineList.Root>
           <TimelineList.Item>
-            <TimelineList.Title size="xl" font="semi-bold">
-              Restyled
-            </TimelineList.Title>
+            <TimelineList.Indicator />
+            <TimelineList.Content>
+              <TimelineList.Title size="xl" font="semi-bold">
+                Restyled
+              </TimelineList.Title>
+            </TimelineList.Content>
           </TimelineList.Item>
         </TimelineList.Root>
       </ThemeScope>

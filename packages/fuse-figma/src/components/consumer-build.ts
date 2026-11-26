@@ -86,6 +86,7 @@ export function buildConsumerCss(
     // `fuse.css` imports its private sheets from beside itself.
     ["./frame-variants.css", join(dirname(fuseCss), "frame-variants.css")],
     ["./skeleton-reveal.css", join(dirname(fuseCss), "skeleton-reveal.css")],
+    ["./timeline-list-variants.css", join(dirname(fuseCss), "timeline-list-variants.css")],
     [
       "tw-animate-css",
       fileURLToPath(new URL("../../node_modules/tw-animate-css/dist/tw-animate.css", import.meta.url)),

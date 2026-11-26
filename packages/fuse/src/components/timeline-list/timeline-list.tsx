@@ -1,18 +1,143 @@
-import type { ComponentProps, ComponentPropsWithoutRef, ReactElement } from "react";
+import type { ComponentProps, ComponentPropsWithoutRef, ReactElement, ReactNode } from "react";
 
+import { Check } from "../../icons/generated/check";
+import { X } from "../../icons/generated/x";
+import { definedProps } from "../../internal/defined-props";
 import { cn } from "../../styles/cn";
 import type { SkeletonPart } from "../../theme/tokens/skeleton-roles";
 import { isThemeDevelopment } from "../../theme/validate-theme";
 import { Heading } from "../heading/heading";
+import { TimelineListStatusLabel } from "./timeline-list-status-label";
 import { timelineListVariants } from "./timeline-list-variants";
 
-/** The recipe's slot classes, resolved once at module scope because the recipe has no axes. */
-const { root, item, dot, title, time, description } = timelineListVariants();
+// Every part writes `data-slot` first, as its public name, and `data-timeline-list-part` after the
+// consumer's props. The custom variants in `styles/timeline-list-variants.css` and the recipe's
+// cross-part selectors find a part by that marker, so a consumer's `data-slot` cannot take a part
+// out of its list's layout or its Item's status; see issue #1021.
 
-/** Props for `TimelineList.Root`, a native `ol`'s props. */
-export type TimelineListRootProps = ComponentProps<"ol">;
-/** Props for `TimelineList.Item`, a native `li`'s props. */
-export type TimelineListItemProps = ComponentProps<"li">;
+/** The slot classes that read no axis, resolved once at module scope. */
+const {
+  item,
+  opposite: oppositeCell,
+  indicator: rail,
+  incoming,
+  lane,
+  outgoing,
+  glyph,
+  halo,
+  content,
+  title,
+  time,
+  description,
+} = timelineListVariants();
+
+/** Props for `TimelineList.Root`, a native `ol`'s props and the list's layout axes. */
+export type TimelineListRootProps = ComponentProps<"ol"> & {
+  /**
+   * The direction the list runs. `alternate` is a vertical list with each Item's
+   * `TimelineList.Content` and `TimelineList.Opposite` on either side of the rail, swapped on
+   * every other `TimelineList.Item`. It folds to one side, the Opposite above the Content, when
+   * the list is narrower than 32rem. It measures its own width, so give an alternate list a
+   * definite inline size, such as a block parent's width; in a parent that sizes to its content it
+   * has no width of its own. `horizontal` runs along the inline axis, with each
+   * `TimelineList.Item` at least 10rem wide. A horizontal list wider than its parent overflows and
+   * neither clips nor scrolls, so wrap it in `ScrollArea.Root` with `orientation="horizontal"`.
+   */
+  layout?: "vertical" | "alternate" | "horizontal";
+  /** The space between the list's `TimelineList.Item`s. */
+  spacing?: "default" | "compact";
+  /**
+   * The size of the lane every `TimelineList.Item`'s indicator sits in: `dot` is 8.75px, `md`
+   * 24px and `lg` 32px. The status marks fill the lane, and at `md` and `lg` the complete and
+   * error marks carry a check and a cross. An Item without `status` keeps the 8.75px dot when its
+   * `TimelineList.Indicator` shows the default `TimelineList.Mark`. A node in the Indicator shows in
+   * place of the dot, and an Indicator of `null` shows no mark. In a vertical or alternate list the
+   * text moves down so a first line 22px tall centers on the mark. A
+   * `TimelineList.Title` has that line from level 3 down; a title at level 1 or 2 does not center
+   * on the mark. In a horizontal list the text sits under the rail, its start on the mark's start.
+   */
+  indicatorSize?: "dot" | "md" | "lg";
+};
+
+/** Props for `TimelineList.Item`, a native `li`'s props and the event's status. */
+export type TimelineListItemProps = ComponentProps<"li"> &
+  (
+    | {
+        /**
+         * The event's status, which draws the item's `TimelineList.Mark`. `current` sets
+         * `aria-current="step"` and adds no text. An `aria-current` the Item gets, `false`
+         * included, replaces it. `complete`, `upcoming` and `error` add visually hidden text as
+         * the Item's first child: "Completed", "Upcoming" or "Error" in the reader's locale. That
+         * text needs a `LocaleProvider` above the list.
+         */
+        status: "complete" | "current" | "upcoming" | "error";
+        /**
+         * The visually hidden text that names the status, in place of the locale text. It also
+         * renders for `current`. An empty string renders no text.
+         */
+        statusLabel?: string;
+      }
+    | {
+        /** Unset, the default mark is the 8.75px dot and the Item gains no text. */
+        status?: undefined;
+        /** Not allowed without `status`. */
+        statusLabel?: never;
+      }
+  ) & {
+    /**
+     * The event's parts, in this order: an optional `TimelineList.Opposite`, a
+     * `TimelineList.Indicator` and a `TimelineList.Content`. An Item without an Indicator draws
+     * no rail.
+     */
+    children?: ReactNode;
+  };
+/** Props for `TimelineList.Opposite`, a native `div`'s props. */
+export type TimelineListOppositeProps = ComponentProps<"div"> & {
+  /**
+   * The content across the rail from the body, such as a `TimelineList.Time`. A vertical list
+   * then gives every Item a 7rem column before the rail, and a horizontal list puts the content
+   * above the rail; below Chrome 117, which lacks row subgrid, under it. An Opposite with no
+   * children, such as one whose condition renders `false`, takes no column or row. A
+   * `TimelineList.Time` in the `TimelineList.Content` stays inline with the body.
+   */
+  children?: ReactNode;
+};
+/** Props for `TimelineList.Indicator`, a native `div`'s props. */
+export type TimelineListIndicatorProps = Omit<ComponentProps<"div">, "aria-hidden"> & {
+  /**
+   * What shows in the lane. Unset, the default `TimelineList.Mark` for the Item's `status`.
+   * `null`, or any child that renders nothing, shows no mark, and the line runs on to the Item's
+   * text. A node shows in the lane, centered, such as a `TimelineList.Mark` around a glyph or an
+   * `Avatar`. Size the node to the lane that `indicatorSize` on `TimelineList.Root` sets. A
+   * default `Avatar` is 32px, so it needs `lg`, and it overflows a 24px `md` lane. The rail is
+   * hidden from assistive technology by default, so keep the node's meaning in the Item's text,
+   * and render no focusable control in it. Write the Indicator between an optional
+   * `TimelineList.Opposite` and the `TimelineList.Content`: a vertical list without opposite
+   * content lays the parts out in the order they are written.
+   */
+  children?: ReactNode;
+  /**
+   * Whether assistive technology skips the rail. The rail is decorative, so the Indicator hides it
+   * from assistive technology by default. Pass `false` to expose the rail and its children. A
+   * forwarded `undefined` keeps the rail hidden.
+   */
+  "aria-hidden"?: ComponentProps<"div">["aria-hidden"];
+};
+/** Props for `TimelineList.Mark`, a native `span`'s props. */
+export type TimelineListMarkProps = ComponentProps<"span"> & {
+  /**
+   * The mark's glyph. Unset, the mark draws the Item's `status`: the 8.75px dot without one, and
+   * at `md` and `lg` a check on `complete` and a cross on `error`. With children, the mark fills
+   * the lane and holds them, in the status's colors, or on a muted fill without a `status`. The
+   * mark sizes a direct `svg` child to 60% of its content box, which a ring's border makes smaller
+   * than the lane.
+   */
+  children?: ReactNode;
+};
+/** Props for `TimelineList.Content`, a native `div`'s props. */
+export type TimelineListContentProps = ComponentProps<"div">;
+/** The statuses an Item can show. */
+type TimelineListStatus = NonNullable<TimelineListItemProps["status"]>;
 type HeadingProps = ComponentPropsWithoutRef<typeof Heading>;
 
 /** Props for `TimelineList.Title`, Heading's props except `noMargin`. */
@@ -46,22 +171,166 @@ export type TimelineListTimeProps = Omit<ComponentProps<"time">, "dateTime"> & {
 export type TimelineListDescriptionProps = ComponentProps<"div">;
 
 /** The ordered list of events. */
-function TimelineListRoot({ className, ...props }: TimelineListRootProps): ReactElement {
-  return <ol data-slot="timeline-list" className={cn(root(), className)} {...props} />;
+function TimelineListRoot({
+  className,
+  layout = "vertical",
+  spacing = "default",
+  indicatorSize = "dot",
+  // Safari drops the list role of a list whose items draw no marker, as these flex and grid items
+  // do, unless the list states it. Destructured, so a forwarded `role={undefined}` keeps it and a
+  // defined role replaces it.
+  role = "list",
+  ...props
+}: TimelineListRootProps): ReactElement {
+  const { root } = timelineListVariants({ layout, spacing, indicatorSize });
+  return (
+    <ol
+      role={role}
+      data-slot="timeline-list"
+      className={cn(root(), className)}
+      {...props}
+      // The state the custom variants read comes after the consumer's props, so a forwarded data
+      // attribute cannot replace it.
+      data-layout={layout}
+      data-spacing={spacing}
+      data-indicator-size={indicatorSize}
+      data-timeline-list-part="root"
+    />
+  );
 }
 
-/** One event, with its dot and the line that joins it to the next event. */
-function TimelineListItem({ className, children, ...props }: TimelineListItemProps): ReactElement {
-  return (
-    <li data-slot="timeline-list-item" className={cn(item(), className)} {...props}>
+/**
+ * The mark in the lane. Its fill, ring, shape and glyph follow the Item's `data-status` through
+ * the parts between them, so it needs no status of its own. Without children it renders the
+ * three glyphs, and its status classes show the one the status draws.
+ */
+function TimelineListMark({ className, children, ...props }: TimelineListMarkProps): ReactElement {
+  if (children !== undefined) {
+    // A mark with children is a lane-sized node around them. Its `null` marker states that it has
+    // no skeleton role, so `SkeletonReveal` measures what it holds.
+    const { mark } = timelineListVariants({ kind: "custom" });
+    return (
       <span
-        data-slot="timeline-list-dot"
-        data-skeleton-part={"timeline-list-dot" satisfies SkeletonPart}
-        aria-hidden="true"
-        className={dot()}
-      />
+        data-slot="timeline-list-mark"
+        className={cn(mark(), className)}
+        {...props}
+        data-mark="custom"
+        data-timeline-list-part="mark"
+        data-skeleton-part={null}>
+        {children}
+      </span>
+    );
+  }
+  const { mark } = timelineListVariants({ kind: "default" });
+  return (
+    <span
+      data-slot="timeline-list-mark"
+      className={cn(mark(), className)}
+      {...props}
+      data-mark="default"
+      data-timeline-list-part="mark"
+      data-skeleton-part={"timeline-list-mark" satisfies SkeletonPart}>
+      <Check data-glyph="check" className={glyph()} />
+      <X data-glyph="cross" className={glyph()} />
+      <span data-glyph="halo" className={halo()} />
+    </span>
+  );
+}
+
+/** The hidden status text: `statusLabel` when given, else the locale text for a labeled status. */
+function TimelineListStatusText({
+  status,
+  statusLabel,
+}: {
+  readonly status: TimelineListStatus;
+  readonly statusLabel: string | undefined;
+}): ReactElement | null {
+  if (statusLabel !== undefined) {
+    return statusLabel === "" ? null : <span className="sr-only">{`${statusLabel} `}</span>;
+  }
+  if (status === "current") {
+    return null;
+  }
+  return <TimelineListStatusLabel status={status} />;
+}
+
+/** One event: its hidden status text, then its parts. */
+function TimelineListItem({
+  className,
+  children,
+  status,
+  statusLabel,
+  "aria-current": ariaCurrent,
+  ...props
+}: TimelineListItemProps): ReactElement {
+  return (
+    <li
+      data-slot="timeline-list-item"
+      // A forwarded `aria-current={undefined}` keeps the automatic `"step"`, and any explicit
+      // value, `false` included, replaces it.
+      {...definedProps({ "aria-current": ariaCurrent ?? (status === "current" ? "step" : undefined) })}
+      className={cn(item(), className)}
+      {...props}
+      // After the consumer's props, so a forwarded `data-status` cannot replace the status, and an
+      // Item without `status` writes none, which React leaves off the element.
+      data-status={status}
+      data-timeline-list-part="item">
+      {status === undefined ? null : <TimelineListStatusText status={status} statusLabel={statusLabel} />}
       {children}
     </li>
+  );
+}
+
+/** The cell across the rail from the body. */
+function TimelineListOpposite({ className, ...props }: TimelineListOppositeProps): ReactElement {
+  return (
+    <div
+      data-slot="timeline-list-opposite"
+      className={cn(oppositeCell(), className)}
+      {...props}
+      data-timeline-list-part="opposite"
+    />
+  );
+}
+
+/**
+ * The rail: the incoming connector, the lane with the mark, and the outgoing connector. An empty
+ * lane draws no mark, and the two connectors meet.
+ */
+function TimelineListIndicator({
+  className,
+  children,
+  // Destructured, so a forwarded `aria-hidden={undefined}` keeps the rail hidden and a defined
+  // value replaces it.
+  "aria-hidden": ariaHidden = true,
+  ...props
+}: TimelineListIndicatorProps): ReactElement {
+  return (
+    <div
+      data-slot="timeline-list-indicator"
+      aria-hidden={ariaHidden}
+      className={cn(rail(), className)}
+      {...props}
+      data-timeline-list-part="indicator">
+      <span data-slot="timeline-list-connector" className={incoming()} data-timeline-list-part="connector" />
+      <div data-slot="timeline-list-lane" className={lane()} data-timeline-list-part="lane">
+        {/* Unset shows the default mark; `null` stays `null`, which leaves the lane empty. */}
+        {children === undefined ? <TimelineListMark /> : children}
+      </div>
+      <span data-slot="timeline-list-connector" className={outgoing()} data-timeline-list-part="connector" />
+    </div>
+  );
+}
+
+/** The event's body, beside or across from the rail. */
+function TimelineListContent({ className, ...props }: TimelineListContentProps): ReactElement {
+  return (
+    <div
+      data-slot="timeline-list-content"
+      className={cn(content(), className)}
+      {...props}
+      data-timeline-list-part="content"
+    />
   );
 }
 
@@ -99,6 +368,7 @@ function TimelineListTitle({
       className={cn(title(), className)}
       level={level}
       {...props}
+      data-timeline-list-part="title"
       size={size ?? levelSize(level)}
       font={font ?? "default"}
       noMargin
@@ -151,6 +421,7 @@ function TimelineListTime({ children, className, date, ...props }: TimelineListT
       data-slot="timeline-list-time"
       className={cn(time(), className)}
       {...props}
+      data-timeline-list-part="time"
       dateTime={machineDateTime(date)}>
       {children}
     </time>
@@ -159,11 +430,22 @@ function TimelineListTime({ children, className, date, ...props }: TimelineListT
 
 /** The event's description. */
 function TimelineListDescription({ className, ...props }: TimelineListDescriptionProps): ReactElement {
-  return <div data-slot="timeline-list-description" className={cn(description(), className)} {...props} />;
+  return (
+    <div
+      data-slot="timeline-list-description"
+      className={cn(description(), className)}
+      {...props}
+      data-timeline-list-part="description"
+    />
+  );
 }
 
 TimelineListRoot.displayName = "TimelineList.Root";
 TimelineListItem.displayName = "TimelineList.Item";
+TimelineListOpposite.displayName = "TimelineList.Opposite";
+TimelineListIndicator.displayName = "TimelineList.Indicator";
+TimelineListMark.displayName = "TimelineList.Mark";
+TimelineListContent.displayName = "TimelineList.Content";
 TimelineListTitle.displayName = "TimelineList.Title";
 TimelineListTime.displayName = "TimelineList.Time";
 TimelineListDescription.displayName = "TimelineList.Description";
@@ -171,6 +453,10 @@ TimelineListDescription.displayName = "TimelineList.Description";
 export const TimelineList = {
   Root: TimelineListRoot,
   Item: TimelineListItem,
+  Opposite: TimelineListOpposite,
+  Indicator: TimelineListIndicator,
+  Mark: TimelineListMark,
+  Content: TimelineListContent,
   Title: TimelineListTitle,
   Time: TimelineListTime,
   Description: TimelineListDescription,

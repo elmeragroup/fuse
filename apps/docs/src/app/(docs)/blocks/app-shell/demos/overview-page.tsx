@@ -292,9 +292,12 @@ export function OverviewPage(): ReactElement {
               <TimelineList.Root>
                 {ACTIVITY.map((entry) => (
                   <TimelineList.Item key={entry.id}>
-                    <TimelineList.Title level={3}>{entry.title}</TimelineList.Title>
-                    <TimelineList.Time date={entry.at}>{whenLabel(entry.at)}</TimelineList.Time>
-                    <TimelineList.Description>{entry.detail}</TimelineList.Description>
+                    <TimelineList.Indicator />
+                    <TimelineList.Content>
+                      <TimelineList.Title level={3}>{entry.title}</TimelineList.Title>
+                      <TimelineList.Time date={entry.at}>{whenLabel(entry.at)}</TimelineList.Time>
+                      <TimelineList.Description>{entry.detail}</TimelineList.Description>
+                    </TimelineList.Content>
                   </TimelineList.Item>
                 ))}
               </TimelineList.Root>

@@ -14,6 +14,12 @@ ruleTester.run("skeleton-part-marker", skeletonPartMarker, {
       options,
     },
     { code: '<div {...props} data-slot="loader" data-skeleton-part="loader" />', options },
+    // A variant with no role states so with a `null` marker after its spreads.
+    { code: '<span data-slot="badge" {...props} data-skeleton-part={null}>{children}</span>', options },
+    {
+      code: 'useRender({ props: { "data-slot": "badge", ...props, "data-skeleton-part": null } });',
+      options,
+    },
     // A slot without a role needs no marker.
     { code: '<div data-slot="card" {...props} />', options },
     // A slot chosen at runtime is not read.
@@ -40,6 +46,12 @@ ruleTester.run("skeleton-part-marker", skeletonPartMarker, {
   ],
   invalid: [
     { code: '<span data-slot="badge" {...props} />', options, errors: [{ messageId: "missing" }] },
+    // A `null` marker before the spreads lets a consumer's props give the element a role.
+    {
+      code: '<span data-slot="badge" data-skeleton-part={null} {...props} />',
+      options,
+      errors: [{ messageId: "beforeSpread" }],
+    },
     {
       code: '<span data-slot="badge" {...props} data-skeleton-part={"loader" satisfies SkeletonPart} />',
       options,

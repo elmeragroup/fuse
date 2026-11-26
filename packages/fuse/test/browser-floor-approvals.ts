@@ -70,6 +70,8 @@ const SPARKLINE_BAND_CLIPPED: FloorFallback = {
   value: "inset(50%)",
 };
 const SUBGRID_MISSING = "@supports not (grid-template-columns:subgrid)";
+const ROW_SUBGRID_MISSING = "@supports not (grid-template-rows:subgrid)";
+const TIMELINE_HORIZONTAL_ITEM = ':where([data-timeline-list-part="root"][data-layout="horizontal"])>';
 const TAILWIND_SUPPORTS_TEST =
   "A @supports test in Tailwind's own output: an engine without a feature it tests reads that test false, which is the answer the condition selects on.";
 
@@ -204,6 +206,30 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
     fallback: { kind: "none" },
     reason:
       "A @supports test: below Chrome 117 it reads true, and its block gives a DescriptionList.Item that still has grid-cols-subgrid its list's column template.",
+  },
+  {
+    sheet: "styles.css",
+    where: `${TIMELINE_HORIZONTAL_ITEM}.timeline-list-horizontal\\:grid-rows-subgrid`,
+    property: "grid-template-rows",
+    value: "subgrid",
+    features: ["css.properties.grid-template-rows.subgrid"],
+    fallback: {
+      kind: "rule",
+      within: [ROW_SUBGRID_MISSING],
+      where: `${TIMELINE_HORIZONTAL_ITEM}.timeline-list-horizontal\\:supports-\\[not\\(grid-template-rows\\:subgrid\\)\\]\\:grid-rows-\\[\\[rail\\]_auto_\\[opposite\\]_auto_\\[content\\]_1fr\\]`,
+      property: "grid-template-rows",
+      value: "[rail]auto[opposite]auto[content]1fr",
+    },
+    reason:
+      "Below Chrome 117 each horizontal TimelineList.Item lays out its own rows, the rail first, then the opposite content, then the body, so every rail sits in the first row and the track stays straight. A date above the rail moves under it, and a body or date that wraps no longer moves the neighboring Items' rows.",
+  },
+  {
+    sheet: "styles.css",
+    where: ROW_SUBGRID_MISSING,
+    features: ["css.properties.grid-template-rows.subgrid"],
+    fallback: { kind: "none" },
+    reason:
+      "A @supports test: below Chrome 117 it reads true, and its block gives each horizontal TimelineList.Item its own rows, the rail first.",
   },
   {
     sheet: "styles.css",
