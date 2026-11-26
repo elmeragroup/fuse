@@ -67,7 +67,7 @@ export const radioVariants = tv({
       "aria-invalid:aria-checked:border-primary data-invalid:aria-checked:border-primary"
     ),
     indicator: "flex size-4 items-center justify-center",
-    dot: "absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-foreground",
+    dot: "absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full mark-fill-primary-foreground",
   },
 });
 

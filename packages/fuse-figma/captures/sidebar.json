@@ -239,7 +239,7 @@
     {"property":"gap","value":"0","important":false,"longhands":["row-gap","column-gap"],"source":"fuse","layer":"","selector":".gap-0","className":"gap-0","owner":0},
     {"property":"margin","value":"0","important":false,"longhands":["margin-top","margin-bottom"],"source":"fuse","layer":"base","selector":":where([data-slot])","className":"fuse.css base layer","owner":0},
     {"property":"margin-inline","value":".5rem","important":false,"longhands":["margin-left","margin-right"],"source":"fuse","layer":"","selector":".mx-2","className":"mx-2","owner":0},
-    {"property":"background-color","value":"var(--sidebar-border)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".bg-sidebar-border","className":"bg-sidebar-border","owner":0},
+    {"property":"background-color","value":"var(--sidebar-border)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".mark-fill-sidebar-border","className":"mark-fill-sidebar-border","owner":0},
     {"property":"height","value":"1px","important":false,"longhands":["height"],"source":"fuse","layer":"","selector":".data-horizontal\\:h-px:where([data-orientation=\"horizontal\"])","className":"data-horizontal:h-px","owner":0},
     {"property":"width","value":"auto","important":false,"longhands":["width"],"source":"fuse","layer":"","selector":".data-horizontal\\:w-auto:where([data-orientation=\"horizontal\"])","className":"data-horizontal:w-auto","owner":0},
     {"property":"scrollbar-width","value":"none","important":false,"longhands":["scrollbar-width"],"source":"fuse","layer":"","selector":".no-scrollbar","className":"no-scrollbar","owner":0},
@@ -709,7 +709,7 @@
                     {
                       "tag": "div",
                       "attributes": {"aria-orientation":"horizontal","data-orientation":"horizontal","data-slot":"sidebar-separator","role":"separator"},
-                      "classes": ["shrink-0","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","mx-2","bg-sidebar-border","data-horizontal:w-auto"],
+                      "classes": ["shrink-0","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","mx-2","mark-fill-sidebar-border","data-horizontal:w-auto"],
                       "text": "",
                       "declarations": [62,63,64,6,65,66,67,195,69,196,133,197,198,199],
                       "initial": [64,67,195,69],
@@ -1217,7 +1217,7 @@
                     {
                       "tag": "div",
                       "attributes": {"aria-orientation":"horizontal","data-orientation":"horizontal","data-slot":"sidebar-separator","role":"separator"},
-                      "classes": ["shrink-0","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","mx-2","bg-sidebar-border","data-horizontal:w-auto"],
+                      "classes": ["shrink-0","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","mx-2","mark-fill-sidebar-border","data-horizontal:w-auto"],
                       "text": "",
                       "declarations": [62,63,64,6,65,66,67,195,69,196,133,197,198,199],
                       "initial": [64,67,195,69],
@@ -1729,7 +1729,7 @@
                     {
                       "tag": "div",
                       "attributes": {"aria-orientation":"horizontal","data-orientation":"horizontal","data-slot":"sidebar-separator","role":"separator"},
-                      "classes": ["shrink-0","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","mx-2","bg-sidebar-border","data-horizontal:w-auto"],
+                      "classes": ["shrink-0","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","mx-2","mark-fill-sidebar-border","data-horizontal:w-auto"],
                       "text": "",
                       "declarations": [62,63,64,6,65,66,67,195,69,196,133,197,198,199],
                       "initial": [64,67,195,69],
@@ -2237,7 +2237,7 @@
                     {
                       "tag": "div",
                       "attributes": {"aria-orientation":"horizontal","data-orientation":"horizontal","data-slot":"sidebar-separator","role":"separator"},
-                      "classes": ["shrink-0","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","mx-2","bg-sidebar-border","data-horizontal:w-auto"],
+                      "classes": ["shrink-0","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","mx-2","mark-fill-sidebar-border","data-horizontal:w-auto"],
                       "text": "",
                       "declarations": [62,63,64,6,65,66,67,195,69,196,133,197,198,199],
                       "initial": [64,67,195,69],
@@ -2749,7 +2749,7 @@
                     {
                       "tag": "div",
                       "attributes": {"aria-orientation":"horizontal","data-orientation":"horizontal","data-slot":"sidebar-separator","role":"separator"},
-                      "classes": ["shrink-0","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","mx-2","bg-sidebar-border","data-horizontal:w-auto"],
+                      "classes": ["shrink-0","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","mx-2","mark-fill-sidebar-border","data-horizontal:w-auto"],
                       "text": "",
                       "declarations": [62,63,64,6,65,66,67,195,69,196,133,197,198,199],
                       "initial": [64,67,195,69],
@@ -3257,7 +3257,7 @@
                     {
                       "tag": "div",
                       "attributes": {"aria-orientation":"horizontal","data-orientation":"horizontal","data-slot":"sidebar-separator","role":"separator"},
-                      "classes": ["shrink-0","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","mx-2","bg-sidebar-border","data-horizontal:w-auto"],
+                      "classes": ["shrink-0","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","mx-2","mark-fill-sidebar-border","data-horizontal:w-auto"],
                       "text": "",
                       "declarations": [62,63,64,6,65,66,67,195,69,196,133,197,198,199],
                       "initial": [64,67,195,69],

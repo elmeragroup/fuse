@@ -44,8 +44,8 @@ export const carouselVariants = tv({
       // The round ring would leave the target's corners to its neighbor's hit test, so the
       // square `::before` of `hit-area-0` keeps the whole 24px box the button's.
       "hit-area-0",
-      "after:ease-out after:block after:h-2 after:w-2 after:rounded-full after:bg-muted-foreground after:transition-[width,background-color] after:duration-200 after:content-['']",
-      "data-current:after:w-7 data-current:after:bg-foreground enabled-hover:after:bg-foreground/70",
+      "after:ease-out after:block after:h-2 after:w-2 after:rounded-full after:mark-fill-muted-foreground after:transition-[width,background-color] after:duration-200 after:content-['']",
+      "data-current:after:w-7 data-current:after:mark-fill-foreground enabled-hover:after:mark-fill-foreground/70",
       selfFocusRingClass
     ),
     // An indicator with its own content, such as a thumbnail, keeps the ring, the reset and the

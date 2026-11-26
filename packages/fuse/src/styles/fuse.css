@@ -835,6 +835,19 @@
   }
 }
 
+/* The fill of a mark drawn only by its background, such as a separator line or a dot. Forced-colors
+   mode replaces background colors with system colors, usually Canvas, which can hide the mark, so
+   there the fill takes CanvasText. The name stays outside Tailwind's bg-* namespace because a host
+   @theme color with the same suffix would make Tailwind emit its own bg-* rule after this one,
+   which would replace the CanvasText fill. */
+@utility mark-fill-* {
+  background-color: --value(--color-*);
+  background-color: --alpha(--value(--color-*) / --modifier(integer)%);
+  @media (forced-colors: active) {
+    background-color: CanvasText;
+  }
+}
+
 @utility no-scrollbar {
   &::-webkit-scrollbar {
     display: none;

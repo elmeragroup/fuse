@@ -5,6 +5,8 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { withForcedColors } from "../../../test/media-emulation";
+import { differsFromCanvas, middleOf } from "../../../test/screenshot-pixels";
 import {
   cssVarColor,
   effectiveOpacity,
@@ -310,6 +312,19 @@ describe("RadioGroup", () => {
     expect(radioNamed("Spot").getAttribute("aria-checked")).toBe("true");
     expect(radioNamed("Home").getAttribute("aria-checked")).toBe("true");
     expect(document.activeElement).toBe(radioNamed("Home"));
+  });
+
+  it("marks the checked radio in forced-colors mode", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(
+        <RadioGroup label="Plan" defaultValue="fixed">
+          <Radio value="fixed">Fixed</Radio>
+          <Radio value="spot">Spot</Radio>
+        </RadioGroup>
+      );
+      const regions = [middleOf(radioNamed("Fixed", true), 4), middleOf(radioNamed("Spot", false), 4)];
+      expect(await differsFromCanvas(radiogroupNamed("Plan"), regions)).toEqual([true, false]);
+    });
   });
 });
 

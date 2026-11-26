@@ -12,8 +12,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { nextFrames, pollFrames, recordFrames } from "../../../test/animation-frames";
 import { withLocale } from "../../../test/locale-matrix";
+import { withForcedColors } from "../../../test/media-emulation";
+import { emulateReducedMotion } from "../../../test/reduced-motion";
+import { differsFromCanvas, middleOf } from "../../../test/screenshot-pixels";
 import {
   overlayBackdropOf,
   renderThemed as renderThemedTree,
@@ -1382,6 +1386,31 @@ describe("Tour.Beacon", () => {
     observer.disconnect();
     expect(page.getByRole("button", { name: "Show tip" }).query()).toBeNull();
     expect(widths.filter((value) => value !== lit)).toEqual([]);
+  });
+  it.each([
+    { motion: "motion", reducedMotion: "no-preference" },
+    { motion: "reduced motion", reducedMotion: "reduce" },
+  ] as const)("draws its dot with $motion in forced-colors mode", async ({ reducedMotion }) => {
+    await emulateReducedMotion(reducedMotion);
+    try {
+      await withForcedColors("active", async () => {
+        renderThemed(
+          <Tour.Provider storage={memoryTourStorage()}>
+            <Tour.Beacon tour={tip} />
+          </Tour.Provider>
+        );
+        const beacon = page.getByRole("button", { name: "Show tip" });
+        await expect.element(beacon).toBeVisible();
+        for (const animation of document.getAnimations()) animation.finish();
+        const dot = beacon.element().lastElementChild;
+        if (dot === null) throw new Error("expected the beacon's dot");
+        // The pulse is the dot's size and place, so the edges of the two circles blend. The
+        // dot's middle shows whichever paints on top.
+        expect(await differsFromCanvas(beacon.element(), [middleOf(dot, 4)])).toEqual([true]);
+      });
+    } finally {
+      await emulateReducedMotion("no-preference");
+    }
   });
 });
 

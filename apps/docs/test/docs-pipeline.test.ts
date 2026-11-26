@@ -555,6 +555,8 @@ describe("token extraction", () => {
     // `--error` arrives with the focused invalid ring that shares `styles/utils.ts` with the
     // focus ring ScrollArea's viewport takes.
     ["ScrollArea", "scroll-area", ["--border", "--error", "--ring"]],
+    // The line paints through the `mark-fill-*` utility in fuse.css, not a Tailwind `bg-*` class.
+    ["Separator", "separator", ["--border"]],
   ] as const)("extracts the tokens consumed by %s", (_name, directory, expected) => {
     const recipe = collectRecipeSources(join(repoRoot, "packages/fuse/src/components", directory));
     const names = extractTokens({

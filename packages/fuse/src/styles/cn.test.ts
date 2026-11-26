@@ -30,6 +30,13 @@ describe("class merge last-wins", () => {
       ["rounded-sm", "rounded-inner"],
       "rounded-inner",
     ],
+    ["replaces a mark fill with a later bg-* class", ["mark-fill-border", "bg-primary"], "bg-primary"],
+    ["replaces a bg-* class with a later mark fill", ["bg-primary", "mark-fill-border"], "mark-fill-border"],
+    [
+      "replaces a mark fill with an opacity modifier under a variant",
+      ["after:mark-fill-foreground/70", "after:bg-transparent"],
+      "after:bg-transparent",
+    ],
   ])("%s", (_name, classes, expected) => {
     expect(cn(...classes)).toBe(expected);
   });

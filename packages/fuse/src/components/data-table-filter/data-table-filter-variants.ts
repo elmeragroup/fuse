@@ -96,7 +96,7 @@ export const dataTableFilterVariants = tv({
     /** row. A value row. A count of 0 mutes its label too. */
     option: "data-zero:text-muted-foreground",
     /** The dot on a field row whose field already has a filter. */
-    activeDot: "ms-auto size-[6px] shrink-0 rounded-full bg-primary",
+    activeDot: "ms-auto size-[6px] shrink-0 rounded-full mark-fill-primary",
     /** The field's name before a quick-search value, "Status ›". */
     pathSeparator: "text-muted-foreground",
     /** The empty state of a menu list. */

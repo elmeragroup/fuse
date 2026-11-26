@@ -10,6 +10,8 @@ import {
   assertFocusRingAtBothDensities,
   assertFocusRingOnKeyboardAbsentOnMouse,
 } from "../../../test/assert-focus-ring";
+import { withForcedColors } from "../../../test/media-emulation";
+import { differsFromCanvas } from "../../../test/screenshot-pixels";
 import {
   cssVarColor,
   fkasBranded,
@@ -251,4 +253,30 @@ describe("Tabs", () => {
       }
     }
   );
+
+  it("underlines the active line tab in forced-colors mode", async () => {
+    await withForcedColors("active", async () => {
+      // No panel renders below the list, so nothing but the underline draws there.
+      renderThemed(
+        <div data-testid="host" style={{ padding: 8 }}>
+          <Tabs.Root defaultValue="account">
+            <Tabs.List variant="line">
+              <Tabs.Trigger value="account">Account</Tabs.Trigger>
+              <Tabs.Trigger value="password">Password</Tabs.Trigger>
+            </Tabs.List>
+          </Tabs.Root>
+        </div>
+      );
+      for (const animation of document.getAnimations()) animation.finish();
+      // The underline is the trigger's `::after`, a short way below its box. The region starts a
+      // pixel down, clear of the trigger's border, which forced-colors mode draws.
+      const below = (name: string) => {
+        const tab = htmlTab(name).getBoundingClientRect();
+        return new DOMRect(tab.x, tab.bottom + 1, tab.width, 8);
+      };
+      expect(
+        await differsFromCanvas(page.getByTestId("host").element(), [below("Account"), below("Password")])
+      ).toEqual([true, false]);
+    });
+  });
 });

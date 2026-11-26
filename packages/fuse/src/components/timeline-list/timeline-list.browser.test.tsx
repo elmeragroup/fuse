@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
+import { withForcedColors } from "../../../test/media-emulation";
+import { differsFromCanvas, middleOf } from "../../../test/screenshot-pixels";
 import { headingNamed, px, renderThemed } from "../../../test/themed-browser-render";
 import { TimelineList } from "./timeline-list";
 
@@ -150,5 +153,20 @@ describe("TimelineList", () => {
     expect(descriptionRef.current).toBe(description);
     expect(description.id).toBe("placed-copy");
     expect(px(getComputedStyle(description).fontSize)).toBe(14);
+  });
+
+  it("draws each dot and the connector below it in forced-colors mode", async () => {
+    await withForcedColors("active", async () => {
+      renderBasicList();
+      const [first] = listItems();
+      const [dot] = decorativeDots();
+      if (first === undefined || dot === undefined) throw new Error("expected a first item and its dot");
+      const item = first.getBoundingClientRect();
+      const { bottom } = dot.getBoundingClientRect();
+      // The connector is the first item's `::before`, a line under the dot in the item's start
+      // padding, which holds no text.
+      const connector = new DOMRect(item.x, bottom + 2, dot.offsetWidth, item.bottom - bottom - 2);
+      expect(await differsFromCanvas(listRoot(), [middleOf(dot, 4), connector])).toEqual([true, true]);
+    });
   });
 });

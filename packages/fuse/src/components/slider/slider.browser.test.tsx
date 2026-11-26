@@ -8,7 +8,9 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { expectInvalidFocusRing, expectInvalidRing } from "../../../test/assert-invalid-ring";
 import { withLocale } from "../../../test/locale-matrix";
+import { withForcedColors } from "../../../test/media-emulation";
 import { whilePointerPressed } from "../../../test/pointer-press";
+import { differsFromCanvas } from "../../../test/screenshot-pixels";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { SupportedLocale } from "../../intl/locale-context";
 import { Slider } from "./slider";
@@ -239,6 +241,26 @@ describe("Slider", () => {
 
     sliderNamed("Invalid budget").blur();
     expectInvalidRing("thumb at rest", thumbOf("Invalid budget"));
+  });
+  it.each([
+    { state: "enabled", isDisabled: false },
+    { state: "disabled", isDisabled: true },
+  ])("draws the $state track and its fill apart in forced-colors mode", async ({ isDisabled }) => {
+    await withForcedColors("active", async () => {
+      renderSlider(<Slider label="Volume" defaultValue={50} isDisabled={isDisabled} />);
+      const control = controlOf("Volume");
+      const track = control.querySelector('[data-slot="slider-track"]');
+      if (!(track instanceof HTMLElement)) throw new Error("expected the track");
+      const box = track.getBoundingClientRect();
+      const thumb = thumbOf("Volume").getBoundingClientRect();
+      // The rounded ends are left out, where an outline curves into the track's box.
+      const start = box.x + box.height;
+      const end = box.right - box.height;
+      const fill = new DOMRect(start, box.y, thumb.left - 2 - start, box.height);
+      const unfilled = new DOMRect(thumb.right + 2, box.y + 1, end - thumb.right - 2, box.height - 2);
+      const edge = new DOMRect(thumb.right + 2, box.y - 3, end - thumb.right - 2, 3);
+      expect(await differsFromCanvas(control, [fill, unfilled, edge])).toEqual([true, false, true]);
+    });
   });
 });
 

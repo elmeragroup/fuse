@@ -31,7 +31,7 @@ export const switchVariants = tv({
     // off reads as outline versus fill in every palette, as on Checkbox and Radio.
     root: "shadow-xs relative inline-flex shrink-0 items-center justify-start rounded-full border border-muted-foreground transition-colors data-checked:border-primary data-checked:bg-primary",
     thumb:
-      "pointer-events-none block rounded-full bg-muted-foreground ring-0 transition-transform data-checked:translate-x-[calc(100%-2px)] data-checked:bg-background data-unchecked:translate-x-0 data-unchecked:scale-75",
+      "pointer-events-none block rounded-full mark-fill-muted-foreground ring-0 transition-transform data-checked:translate-x-[calc(100%-2px)] data-checked:mark-fill-background data-unchecked:translate-x-0 data-unchecked:scale-75",
     control: cn(
       // The track is a <span>, so the state face keys off Base UI's `data-disabled` and
       // `data-invalid` attributes, plus a consumer's `aria-invalid`.
