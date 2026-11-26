@@ -36,9 +36,9 @@ const siteHero = tv({
     chipArrow: "size-3",
     actions: "",
     chipLink:
-      "font-medium inline-flex min-h-6 items-center gap-1 rounded-full bg-primary-soft px-2.5 text-primary-soft-foreground no-underline outline-none hover:bg-primary-soft/70 focus-visible:ring-2 focus-visible:ring-ring",
+      "font-medium inline-flex min-h-6 items-center gap-1 rounded-full bg-primary-soft px-2.5 text-primary-soft-foreground no-underline outline-none hover:bg-primary-soft/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden",
     tiles: "@3xl:grid-cols-3 relative m-0 grid list-none gap-3 p-0",
-    tile: "backdrop-blur-sm flex h-full flex-col gap-2 rounded-lg p-5 no-underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+    tile: "backdrop-blur-sm flex h-full flex-col gap-2 rounded-lg p-5 no-underline transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden",
     tileTitle: "text-xl font-semibold font-heading text-balance",
     tileText: "text-sm text-pretty opacity-90",
     tileArrow: "mt-auto size-5 self-end",

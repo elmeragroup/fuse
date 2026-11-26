@@ -22,7 +22,7 @@ const siteCards = tv({
     storyPhoto: "h-auto w-full rounded-xl outline-1 -outline-offset-1 outline-foreground/10",
     storyTitle: "text-lg font-medium text-balance",
     storyLink:
-      "text-sm font-medium group/story inline-flex min-h-8 items-center gap-3 self-start rounded-full text-current no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      "text-sm font-medium group/story inline-flex min-h-8 items-center gap-3 self-start rounded-full text-current no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden",
     storyArrow:
       "ease-snap flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform duration-200 group-hover/story:translate-x-0.5",
     more: "self-center",
@@ -52,7 +52,7 @@ const siteCards = tv({
     eventDetail: "text-xs text-muted-foreground",
     brands: "@xl:grid-cols-2 @4xl:grid-cols-5 m-0 grid list-none gap-3 p-0",
     brand:
-      "landing-press shadow-xs flex h-full w-full cursor-pointer flex-col items-start gap-3 rounded-lg border border-border bg-card p-4 text-left text-card-foreground outline-none hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      "landing-press shadow-xs flex h-full w-full cursor-pointer flex-col items-start gap-3 rounded-lg border border-border bg-card p-4 text-left text-card-foreground outline-none hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden",
     brandLogo: "flex h-7 items-center text-foreground",
     brandName: "text-sm font-semibold",
     brandText: "text-xs text-pretty text-muted-foreground",
@@ -64,7 +64,7 @@ const siteCards = tv({
     featureTitle: "text-lg font-semibold",
     featureText: "text-sm text-pretty text-muted-foreground",
     featureLink:
-      "text-sm font-medium group/feature mt-1 inline-flex min-h-6 items-center gap-1.5 rounded-sm text-primary no-underline outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring",
+      "text-sm font-medium group/feature mt-1 inline-flex min-h-6 items-center gap-1.5 rounded-sm text-primary no-underline outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden",
     featureArrow: "ease-snap size-3.5 transition-transform duration-200 group-hover/feature:translate-x-0.5",
     glow: "max-w-3xl pointer-events-none absolute inset-x-0 top-1/2 -z-10 mx-auto aspect-square -translate-y-1/2 rounded-full bg-radial from-primary-soft to-transparent to-70%",
     closingActions: "justify-center",
@@ -126,7 +126,7 @@ function HelpCard({ card }: { card: SiteHelpCard }): ReactElement {
 const siteShortcuts = tv({
   slots: {
     list: "m-0 grid list-none p-0",
-    link: "landing-press group/shortcut flex h-full items-center no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+    link: "landing-press group/shortcut flex h-full items-center no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden",
     label: "text-pretty",
     arrow: "ease-snap size-5 shrink-0 transition-transform duration-200 group-hover/shortcut:translate-x-0.5",
   },
@@ -151,7 +151,7 @@ const siteShortcuts = tv({
 const siteLinkCards = tv({
   slots: {
     list: "@3xl:grid-cols-3 m-0 grid list-none gap-4 p-0",
-    card: "shadow-xs rounded-2xl hover:shadow-md relative flex h-full flex-col gap-2 bg-card p-6 text-card-foreground transition-shadow duration-200 focus-within:ring-2 focus-within:ring-ring",
+    card: "shadow-xs rounded-2xl hover:shadow-md relative flex h-full flex-col gap-2 bg-card p-6 text-card-foreground transition-shadow duration-200 focus-within:ring-2 focus-within:ring-ring focus-within:outline-hidden",
     title: "text-2xl font-medium font-heading text-balance text-primary",
     text: "text-base text-pretty",
     // The link stretches over the whole card, so the card is one target with one name.

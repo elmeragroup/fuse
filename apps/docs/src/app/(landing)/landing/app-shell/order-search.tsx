@@ -63,10 +63,13 @@ const orderSearch = tv({
     total: "text-xs @md:block m-0 hidden shrink-0 whitespace-nowrap text-muted-foreground tabular-nums",
     scroll: "min-h-0 flex-1",
     body: "px-3 pb-24",
-    // The current order's opener carries `aria-current`; its row takes the highlight.
-    row: "has-[[aria-current=true]]:bg-accent has-[[aria-current=true]]:text-accent-foreground",
+    // The current order's opener carries `aria-current`; its row takes the highlight. Forced
+    // colors drop the fill, so there the row takes Highlight lines along its top and bottom edges,
+    // across every column, so the cue stays in view when the table scrolls sideways. They sit
+    // outside the opener's focus outline, and presses pass through them.
+    row: "has-[[aria-current=true]]:bg-accent has-[[aria-current=true]]:text-accent-foreground forced-colors:relative forced-colors:has-[[aria-current=true]]:after:pointer-events-none forced-colors:has-[[aria-current=true]]:after:absolute forced-colors:has-[[aria-current=true]]:after:inset-0 forced-colors:has-[[aria-current=true]]:after:border-y-2 forced-colors:has-[[aria-current=true]]:after:border-[Highlight]",
     // The keyboard path to what a row press does: Fuse's row press ignores presses on controls.
-    open: "text-xs min-h-6 cursor-pointer rounded-sm font-mono text-muted-foreground tabular-nums outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60",
+    open: "text-xs min-h-6 cursor-pointer rounded-sm font-mono text-muted-foreground tabular-nums outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-hidden",
     status: "flex items-center gap-2",
     // `outline` draws in the text colour; the border token keeps the badge quieter than the name.
     channel: "border-border text-muted-foreground",

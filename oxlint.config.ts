@@ -518,7 +518,16 @@ export default defineConfig({
         "shadcn/no-arbitrary-values": [
           "error",
           {
-            allow: ["layout", "rounded-[inherit]"],
+            // A forced-colors cue names a CSS system color, which no theme token holds. Each
+            // `Highlight` entry is a whole class with its `forced-colors:` variant, so normal-mode
+            // code cannot use one.
+            allow: [
+              "layout",
+              "rounded-[inherit]",
+              "forced-colors:aria-[current=true]:before:bg-[Highlight]",
+              "forced-colors:has-[[aria-current=true]]:after:border-[Highlight]",
+              "forced-colors:group-aria-pressed:border-[Highlight]",
+            ],
           },
         ],
       },

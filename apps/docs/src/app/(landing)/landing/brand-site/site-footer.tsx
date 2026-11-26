@@ -16,7 +16,7 @@ const siteFooter = tv({
     name: "text-xl font-semibold font-heading",
     domain: "text-sm opacity-85",
     links: "@xl:grid-cols-3 m-0 grid list-none grid-cols-2 gap-x-10 gap-y-1 p-0",
-    link: "text-sm inline-flex min-h-8 items-center rounded-sm text-current/85 no-underline outline-none hover:text-current hover:underline focus-visible:ring-2 focus-visible:ring-ring",
+    link: "text-sm inline-flex min-h-8 items-center rounded-sm text-current/85 no-underline outline-none hover:text-current hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden",
     legal: "text-xs max-w-6xl @3xl:px-10 mx-auto w-full border-t border-current/15 px-5 py-5 opacity-85",
   },
 });
