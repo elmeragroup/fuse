@@ -8,6 +8,7 @@ export type EmulatedMedia = {
   readonly media?: "print" | "screen" | null;
   readonly forcedColors?: "active" | "none" | null;
   readonly reducedMotion?: "reduce" | "no-preference" | null;
+  readonly colorScheme?: "light" | "dark" | null;
 };
 
 /**

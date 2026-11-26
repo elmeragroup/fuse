@@ -50,13 +50,15 @@ export const dateInputVariants = tv({
     // sight and out of the tab order.
     hiddenInput: "pointer-events-none sr-only",
     segment: cn(
-      "inline rounded-inner p-0.5 text-foreground tabular-nums caret-transparent forced-color-adjust-none",
+      "inline rounded-inner p-0.5 text-foreground tabular-nums caret-transparent",
       withinFocusRingControlClass,
       // A literal keeps its spaces: as a flex item it would lose the one closing ", " before a time.
       "data-[type=literal]:px-0 data-[type=literal]:whitespace-pre",
       "data-placeholder:text-muted-foreground data-placeholder:italic",
       "data-disabled:text-muted-foreground forced-colors:data-disabled:text-[GrayText]",
-      "focus:bg-primary focus:text-primary-foreground forced-colors:focus:bg-[Highlight] forced-colors:focus:text-[HighlightText]"
+      // Only a focused segment opts out of forced colors, so Chromium paints no Canvas backplate
+      // behind its HighlightText. The browser forces every other segment's text to the palette's.
+      "focus:bg-primary focus:text-primary-foreground focus:forced-color-adjust-none forced-colors:focus:bg-[Highlight] forced-colors:focus:text-[HighlightText]"
     ),
   },
   variants: {

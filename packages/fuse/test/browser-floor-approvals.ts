@@ -322,7 +322,16 @@ export const BROWSER_FLOOR_APPROVALS: readonly FloorApproval[] = [
   },
   {
     sheet: "styles.css",
-    where: ".forced-color-adjust-none",
+    where: '.data-selected\\:forced-color-adjust-none:where([data-selected]:not([data-selected="false"]))',
+    property: "forced-color-adjust",
+    value: "none",
+    features: ["css.properties.forced-color-adjust", "css.properties.forced-color-adjust.none"],
+    fallback: { kind: "none" },
+    reason: FORCED_COLORS,
+  },
+  {
+    sheet: "styles.css",
+    where: ".focus\\:forced-color-adjust-none:focus",
     property: "forced-color-adjust",
     value: "none",
     features: ["css.properties.forced-color-adjust", "css.properties.forced-color-adjust.none"],

@@ -22,6 +22,7 @@ import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { expectFocusRing } from "../../../test/assert-focus-ring";
 import { expectInvalidFocusRing } from "../../../test/assert-invalid-ring";
+import { render } from "../../../test/browser-render";
 import { expectRenderTypeError } from "../../../test/caught-error";
 import {
   atEachDensity,
@@ -31,7 +32,19 @@ import {
   lastSegmentOf,
 } from "../../../test/date-row-reach";
 import { withLocale } from "../../../test/locale-matrix";
-import { formNamed, renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
+import { systemFace, withForcedColors } from "../../../test/media-emulation";
+import { glyphInkContrast } from "../../../test/screenshot-pixels";
+import { restoreDocumentThemeAroundEach } from "../../../test/surface-paint";
+import {
+  computedContrast,
+  cssVarColor,
+  fkasPrivate,
+  formNamed,
+  renderThemed,
+  roleNamed,
+  stampDocumentTheme,
+  textNamed,
+} from "../../../test/themed-browser-render";
 import { segmentWithCustomSlot, wrappedSegment } from "../../../test/wrapped-date-segment";
 import type { SupportedLocale } from "../../intl/locale-context";
 import "../../temporal-polyfill";
@@ -281,6 +294,62 @@ describe("DateField focus ring", () => {
       .toHaveFocus();
     expectRing(roleNamed("group", "Start date"));
   });
+});
+
+describe("DateField segments under forced colors", () => {
+  restoreDocumentThemeAroundEach();
+
+  it("paints a focused segment's glyphs legibly on its Highlight fill", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <DateField label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+      )
+    );
+    await withForcedColors("active", async () => {
+      const month = spin("month, Start date");
+      month.focus();
+      await expect
+        .element(page.getByRole("spinbutton", { name: "month, Start date", exact: true }))
+        .toHaveFocus();
+
+      expect(getComputedStyle(month).backgroundColor).toBe(systemFace("Highlight").background);
+      // Chromium paints a Canvas backplate behind forced text, which would cover the glyphs.
+      expect(await glyphInkContrast(month)).toBeGreaterThanOrEqual(4.5);
+    });
+  });
+
+  // A host can pin its theme's scheme while the system's contrast theme has the other polarity.
+  // The theme's text then sits on the forced Canvas at about 1:1 unless the browser forces it.
+  it.each([
+    { palette: "dark", theme: "light" },
+    { palette: "light", theme: "dark" },
+  ] as const)(
+    "paints a filled segment legibly in the $palette forced palette over a $theme theme",
+    async ({ palette, theme }) => {
+      stampDocumentTheme(fkasPrivate, theme);
+      render(
+        withLocale(
+          "en-US",
+          <DateField label="Start date" defaultValue={Temporal.PlainDate.from("2026-10-05")} />
+        )
+      );
+      const month = spin("month, Start date");
+      const themeText = cssVarColor(month, "--foreground");
+
+      await withForcedColors(
+        "active",
+        async () => {
+          expect(
+            computedContrast(themeText, systemFace("Canvas").background),
+            "the theme's text would fail on this Canvas"
+          ).toBeLessThan(3);
+          expect(await glyphInkContrast(month)).toBeGreaterThanOrEqual(4.5);
+        },
+        { colorScheme: palette }
+      );
+    }
+  );
 });
 
 describe("DateField blur", () => {

@@ -16,6 +16,8 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { expectRenderTypeError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
+import { faceOf, systemFace, withForcedColors } from "../../../test/media-emulation";
+import { glyphInkContrast } from "../../../test/screenshot-pixels";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import "../../temporal-polyfill";
 import { RangeCalendar } from "./index";
@@ -519,6 +521,125 @@ describe("RangeCalendar grid semantics", () => {
       expect(grid).toHaveAttribute("aria-multiselectable", "true");
     }
   });
+});
+
+describe("RangeCalendar day face under forced colors", () => {
+  const INVALID_END =
+    "Selected Range: Monday, October 5 to Friday, October 9, 2026, Friday, October 9, 2026 selected";
+
+  /** The fill of the grid cell that holds `day`, which draws the range band. */
+  function bandBehind(day: HTMLElement): string {
+    const cell = day.closest("[role=gridcell]");
+    if (cell === null) throw new Error(`expected a grid cell around ${day.getAttribute("aria-label") ?? ""}`);
+    return faceOf(cell).background;
+  }
+
+  it("paints the ends of a range that fails validation in Mark and a valid range's ends in Highlight, each over its band, and keeps the middle days Highlight under the pointer", async () => {
+    await withForcedColors("active", async () => {
+      mount(
+        <>
+          <Parts
+            aria-label="Invalid"
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-05"),
+              end: Temporal.PlainDate.from("2026-10-09"),
+            }}
+            // The unavailable end makes the range invalid. The unavailable middle day is still a
+            // day of the range, and paints as its neighbors do.
+            isDateUnavailable={(date) => ["2026-10-07", "2026-10-09"].includes(date.toString())}
+          />
+          <Parts
+            aria-label="Valid"
+            defaultValue={{
+              start: Temporal.PlainDate.from("2026-10-19"),
+              end: Temporal.PlainDate.from("2026-10-21"),
+            }}
+          />
+        </>
+      );
+      const mark = systemFace("Mark");
+      const highlight = systemFace("Highlight");
+      expect(mark, "the emulated palette tells Mark from Highlight").not.toEqual(highlight);
+
+      const ranges = [
+        {
+          face: mark,
+          ends: [
+            "Selected Range: Monday, October 5 to Friday, October 9, 2026, Monday, October 5, 2026 selected",
+            INVALID_END,
+          ],
+          middle: [
+            "Tuesday, October 6, 2026 selected",
+            "Wednesday, October 7, 2026 selected",
+            "Thursday, October 8, 2026 selected",
+          ],
+        },
+        {
+          face: highlight,
+          ends: [
+            "Selected Range: Monday, October 19 to Wednesday, October 21, 2026, Monday, October 19, 2026 selected",
+            "Selected Range: Monday, October 19 to Wednesday, October 21, 2026, Wednesday, October 21, 2026 selected",
+          ],
+          middle: ["Tuesday, October 20, 2026 selected"],
+        },
+      ];
+      for (const { face, ends, middle } of ranges) {
+        for (const name of ends) {
+          const day = roleNamed("button", name);
+          expect(faceOf(day), name).toEqual(face);
+          expect(bandBehind(day), name).toBe(face.background);
+        }
+        // At rest and under the pointer, a middle day is a Highlight circle on its range's band.
+        for (const name of middle) {
+          const day = roleNamed("button", name);
+          expect(faceOf(day), name).toEqual(highlight);
+          expect(bandBehind(day), name).toBe(face.background);
+          await userEvent.hover(day);
+          expect(day.matches(":hover"), `${name} is hovered`).toBe(true);
+          expect(faceOf(day), `${name} hovered`).toEqual(highlight);
+        }
+      }
+    });
+  });
+
+  // Chromium paints a Canvas backplate behind the text of a day that takes forced colors, which
+  // computed colors do not report. In the dark palette Canvas and MarkText are both black, and in
+  // the light palette Canvas and HighlightText are both white, so a backplate hides the digits.
+  // Chromium does not repaint the backplate when only a hover changes `forced-color-adjust`, so
+  // the pointer moves onto the middle day first and turning forced colors on paints it hovered.
+  it.each([
+    { palette: "dark", day: "the end day", name: INVALID_END, hover: false },
+    {
+      palette: "light",
+      day: "a hovered middle day",
+      name: "Wednesday, October 7, 2026 selected",
+      hover: true,
+    },
+  ] as const)(
+    "keeps the digits of $day of a range that fails validation legible in the $palette forced palette",
+    async ({ palette, name, hover }) => {
+      mount(
+        <Parts
+          aria-label="Invalid"
+          defaultValue={{
+            start: Temporal.PlainDate.from("2026-10-05"),
+            end: Temporal.PlainDate.from("2026-10-09"),
+          }}
+          isDateUnavailable={(date) => date.toString() === "2026-10-09"}
+        />
+      );
+      const day = roleNamed("button", name);
+      if (hover) await userEvent.hover(day);
+      await withForcedColors(
+        "active",
+        async () => {
+          expect(day.matches(":hover"), "the pointer is on the day only when the case hovers it").toBe(hover);
+          expect(await glyphInkContrast(day)).toBeGreaterThanOrEqual(4.5);
+        },
+        { colorScheme: palette }
+      );
+    }
+  );
 });
 
 describe("RangeCalendar outside presses, regardless of the pressed element and the Root's element", () => {

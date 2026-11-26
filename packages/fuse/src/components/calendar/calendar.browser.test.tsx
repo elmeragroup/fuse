@@ -16,12 +16,26 @@ import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
+import * as Srgb from "@elmeragroup/color/srgb";
+
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { render } from "../../../test/browser-render";
 import { MonthsWithDay } from "../../../test/calendar-fixtures";
 import { expectRenderTypeError } from "../../../test/caught-error";
 import { withLocale } from "../../../test/locale-matrix";
-import { cssVarColor, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { faceOf, systemFace, withForcedColors } from "../../../test/media-emulation";
+import { glyphInkContrast, pixelsAt } from "../../../test/screenshot-pixels";
+import type { Point } from "../../../test/screenshot-pixels";
+import { restoreDocumentThemeAroundEach, toSrgb } from "../../../test/surface-paint";
+import {
+  computedContrast,
+  cssVarColor,
+  fkasPrivate,
+  renderThemed,
+  roleNamed,
+  stampDocumentTheme,
+} from "../../../test/themed-browser-render";
 import { definedProps } from "../../internal/defined-props";
 import "../../temporal-polyfill";
 import type { CalendarRootProps } from "./calendar";
@@ -760,11 +774,7 @@ describe("Calendar visibleMonths", () => {
 });
 
 describe("Calendar selected day face", () => {
-  /** A day button's painted fill and text color. */
-  function face(name: string) {
-    const style = getComputedStyle(roleNamed("button", name));
-    return { fill: style.backgroundColor, text: style.color };
-  }
+  restoreDocumentThemeAroundEach();
 
   it("paints a selected day that fails validation with the error pair", () => {
     mount(
@@ -775,11 +785,140 @@ describe("Calendar selected day face", () => {
     );
     const invalid = roleNamed("button", "Thursday, October 15, 2026 selected");
 
-    expect(face("Thursday, October 15, 2026 selected")).toEqual({
-      fill: cssVarColor(invalid, "--error"),
+    expect(faceOf(invalid)).toEqual({
+      background: cssVarColor(invalid, "--error"),
       text: cssVarColor(invalid, "--error-foreground"),
     });
   });
+
+  it("paints a selected day that fails validation in Mark under forced colors, and a valid selected day in Highlight, with legible glyphs on each", async () => {
+    await withForcedColors(
+      "active",
+      async () => {
+        mount(
+          <>
+            <Parts
+              aria-label="Invalid"
+              defaultValue={Temporal.PlainDate.from("2026-10-15")}
+              isDateUnavailable={(date) => date.toString() === "2026-10-15"}
+            />
+            <Parts aria-label="Valid" defaultValue={Temporal.PlainDate.from("2026-10-14")} />
+          </>
+        );
+        const mark = systemFace("Mark");
+        const highlight = systemFace("Highlight");
+        expect(mark, "the emulated palette tells Mark from Highlight").not.toEqual(highlight);
+
+        const invalid = roleNamed("button", "Thursday, October 15, 2026 selected");
+        const valid = roleNamed("button", "Wednesday, October 14, 2026 selected");
+        expect(faceOf(invalid)).toEqual(mark);
+        expect(faceOf(valid)).toEqual(highlight);
+        // Chromium paints a Canvas backplate behind forced text. In the dark palette Canvas,
+        // HighlightText and MarkText are all black, so a backplate would hide the glyphs.
+        expect(await glyphInkContrast(invalid), "the Mark day's glyphs").toBeGreaterThanOrEqual(4.5);
+        expect(await glyphInkContrast(valid), "the Highlight day's glyphs").toBeGreaterThanOrEqual(4.5);
+      },
+      { colorScheme: "dark" }
+    );
+  });
+
+  it("outlines a focused selected day in its text color inside its fill under forced colors, in place of the theme ring", async () => {
+    mount(
+      <>
+        <button type="button">Before</button>
+        <Calendar.Root aria-label="Delivery" defaultValue={Temporal.PlainDate.from("2026-10-14")}>
+          <Calendar.Months />
+        </Calendar.Root>
+      </>
+    );
+    await withForcedColors(
+      "active",
+      async () => {
+        await userEvent.click(roleNamed("button", "Before"));
+        await userEvent.keyboard("{Tab}");
+        await expectFocusOnDay("Wednesday, October 14, 2026 selected");
+        const day = roleNamed("button", "Wednesday, October 14, 2026 selected");
+        expect(day.matches(":focus-visible"), "Tab lands with :focus-visible").toBe(true);
+        const style = getComputedStyle(day);
+        const highlight = systemFace("Highlight");
+
+        expect({ style: style.outlineStyle, width: style.outlineWidth, color: style.outlineColor }).toEqual({
+          style: "solid",
+          width: "2px",
+          color: highlight.text,
+        });
+        expect(style.boxShadow, "no theme-colored ring").toBe("none");
+        // The day is a circle. Along the lines through its center, the 2px stroke starts 2px in
+        // from each edge, with fill on both sides of it: 1px in, 3px in and 5px in. In the light
+        // palette HighlightText and Canvas are both white, so a stroke drawn outside the fill
+        // would not show. The palette's Highlight is translucent, so the fill shows it over Canvas.
+        const fill = Srgb.compositeOver(
+          toSrgb(highlight.background),
+          toSrgb(systemFace("Canvas").background)
+        );
+        const stroke = toSrgb(highlight.text);
+        /** Which of the two colors a pixel shows, within one 8-bit step per channel. */
+        const paintOf = (pixel: readonly number[]): string => {
+          const near = (color: Srgb.Srgb) =>
+            [color.r, color.g, color.b].every(
+              (channel, index) => Math.abs(channel * 255 - (pixel[index] ?? 0)) <= 1
+            );
+          if (near(fill)) return "fill";
+          if (near(stroke)) return "stroke";
+          return `rgb(${pixel.slice(0, 3).join(", ")})`;
+        };
+        const { width, height } = day.getBoundingClientRect();
+        const across = Math.floor(width / 2);
+        const down = Math.floor(height / 2);
+        const right = Math.ceil(width) - 1;
+        const bottom = Math.ceil(height) - 1;
+        const insets = [1, 3, 5];
+        const sides = [
+          { side: "left", at: insets.map((inset): Point => [inset, down]) },
+          { side: "right", at: insets.map((inset): Point => [right - inset, down]) },
+          { side: "top", at: insets.map((inset): Point => [across, inset]) },
+          { side: "bottom", at: insets.map((inset): Point => [across, bottom - inset]) },
+        ];
+        const pixels = await pixelsAt(
+          day,
+          sides.flatMap(({ at }) => at)
+        );
+        const read = sides.map(({ side }) => ({
+          side,
+          paint: pixels.splice(0, insets.length).map(paintOf),
+        }));
+        expect(read).toEqual(sides.map(({ side }) => ({ side, paint: ["fill", "stroke", "fill"] })));
+      },
+      { colorScheme: "light" }
+    );
+  });
+
+  // A host can pin its theme's scheme while the system's contrast theme has the other polarity.
+  // The theme's text then sits on the forced Canvas at about 1:1 unless the browser forces it.
+  it.each([
+    { palette: "dark", theme: "light" },
+    { palette: "light", theme: "dark" },
+  ] as const)(
+    "paints an unselected day legibly in the $palette forced palette over a $theme theme",
+    async ({ palette, theme }) => {
+      stampDocumentTheme(fkasPrivate, theme);
+      render(withLocale("en-US", <Parts defaultValue={Temporal.PlainDate.from("2026-10-14")} />));
+      const day = roleNamed("button", "Thursday, October 8, 2026");
+      const themeText = cssVarColor(day, "--foreground");
+
+      await withForcedColors(
+        "active",
+        async () => {
+          expect(
+            computedContrast(themeText, systemFace("Canvas").background),
+            "the theme's text would fail on this Canvas"
+          ).toBeLessThan(3);
+          expect(await glyphInkContrast(day)).toBeGreaterThanOrEqual(4.5);
+        },
+        { colorScheme: palette }
+      );
+    }
+  );
 });
 
 describe("date props past the types", () => {
