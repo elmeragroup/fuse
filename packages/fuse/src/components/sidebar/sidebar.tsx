@@ -850,6 +850,20 @@ export function SidebarMenuAction({
           sidebarMenuActionShellClass,
           sidebarMenuActionBoxClass,
           "absolute right-1 flex items-center justify-center p-0 text-sidebar-foreground transition-transform group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
+          // The action is a sibling of the active row, outside its forced highlight. Forced
+          // colors would draw its icon in CanvasText and its focus outline in Highlight, which
+          // barely show on the row's Highlight fill, its hover fill in Canvas, and a Canvas
+          // backplate behind text it holds. On an enabled active row it opts out of forced colors,
+          // draws its content, a child that sets its own color included, and its focus outline in
+          // HighlightText on no fill, and drops the focus ring's box-shadow, which would paint in
+          // the theme's ring color. A filled child drops its background and shadow, apart from a
+          // mark-fill mark, and keeps its shape as a HighlightText border, as the forced-highlight
+          // utility does. A mark-fill mark, such as an unread dot, fills with HighlightText
+          // through `--mark-fill-forced`. The outline sits inside the action's edge: a `sm` row
+          // leaves 2px above and below the action, so an outline outside it would leave the row's
+          // fill. A disabled active row has no fill, so there the action keeps the usual forced
+          // colors.
+          "forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:bg-transparent! forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:text-[HighlightText]! forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:[box-shadow:none]! forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:-outline-offset-2! forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:outline-[HighlightText]! forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:forced-color-adjust-none forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:[--mark-fill-forced:HighlightText] forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:**:border-[HighlightText]! forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:**:text-[HighlightText]! forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:**:[box-shadow:none]! forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:**:not-[[class*=mark-fill-]]:bg-transparent!",
           selfFocusRingClass,
           nativeStateFaceClass,
           showOnHover &&

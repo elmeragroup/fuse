@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { expectFocusInsideFill, expectStateFill, focusByKeyboard } from "../../../test/forced-highlight";
 import { withLocale } from "../../../test/locale-matrix";
+import { withForcedColors } from "../../../test/media-emulation";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { expectVisuallyHidden } from "../../../test/visually-hidden";
 import { Dialog } from "../dialog";
@@ -327,4 +329,54 @@ describe("ConfirmButton", () => {
     expect(restored.getAttribute("aria-label")).toBe("Delete row");
     expect(restored.querySelector("[aria-live='polite']")).toBeNull();
   });
+});
+
+// A button disarms when it loses focus, so the armed one keeps focus in each case: the mouse focus
+// of the press that armed it, which draws no outline, or keyboard focus.
+describe("armed face in forced-colors mode", () => {
+  /** Two buttons with the same label and no `armedChildren`, so arming changes only the face. */
+  function renderPair(variant: "destructive" | "success") {
+    renderThemed(
+      <div style={{ padding: 8, display: "flex", gap: 16 }}>
+        <ConfirmButton variant={variant} onConfirm={() => undefined} data-testid="first">
+          Delete
+        </ConfirmButton>
+        <ConfirmButton variant={variant} onConfirm={() => undefined} data-testid="second">
+          Delete
+        </ConfirmButton>
+      </div>
+    );
+    const [first, second] = ["first", "second"].map((id) => page.getByTestId(id).element());
+    if (!(first instanceof HTMLElement && second instanceof HTMLElement)) {
+      throw new Error("expected two buttons");
+    }
+    return { first, second };
+  }
+
+  it.each(["destructive", "success"] as const)(
+    "fills an armed %s button, apart from a resting one",
+    async (variant) => {
+      await withForcedColors("active", async () => {
+        const { first, second } = renderPair(variant);
+        await userEvent.click(first);
+        expect(first.getAttribute("data-armed")).toBe("true");
+        await expectStateFill(first, second, "armed");
+      });
+    }
+  );
+
+  it.each(["destructive", "success"] as const)(
+    "keeps an armed %s button's fill under keyboard focus and outlines it inside its fill",
+    async (variant) => {
+      await withForcedColors("active", async () => {
+        const { first, second } = renderPair(variant);
+        first.focus();
+        await userEvent.keyboard("{Enter}");
+        expect(first.getAttribute("data-armed")).toBe("true");
+        await focusByKeyboard(first);
+        await expectFocusInsideFill(first, "focused armed");
+        await expectStateFill(first, second, "focused armed");
+      });
+    }
+  );
 });

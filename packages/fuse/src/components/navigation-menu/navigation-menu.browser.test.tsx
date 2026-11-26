@@ -7,6 +7,8 @@ import "../../../dist/styles.css";
 // Role tokens live in themes.css only; the dark highlight test reads them.
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
+import { expectFocusInsideFill, expectStateFill, focusByKeyboard } from "../../../test/forced-highlight";
+import { withForcedColors } from "../../../test/media-emulation";
 import { panelControlledBy } from "../../../test/panel-transition";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
@@ -436,6 +438,54 @@ describe("nested NavigationMenu", () => {
       await vi.waitFor(() => {
         expect(computedOklch(getComputedStyle(spot).backgroundColor)).not.toEqual(computedOklch(popupColor));
       });
+    });
+  });
+});
+
+describe("NavigationMenu.Link in forced-colors mode", () => {
+  /** Two bar links with the same label and width, the first for the current page. */
+  function renderPair() {
+    renderThemed(
+      <div style={{ padding: 8 }}>
+        <NavigationMenu.Root aria-label="Site">
+          <NavigationMenu.List>
+            {[true, false].map((active) => (
+              <NavigationMenu.Item key={String(active)}>
+                {/* A fixed width, since the current link's medium weight widens its label. */}
+                <NavigationMenu.Link
+                  href={active ? "#current" : "#other"}
+                  active={active}
+                  style={{ width: 96 }}>
+                  Pricing
+                </NavigationMenu.Link>
+              </NavigationMenu.Item>
+            ))}
+          </NavigationMenu.List>
+        </NavigationMenu.Root>
+      </div>
+    );
+    const [current, other] = page.getByRole("link", { name: "Pricing", exact: true }).elements();
+    if (!(current instanceof HTMLElement && other instanceof HTMLElement)) {
+      throw new Error("expected two links");
+    }
+    expect(current.getAttribute("aria-current")).toBe("page");
+    return { current, other };
+  }
+
+  it("fills the current page's link, apart from another link", async () => {
+    await withForcedColors("active", async () => {
+      const { current, other } = renderPair();
+      // Text is left out, so the current link's medium weight alone does not count.
+      await expectStateFill(current, other, "current link");
+    });
+  });
+
+  it("keeps the fill under keyboard focus and outlines the focused link inside its fill", async () => {
+    await withForcedColors("active", async () => {
+      const { current, other } = renderPair();
+      await focusByKeyboard(current);
+      await expectFocusInsideFill(current, "focused current link");
+      await expectStateFill(current, other, "focused current link");
     });
   });
 });

@@ -250,7 +250,7 @@
           {
             "tag": "tr",
             "attributes": {"data-slot":"table-row"},
-            "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+            "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
             "text": "",
             "declarations": [112,113,114,64,6,65,68,69,115,116,117,118,119,120,121],
             "initial": [64,68,69,116,117,118,121],

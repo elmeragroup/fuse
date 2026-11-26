@@ -27,7 +27,8 @@ Parse, convert, mix and measure colors through `@elmeragroup/color`, never ad ho
 Keep explicit string overrides ahead of dictionary defaults.
 Preserve the 24px target-size floor at both densities and central reduced motion.
 Hold built CSS to the browser floor: approve each use above it, with its fallback, in
-`packages/fuse/test/browser-floor-approvals.ts`.
+`packages/fuse/test/browser-floor-approvals.ts`, or in `forced-highlight-approvals.ts` beside it
+for the `forced-highlight` utility and the Sidebar parts beside a highlighted row.
 
 ## Consumer compatibility
 

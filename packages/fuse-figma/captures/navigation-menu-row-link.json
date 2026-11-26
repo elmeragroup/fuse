@@ -216,14 +216,14 @@
         "root": {
           "tag": "a",
           "attributes": {"data-slot":"navigation-menu-link","href":"#electricity"},
-          "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","flex","items-center","text-inherit","no-underline","outline-none","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","text-sm","box-border","min-h-(--row-h)","gap-2","px-(--row-px)","py-(--row-py)","[:where(&)]:rounded-sm","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
+          "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","flex","items-center","text-inherit","no-underline","outline-none","data-active:forced-highlight","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","text-sm","box-border","min-h-(--row-h)","gap-2","px-(--row-px)","py-(--row-py)","[:where(&)]:rounded-sm","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
           "text": "Electricity",
           "textIndex": 0,
           "declarations": [86,65,6,67,68,69,87,88,89,72,90,91,92,93,94,95,96,97,98,99,100],
           "initial": [65,68,69,98,100],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
-          "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
+          "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","data-active:forced-highlight","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
           "measured": {"containerWidth":256},
           "children": []
         }
@@ -288,14 +288,14 @@
         "root": {
           "tag": "a",
           "attributes": {"aria-current":"page","data-active":"","data-slot":"navigation-menu-link","href":"#electricity"},
-          "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","flex","items-center","text-inherit","no-underline","outline-none","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","text-sm","box-border","min-h-(--row-h)","gap-2","px-(--row-px)","py-(--row-py)","[:where(&)]:rounded-sm","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
+          "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","flex","items-center","text-inherit","no-underline","outline-none","data-active:forced-highlight","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","text-sm","box-border","min-h-(--row-h)","gap-2","px-(--row-px)","py-(--row-py)","[:where(&)]:rounded-sm","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
           "text": "Electricity",
           "textIndex": 0,
           "declarations": [86,65,6,67,68,69,87,88,89,72,90,91,92,93,94,95,96,98,99,100,101,102,103],
           "initial": [65,68,69,98,100],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
-          "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
+          "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:forced-highlight","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
           "measured": {"containerWidth":256},
           "children": []
         }
@@ -360,14 +360,14 @@
         "root": {
           "tag": "a",
           "attributes": {"data-slot":"navigation-menu-link","href":"#electricity"},
-          "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","flex","items-center","text-inherit","no-underline","outline-none","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","text-sm","box-border","min-h-(--row-h)","gap-2","px-(--row-px)","py-(--row-py)","[:where(&)]:rounded-sm","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
+          "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","flex","items-center","text-inherit","no-underline","outline-none","data-active:forced-highlight","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","text-sm","box-border","min-h-(--row-h)","gap-2","px-(--row-px)","py-(--row-py)","[:where(&)]:rounded-sm","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
           "text": "Electricity",
           "textIndex": 0,
           "declarations": [86,65,6,67,68,69,87,88,89,72,90,91,92,93,94,95,96,98,99,100,104,105],
           "initial": [65,68,69,98,100],
           "pseudo": {},
           "variables": {"--accent":{"_tag":"theme"},"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
-          "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:**:text-accent-foreground"],
+          "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","data-active:forced-highlight","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:**:text-accent-foreground"],
           "measured": {"containerWidth":256},
           "children": []
         }
@@ -432,14 +432,14 @@
         "root": {
           "tag": "a",
           "attributes": {"aria-current":"page","data-active":"","data-slot":"navigation-menu-link","href":"#electricity"},
-          "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","flex","items-center","text-inherit","no-underline","outline-none","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","text-sm","box-border","min-h-(--row-h)","gap-2","px-(--row-px)","py-(--row-py)","[:where(&)]:rounded-sm","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
+          "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","flex","items-center","text-inherit","no-underline","outline-none","data-active:forced-highlight","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","text-sm","box-border","min-h-(--row-h)","gap-2","px-(--row-px)","py-(--row-py)","[:where(&)]:rounded-sm","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
           "text": "Electricity",
           "textIndex": 0,
           "declarations": [86,65,6,67,68,69,87,88,89,72,90,91,92,93,94,95,96,98,99,100,101,102,104,105],
           "initial": [65,68,69,98,100],
           "pseudo": {},
           "variables": {"--accent":{"_tag":"theme"},"--accent-foreground":{"_tag":"theme"},"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-leading":{"_tag":"unset"}},
-          "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:**:text-accent-foreground"],
+          "unmatched": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:forced-highlight","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:**:text-accent-foreground"],
           "measured": {"containerWidth":256},
           "children": []
         }
@@ -504,14 +504,14 @@
         "root": {
           "tag": "a",
           "attributes": {"data-slot":"navigation-menu-link","href":"#electricity"},
-          "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","flex","items-center","text-inherit","no-underline","outline-none","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","text-sm","box-border","min-h-(--row-h)","gap-2","px-(--row-px)","py-(--row-py)","[:where(&)]:rounded-sm","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
+          "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","flex","items-center","text-inherit","no-underline","outline-none","data-active:forced-highlight","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","text-sm","box-border","min-h-(--row-h)","gap-2","px-(--row-px)","py-(--row-py)","[:where(&)]:rounded-sm","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
           "text": "Electricity",
           "textIndex": 0,
           "declarations": [106,107,86,108,65,6,67,68,69,87,88,89,72,90,91,92,93,94,95,96,97,98,109,110,111,112,113],
           "initial": [65,68,69,98,113],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--ring":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-leading":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"unset"}},
-          "unmatched": ["data-active:font-medium","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
+          "unmatched": ["data-active:font-medium","data-active:forced-highlight","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
           "measured": {"containerWidth":256},
           "children": []
         }
@@ -576,14 +576,14 @@
         "root": {
           "tag": "a",
           "attributes": {"aria-current":"page","data-active":"","data-slot":"navigation-menu-link","href":"#electricity"},
-          "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","flex","items-center","text-inherit","no-underline","outline-none","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","text-sm","box-border","min-h-(--row-h)","gap-2","px-(--row-px)","py-(--row-py)","[:where(&)]:rounded-sm","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
+          "classes": ["focus-visible:ring-2","focus-visible:ring-ring","focus-visible:outline-hidden","data-active:font-medium","flex","items-center","text-inherit","no-underline","outline-none","data-active:forced-highlight","data-active:text-foreground","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","text-sm","box-border","min-h-(--row-h)","gap-2","px-(--row-px)","py-(--row-py)","[:where(&)]:rounded-sm","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
           "text": "Electricity",
           "textIndex": 0,
           "declarations": [106,107,86,108,65,6,67,68,69,87,88,89,72,90,91,92,93,94,95,96,98,101,102,103,109,110,111,112,113],
           "initial": [65,68,69,98,113],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--font-weight-medium":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--radius":{"_tag":"theme"},"--radius-step":{"_tag":"theme"},"--ring":{"_tag":"theme"},"--row-h":{"_tag":"element","up":7},"--row-px":{"_tag":"element","up":7},"--row-py":{"_tag":"element","up":7},"--text-sm":{"_tag":"theme"},"--text-sm--line-height":{"_tag":"theme"},"--tw-inset-ring-shadow":{"_tag":"unset"},"--tw-inset-shadow":{"_tag":"unset"},"--tw-leading":{"_tag":"unset"},"--tw-ring-color":{"_tag":"element","up":0},"--tw-ring-inset":{"_tag":"unset"},"--tw-ring-offset-shadow":{"_tag":"unset"},"--tw-ring-offset-width":{"_tag":"unset"},"--tw-ring-shadow":{"_tag":"element","up":0},"--tw-shadow":{"_tag":"unset"}},
-          "unmatched": ["[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
+          "unmatched": ["data-active:forced-highlight","[&_svg]:pointer-events-none","[&_svg]:shrink-0","[&_svg:not([class*='size-'])]:size-4","in-data-[slot=navigation-menu-popup]:[:where(&)]:rounded-inner","hover:bg-accent","hover:text-accent-foreground","hover:**:text-accent-foreground"],
           "measured": {"containerWidth":256},
           "children": []
         }

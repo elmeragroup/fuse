@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { browserFloorProblems, describeFloorProblem } from "../../test/browser-floor";
 import { BROWSER_FLOOR_APPROVALS, BROWSER_FLOOR_EQUIVALENCES } from "../../test/browser-floor-approvals";
+import { FORCED_HIGHLIGHT_APPROVALS } from "../../test/forced-highlight-approvals";
 
 /** The stylesheets `dist/` ships as built: the standalone sheet and the chart sheet. */
 const SHIPPED_SHEETS = ["styles.css", "chart.css"] as const;
@@ -20,9 +21,11 @@ describe("the built stylesheets at the browser floor", () => {
       return { name, css: readFileSync(path, "utf8") };
     });
     expect(
-      browserFloorProblems(sheets, BROWSER_FLOOR_APPROVALS, BROWSER_FLOOR_EQUIVALENCES).map(
-        describeFloorProblem
-      )
+      browserFloorProblems(
+        sheets,
+        [...BROWSER_FLOOR_APPROVALS, ...FORCED_HIGHLIGHT_APPROVALS],
+        BROWSER_FLOOR_EQUIVALENCES
+      ).map(describeFloorProblem)
     ).toEqual([]);
   });
 });

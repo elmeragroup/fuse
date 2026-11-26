@@ -5,6 +5,7 @@ import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { expectFocusInsideFill, expectStateFill, focusByKeyboard } from "../../../test/forced-highlight";
 import { withForcedColors } from "../../../test/media-emulation";
 import { differsFromCanvas, middleOf } from "../../../test/screenshot-pixels";
 import {
@@ -382,5 +383,40 @@ describe("RadioIconButton", () => {
     expect(onChange).toHaveBeenCalledWith("house");
     expect(radioNamed("Home", true).getAttribute("aria-checked")).toBe("true");
     expect(radioNamed("List", false).getAttribute("aria-checked")).toBe("false");
+  });
+
+  describe("checked face in forced-colors mode", () => {
+    /** Two buttons with the same glyph, List checked. */
+    function renderPair() {
+      renderThemed(
+        <div style={{ padding: 8 }}>
+          <RadioGroup label="View" defaultValue="list">
+            <RadioIconButton value="list" aria-label="List">
+              <Glyph />
+            </RadioIconButton>
+            <RadioIconButton value="grid" aria-label="Grid">
+              <Glyph />
+            </RadioIconButton>
+          </RadioGroup>
+        </div>
+      );
+      return { checked: radioNamed("List", true), unchecked: radioNamed("Grid", false) };
+    }
+
+    it("fills the checked button, apart from an unchecked one", async () => {
+      await withForcedColors("active", async () => {
+        const { checked, unchecked } = renderPair();
+        await expectStateFill(checked, unchecked, "checked");
+      });
+    });
+
+    it("keeps the fill under keyboard focus and outlines the focused button inside its fill", async () => {
+      await withForcedColors("active", async () => {
+        const { checked, unchecked } = renderPair();
+        await focusByKeyboard(checked);
+        await expectFocusInsideFill(checked, "focused checked");
+        await expectStateFill(checked, unchecked, "focused checked");
+      });
+    });
   });
 });

@@ -145,7 +145,14 @@ export function PaginationLink({
     <a
       data-slot="pagination-link"
       aria-current={isActive ? "page" : undefined}
-      className={cn(buttonVariants({ variant: isActive ? "outline" : "ghost", size }), link(), className)}
+      // Forced colors draw the outline and ghost variants alike, so the current page takes the
+      // forced highlight there.
+      className={cn(
+        buttonVariants({ variant: isActive ? "outline" : "ghost", size }),
+        "aria-[current=page]:forced-highlight",
+        link(),
+        className
+      )}
       {...props}
       data-skeleton-part={"pagination-link" satisfies SkeletonPart}
     />

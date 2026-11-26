@@ -1,9 +1,9 @@
 /**
  * Unit under test: the fill utility in `fuse.css` that the Separator line paints through, as a
  * Tailwind-source host compiles it beside theme colors of its own. Oracle: the Separator draws
- * its line in the `--border` role, forced-colors mode needs `CanvasText` on that fill to show it,
- * and a Tailwind utility that also matches the fill class would add a later `background-color`
- * that replaces both.
+ * its line in the `--border` role, and a Tailwind utility that also matches the fill class would
+ * add a later `background-color` that replaces it. The Separator's browser test checks that the
+ * line shows in forced-colors mode.
  */
 import { describe, expect, it } from "vitest";
 
@@ -24,14 +24,12 @@ function backgrounds(css: string, candidate: string) {
   );
 }
 
-/** The Separator's fill class: the one its build paints `CanvasText` under forced colors. */
+/** The Separator's fill class: the one its build gives a background color under forced colors. */
 async function separatorFill(hostTheme: string): Promise<{ fill: string; css: string }> {
   const candidates = separatorClass.split(/\s+/u);
   const css = await consumerCss(`${STANDALONE_ENTRY}\n${hostTheme}`, candidates);
   const fills = candidates.filter((candidate) =>
-    backgrounds(css, candidate).some(
-      ({ value, scope }) => value === "CanvasText" && scope.includes(FORCED_COLORS)
-    )
+    backgrounds(css, candidate).some(({ scope }) => scope.includes(FORCED_COLORS))
   );
   expect(fills).toHaveLength(1);
   const [fill = ""] = fills;

@@ -324,7 +324,7 @@
           {
             "tag": "thead",
             "attributes": {"data-slot":"table-header"},
-            "classes": ["[&_tr]:border-b","framed-table:*:[tr]:border-none","framed-table:*:[tr]:hover:bg-transparent","framed-table:*:[tr]:hover:[--table-row-foreground:currentColor]"],
+            "classes": ["forced-colors:z-1","[&_tr]:border-b","framed-table:*:[tr]:border-none","framed-table:*:[tr]:hover:bg-transparent","framed-table:*:[tr]:hover:[--table-row-foreground:currentColor]"],
             "text": "",
             "declarations": [107,108,109,110,64,6,65,84,85,66,86],
             "initial": [110,64,85,66,86],
@@ -337,13 +337,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,135,66,86,136,137,138,139,140,141,142,143],
           "initial": [64,135,66,86,137,138,139,141,143],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"coincidingAround":4,"tableTiles":true},
           "children": [
             {
@@ -462,7 +462,7 @@
           {
             "tag": "thead",
             "attributes": {"data-slot":"table-header"},
-            "classes": ["[&_tr]:border-b","framed-table:*:[tr]:border-none","framed-table:*:[tr]:hover:bg-transparent","framed-table:*:[tr]:hover:[--table-row-foreground:currentColor]"],
+            "classes": ["forced-colors:z-1","[&_tr]:border-b","framed-table:*:[tr]:border-none","framed-table:*:[tr]:hover:bg-transparent","framed-table:*:[tr]:hover:[--table-row-foreground:currentColor]"],
             "text": "",
             "declarations": [107,108,109,110,64,6,65,84,85,66,86],
             "initial": [110,64,85,66,86],
@@ -475,13 +475,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,135,66,86,136,137,138,139,141,142,143,144,145],
           "initial": [64,135,66,86,137,138,139,141,143,144],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": ["data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:data-[state=selected]:bg-transparent"],
+          "unmatched": ["data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"coincidingAround":4,"tableTiles":true},
           "children": [
             {
@@ -600,7 +600,7 @@
           {
             "tag": "thead",
             "attributes": {"data-slot":"table-header"},
-            "classes": ["[&_tr]:border-b","framed-table:*:[tr]:border-none","framed-table:*:[tr]:hover:bg-transparent","framed-table:*:[tr]:hover:[--table-row-foreground:currentColor]"],
+            "classes": ["forced-colors:z-1","[&_tr]:border-b","framed-table:*:[tr]:border-none","framed-table:*:[tr]:hover:bg-transparent","framed-table:*:[tr]:hover:[--table-row-foreground:currentColor]"],
             "text": "",
             "declarations": [107,108,109,110,64,6,65,84,85,66,86],
             "initial": [110,64,85,66,86],
@@ -613,13 +613,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row","data-state":"selected"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,135,66,86,136,137,138,139,141,142,143,146,147],
           "initial": [64,135,66,86,137,138,139,141,143,147],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent"],
+          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"coincidingAround":4,"tableTiles":true},
           "children": [
             {
@@ -738,7 +738,7 @@
           {
             "tag": "thead",
             "attributes": {"data-slot":"table-header"},
-            "classes": ["[&_tr]:border-b","framed-table:*:[tr]:border-none","framed-table:*:[tr]:hover:bg-transparent","framed-table:*:[tr]:hover:[--table-row-foreground:currentColor]"],
+            "classes": ["forced-colors:z-1","[&_tr]:border-b","framed-table:*:[tr]:border-none","framed-table:*:[tr]:hover:bg-transparent","framed-table:*:[tr]:hover:[--table-row-foreground:currentColor]"],
             "text": "",
             "declarations": [107,108,109,110,64,6,65,84,85,66,86],
             "initial": [110,64,85,66,86],
@@ -751,13 +751,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row","data-state":"selected"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,135,66,86,136,137,138,139,141,142,143,144,145],
           "initial": [64,135,66,86,137,138,139,141,143,144],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": [],
+          "unmatched": ["forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"coincidingAround":4,"tableTiles":true},
           "children": [
             {
@@ -889,13 +889,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,66,86,136,137,138,139,140,196,197],
           "initial": [64,66,86,137,138,139,197],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"tableTiles":true},
           "children": [
             {
@@ -1027,13 +1027,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,66,86,136,137,138,139,196,197,199,200],
           "initial": [64,66,86,137,138,139,197,200],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": ["data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:data-[state=selected]:bg-transparent"],
+          "unmatched": ["data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"tableTiles":true},
           "children": [
             {
@@ -1165,13 +1165,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row","data-state":"selected"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,66,86,136,137,138,139,196,197,146,147],
           "initial": [64,66,86,137,138,139,197,147],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent"],
+          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"tableTiles":true},
           "children": [
             {
@@ -1303,13 +1303,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row","data-state":"selected"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,66,86,136,137,138,139,196,197,146,147],
           "initial": [64,66,86,137,138,139,197,147],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": [],
+          "unmatched": ["forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"tableTiles":true},
           "children": [
             {
@@ -1441,13 +1441,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,66,86,136,137,138,139,140,196,197],
           "initial": [64,66,86,137,138,139,197],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"tableTiles":true},
           "children": [
             {
@@ -1579,13 +1579,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,66,86,136,137,138,139,196,197,199,200],
           "initial": [64,66,86,137,138,139,197,200],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": ["data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:data-[state=selected]:bg-transparent"],
+          "unmatched": ["data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"tableTiles":true},
           "children": [
             {
@@ -1717,13 +1717,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row","data-state":"selected"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,66,86,136,137,138,139,196,197,146,147],
           "initial": [64,66,86,137,138,139,197,147],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent"],
+          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"tableTiles":true},
           "children": [
             {
@@ -1855,13 +1855,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row","data-state":"selected"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,66,86,136,137,138,139,196,197,146,147],
           "initial": [64,66,86,137,138,139,197,147],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": [],
+          "unmatched": ["forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"tableTiles":true},
           "children": [
             {
@@ -1993,13 +1993,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,66,86,136,137,138,139,140,209,210],
           "initial": [64,66,86,137,138,139,210],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"tableTiles":true},
           "children": [
             {
@@ -2131,13 +2131,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,66,86,136,137,138,139,199,200,209,210],
           "initial": [64,66,86,137,138,139,200,210],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": ["data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:data-[state=selected]:bg-transparent"],
+          "unmatched": ["data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"tableTiles":true},
           "children": [
             {
@@ -2269,13 +2269,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row","data-state":"selected"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,66,86,136,137,138,139,146,147,209,210],
           "initial": [64,66,86,137,138,139,147,210],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent"],
+          "unmatched": ["hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"tableTiles":true},
           "children": [
             {
@@ -2407,13 +2407,13 @@
         "root": {
           "tag": "tr",
           "attributes": {"data-slot":"frame-table-row","data-state":"selected"},
-          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent"],
+          "classes": ["border-b","text-(color:--table-row-foreground)","transition-colors","[--table-row-foreground:currentColor]","hover:bg-muted/72","hover:[--table-row-foreground:--theme(--color-foreground)]","data-[state=selected]:bg-muted/72","data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)]","framed-table:hover:bg-transparent","framed-table:data-[state=selected]:bg-transparent","forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "text": "",
           "declarations": [132,133,134,64,6,65,66,86,136,137,138,139,146,147,209,210],
           "initial": [64,66,86,137,138,139,147,210],
           "pseudo": {},
           "variables": {"--border":{"_tag":"theme"},"--default-transition-duration":{"_tag":"theme"},"--default-transition-timing-function":{"_tag":"theme"},"--foreground":{"_tag":"theme"},"--table-row-foreground":{"_tag":"element","up":0},"--tw-border-style":{"_tag":"unset"},"--tw-duration":{"_tag":"unset"},"--tw-ease":{"_tag":"unset"}},
-          "unmatched": [],
+          "unmatched": ["forced-colors:data-[state=selected]:relative","forced-colors:data-[state=selected]:after:pointer-events-none","forced-colors:data-[state=selected]:after:absolute","forced-colors:data-[state=selected]:after:inset-0","forced-colors:data-[state=selected]:after:border-2","forced-colors:data-[state=selected]:after:border-[Highlight]","forced-colors:focus-visible:relative","forced-colors:focus-visible:after:pointer-events-none","forced-colors:focus-visible:after:absolute","forced-colors:focus-visible:after:inset-0","forced-colors:focus-visible:after:outline-2","forced-colors:focus-visible:after:-outline-offset-6","forced-colors:focus-visible:after:outline-[CanvasText]"],
           "measured": {"tableTiles":true},
           "children": [
             {

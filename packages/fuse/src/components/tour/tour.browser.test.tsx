@@ -14,6 +14,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames, pollFrames, recordFrames } from "../../../test/animation-frames";
+import { expectStateFill } from "../../../test/forced-highlight";
 import { withLocale } from "../../../test/locale-matrix";
 import { withForcedColors } from "../../../test/media-emulation";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
@@ -1510,5 +1511,29 @@ describe("Tour re-renders", () => {
     const shownChanges = events.filter((event) => event.type === "show" || event.type === "end").length;
     expect(shownChanges).toBe(4);
     expect(commits.otherPopup - mounted.otherPopup).toBe(shownChanges);
+  });
+});
+
+describe("Tour progress dots in forced-colors mode", () => {
+  it("draws every step's dot, and the current one apart from the others", async () => {
+    await withForcedColors("active", async () => {
+      renderWelcome();
+      await userEvent.click(roleNamed("button", "Take the tour"));
+      const popup = await dialogNamed("Welcome");
+      const current = popup.querySelector("[data-current]");
+      const dots = [...(current?.parentElement?.children ?? [])];
+      const [first, second] = dots;
+      if (!(first instanceof HTMLElement && second instanceof HTMLElement) || dots.length !== 3) {
+        throw new Error("expected three dots");
+      }
+      expect(first).toBe(current);
+      expect(
+        await differsFromCanvas(
+          popup,
+          dots.map((dot) => middleOf(dot, 2))
+        )
+      ).toEqual([true, true, true]);
+      await expectStateFill(first, second, "current dot");
+    });
   });
 });

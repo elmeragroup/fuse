@@ -112,8 +112,8 @@
     {"property":"width","value":".375rem","important":false,"longhands":["width"],"source":"fuse","layer":"","selector":".size-1\\.5","className":"size-1.5","owner":0},
     {"property":"height","value":".375rem","important":false,"longhands":["height"],"source":"fuse","layer":"","selector":".size-1\\.5","className":"size-1.5","owner":0},
     {"property":"border-radius","value":"3.40282e38px","important":false,"longhands":["border-top-left-radius","border-top-right-radius","border-bottom-right-radius","border-bottom-left-radius"],"source":"fuse","layer":"","selector":".rounded-full","className":"rounded-full","owner":0},
-    {"property":"background-color","value":"var(--primary)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".data-current\\:bg-primary[data-current]","className":"data-current:bg-primary","owner":0},
-    {"property":"background-color","value":"color-mix(in oklab, var(--muted-foreground) 30%, transparent)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".bg-muted-foreground\\/30","className":"bg-muted-foreground/30","owner":0},
+    {"property":"background-color","value":"var(--primary)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".data-current\\:mark-fill-primary[data-current]","className":"data-current:mark-fill-primary","owner":0},
+    {"property":"background-color","value":"color-mix(in oklab, var(--muted-foreground) 30%, transparent)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".mark-fill-muted-foreground\\/30","className":"mark-fill-muted-foreground/30","owner":0},
     {"property":"display","value":"flex","important":false,"longhands":["display"],"source":"fuse","layer":"","selector":".flex","className":"flex","owner":0},
     {"property":"align-items","value":"center","important":false,"longhands":["align-items"],"source":"fuse","layer":"","selector":".items-center","className":"items-center","owner":0},
     {"property":"gap","value":".25rem","important":false,"longhands":["row-gap","column-gap"],"source":"fuse","layer":"","selector":".gap-1","className":"gap-1","owner":0},
@@ -333,25 +333,25 @@
                         {
                           "tag": "span",
                           "attributes": {"data-current":""},
-                          "classes": ["size-1.5","rounded-full","bg-muted-foreground/30","data-current:bg-primary"],
+                          "classes": ["size-1.5","rounded-full","mark-fill-muted-foreground/30","data-current:forced-highlight","data-current:mark-fill-primary"],
                           "text": "",
                           "declarations": [2,3,4,5,6,67,68,69,70],
                           "initial": [3,4],
                           "pseudo": {},
                           "variables": {"--border":{"_tag":"theme"},"--primary":{"_tag":"theme"}},
-                          "unmatched": [],
+                          "unmatched": ["data-current:forced-highlight"],
                           "children": []
                         },
                         {
                           "tag": "span",
                           "attributes": {},
-                          "classes": ["size-1.5","rounded-full","bg-muted-foreground/30","data-current:bg-primary"],
+                          "classes": ["size-1.5","rounded-full","mark-fill-muted-foreground/30","data-current:forced-highlight","data-current:mark-fill-primary"],
                           "text": "",
                           "declarations": [2,3,4,5,6,67,68,69,71],
                           "initial": [3,4],
                           "pseudo": {},
                           "variables": {"--border":{"_tag":"theme"},"--muted-foreground":{"_tag":"theme"}},
-                          "unmatched": ["data-current:bg-primary"],
+                          "unmatched": ["data-current:forced-highlight","data-current:mark-fill-primary"],
                           "children": []
                         }
                       ]

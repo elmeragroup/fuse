@@ -17,7 +17,7 @@ import { selfFocusRingClass } from "../../styles/utils";
 // the control-size recipe's `min-square`, so a toggle is never narrower than it is tall.
 export const toggleVariants = tv({
   base: cn(
-    "group/toggle font-medium inline-flex items-center justify-center rounded-md whitespace-nowrap transition-[color,background-color,box-shadow,scale] aria-pressed:bg-toggle-pressed aria-pressed:text-toggle-pressed-foreground data-pressed:bg-toggle-pressed data-pressed:text-toggle-pressed-foreground enabled-hover:bg-muted enabled-hover:text-foreground enabled-active:scale-[0.96] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    "group/toggle font-medium inline-flex items-center justify-center rounded-md whitespace-nowrap transition-[color,background-color,box-shadow,scale] aria-pressed:forced-highlight aria-pressed:bg-toggle-pressed aria-pressed:text-toggle-pressed-foreground data-pressed:forced-highlight data-pressed:bg-toggle-pressed data-pressed:text-toggle-pressed-foreground enabled-hover:bg-muted enabled-hover:text-foreground enabled-active:scale-[0.96] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     selfFocusRingClass,
     nativeStateFaceClass,
     dataStateFaceClass

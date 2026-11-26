@@ -13,8 +13,10 @@ export const confirmButtonVariants = tv({
       secondary: "",
       ghost: "",
       link: "",
-      destructive: "data-[armed=true]:bg-error data-[armed=true]:text-error-foreground",
-      success: "data-[armed=true]:bg-success data-[armed=true]:text-success-foreground",
+      destructive:
+        "data-[armed=true]:forced-highlight data-[armed=true]:bg-error data-[armed=true]:text-error-foreground",
+      success:
+        "data-[armed=true]:forced-highlight data-[armed=true]:bg-success data-[armed=true]:text-success-foreground",
     },
   },
   // Required shape: the `elmera/enforce-variant-standard` rule makes every recipe declare

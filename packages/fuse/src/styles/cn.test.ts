@@ -37,6 +37,11 @@ describe("class merge last-wins", () => {
       ["after:mark-fill-foreground/70", "after:bg-transparent"],
       "after:bg-transparent",
     ],
+    [
+      "keeps the forced highlight beside a later bg-* class under the same variant",
+      ["data-pressed:bg-toggle-pressed data-pressed:forced-highlight", "data-pressed:bg-primary"],
+      "data-pressed:forced-highlight data-pressed:bg-primary",
+    ],
   ])("%s", (_name, classes, expected) => {
     expect(cn(...classes)).toBe(expected);
   });

@@ -1,7 +1,8 @@
 /**
- * Pixel reads from a browser screenshot, the check of a read pixel against a theme token's color,
- * and the check of a region against the forced-colors canvas. A screenshot shows the painted
- * result after stacking and clipping, which computed styles do not report.
+ * Pixel reads from a browser screenshot, the WCAG contrast of read pixels, the check of a read
+ * pixel against a theme token's color, and the check of a region against the forced-colors
+ * canvas. A screenshot shows the painted result after stacking and clipping, which computed
+ * styles do not report.
  */
 import { expect } from "vitest";
 import { page } from "vitest/browser";
@@ -22,15 +23,81 @@ export type Point = readonly [column: number, row: number];
  * @param element - The element to shoot.
  * @param at - The points to read.
  * @returns Each point's RGBA channels, 0 to 255.
+ * @throws When a point leaves the screenshot.
  */
 export async function pixelsAt(element: Element, at: readonly Point[]): Promise<number[][]> {
+  const image = await screenshotOf(element);
+  return at.map(([x, y]) => {
+    // A fractional point reads the pixel it falls in, as `getImageData` truncates.
+    const column = Math.trunc(x);
+    const row = Math.trunc(y);
+    if (column < 0 || row < 0 || column >= image.width || row >= image.height) {
+      throw new Error(`the point (${String(column)}, ${String(row)}) leaves the screenshot`);
+    }
+    const index = (row * image.width + column) * 4;
+    return [...image.data.subarray(index, index + 4)];
+  });
+}
+
+/**
+ * One screenshot of an element, in CSS pixels. It covers the whole pixels the element's border
+ * box touches, so a box from x = 0.5 to 8.5 gives columns 0 to 8.
+ *
+ * @param element - The element to shoot.
+ * @returns The screenshot's RGBA pixels, row by row.
+ */
+export async function screenshotOf(element: Element): Promise<ImageData> {
   const base64 = await page.screenshot({ element, base64: true, save: false, scale: "css" });
   const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${base64}`)).blob());
   const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
   const context = canvas.getContext("2d");
   if (context === null) throw new Error("expected a 2d context");
   context.drawImage(bitmap, 0, 0);
-  return at.map(([column, row]) => [...context.getImageData(column, row, 1, 1).data]);
+  return context.getImageData(0, 0, bitmap.width, bitmap.height);
+}
+
+/**
+ * The color of one pixel of a screenshot.
+ *
+ * @param shot - A screenshot, as `screenshotOf` returns it.
+ * @param point - The pixel's column and row.
+ * @returns Its RGB channels, 0 to 255.
+ */
+export function rgbAt(shot: ImageData, [column, row]: Point): number[] {
+  const index = (row * shot.width + column) * 4;
+  return [...shot.data.subarray(index, index + 3)];
+}
+
+/**
+ * Finishes the animations that have an end. An infinite animation, such as a skeleton's pulse,
+ * has none, and `finish()` throws on it, so it runs on.
+ */
+function finishFinite(animations: readonly Animation[]): void {
+  for (const animation of animations) {
+    if (Number.isFinite(animation.effect?.getComputedTiming().endTime)) animation.finish();
+  }
+}
+
+/**
+ * Finishes the transitions and animations on the elements and inside them, so a screenshot shows
+ * their end state. An infinite animation runs on.
+ *
+ * @param elements - The elements to finish the animations on and inside.
+ * @param options - With `ancestors`, it first finishes the animations on each element's ancestors
+ * too, such as a popup's entry around a part inside it.
+ */
+export function finishAnimations(
+  elements: readonly Element[],
+  { ancestors = false }: { readonly ancestors?: boolean } = {}
+): void {
+  for (const element of elements) {
+    if (ancestors) {
+      for (let node = element.parentElement; node !== null; node = node.parentElement) {
+        finishFinite(node.getAnimations());
+      }
+    }
+    finishFinite(element.getAnimations({ subtree: true }));
+  }
 }
 
 /**
@@ -109,6 +176,41 @@ export async function differsFromCanvas(
   );
 }
 
+/** An opaque screenshot pixel, RGBA from 0 to 255, as an sRGB color. */
+function pixelColor(pixel: readonly number[]): Srgb.Srgb {
+  const [r = 0, g = 0, b = 0] = pixel;
+  return getOrThrow(Srgb.make({ r: r / 255, g: g / 255, b: b / 255, alpha: 1 }));
+}
+
+/**
+ * The WCAG contrast of two screenshot pixels.
+ *
+ * @param a - A pixel, RGBA from 0 to 255.
+ * @param b - Another pixel, RGBA from 0 to 255.
+ * @returns The ratio, from 1 to 21.
+ */
+export function pixelContrast(a: readonly number[], b: readonly number[]): number {
+  return getOrThrow(Wcag.contrastRatio(pixelColor(a), pixelColor(b)));
+}
+
+/**
+ * The highest WCAG contrast between a pixel of an element's screenshot and a ground pixel, which
+ * for an icon is the contrast of its strokes against what it is drawn on.
+ *
+ * @param element - The element to shoot, such as an icon.
+ * @param ground - The pixel it is drawn on, RGBA from 0 to 255.
+ * @returns The ratio, from 1 to 21.
+ */
+export async function inkContrast(element: Element, ground: readonly number[]): Promise<number> {
+  finishAnimations([element]);
+  const shot = await screenshotOf(element);
+  let highest = 1;
+  for (let index = 0; index < shot.data.length; index += 4) {
+    highest = Math.max(highest, pixelContrast([...shot.data.subarray(index, index + 3)], ground));
+  }
+  return highest;
+}
+
 /**
  * The WCAG contrast between the lightest and the darkest pixel inside the box of an element's
  * text, inset by 1px, in one screenshot of the element. It measures the glyphs against whatever
@@ -132,9 +234,7 @@ export async function glyphInkContrast(element: Element): Promise<number> {
   const points = Array.from({ length: right - left }, (_, column) =>
     Array.from({ length: bottom - top }, (_, row): Point => [left + column, top + row])
   ).flat();
-  const colors = (await pixelsAt(element, points)).map(([r = 0, g = 0, b = 0]) =>
-    getOrThrow(Srgb.make({ r: r / 255, g: g / 255, b: b / 255, alpha: 1 }))
-  );
+  const colors = (await pixelsAt(element, points)).map(pixelColor);
   const byLuminance = colors.toSorted((a, b) => Wcag.relativeLuminance(a) - Wcag.relativeLuminance(b));
   const [darkest] = byLuminance;
   const lightest = byLuminance.at(-1);

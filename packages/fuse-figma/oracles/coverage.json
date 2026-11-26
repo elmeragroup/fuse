@@ -1431,6 +1431,10 @@
       {
         "part": "button",
         "className": "has-data-[icon=inline-start]:pl-(--control-px-button-icon-lg)"
+      },
+      {
+        "part": "button",
+        "className": "data-[armed=true]:forced-highlight"
       }
     ],
     "dialog-content": [
@@ -1811,6 +1815,14 @@
       {
         "part": "toggle",
         "className": "has-data-[icon=inline-end]:pr-(--control-px-icon-lg)"
+      },
+      {
+        "part": "toggle",
+        "className": "aria-pressed:forced-highlight"
+      },
+      {
+        "part": "toggle",
+        "className": "data-pressed:forced-highlight"
       }
     ],
     "input-group": [
@@ -2263,6 +2275,10 @@
       {
         "part": "navigation-menu-link",
         "className": "[&_svg:not([class*='size-'])]:size-4"
+      },
+      {
+        "part": "navigation-menu-link",
+        "className": "data-active:forced-highlight"
       }
     ],
     "navigation-menu-bar-trigger": [
@@ -2351,6 +2367,10 @@
       {
         "part": "navigation-menu-link",
         "className": "hover:**:text-accent-foreground"
+      },
+      {
+        "part": "navigation-menu-link",
+        "className": "data-active:forced-highlight"
       }
     ],
     "navigation-menu-vertical-trigger": [
@@ -2617,6 +2637,10 @@
       {
         "part": "pagination-edge",
         "className": "has-data-[icon=inline-start]:pl-(--control-px-button-icon-xs)"
+      },
+      {
+        "part": "pagination-edge",
+        "className": "aria-[current=page]:forced-highlight"
       }
     ],
     "pagination-link": [
@@ -2771,6 +2795,10 @@
       {
         "part": "pagination-link",
         "className": "has-data-[icon=inline-start]:pl-(--control-px-button-icon-xs)"
+      },
+      {
+        "part": "pagination-link",
+        "className": "aria-[current=page]:forced-highlight"
       }
     ],
     "pagination-row": [
@@ -2903,6 +2931,10 @@
       {
         "part": "radio-icon-button",
         "className": "enabled-active:scale-[0.96]"
+      },
+      {
+        "part": "radio-icon-button",
+        "className": "data-checked:forced-highlight"
       }
     ],
     "select-field": [
@@ -3019,6 +3051,34 @@
       {
         "part": "sidebar-menu-badge",
         "className": "peer-data-[size=lg]/menu-button:[--menu-row-mid:clamp(var(--menu-action-size)/2,--spacing(5),var(--menu-row-h)-var(--menu-action-size)/2)]"
+      },
+      {
+        "part": "sidebar-menu-badge",
+        "className": "forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:text-[HighlightText]!"
+      },
+      {
+        "part": "sidebar-menu-badge",
+        "className": "forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:**:text-[HighlightText]!"
+      },
+      {
+        "part": "sidebar-menu-badge",
+        "className": "forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:**:border-[HighlightText]!"
+      },
+      {
+        "part": "sidebar-menu-badge",
+        "className": "forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:**:[box-shadow:none]!"
+      },
+      {
+        "part": "sidebar-menu-badge",
+        "className": "forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:**:not-[[class*=mark-fill-]]:bg-transparent!"
+      },
+      {
+        "part": "sidebar-menu-badge",
+        "className": "forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:forced-color-adjust-none"
+      },
+      {
+        "part": "sidebar-menu-badge",
+        "className": "forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:[--mark-fill-forced:HighlightText]"
       }
     ],
     "sidebar-menu-button": [
@@ -3081,6 +3141,34 @@
       {
         "part": "sidebar-menu-button",
         "className": "group-has-data-[slot=sidebar-menu-action]/menu-item:pr-[calc(var(--menu-action-size)+(--spacing(2)))]"
+      },
+      {
+        "part": "sidebar-menu-button",
+        "className": "data-active:not-disabled-state:forced-highlight"
+      },
+      {
+        "part": "sidebar-menu-button",
+        "className": "forced-colors:data-active:disabled-state:relative"
+      },
+      {
+        "part": "sidebar-menu-button",
+        "className": "forced-colors:data-active:disabled-state:after:absolute"
+      },
+      {
+        "part": "sidebar-menu-button",
+        "className": "forced-colors:data-active:disabled-state:after:inset-0"
+      },
+      {
+        "part": "sidebar-menu-button",
+        "className": "forced-colors:data-active:disabled-state:after:rounded-[inherit]"
+      },
+      {
+        "part": "sidebar-menu-button",
+        "className": "forced-colors:data-active:disabled-state:after:border-2"
+      },
+      {
+        "part": "sidebar-menu-button",
+        "className": "forced-colors:data-active:disabled-state:after:border-[Highlight]"
       }
     ],
     "sidebar-menu-sub-button": [
@@ -3143,6 +3231,10 @@
       {
         "part": "sidebar-menu-sub-button",
         "className": "aria-invalid:focus-visible:ring-offset-error"
+      },
+      {
+        "part": "sidebar-menu-sub-button",
+        "className": "data-active:forced-highlight"
       }
     ],
     "sidebar-menu-sub": [
@@ -3823,6 +3915,14 @@
       {
         "part": "toggle",
         "className": "group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-t"
+      },
+      {
+        "part": "toggle",
+        "className": "aria-pressed:forced-highlight"
+      },
+      {
+        "part": "toggle",
+        "className": "data-pressed:forced-highlight"
       }
     ],
     "tooltip-content": [
@@ -4567,6 +4667,10 @@
       {
         "part": "tabs-trigger",
         "className": "has-data-[icon=inline-start]:pl-(--control-px-icon-md)"
+      },
+      {
+        "part": "tabs-trigger",
+        "className": "group-data-[variant=default]/tabs-list:data-active:forced-highlight"
       }
     ],
     "tabs-list": [
@@ -4804,6 +4908,112 @@
       {
         "part": "table-row",
         "className": "framed-table:data-[state=selected]:bg-transparent"
+      },
+      {
+        "part": "table-row",
+        "className": "forced-colors:data-[state=selected]:relative"
+      },
+      {
+        "part": "table-row",
+        "className": "forced-colors:data-[state=selected]:after:pointer-events-none"
+      },
+      {
+        "part": "table-row",
+        "className": "forced-colors:data-[state=selected]:after:absolute"
+      },
+      {
+        "part": "table-row",
+        "className": "forced-colors:data-[state=selected]:after:inset-0"
+      },
+      {
+        "part": "table-row",
+        "className": "forced-colors:data-[state=selected]:after:border-2"
+      },
+      {
+        "part": "table-row",
+        "className": "forced-colors:data-[state=selected]:after:border-[Highlight]"
+      },
+      {
+        "part": "table-row",
+        "className": "forced-colors:focus-visible:relative"
+      },
+      {
+        "part": "table-row",
+        "className": "forced-colors:focus-visible:after:pointer-events-none"
+      },
+      {
+        "part": "table-row",
+        "className": "forced-colors:focus-visible:after:absolute"
+      },
+      {
+        "part": "table-row",
+        "className": "forced-colors:focus-visible:after:inset-0"
+      },
+      {
+        "part": "table-row",
+        "className": "forced-colors:focus-visible:after:outline-2"
+      },
+      {
+        "part": "table-row",
+        "className": "forced-colors:focus-visible:after:-outline-offset-6"
+      },
+      {
+        "part": "table-row",
+        "className": "forced-colors:focus-visible:after:outline-[CanvasText]"
+      }
+    ],
+    "frame-table-row": [
+      {
+        "part": "frame-table-row",
+        "className": "forced-colors:data-[state=selected]:relative"
+      },
+      {
+        "part": "frame-table-row",
+        "className": "forced-colors:data-[state=selected]:after:pointer-events-none"
+      },
+      {
+        "part": "frame-table-row",
+        "className": "forced-colors:data-[state=selected]:after:absolute"
+      },
+      {
+        "part": "frame-table-row",
+        "className": "forced-colors:data-[state=selected]:after:inset-0"
+      },
+      {
+        "part": "frame-table-row",
+        "className": "forced-colors:data-[state=selected]:after:border-2"
+      },
+      {
+        "part": "frame-table-row",
+        "className": "forced-colors:data-[state=selected]:after:border-[Highlight]"
+      },
+      {
+        "part": "frame-table-row",
+        "className": "forced-colors:focus-visible:relative"
+      },
+      {
+        "part": "frame-table-row",
+        "className": "forced-colors:focus-visible:after:pointer-events-none"
+      },
+      {
+        "part": "frame-table-row",
+        "className": "forced-colors:focus-visible:after:absolute"
+      },
+      {
+        "part": "frame-table-row",
+        "className": "forced-colors:focus-visible:after:inset-0"
+      },
+      {
+        "part": "frame-table-row",
+        "className": "forced-colors:focus-visible:after:outline-2"
+      },
+      {
+        "part": "frame-table-row",
+        "className": "forced-colors:focus-visible:after:-outline-offset-6"
+      },
+      {
+        "part": "frame-table-row",
+        "className": "forced-colors:focus-visible:after:outline-[CanvasText]"
       }
     ],
     "table-caption": [
@@ -5070,10 +5280,6 @@
     ],
     "tour-step": [
       {
-        "part": "dot-2",
-        "className": "data-current:bg-primary"
-      },
-      {
         "part": "tour-popup",
         "className": "focus-visible:ring-2"
       },
@@ -5084,6 +5290,18 @@
       {
         "part": "tour-popup",
         "className": "focus-visible:outline-hidden"
+      },
+      {
+        "part": "dot-2",
+        "className": "data-current:mark-fill-primary"
+      },
+      {
+        "part": "dot-1",
+        "className": "data-current:forced-highlight"
+      },
+      {
+        "part": "dot-2",
+        "className": "data-current:forced-highlight"
       }
     ],
     "toast": [

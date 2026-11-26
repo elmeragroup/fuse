@@ -16,18 +16,16 @@ import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
-import * as Srgb from "@elmeragroup/color/srgb";
-
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
 import { MonthsWithDay } from "../../../test/calendar-fixtures";
 import { expectRenderTypeError } from "../../../test/caught-error";
+import { expectFocusInsideFill } from "../../../test/forced-highlight";
 import { withLocale } from "../../../test/locale-matrix";
 import { faceOf, systemFace, withForcedColors } from "../../../test/media-emulation";
-import { glyphInkContrast, pixelsAt } from "../../../test/screenshot-pixels";
-import type { Point } from "../../../test/screenshot-pixels";
-import { restoreDocumentThemeAroundEach, toSrgb } from "../../../test/surface-paint";
+import { glyphInkContrast } from "../../../test/screenshot-pixels";
+import { restoreDocumentThemeAroundEach } from "../../../test/surface-paint";
 import {
   computedContrast,
   cssVarColor,
@@ -848,46 +846,8 @@ describe("Calendar selected day face", () => {
           color: highlight.text,
         });
         expect(style.boxShadow, "no theme-colored ring").toBe("none");
-        // The day is a circle. Along the lines through its center, the 2px stroke starts 2px in
-        // from each edge, with fill on both sides of it: 1px in, 3px in and 5px in. In the light
-        // palette HighlightText and Canvas are both white, so a stroke drawn outside the fill
-        // would not show. The palette's Highlight is translucent, so the fill shows it over Canvas.
-        const fill = Srgb.compositeOver(
-          toSrgb(highlight.background),
-          toSrgb(systemFace("Canvas").background)
-        );
-        const stroke = toSrgb(highlight.text);
-        /** Which of the two colors a pixel shows, within one 8-bit step per channel. */
-        const paintOf = (pixel: readonly number[]): string => {
-          const near = (color: Srgb.Srgb) =>
-            [color.r, color.g, color.b].every(
-              (channel, index) => Math.abs(channel * 255 - (pixel[index] ?? 0)) <= 1
-            );
-          if (near(fill)) return "fill";
-          if (near(stroke)) return "stroke";
-          return `rgb(${pixel.slice(0, 3).join(", ")})`;
-        };
-        const { width, height } = day.getBoundingClientRect();
-        const across = Math.floor(width / 2);
-        const down = Math.floor(height / 2);
-        const right = Math.ceil(width) - 1;
-        const bottom = Math.ceil(height) - 1;
-        const insets = [1, 3, 5];
-        const sides = [
-          { side: "left", at: insets.map((inset): Point => [inset, down]) },
-          { side: "right", at: insets.map((inset): Point => [right - inset, down]) },
-          { side: "top", at: insets.map((inset): Point => [across, inset]) },
-          { side: "bottom", at: insets.map((inset): Point => [across, bottom - inset]) },
-        ];
-        const pixels = await pixelsAt(
-          day,
-          sides.flatMap(({ at }) => at)
-        );
-        const read = sides.map(({ side }) => ({
-          side,
-          paint: pixels.splice(0, insets.length).map(paintOf),
-        }));
-        expect(read).toEqual(sides.map(({ side }) => ({ side, paint: ["fill", "stroke", "fill"] })));
+        // The day is a circle, and the helper reads along the lines through its center.
+        await expectFocusInsideFill(day, "focused selected day");
       },
       { colorScheme: "light" }
     );

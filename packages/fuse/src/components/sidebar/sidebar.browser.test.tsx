@@ -1,41 +1,56 @@
-import { StrictMode, startTransition, useLayoutEffect, useState } from "react";
+import { StrictMode, useLayoutEffect } from "react";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import "../../../dist/themes.css";
 import { expectActivationCanceled, resetHashAroundEach } from "../../../test/aria-disabled-activation";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
-import { withLocale } from "../../../test/locale-matrix";
-import { emulateReducedMotion } from "../../../test/reduced-motion";
 import {
+  expectFocusInsideFill,
+  expectStateFill,
+  expectTextOnFill,
+  focusByKeyboard,
+} from "../../../test/forced-highlight";
+import { withLocale } from "../../../test/locale-matrix";
+import { withForcedColors } from "../../../test/media-emulation";
+import { emulateReducedMotion } from "../../../test/reduced-motion";
+import { inkContrast, pixelContrast, pixelsAt, screenshotOf } from "../../../test/screenshot-pixels";
+import {
+  AvatarRows,
   ContextProbe,
   Frame,
   MOBILE,
+  MobileQueue,
   OrdersLink,
+  QueueControls,
+  ROW_STATES,
+  StateRowEnds,
+  StateRows,
+  actionOutlinePixels,
+  avatarAndRow,
   bySlot,
   captureCookieWrites,
+  menuItem,
+  pressB,
   railNamed,
+  rowFill,
   setupSidebarBrowser,
   sidebarRoot,
+  stateRow,
+  stubPlatform,
+  withoutShellMotion,
 } from "../../../test/sidebar-browser-fixtures";
 import { DESCRIPTION_COPY, TITLE_COPY, TOGGLE_COPY } from "../../../test/sidebar-contract";
 import { px, renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
+import { Badge } from "../badge/badge";
 import { Tooltip } from "../tooltip";
 import { Sidebar } from "./index";
 import { useSidebar } from "./sidebar";
 import type { SidebarContextValue, SidebarProviderProps } from "./sidebar";
 
 setupSidebarBrowser();
-
-/**
- * Pins `navigator.platform`, which picks the shortcut's modifier, so a suite reads the same on a
- * macOS workstation and a Linux CI runner. The own property shadows the prototype getter and is
- * deleted after each test.
- */
-function stubPlatform(platform: "MacIntel" | "Win32"): void {
-  Object.defineProperty(navigator, "platform", { value: platform, configurable: true });
-}
 
 beforeEach(() => {
   stubPlatform("MacIntel");
@@ -45,30 +60,6 @@ afterEach(() => {
   // SAFETY: deleting the own property restores the prototype getter that stubPlatform shadowed.
   Reflect.deleteProperty(navigator, "platform");
 });
-
-/** Dispatches a B keydown and waits two frames, so a toggle it causes has committed. */
-async function pressB(
-  init: KeyboardEventInit,
-  target: EventTarget = window,
-  before?: (event: KeyboardEvent) => void
-): Promise<KeyboardEvent> {
-  const event = new KeyboardEvent("keydown", { key: "b", bubbles: true, cancelable: true, ...init });
-  before?.(event);
-  target.dispatchEvent(event);
-  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-  return event;
-}
-
-/**
- * For suites whose contract is state, not motion: with the shell's width tween off, the
- * Trigger in the Inset stops moving as soon as the rail toggles, so a click needs no wait for
- * it to settle. The fixture's afterEach releases the emulation.
- */
-function withoutShellMotion(): void {
-  beforeEach(async () => {
-    await emulateReducedMotion("reduce");
-  });
-}
 
 describe("Sidebar toggle paths", () => {
   it("toggles data-state from ⌘B on Apple platforms and prevents the browser default", async () => {
@@ -630,6 +621,272 @@ describe("Sidebar.MenuButton", () => {
   });
 });
 
+describe("Sidebar active rows in forced-colors mode", () => {
+  it.each(["button", "sub"] as const)("fills the active %s row, apart from an inactive one", async (kind) => {
+    await withForcedColors("active", async () => {
+      renderThemed(
+        <Frame>
+          <StateRows />
+        </Frame>
+      );
+      await expectStateFill(stateRow("active", kind), stateRow("inactive", kind), "active row");
+    });
+  });
+
+  it.each(["button", "sub"] as const)(
+    "keeps the active %s row's fill under keyboard focus and outlines the focused row inside its fill",
+    async (kind) => {
+      await withForcedColors("active", async () => {
+        renderThemed(
+          <Frame>
+            <StateRows />
+          </Frame>
+        );
+        const active = stateRow("active", kind);
+        await focusByKeyboard(active);
+        await expectFocusInsideFill(active, "focused active row");
+        await expectStateFill(active, stateRow("inactive", kind), "focused active row");
+      });
+    }
+  );
+
+  it("shows the active row's fill through an Avatar inside it", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(
+        <Frame>
+          <AvatarRows />
+        </Frame>
+      );
+      const [avatar, fill] = await avatarAndRow("active");
+      const [, rest] = await avatarAndRow("inactive");
+      // The avatar's own light background would cover the fill, under initials in HighlightText.
+      expect(fill).not.toEqual(rest);
+      expect(avatar).toEqual(fill);
+    });
+  });
+});
+
+describe("Sidebar row ends on an active row in forced-colors mode", () => {
+  // Oracle: WCAG 1.4.11's 3:1 for a graphic and a focus indicator against the color beside it.
+  it.each([
+    ["an inherited", false],
+    ["its own", true],
+  ])(
+    "draws the action's icon in %s color at 3:1 against an active row's fill, as against an inactive row's",
+    async (_color, styled) => {
+      await withForcedColors("active", async () => {
+        renderThemed(
+          <Frame>
+            <StateRowEnds styled={styled} />
+          </Frame>
+        );
+        for (const state of ROW_STATES) {
+          const icon = bySlot("sidebar-menu-action", menuItem(`${state}-icon`)).querySelector("svg");
+          if (icon === null) throw new Error("expected the icon");
+          expect(
+            await inkContrast(icon, await rowFill(menuItem(`${state}-icon`))),
+            `${state} row`
+          ).toBeGreaterThanOrEqual(3);
+        }
+      });
+    }
+  );
+
+  it.each([
+    ["light", "plain", false],
+    ["light", "styled", true],
+    ["dark", "plain", false],
+    ["dark", "styled", true],
+  ] as const)(
+    "draws a text-only action and a badge's count on an active row's fill in the %s forced palette, as %s text",
+    async (colorScheme, _text, styled) => {
+      await withForcedColors(
+        "active",
+        async () => {
+          renderThemed(
+            <Frame>
+              <StateRowEnds styled={styled} />
+            </Frame>
+          );
+          const fill = await rowFill(menuItem("active-text"));
+          await expectTextOnFill(
+            bySlot("sidebar-menu-action", menuItem("active-text")),
+            fill,
+            "text-only action"
+          );
+          await expectTextOnFill(bySlot("sidebar-menu-badge", menuItem("active-badge")), fill, "badge");
+        },
+        { colorScheme }
+      );
+    }
+  );
+
+  // Oracle: WCAG 1.4.3's 4.5:1 for the count against the row's fill. The invisible text paints
+  // nothing, so only the count is text that must read.
+  it("reads a badge's count on an active row's fill beside an invisible mark", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(
+        <Frame>
+          <Sidebar.MenuItem data-testid="labeled-badge">
+            <Sidebar.MenuButton isActive>Inbox</Sidebar.MenuButton>
+            <Sidebar.MenuBadge>
+              24<span className="invisible"> overdue</span>
+            </Sidebar.MenuBadge>
+          </Sidebar.MenuItem>
+        </Frame>
+      );
+      const entry = menuItem("labeled-badge");
+      await expectTextOnFill(bySlot("sidebar-menu-badge", entry), await rowFill(entry), "badge");
+    });
+  });
+
+  // Oracle: WCAG 1.4.11's 3:1 for a graphic against the color beside it, here an unread dot drawn
+  // only by its mark-fill background on the row's fill.
+  it.each(["light", "dark"] as const)(
+    "draws a mark-fill dot in a row end at 3:1 against an active row's fill in the %s forced palette",
+    async (colorScheme) => {
+      await withForcedColors(
+        "active",
+        async () => {
+          renderThemed(
+            <Frame>
+              <Sidebar.MenuItem data-testid="dot-badge">
+                <Sidebar.MenuButton isActive>Inbox</Sidebar.MenuButton>
+                <Sidebar.MenuBadge>
+                  <span data-testid="dot-badge-dot" className="size-2 rounded-full mark-fill-primary" />
+                </Sidebar.MenuBadge>
+              </Sidebar.MenuItem>
+              <Sidebar.MenuItem data-testid="dot-action">
+                <Sidebar.MenuButton isActive>Inbox</Sidebar.MenuButton>
+                <Sidebar.MenuAction aria-label="Unread">
+                  <span data-testid="dot-action-dot" className="size-2 rounded-full mark-fill-primary" />
+                </Sidebar.MenuAction>
+              </Sidebar.MenuItem>
+            </Frame>
+          );
+          for (const id of ["dot-badge", "dot-action"]) {
+            expect(
+              await inkContrast(menuItem(`${id}-dot`), await rowFill(menuItem(id))),
+              id
+            ).toBeGreaterThanOrEqual(3);
+          }
+        },
+        { colorScheme }
+      );
+    }
+  );
+
+  // Oracle: WCAG 1.4.3's 4.5:1 for the count against the row's fill. The secondary Badge paints
+  // its own light background, which would sit under a count drawn in HighlightText.
+  it.each(["light", "dark"] as const)(
+    "shows the active row's fill through a secondary Badge in a row end in the %s forced palette",
+    async (colorScheme) => {
+      await withForcedColors(
+        "active",
+        async () => {
+          renderThemed(
+            <Frame>
+              <Sidebar.MenuItem data-testid="filled-badge">
+                <Sidebar.MenuButton isActive>Inbox</Sidebar.MenuButton>
+                <Sidebar.MenuBadge>
+                  <Badge variant="secondary">24</Badge>
+                </Sidebar.MenuBadge>
+              </Sidebar.MenuItem>
+              <Sidebar.MenuItem data-testid="filled-action">
+                <Sidebar.MenuButton isActive>Inbox</Sidebar.MenuButton>
+                <Sidebar.MenuAction aria-label="More">
+                  <Badge variant="secondary">3</Badge>
+                </Sidebar.MenuAction>
+              </Sidebar.MenuItem>
+            </Frame>
+          );
+          for (const [id, slot] of [
+            ["filled-badge", "sidebar-menu-badge"],
+            ["filled-action", "sidebar-menu-action"],
+          ] as const) {
+            await expectTextOnFill(bySlot(slot, menuItem(id)), await rowFill(menuItem(id)), id);
+          }
+        },
+        { colorScheme }
+      );
+    }
+  );
+
+  // Oracle: a disabled inactive row, whose ends draw in the usual forced colors and whose edge
+  // has no frame.
+  it.each(["light", "dark"] as const)(
+    "frames a disabled active row and draws its ends as a disabled inactive row's in the %s forced palette",
+    async (colorScheme) => {
+      await withForcedColors(
+        "active",
+        async () => {
+          renderThemed(
+            <Frame>
+              <StateRowEnds styled disabled />
+            </Frame>
+          );
+          for (const [end, slot] of [
+            ["icon", "sidebar-menu-action"],
+            ["text", "sidebar-menu-action"],
+            ["badge", "sidebar-menu-badge"],
+          ] as const) {
+            const [active, inactive] = await Promise.all(
+              ROW_STATES.map(async (state) => screenshotOf(bySlot(slot, menuItem(`${state}-${end}`))))
+            );
+            expect(active?.data, `${end} end`).toEqual(inactive?.data);
+          }
+          // 1px in from the row's start, on the frame a disabled active row draws in place of the fill.
+          const [frame, edge] = await Promise.all(
+            ROW_STATES.map(async (state) => {
+              const button = bySlot("sidebar-menu-button", menuItem(`${state}-icon`));
+              const [pixel] = await pixelsAt(button, [[1, button.getBoundingClientRect().height / 2]]);
+              return pixel ?? [];
+            })
+          );
+          expect(frame, "frame against a disabled inactive row's edge").not.toEqual(edge);
+        },
+        { colorScheme }
+      );
+    }
+  );
+
+  it("keeps the active row's fill behind a hovered action", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(
+        <Frame>
+          <StateRowEnds />
+        </Frame>
+      );
+      const action = bySlot("sidebar-menu-action", menuItem("active-icon"));
+      await userEvent.hover(action);
+      // 4px in from the action's start, beside its icon, where a hover fill would paint.
+      const [ground] = await pixelsAt(action, [[4, action.getBoundingClientRect().height / 2]]);
+      expect(ground).toEqual(await rowFill(menuItem("active-icon")));
+    });
+  });
+
+  it("draws the action's focus outline at 3:1 against a small active row's fill, inside the action and with no ring", async () => {
+    await withForcedColors("active", async () => {
+      // A small row leaves 2px above and below the action, the least of any size.
+      renderThemed(
+        <Frame>
+          <StateRowEnds size="sm" />
+        </Frame>
+      );
+      const active = menuItem("active-icon");
+      const fill = await rowFill(active);
+      const action = bySlot("sidebar-menu-action", active);
+      await focusByKeyboard(action);
+      const { ring, outline } = await actionOutlinePixels(action);
+      for (const [side, pixel] of outline.entries()) {
+        expect(pixelContrast(pixel, fill), `outline, side ${String(side)}`).toBeGreaterThanOrEqual(3);
+      }
+      // The author focus ring, a box-shadow, would paint flush around the action in its theme color.
+      expect(ring, "1px out of the action").toEqual(fill);
+    });
+  });
+});
+
 // Rows announced `aria-disabled="true"`: they keep pointer events so a Tooltip opens, and cancel
 // their own activation.
 describe("aria-disabled rows", () => {
@@ -761,36 +1018,6 @@ describe("aria-disabled rows", () => {
 });
 
 describe("state", () => {
-  function OpenStatus() {
-    const sidebar = useSidebar();
-    return <output aria-label="Open state">{String(sidebar.open)}</output>;
-  }
-
-  function QueueControls() {
-    const { setOpen } = useSidebar();
-    return (
-      <>
-        <button
-          type="button"
-          onClick={() => {
-            setOpen((open) => !open);
-            setOpen((open) => !open);
-          }}>
-          Invert twice
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setOpen(false);
-            setOpen((open) => !open);
-          }}>
-          Set then invert
-        </button>
-        <OpenStatus />
-      </>
-    );
-  }
-
   describe("Sidebar committed state and update queue", () => {
     it("composes controlled notifications once and starts the next event from a rejected prop", async () => {
       const onChange = vi.fn<(open: boolean) => void>();
@@ -813,27 +1040,6 @@ describe("state", () => {
     });
 
     it("queues uncontrolled openMobile updaters across transitions as React's setter does", async () => {
-      function MobileQueue() {
-        const { openMobile, setOpenMobile } = useSidebar();
-        const [settled, setSettled] = useState(false);
-        return (
-          <>
-            <button
-              type="button"
-              onClick={async () => {
-                startTransition(() => setOpenMobile((open) => !open));
-                await Promise.resolve();
-                startTransition(() => {
-                  setOpenMobile((open) => !open);
-                  setSettled(true);
-                });
-              }}>
-              Invert in two transitions
-            </button>
-            <output aria-label="Mobile open state">{settled ? String(openMobile) : "pending"}</output>
-          </>
-        );
-      }
       renderThemed(
         withLocale(
           "en-US",
