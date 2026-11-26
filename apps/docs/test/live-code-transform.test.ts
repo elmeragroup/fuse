@@ -1,11 +1,11 @@
 import { createElement } from "react";
 import type { ComponentType } from "react";
 
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { Button } from "@elmeragroup/fuse/button";
 import { Select } from "@elmeragroup/fuse/select";
@@ -42,9 +42,21 @@ const DEMO = [
   "}",
 ].join("\n");
 
-/** The modules a test loads, written beside this file so Vitest compiles their TSX. */
-const directory = mkdtempSync(join(import.meta.dirname, ".live-code-"));
-afterAll(() => rmSync(directory, { recursive: true, force: true }));
+/**
+ * The modules a test loads. Vitest compiles their TSX, and they resolve Fuse and React from the
+ * docs app's node_modules, which a module in the OS temp dir cannot reach. So they go in the app's
+ * `.cache`, which git and both lint passes ignore. A hook makes the folder, so a `-t` filter that
+ * skips every test here leaves none behind. The hook returns its teardown, which Vitest runs after
+ * the tests, only once the folder exists.
+ */
+let directory: string;
+beforeAll(() => {
+  const cache = join(import.meta.dirname, "../.cache");
+  mkdirSync(cache, { recursive: true });
+  const created = mkdtempSync(join(cache, "live-code-"));
+  directory = created;
+  return () => rmSync(created, { recursive: true, force: true });
+});
 
 type DemoModule = {
   readonly bindings: { readonly Button: unknown; readonly Picker: typeof Select };

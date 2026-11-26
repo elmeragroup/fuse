@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { afterAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 // Unit under test: the import graph of the notify step's process, which holds the Slack token.
 // Oracle: the fixed list of the Markdown parser's packages (micromark and its mdast utilities),
@@ -19,9 +19,11 @@ const PARSER_PACKAGES = /^(?:micromark|mdast-util-)/u;
 /** What the hook records of one resolution. */
 const Resolution = Schema.fromJsonString(Schema.Struct({ specifier: Schema.String, url: Schema.String }));
 
-const dir = mkdtempSync(join(tmpdir(), "release-announcement-imports-"));
-afterAll(() => {
-  rmSync(dir, { recursive: true, force: true });
+let dir: string;
+beforeAll(() => {
+  const created = mkdtempSync(join(tmpdir(), "release-announcement-imports-"));
+  dir = created;
+  return () => rmSync(created, { recursive: true, force: true });
 });
 
 /**

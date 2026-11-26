@@ -842,6 +842,7 @@ export default defineConfig({
     {
       files: ["**/*.test.{ts,tsx,mts,mjs}"],
       rules: {
+        "fuse/no-temp-dir-at-collection": "error",
         "tests/no-class-assertions": "error",
         "tests/no-fixed-delay": NO_FIXED_DELAY,
         "tests/no-geometry-assertions": "error",
