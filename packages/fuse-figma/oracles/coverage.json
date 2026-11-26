@@ -3165,6 +3165,10 @@
     ],
     "timeline-list": [
       {
+        "part": "svg",
+        "className": "forced-colors:text-[Canvas]"
+      },
+      {
         "part": "timeline-list-connector",
         "className": "timeline-list-horizontal-rail:h-px"
       },
@@ -3178,7 +3182,7 @@
       },
       {
         "part": "timeline-list-content",
-        "className": "timeline-list-alternate-cell:@max-[32rem]/timeline-list:[[data-slot=timeline-list-opposite]~&]:pbs-0"
+        "className": "timeline-list-alternate-cell:@max-[32rem]/timeline-list:[[data-timeline-list-part=opposite]:not(:empty,[hidden])~&]:pbs-0"
       },
       {
         "part": "timeline-list-content",
@@ -3214,27 +3218,27 @@
       },
       {
         "part": "timeline-list-indicator",
-        "className": "timeline-list-horizontal-rail:h-(--timeline-mark)"
+        "className": "timeline-list-horizontal-cell:[grid-area:rail/1]"
       },
       {
         "part": "timeline-list-indicator",
-        "className": "timeline-list-horizontal-rail:mbe-0"
+        "className": "timeline-list-horizontal-cell:flex-row"
       },
       {
         "part": "timeline-list-indicator",
-        "className": "timeline-list-horizontal-rail:mbs-0"
+        "className": "timeline-list-horizontal-cell:h-(--timeline-mark)"
       },
       {
         "part": "timeline-list-indicator",
-        "className": "timeline-list-horizontal-rail:me-(--timeline-gap)"
+        "className": "timeline-list-horizontal-cell:w-auto"
       },
       {
         "part": "timeline-list-indicator",
-        "className": "timeline-list-horizontal-rail:ms-(--timeline-inset)"
+        "className": "timeline-list-markless:[--timeline-reach:0px]"
       },
       {
         "part": "timeline-list-indicator",
-        "className": "timeline-list-horizontal-rail:w-(--timeline-drawn)"
+        "className": "timeline-list-placed:[grid-area:rail]"
       },
       {
         "part": "timeline-list-item",
@@ -3254,7 +3258,7 @@
       },
       {
         "part": "timeline-list-item",
-        "className": "timeline-list-alternate:@min-[32rem]/timeline-list:even:[grid-template-areas:'content_rail_opposite']"
+        "className": "timeline-list-alternate:@min-[32rem]/timeline-list:timeline-list-even-item:[grid-template-areas:'content_rail_opposite']"
       },
       {
         "part": "timeline-list-item",
@@ -3266,11 +3270,7 @@
       },
       {
         "part": "timeline-list-item",
-        "className": "timeline-list-horizontal:[--timeline-inset:var(--timeline-gap)]"
-      },
-      {
-        "part": "timeline-list-item",
-        "className": "timeline-list-horizontal:first:[--timeline-inset:0px]"
+        "className": "timeline-list-horizontal:[--timeline-inset:calc(var(--timeline-gap)*var(--timeline-has-previous))]"
       },
       {
         "part": "timeline-list-item",
@@ -3309,28 +3309,96 @@
         "className": "timeline-list-opposite:grid-cols-[7rem_var(--timeline-mark)_minmax(0,1fr)]"
       },
       {
-        "part": "timeline-list-rail",
-        "className": "timeline-list-horizontal-cell:[grid-area:rail/1]"
+        "part": "timeline-list-lane",
+        "className": "empty:hidden"
       },
       {
-        "part": "timeline-list-rail",
-        "className": "timeline-list-horizontal-cell:flex-row"
+        "part": "timeline-list-lane",
+        "className": "timeline-list-horizontal-rail:h-(--timeline-mark)"
       },
       {
-        "part": "timeline-list-rail",
-        "className": "timeline-list-horizontal-cell:h-(--timeline-mark)"
+        "part": "timeline-list-lane",
+        "className": "timeline-list-horizontal-rail:mbe-0"
       },
       {
-        "part": "timeline-list-rail",
-        "className": "timeline-list-horizontal-cell:w-auto"
+        "part": "timeline-list-lane",
+        "className": "timeline-list-horizontal-rail:mbs-0"
       },
       {
-        "part": "timeline-list-rail",
-        "className": "timeline-list-placed:[grid-area:rail]"
+        "part": "timeline-list-lane",
+        "className": "timeline-list-horizontal-rail:me-(--timeline-gap)"
+      },
+      {
+        "part": "timeline-list-lane",
+        "className": "timeline-list-horizontal-rail:ms-(--timeline-inset)"
+      },
+      {
+        "part": "timeline-list-lane",
+        "className": "timeline-list-horizontal-rail:w-(--timeline-drawn)"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-complete:[&>[data-glyph=check]]:[display:var(--timeline-glyph)]"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-complete:mark-fill-primary"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-complete:text-primary-foreground"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-current:[&>[data-glyph=halo]]:block"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-current:border-(length:--timeline-halo)"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-current:border-primary"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-error:[&>[data-glyph=cross]]:[display:var(--timeline-glyph)]"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-error:[rotate:var(--timeline-error-rotate)]"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-error:mark-fill-error"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-error:rounded-(--timeline-error-radius)"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-error:size-(--timeline-error-size)"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-error:text-error-foreground"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-upcoming:border-(length:--timeline-halo)"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-upcoming:border-muted-foreground"
       }
     ],
     "timeline-list-links": [
       {
+        "part": "svg",
+        "className": "forced-colors:text-[Canvas]"
+      },
+      {
         "part": "timeline-list-connector",
         "className": "timeline-list-horizontal-rail:h-px"
       },
@@ -3344,7 +3412,7 @@
       },
       {
         "part": "timeline-list-content",
-        "className": "timeline-list-alternate-cell:@max-[32rem]/timeline-list:[[data-slot=timeline-list-opposite]~&]:pbs-0"
+        "className": "timeline-list-alternate-cell:@max-[32rem]/timeline-list:[[data-timeline-list-part=opposite]:not(:empty,[hidden])~&]:pbs-0"
       },
       {
         "part": "timeline-list-content",
@@ -3380,27 +3448,27 @@
       },
       {
         "part": "timeline-list-indicator",
-        "className": "timeline-list-horizontal-rail:h-(--timeline-mark)"
+        "className": "timeline-list-horizontal-cell:[grid-area:rail/1]"
       },
       {
         "part": "timeline-list-indicator",
-        "className": "timeline-list-horizontal-rail:mbe-0"
+        "className": "timeline-list-horizontal-cell:flex-row"
       },
       {
         "part": "timeline-list-indicator",
-        "className": "timeline-list-horizontal-rail:mbs-0"
+        "className": "timeline-list-horizontal-cell:h-(--timeline-mark)"
       },
       {
         "part": "timeline-list-indicator",
-        "className": "timeline-list-horizontal-rail:me-(--timeline-gap)"
+        "className": "timeline-list-horizontal-cell:w-auto"
       },
       {
         "part": "timeline-list-indicator",
-        "className": "timeline-list-horizontal-rail:ms-(--timeline-inset)"
+        "className": "timeline-list-markless:[--timeline-reach:0px]"
       },
       {
         "part": "timeline-list-indicator",
-        "className": "timeline-list-horizontal-rail:w-(--timeline-drawn)"
+        "className": "timeline-list-placed:[grid-area:rail]"
       },
       {
         "part": "timeline-list-item",
@@ -3420,7 +3488,7 @@
       },
       {
         "part": "timeline-list-item",
-        "className": "timeline-list-alternate:@min-[32rem]/timeline-list:even:[grid-template-areas:'content_rail_opposite']"
+        "className": "timeline-list-alternate:@min-[32rem]/timeline-list:timeline-list-even-item:[grid-template-areas:'content_rail_opposite']"
       },
       {
         "part": "timeline-list-item",
@@ -3432,11 +3500,7 @@
       },
       {
         "part": "timeline-list-item",
-        "className": "timeline-list-horizontal:[--timeline-inset:var(--timeline-gap)]"
-      },
-      {
-        "part": "timeline-list-item",
-        "className": "timeline-list-horizontal:first:[--timeline-inset:0px]"
+        "className": "timeline-list-horizontal:[--timeline-inset:calc(var(--timeline-gap)*var(--timeline-has-previous))]"
       },
       {
         "part": "timeline-list-item",
@@ -3475,24 +3539,88 @@
         "className": "timeline-list-opposite:grid-cols-[7rem_var(--timeline-mark)_minmax(0,1fr)]"
       },
       {
-        "part": "timeline-list-rail",
-        "className": "timeline-list-horizontal-cell:[grid-area:rail/1]"
+        "part": "timeline-list-lane",
+        "className": "empty:hidden"
       },
       {
-        "part": "timeline-list-rail",
-        "className": "timeline-list-horizontal-cell:flex-row"
+        "part": "timeline-list-lane",
+        "className": "timeline-list-horizontal-rail:h-(--timeline-mark)"
       },
       {
-        "part": "timeline-list-rail",
-        "className": "timeline-list-horizontal-cell:h-(--timeline-mark)"
+        "part": "timeline-list-lane",
+        "className": "timeline-list-horizontal-rail:mbe-0"
       },
       {
-        "part": "timeline-list-rail",
-        "className": "timeline-list-horizontal-cell:w-auto"
+        "part": "timeline-list-lane",
+        "className": "timeline-list-horizontal-rail:mbs-0"
       },
       {
-        "part": "timeline-list-rail",
-        "className": "timeline-list-placed:[grid-area:rail]"
+        "part": "timeline-list-lane",
+        "className": "timeline-list-horizontal-rail:me-(--timeline-gap)"
+      },
+      {
+        "part": "timeline-list-lane",
+        "className": "timeline-list-horizontal-rail:ms-(--timeline-inset)"
+      },
+      {
+        "part": "timeline-list-lane",
+        "className": "timeline-list-horizontal-rail:w-(--timeline-drawn)"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-complete:[&>[data-glyph=check]]:[display:var(--timeline-glyph)]"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-complete:mark-fill-primary"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-complete:text-primary-foreground"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-current:[&>[data-glyph=halo]]:block"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-current:border-(length:--timeline-halo)"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-current:border-primary"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-error:[&>[data-glyph=cross]]:[display:var(--timeline-glyph)]"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-error:[rotate:var(--timeline-error-rotate)]"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-error:mark-fill-error"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-error:rounded-(--timeline-error-radius)"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-error:size-(--timeline-error-size)"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-error:text-error-foreground"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-upcoming:border-(length:--timeline-halo)"
+      },
+      {
+        "part": "timeline-list-mark",
+        "className": "timeline-list-upcoming:border-muted-foreground"
       }
     ],
     "toggle-group": [

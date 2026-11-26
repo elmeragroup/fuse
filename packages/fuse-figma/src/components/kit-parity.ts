@@ -31,6 +31,9 @@ export type KitParityRow =
 /** The open issue that lists the kit's gaps the 2026-11-20 Figma issue run left for later. */
 const NICE_TO_HAVE = 922;
 
+/** The open issue that tracks TimelineList's layouts, opposite cell, indicator sizes and statuses. */
+const TIMELINE_LIST_VARIANTS = 1155;
+
 /** The open issue whose Figma kit item tracks Skeleton reveal frames. */
 const SKELETON_REVEAL = 535;
 
@@ -436,8 +439,8 @@ export const KIT_PARITY = {
     kind: "partial",
     sets: ["timeline-list", "timeline-list-links"],
     missing:
-      "`TimelineList.Root`'s `layout`, `spacing` and `indicatorSize`, `TimelineList.Item`'s `status`, `statusLabel`, `indicator` and `opposite`, `TimelineList.Title`'s `align`, `size` and `font`, and a description link's hover state and its target, since the links demo's `href` is a fragment, which Figma refuses as a link.",
-    issue: NICE_TO_HAVE,
+      "`TimelineList.Root`'s `layout`, `spacing` and `indicatorSize`, `TimelineList.Item`'s `status` and `statusLabel`, `TimelineList.Opposite`, and a node in `TimelineList.Indicator` or `TimelineList.Mark`, which #1155 tracks. #922 tracks `TimelineList.Title`'s `align`, `size` and `font`, and a description link's hover state and its target, since the links demo's `href` is a fragment, which Figma refuses as a link.",
+    issue: TIMELINE_LIST_VARIANTS,
   },
   toast: {
     kind: "partial",

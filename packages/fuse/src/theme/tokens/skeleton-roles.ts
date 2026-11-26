@@ -21,7 +21,9 @@
  * read the slot. Each part in the table writes `data-skeleton-part` with its name where a
  * consumer's props cannot replace it, and the skeleton looks that name up here. The
  * `fuse/skeleton-part-marker` lint rule requires the marker on every element that writes one of
- * these slots. A part whose tag already draws it as a block, such as `Textarea`, or that only
+ * these slots. A variant of a part that has no role, such as a `TimelineList.Mark` around the
+ * consumer's children, writes `data-skeleton-part={null}` after its spreads instead, which leaves
+ * the marker off so the skeleton walks into it. A part whose tag already draws it as a block, such as `Textarea`, or that only
  * renders inside a block part, such as a Button's pending indicator, has no entry.
  */
 

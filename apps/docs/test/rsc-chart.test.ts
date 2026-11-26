@@ -45,7 +45,7 @@ function slotCount(html: string, slot: string): number {
 /** The props of each Sparkline svg in a Flight payload, at any depth of its model rows. */
 function flightSparklines(payload: string) {
   return flightModels(payload)
-    .flatMap(flightElements)
+    .flatMap(({ model }) => flightElements(model))
     .filter(({ type, props }) => type === "svg" && props["data-slot"] === "sparkline")
     .map(({ props }) => props);
 }

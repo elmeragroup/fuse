@@ -71,7 +71,7 @@ const SPARKLINE_BAND_CLIPPED: FloorFallback = {
 };
 const SUBGRID_MISSING = "@supports not (grid-template-columns:subgrid)";
 const ROW_SUBGRID_MISSING = "@supports not (grid-template-rows:subgrid)";
-const TIMELINE_HORIZONTAL_ITEM = ':where([data-slot="timeline-list"][data-layout="horizontal"])>';
+const TIMELINE_HORIZONTAL_ITEM = ':where([data-timeline-list-part="root"][data-layout="horizontal"])>';
 const TAILWIND_SUPPORTS_TEST =
   "A @supports test in Tailwind's own output: an engine without a feature it tests reads that test false, which is the answer the condition selects on.";
 

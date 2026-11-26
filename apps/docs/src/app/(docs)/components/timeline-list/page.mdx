@@ -34,9 +34,14 @@ import { TimelineList } from "@elmeragroup/fuse/timeline-list";
 
 <TimelineList.Root>
   <TimelineList.Item>
-    <TimelineList.Title>Order placed</TimelineList.Title>
-    <TimelineList.Time date="2026-03-03">3 March 2026</TimelineList.Time>
-    <TimelineList.Description>Confirmed at checkout.</TimelineList.Description>
+    <TimelineList.Opposite>
+      <TimelineList.Time date="2026-03-03">3 March 2026</TimelineList.Time>
+    </TimelineList.Opposite>
+    <TimelineList.Indicator />
+    <TimelineList.Content>
+      <TimelineList.Title>Order placed</TimelineList.Title>
+      <TimelineList.Description>Confirmed at checkout.</TimelineList.Description>
+    </TimelineList.Content>
   </TimelineList.Item>
 </TimelineList.Root>
 ```

@@ -362,15 +362,18 @@ function Activity({ order }: { order: Order }): ReactElement {
       </h3>
       <TimelineList.Root indicatorSize="lg">
         {order.activity.map((event) => (
-          <TimelineList.Item key={event.id} indicator={authorAvatar(event.author)}>
-            <TimelineList.Title>{event.title}</TimelineList.Title>
-            <TimelineList.Time date={event.at}>{dateTime(event.at)}</TimelineList.Time>
-            <TimelineList.Description>
-              {event.detail}
-              {event.author === undefined ? null : (
-                <span className={styles.author()}>{` · ${SELLERS[event.author].name}`}</span>
-              )}
-            </TimelineList.Description>
+          <TimelineList.Item key={event.id}>
+            <TimelineList.Indicator>{authorAvatar(event.author)}</TimelineList.Indicator>
+            <TimelineList.Content>
+              <TimelineList.Title>{event.title}</TimelineList.Title>
+              <TimelineList.Time date={event.at}>{dateTime(event.at)}</TimelineList.Time>
+              <TimelineList.Description>
+                {event.detail}
+                {event.author === undefined ? null : (
+                  <span className={styles.author()}>{` · ${SELLERS[event.author].name}`}</span>
+                )}
+              </TimelineList.Description>
+            </TimelineList.Content>
           </TimelineList.Item>
         ))}
       </TimelineList.Root>

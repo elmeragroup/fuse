@@ -4,7 +4,7 @@
 export type FlightClientReference = { readonly module: string; readonly name: string };
 
 /** One row of a Flight payload: its hex id, its tag letter (empty for a model row) and its body. */
-type FlightRow = { readonly id: string; readonly tag: string; readonly body: string };
+export type FlightRow = { readonly id: string; readonly tag: string; readonly body: string };
 
 /**
  * The rows of a Flight payload, in order. A row is `<hex id>:<body>` ending in a line feed, except
@@ -15,7 +15,7 @@ type FlightRow = { readonly id: string; readonly tag: string; readonly body: str
  * @param payload - The Flight payload text.
  * @returns The rows in payload order.
  */
-function flightRows(payload: string): FlightRow[] {
+export function flightRows(payload: string): FlightRow[] {
   const bytes = new TextEncoder().encode(payload);
   const decoder = new TextDecoder();
   const rows: FlightRow[] = [];
@@ -86,12 +86,15 @@ export type FlightJson = string | number | boolean | null | readonly FlightJson[
 
 export type FlightObject = { readonly [key: string]: FlightJson };
 
+/** One model row's JSON, with the row's body text for a failure's message. */
+export type FlightModel = { readonly model: FlightJson; readonly body: string };
+
 /** The JSON models of a Flight payload's model rows (`<hex id>:[…]` or `<hex id>:{…}`). */
-export function flightModels(payload: string): FlightJson[] {
+export function flightModels(payload: string): FlightModel[] {
   return flightRows(payload).flatMap(({ body }) =>
     // SAFETY: Flight model rows are the I/O boundary. The body starts with `[` or `{`, and
     // JSON.parse yields only JSON values, so the result is a FlightJson array or object.
-    body.startsWith("[") || body.startsWith("{") ? [JSON.parse(body) as FlightJson] : []
+    body.startsWith("[") || body.startsWith("{") ? [{ model: JSON.parse(body) as FlightJson, body }] : []
   );
 }
 

@@ -3,9 +3,10 @@
  * and the links demo's two events, each description ending in a link. 1 cell each.
  *
  * - The root is the `<ol data-slot="timeline-list">`. Its sample renders in a 512px host.
- * - Each event is an `<li data-slot="timeline-list-item">`, a flex row of its rail and its content. The
- *   rail holds the incoming connector, the indicator around the default mark and the outgoing
- *   connector. The two connectors share the `timeline-list-connector` slot, so they take two part
+ * - Each event is an `<li data-slot="timeline-list-item">`, a flex row of its `TimelineList.Indicator`
+ *   and its `TimelineList.Content`. The Indicator holds the incoming connector, the lane around the
+ *   default mark and the outgoing connector. The mark's status glyphs render with `display: none`
+ *   in an Item without status, so they draw no layer. The two connectors share the `timeline-list-connector` slot, so they take two part
  *   keys, `incoming` and `outgoing`, which claim the slot's elements in DOM order. The content holds
  *   the title, a level 3 Heading, the time, a `<time>`, and the description, a `<div>`.
  * - Each text is the docs default demo's, and a TEXT property sets it, numbered by event: `Title 1`,
@@ -95,7 +96,7 @@ function group(key: string, slot: string, parts: readonly PartManifest[]): PartM
 }
 
 /**
- * An event's item: its rail, with the connectors around the indicator and its mark, and its content,
+ * An event's item: its indicator, with the connectors around the lane and its mark, and its content,
  * with the title, time and description.
  *
  * @param description - The description part for the event's number.
@@ -113,9 +114,9 @@ function item(
     label: undefined,
     iconsFor: () => [],
     parts: [
-      group("rail", "timeline-list-rail", [
+      group("indicator", "timeline-list-indicator", [
         leaf("incoming", "timeline-list-connector"),
-        group("indicator", "timeline-list-indicator", [leaf("mark", "timeline-list-mark")]),
+        group("lane", "timeline-list-lane", [leaf("mark", "timeline-list-mark")]),
         leaf("outgoing", "timeline-list-connector"),
       ]),
       group("content", "timeline-list-content", [
@@ -136,6 +137,9 @@ export const TIMELINE_LIST_MANIFEST: SetManifest = {
     parts: [
       "TimelineList.Root",
       "TimelineList.Item",
+      "TimelineList.Indicator",
+      "TimelineList.Mark",
+      "TimelineList.Content",
       "TimelineList.Title",
       "TimelineList.Time",
       "TimelineList.Description",

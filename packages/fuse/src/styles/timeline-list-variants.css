@@ -1,52 +1,70 @@
 /* TimelineList's custom variants, private to `fuse.css`, which imports this file. Each one matches
-   a part by its own list's `data-layout` or by its Item's place, through direct-child steps from
-   the root, so a list nested in a `TimelineList.Item`'s content keeps its own layout. The root half
-   sits in `:where()`, so a rule weighs only the part's own class and a consumer's `className` on
-   the part can still replace it. The root writes `data-layout` and `data-slot` before the
-   consumer's props, in `timeline-list.tsx`.
+   a part by its own list's `data-layout`, its Item's place or its Item's `data-status`, through
+   direct-child steps from the root or the Item, so a list nested in a `TimelineList.Content` keeps
+   its own layout and status. The ancestor half sits in `:where()`, so a rule weighs only the
+   part's own class and a consumer's `className` on the part can still replace it. The root writes
+   `data-layout`, the Item `data-status` and the Mark `data-mark` after the consumer's props, in
+   `timeline-list.tsx`, so a forwarded attribute cannot replace them. Each step names a part by
+   `data-timeline-list-part`, which every part writes after the consumer's props. No step reads
+   `data-slot`, which a consumer may replace; see issue #1021.
+
+   A hidden Item takes no box, through the `[hidden][data-slot]` rule in `fuse.css`, so it counts
+   as no Item, and its opposite cell takes no column. The first, last and even selectors count
+   only the list's shown Items, through `:nth-child(… of li[data-timeline-list-part="item"]:not([hidden]))`,
+   as `Item.Group` does. Another child, such as the `template` React's streamed Suspense shell
+   leaves before the first Item, counts as none.
 
    - On an Item: `timeline-list-alternate`, `timeline-list-horizontal`, `timeline-list-opposite`
-     (a vertical list with an opposite cell on any Item) and `timeline-list-dated` (the Item has an
-     opposite cell of its own).
+     (a vertical list with an opposite cell on any shown Item), `timeline-list-dated` (the Item has
+     an opposite cell of its own), and `timeline-list-first-item`, `timeline-list-last-item` and
+     `timeline-list-even-item`, which count only shown Items.
    - On an Item's cells: `timeline-list-placed` (every list whose cells sit on a template:
      alternate, horizontal, or one with an opposite cell; a plain vertical Item is a flex row),
-     `timeline-list-alternate-cell`, `timeline-list-even-cell` (an even Item in an alternate list)
-     and `timeline-list-horizontal-cell`. A cell's first-Item and last-Item spacing comes from
-     properties its Item sets, `--timeline-inset` and `--timeline-trail`.
-   - On the rail's parts: `timeline-list-horizontal-rail`, `timeline-list-first-rail` and
-     `timeline-list-last-rail`.
+     `timeline-list-alternate-cell`, `timeline-list-even-cell` (an even shown Item in an
+     alternate list) and `timeline-list-horizontal-cell`. A cell's first-Item and last-Item spacing
+     comes from properties its Item sets, `--timeline-inset` and `--timeline-trail`.
+   - On the indicator's parts: `timeline-list-horizontal-rail`.
+   - On the indicator itself: `timeline-list-markless` (its lane is empty) and `timeline-list-dot`
+     (its Item has no status and its lane holds the childless mark, the 8.75px dot).
+   - On a mark, by its Item's status: `timeline-list-unstated`, `timeline-list-complete`,
+     `timeline-list-current`, `timeline-list-upcoming` and `timeline-list-error`. The childless
+     mark's glyphs are its direct children, which its own status classes show.
    - On the root: `timeline-list-has-opposite`.
 
-   A variant declared later in this file wins over an earlier one of the same weight, so the
-   first-Item and last-Item rail variants come after the layout ones. Each `:has()` names the Item by
-   `li` and the cell by its slot, never `*`, which WebKit parses slowly (see `frame-variants.css`). */
+   An opposite cell counts only when it is neither `:empty` nor `[hidden]`, so an empty or hidden
+   `TimelineList.Opposite` reserves no column or row. Each `:has()` names the Item by `li` and the
+   cell by its marker, never `*`, which WebKit parses slowly (see `frame-variants.css`). */
 @custom-variant timeline-list-alternate {
-  :where([data-slot="timeline-list"][data-layout="alternate"]) > & {
+  :where([data-timeline-list-part="root"][data-layout="alternate"]) > & {
     @slot;
   }
 }
 @custom-variant timeline-list-horizontal {
-  :where([data-slot="timeline-list"][data-layout="horizontal"]) > & {
+  :where([data-timeline-list-part="root"][data-layout="horizontal"]) > & {
     @slot;
   }
 }
 @custom-variant timeline-list-opposite {
-  :where([data-slot="timeline-list"][data-layout="vertical"]:has(> li > [data-slot="timeline-list-opposite"]))
+  :where(
+      [data-timeline-list-part="root"][data-layout="vertical"]:has(
+          > li:not([hidden]) > [data-timeline-list-part="opposite"]:not(:empty, [hidden])
+        )
+    )
     > & {
     @slot;
   }
 }
 @custom-variant timeline-list-dated {
-  &:has(> [data-slot="timeline-list-opposite"]) {
+  &:has(> [data-timeline-list-part="opposite"]:not(:empty, [hidden])) {
     @slot;
   }
 }
 @custom-variant timeline-list-placed {
   :where(
-      [data-slot="timeline-list"]:is(
+      [data-timeline-list-part="root"]:is(
           [data-layout="alternate"],
           [data-layout="horizontal"],
-          :has(> li > [data-slot="timeline-list-opposite"])
+          :has(> li:not([hidden]) > [data-timeline-list-part="opposite"]:not(:empty, [hidden]))
         )
         > li
     )
@@ -54,38 +72,95 @@
     @slot;
   }
 }
+@custom-variant timeline-list-first-item {
+  &:where(:nth-child(1 of li[data-timeline-list-part="item"]:not([hidden]))) {
+    @slot;
+  }
+}
+@custom-variant timeline-list-last-item {
+  &:where(:nth-last-child(1 of li[data-timeline-list-part="item"]:not([hidden]))) {
+    @slot;
+  }
+}
+@custom-variant timeline-list-even-item {
+  &:where(:nth-child(even of li[data-timeline-list-part="item"]:not([hidden]))) {
+    @slot;
+  }
+}
 @custom-variant timeline-list-alternate-cell {
-  :where([data-slot="timeline-list"][data-layout="alternate"] > li) > & {
+  :where([data-timeline-list-part="root"][data-layout="alternate"] > li) > & {
     @slot;
   }
 }
 @custom-variant timeline-list-even-cell {
-  :where([data-slot="timeline-list"][data-layout="alternate"] > li:nth-child(even)) > & {
+  :where(
+      [data-timeline-list-part="root"][data-layout="alternate"]
+        > li:nth-child(even of li[data-timeline-list-part="item"]:not([hidden]))
+    )
+    > & {
     @slot;
   }
 }
 @custom-variant timeline-list-horizontal-cell {
-  :where([data-slot="timeline-list"][data-layout="horizontal"] > li) > & {
+  :where([data-timeline-list-part="root"][data-layout="horizontal"] > li) > & {
     @slot;
   }
 }
 @custom-variant timeline-list-horizontal-rail {
-  :where([data-slot="timeline-list"][data-layout="horizontal"] > li > [data-slot="timeline-list-rail"]) > & {
-    @slot;
-  }
-}
-@custom-variant timeline-list-first-rail {
-  :where([data-slot="timeline-list"] > li:first-child > [data-slot="timeline-list-rail"]) > & {
-    @slot;
-  }
-}
-@custom-variant timeline-list-last-rail {
-  :where([data-slot="timeline-list"] > li:last-child > [data-slot="timeline-list-rail"]) > & {
+  :where(
+      [data-timeline-list-part="root"][data-layout="horizontal"] > li > [data-timeline-list-part="indicator"]
+    )
+    > & {
     @slot;
   }
 }
 @custom-variant timeline-list-has-opposite {
-  &:has(> li > [data-slot="timeline-list-opposite"]) {
+  &:has(> li:not([hidden]) > [data-timeline-list-part="opposite"]:not(:empty, [hidden])) {
+    @slot;
+  }
+}
+@custom-variant timeline-list-markless {
+  &:has(> [data-timeline-list-part="lane"]:empty) {
+    @slot;
+  }
+}
+@custom-variant timeline-list-dot {
+  :where(li:not([data-status]))
+    > &:has(> [data-timeline-list-part="lane"] > [data-timeline-list-part="mark"][data-mark="default"]) {
+    @slot;
+  }
+}
+@custom-variant timeline-list-unstated {
+  :where(li:not([data-status]) > [data-timeline-list-part="indicator"] > [data-timeline-list-part="lane"])
+    > & {
+    @slot;
+  }
+}
+@custom-variant timeline-list-complete {
+  :where(
+      li[data-status="complete"] > [data-timeline-list-part="indicator"] > [data-timeline-list-part="lane"]
+    )
+    > & {
+    @slot;
+  }
+}
+@custom-variant timeline-list-current {
+  :where(li[data-status="current"] > [data-timeline-list-part="indicator"] > [data-timeline-list-part="lane"])
+    > & {
+    @slot;
+  }
+}
+@custom-variant timeline-list-upcoming {
+  :where(
+      li[data-status="upcoming"] > [data-timeline-list-part="indicator"] > [data-timeline-list-part="lane"]
+    )
+    > & {
+    @slot;
+  }
+}
+@custom-variant timeline-list-error {
+  :where(li[data-status="error"] > [data-timeline-list-part="indicator"] > [data-timeline-list-part="lane"])
+    > & {
     @slot;
   }
 }

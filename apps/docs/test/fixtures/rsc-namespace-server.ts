@@ -68,7 +68,7 @@ import { Toolbar } from "@elmeragroup/fuse/toolbar";
 import { Tooltip } from "@elmeragroup/fuse/tooltip";
 import { Tour } from "@elmeragroup/fuse/tour";
 
-import { flightElements, flightModels } from "./rsc-flight-payload.ts";
+import { flightElements, flightModels, flightRows } from "./rsc-flight-payload.ts";
 import type { FlightJson, FlightObject } from "./rsc-flight-payload.ts";
 import { renderFlight } from "./rsc-flight-server.ts";
 
@@ -623,7 +623,7 @@ const TIMELINE_STATUS_LABEL = "Delivered on time";
  */
 function timelineListTree(): ReactElement {
   checkNamespace("TimelineList", TimelineList, [], {
-    server: ["Root", "Item", "Title", "Time", "Description"],
+    server: ["Root", "Item", "Opposite", "Indicator", "Mark", "Content", "Title", "Time", "Description"],
   });
   return createElement(
     "section",
@@ -634,21 +634,38 @@ function timelineListTree(): ReactElement {
       createElement(
         TimelineList.Item,
         { status: "complete", statusLabel: TIMELINE_STATUS_LABEL },
-        createElement(TimelineList.Title, null, "Delivered")
+        createElement(TimelineList.Indicator),
+        createElement(TimelineList.Content, null, createElement(TimelineList.Title, null, "Delivered"))
       ),
       createElement(
         TimelineList.Item,
         { status: "current" },
-        createElement(TimelineList.Title, null, "Invoiced"),
-        createElement(TimelineList.Time, { date: "2026-04-01" }, "1 April 2026")
+        createElement(
+          TimelineList.Indicator,
+          null,
+          createElement(TimelineList.Mark, null, createElement("svg", { viewBox: "0 0 16 16" }))
+        ),
+        createElement(
+          TimelineList.Content,
+          null,
+          createElement(TimelineList.Title, null, "Invoiced"),
+          createElement(TimelineList.Time, { date: "2026-04-01" }, "1 April 2026")
+        )
       ),
       createElement(
         TimelineList.Item,
-        {
-          status: "upcoming",
-          opposite: createElement(TimelineList.Time, { date: "2026-04-15" }, "15 April 2026"),
-        },
-        createElement(TimelineList.Description, null, "Payment due.")
+        { status: "upcoming" },
+        createElement(
+          TimelineList.Opposite,
+          null,
+          createElement(TimelineList.Time, { date: "2026-04-15" }, "15 April 2026")
+        ),
+        createElement(TimelineList.Indicator),
+        createElement(
+          TimelineList.Content,
+          null,
+          createElement(TimelineList.Description, null, "Payment due.")
+        )
       )
     )
   );
@@ -890,34 +907,37 @@ if (renderError !== undefined) {
 if (!payload.includes("Sync delayed") || !payload.includes("Facility data is more than an hour old.")) {
   throw new Error(`Alert text missing from the server payload:\n${payload.slice(0, 1500)}`);
 }
-// Client parts are module references (`I["…/item.tsx#…"]`). A server-rendered
-// Alert root is a div row. Check that row: `selection-item.tsx` contains the
-// substring `item.tsx`, so a whole-payload search would not mean Item ran.
-const alertRoot = payload
-  .split("\n")
-  .find((line) => line.includes('data-slot":"item"') && line.includes('"role":"alert"'));
-/**
- * The row's className. Flight moves a string of 1024 characters or more into its own text row,
- * `<id>:T<hex length>,<text>`, and writes `"$<id>"` in its place, so a long class list is read
- * from that row.
- */
-function classNameOf(row: string): string | undefined {
-  const value = /"className":"([^"]*)"/u.exec(row)?.[1];
-  const id = value === undefined ? undefined : /^\$([0-9a-f]+)$/u.exec(value)?.[1];
+// Client parts are module references (`I["…/item.tsx#…"]`). A server-rendered Alert root is a div
+// row. Check that row: `selection-item.tsx` contains the substring `item.tsx`, so a whole-payload
+// search would not mean Item ran. Flight moves a string of 1024 characters or more into a text row
+// of its own and writes `"$<id>"` in its place, so a long class list is read from that row.
+const rows = flightRows(payload);
+const rowBodies = new Map(rows.map(({ id, body }) => [id, body]));
+const textOf = (value: string): string | undefined => {
+  const id = /^\$([0-9a-f]+)$/u.exec(value)?.[1];
   if (id === undefined) return value;
-  const header = new RegExp(`(?:^|\n)${id}:T([0-9a-f]+),`, "u").exec(payload);
-  if (header === null) return undefined;
-  const start = header.index + header[0].length;
-  return payload.slice(start, start + Number.parseInt(header[1] ?? "0", 16));
-}
+  const body = rowBodies.get(id);
+  return body?.startsWith("T") === true ? body.slice(body.indexOf(",") + 1) : undefined;
+};
+// Every Flight element of the payload, flattened once for the checks below, each with the body of
+// the model row it came from for a failure's message.
+const elements = flightModels(payload).flatMap(({ model, body }) =>
+  flightElements(model).map((element) => ({ ...element, body }))
+);
+/** The Alert root's element, with the row whose model renders it. */
+const alertFound = elements.find(({ props }) => props["data-slot"] === "item" && props.role === "alert");
+const alertClass = alertFound?.props.className;
 if (
-  alertRoot === undefined ||
-  !alertRoot.includes('["$","div"') ||
-  !(classNameOf(alertRoot) ?? "").includes("bg-warning-soft") ||
-  alertRoot.includes("item.tsx") ||
-  alertRoot.includes("button.tsx")
+  alertFound?.type !== "div" ||
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Flight props are parsed JSON, so the JSON type is the only tag a class string has
+  typeof alertClass !== "string" ||
+  !(textOf(alertClass) ?? "").includes("bg-warning-soft") ||
+  alertFound.body.includes("item.tsx") ||
+  alertFound.body.includes("button.tsx")
 ) {
-  throw new Error(`Alert chrome was not rendered on the server:\n${alertRoot ?? payload.slice(0, 1500)}`);
+  throw new Error(
+    `Alert chrome was not rendered on the server:\n${alertFound?.body ?? payload.slice(0, 1500)}`
+  );
 }
 // Button's own module path: other client parts, such as `data-table-sort-button.tsx`, end in
 // `button.tsx` too.
@@ -927,11 +947,10 @@ if (payload.includes("/components/button/button.tsx")) {
 
 // Each SubSection crosses Flight as its rendered root, marked for `partitionSubSections`. Where
 // each band lands after Flight is `rsc-selection-item.test.ts`'s.
-// Every Flight element of the payload, flattened once for the checks below.
-const elements = flightModels(payload).flatMap(flightElements);
 const bands = elements.filter(({ props }) => "data-selection-item-sub-section" in props);
 if (bands.length !== 2) {
-  throw new Error(`SubSections were not rendered on the server:\n${JSON.stringify(bands)}`);
+  const shown = bands.map(({ type, props }) => ({ type, props }));
+  throw new Error(`SubSections were not rendered on the server:\n${JSON.stringify(shown)}`);
 }
 for (const text of ["Fixed price", "Locked for 12 months.", CHECKBOX_BAND, "Spot price", RADIO_BAND]) {
   if (!payload.includes(text)) {

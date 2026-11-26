@@ -1,7 +1,7 @@
 /**
  * The renderers of the `timeline-list` and `timeline-list-links` sets: the real Fuse `TimelineList`
- * holding the docs default demo's three events, or the links demo's two, in a host as wide as the
- * kit's preview width.
+ * holding the docs default demo's three events, or the links demo's two, each an Item of an
+ * Indicator with its default mark and a Content, in a host as wide as the kit's preview width.
  *
  * Node cannot load Fuse's TSX source, so this module imports the Fuse build. `cell-renderers.ts`
  * imports this module only after the run found the build.
@@ -30,9 +30,14 @@ export const timelineList: CellRendering = {
           createElement(
             TimelineList.Item,
             { key: event.date },
-            createElement(TimelineList.Title, null, event.title),
-            createElement(TimelineList.Time, { date: event.date }, event.time),
-            createElement(TimelineList.Description, null, event.description)
+            createElement(TimelineList.Indicator),
+            createElement(
+              TimelineList.Content,
+              null,
+              createElement(TimelineList.Title, null, event.title),
+              createElement(TimelineList.Time, { date: event.date }, event.time),
+              createElement(TimelineList.Description, null, event.description)
+            )
           )
         )
       )
@@ -52,14 +57,19 @@ export const timelineListLinks: CellRendering = {
           createElement(
             TimelineList.Item,
             { key: event.date },
-            createElement(TimelineList.Title, null, event.title),
-            createElement(TimelineList.Time, { date: event.date }, event.time),
+            createElement(TimelineList.Indicator),
             createElement(
-              TimelineList.Description,
+              TimelineList.Content,
               null,
-              event.description,
-              " ",
-              createElement("a", { href: event.link.href, className: "underline" }, event.link.text)
+              createElement(TimelineList.Title, null, event.title),
+              createElement(TimelineList.Time, { date: event.date }, event.time),
+              createElement(
+                TimelineList.Description,
+                null,
+                event.description,
+                " ",
+                createElement("a", { href: event.link.href, className: "underline" }, event.link.text)
+              )
             )
           )
         )
