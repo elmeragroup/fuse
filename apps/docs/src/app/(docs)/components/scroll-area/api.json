@@ -27,7 +27,7 @@
           "type": "\"horizontal\" | \"vertical\" | undefined",
           "shortType": "Union",
           "defaultValue": "\"vertical\"",
-          "description": "Which single scrollbar `Root` renders, and so which axis the content scrolls on. A vertical area holds its content to the viewport's width, so `truncate` text ellipsizes at the edge. A horizontal area lets its content grow to its widest line and scroll. For two-axis scrolling, compose Base UI's `ScrollArea` parts and mount two `ScrollArea.Bar`s, one per orientation.",
+          "description": "Which single scrollbar `Root` renders, and so which axis the content scrolls on. A vertical area holds its content to the viewport's width, so `truncate` text ellipsizes at the edge. A horizontal area lets its content grow to its widest line and scroll. For two-axis scrolling, compose Base UI's `ScrollArea` root, content and corner with a `ScrollArea.Viewport` and two `ScrollArea.Bar`s, one per orientation.",
           "required": false,
           "values": [
             "horizontal",
@@ -80,6 +80,58 @@
             "auto",
             "hover"
           ]
+        }
+      ]
+    },
+    {
+      "name": "ScrollArea.Viewport",
+      "rsc": "client",
+      "sourcePath": "packages/fuse/src/components/scroll-area/scroll-area.tsx",
+      "forwardedFrom": [
+        "@base-ui/react",
+        "@types/react"
+      ],
+      "forwardedCount": 274,
+      "props": [
+        {
+          "name": "children",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "Base UI's `ScrollArea.Content` around the area's content. Render the viewport as a direct child of Base UI's `ScrollArea.Root`, which positions itself, so the focus outline follows the root's edge and corners. A positioned element between the two takes the outline on its own box instead. A focused viewport paints over its earlier siblings, so render the `ScrollArea.Bar`s and Base UI's `ScrollArea.Corner` after it. A visible scrollbar thumb then covers the outline where the thumb sits.",
+          "required": false
+        },
+        {
+          "name": "className",
+          "origin": "declared",
+          "type": "string | ((state: ScrollAreaViewportState) => string | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "CSS class applied to the element, or a function that returns a class based on the component's state. Extra classes, merged after the viewport's own. Size the viewport to the root. Under a root with a definite height, use `size-full`. Under a root capped by `max-height`, `size-full` leaves the viewport at its content's height, so the root clips the content and Tab skips the viewport. Make that root a flex column and give the viewport `min-h-0 flex-1`, as `ScrollArea.Root` does.",
+          "required": false
+        },
+        {
+          "name": "render",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "ComponentRenderFn<HTMLProps, ScrollAreaViewportState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "required": false
+        },
+        {
+          "name": "style",
+          "origin": {
+            "packageName": "@base-ui/react"
+          },
+          "type": "CSSProperties | ((state: ScrollAreaViewportState) => CSSProperties | undefined) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Style applied to the element, or a function that returns a style object based on the component's state.",
+          "required": false
         }
       ]
     },

@@ -8,8 +8,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { commands, page } from "vitest/browser";
 
 import "../../../dist/styles.css";
-import { hoverIn, imageNamed, placeIn, rows, shownIn } from "../../../test/chart/sparkline";
+import { hoverIn, imageNamed, placeIn, shownIn } from "../../../test/chart/sparkline";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
+import { rows } from "../../../test/screenshot-pixels";
 import { renderThemed } from "../../../test/themed-browser-render";
 import "./chart.css";
 import { Sparkline } from "./sparkline";

@@ -17,7 +17,8 @@ type ScrollAreaRootProps = ComponentProps<typeof ScrollAreaPrimitive.Root> & {
    * Which single scrollbar `Root` renders, and so which axis the content scrolls on. A vertical
    * area holds its content to the viewport's width, so `truncate` text ellipsizes at the edge. A
    * horizontal area lets its content grow to its widest line and scroll. For two-axis scrolling,
-   * compose Base UI's `ScrollArea` parts and mount two `ScrollArea.Bar`s, one per orientation.
+   * compose Base UI's `ScrollArea` root, content and corner with a `ScrollArea.Viewport` and two
+   * `ScrollArea.Bar`s, one per orientation.
    */
   orientation?: "vertical" | "horizontal";
   /**
@@ -31,6 +32,25 @@ type ScrollAreaRootProps = ComponentProps<typeof ScrollAreaPrimitive.Root> & {
    * height, and longer content scrolls once it reaches the cap.
    */
   className?: ComponentProps<typeof ScrollAreaPrimitive.Root>["className"];
+};
+type ScrollAreaViewportProps = ComponentProps<typeof ScrollAreaPrimitive.Viewport> & {
+  /**
+   * Extra classes, merged after the viewport's own. Size the viewport to the root. Under a root
+   * with a definite height, use `size-full`. Under a root capped by `max-height`, `size-full`
+   * leaves the viewport at its content's height, so the root clips the content and Tab skips the
+   * viewport. Make that root a flex column and give the viewport `min-h-0 flex-1`, as
+   * `ScrollArea.Root` does.
+   */
+  className?: ComponentProps<typeof ScrollAreaPrimitive.Viewport>["className"];
+  /**
+   * Base UI's `ScrollArea.Content` around the area's content. Render the viewport as a direct child
+   * of Base UI's `ScrollArea.Root`, which positions itself, so the focus outline follows the root's
+   * edge and corners. A positioned element between the two takes the outline on its own box instead.
+   * A focused viewport paints over its earlier siblings, so render the `ScrollArea.Bar`s and Base
+   * UI's `ScrollArea.Corner` after it. A visible scrollbar thumb then covers the outline where the
+   * thumb sits.
+   */
+  children?: ComponentProps<typeof ScrollAreaPrimitive.Viewport>["children"];
 };
 type ScrollAreaBarProps = ComponentProps<typeof ScrollAreaPrimitive.Scrollbar> & {
   /** When the scrollbar shows, as on `ScrollArea.Root`. */
@@ -63,9 +83,7 @@ export function ScrollAreaRoot({
       {...props}>
       {/* A flex column hands the viewport the root's resolved height, so a max height caps and scrolls
           like a fixed one; `size-full` would resolve to auto under a max height and the root would clip. */}
-      <ScrollAreaPrimitive.Viewport
-        data-slot="scroll-area-viewport"
-        className={cn("min-h-0 flex-1 rounded-[inherit]", overlayFocusRingControlClass)}>
+      <ViewportElement className="min-h-0 flex-1">
         <ScrollAreaPrimitive.Content
           data-slot="scroll-area-content"
           // Base UI's inline `min-width: fit-content` grows the content to its widest line so it can
@@ -75,13 +93,66 @@ export function ScrollAreaRoot({
           className={cn(orientation === "vertical" && "min-w-0!")}>
           {children}
         </ScrollAreaPrimitive.Content>
-      </ScrollAreaPrimitive.Viewport>
+      </ViewportElement>
       <ScrollAreaBar orientation={orientation} type={type} />
       <ScrollAreaPrimitive.Corner />
       {/* The root clips, so the viewport's focus outline draws on this sibling instead. It comes last
           so it paints above the positioned scrollbar and corner. */}
-      <span aria-hidden data-slot="scroll-area-focus-indicator" className={overlayFocusRingClass} />
+      <FocusIndicator />
     </ScrollAreaPrimitive.Root>
+  );
+}
+
+/**
+ * The viewport that `Root`, `Viewport` and `Attachment.Group` share: Base UI's viewport with the
+ * overlay ring's control classes. It is package-private. Render `FocusIndicator` as a later sibling.
+ *
+ * @param props - Base UI's viewport props. A `data-slot` replaces `scroll-area-viewport`.
+ * @returns The rendered viewport.
+ */
+export function ViewportElement({
+  className,
+  ...props
+}: ComponentProps<typeof ScrollAreaPrimitive.Viewport>): ReactElement {
+  return (
+    <ScrollAreaPrimitive.Viewport
+      data-slot="scroll-area-viewport"
+      className={mergeClassName(className, "rounded-[inherit]", overlayFocusRingControlClass)}
+      {...props}
+    />
+  );
+}
+
+/**
+ * The empty sibling that draws a `ViewportElement`'s focus outline; see `focusRing`'s `overlay`
+ * target. It is package-private.
+ *
+ * @param props - A `data-slot` that replaces `scroll-area-focus-indicator`.
+ * @returns The rendered indicator.
+ */
+export function FocusIndicator(props: { readonly "data-slot"?: string }): ReactElement {
+  return (
+    <span aria-hidden data-slot="scroll-area-focus-indicator" className={overlayFocusRingClass} {...props} />
+  );
+}
+
+/**
+ * The scrolling viewport with its keyboard focus outline, for an area composed from Base UI's
+ * `ScrollArea` parts. Base UI's viewport takes keyboard focus while its content overflows, and
+ * this part draws the same outline as `ScrollArea.Root` just inside the root's edge.
+ *
+ * @param props - Base UI's viewport props.
+ * @returns The rendered viewport, followed by its focus indicator.
+ */
+export function ScrollAreaViewport(props: ScrollAreaViewportProps): ReactElement {
+  return (
+    <>
+      <ViewportElement {...props} />
+      {/* The indicator stays at `z-index: auto`, as `Root`'s does, so a later positioned element of
+          the host still covers it. The composition's later scrollbars and corner paint over it too,
+          which keeps their thumbs visible and under the pointer while the viewport is focused. */}
+      <FocusIndicator />
+    </>
   );
 }
 
@@ -119,4 +190,5 @@ export function ScrollAreaBar({
 }
 
 ScrollAreaRoot.displayName = "ScrollArea.Root";
+ScrollAreaViewport.displayName = "ScrollArea.Viewport";
 ScrollAreaBar.displayName = "ScrollArea.Bar";

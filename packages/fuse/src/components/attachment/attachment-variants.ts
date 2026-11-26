@@ -7,7 +7,7 @@ import {
 } from "../../styles/inner-corner/item";
 import { nativeStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
-import { selfFocusRingClass, withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
+import { selfFocusRingClass } from "../../styles/utils";
 
 /**
  * Keeps a `hidden` part hidden. Fuse ships no preflight, so a slot's own `display` utility beats
@@ -77,16 +77,15 @@ export const attachmentVariants = tv({
       selfFocusRingClass,
       nativeStateFaceClass
     ),
-    group: cn("relative flex min-w-0 flex-col rounded-md", withinFocusRingClass, hiddenGuardClass),
+    group: cn("relative flex min-w-0 flex-col rounded-md", hiddenGuardClass),
     // The viewport fades an edge only while content lies past it: Base UI marks a viewport whose
     // content overflows and writes each edge's overflow distance to it, so a fade grows to 2.5rem
     // as that edge's content does. A linear gradient has no logical direction, so right-to-left
     // text runs it from the right.
     groupViewport: cn(
-      "min-w-0 snap-x snap-mandatory scroll-px-1 overscroll-x-contain rounded-[inherit]",
+      "min-w-0 snap-x snap-mandatory scroll-px-1 overscroll-x-contain",
       "[--attachment-fade:to_right] rtl:[--attachment-fade:to_left]",
-      "data-has-overflow-x:[mask-image:linear-gradient(var(--attachment-fade),transparent_0,black_min(2.5rem,var(--scroll-area-overflow-x-start,0px)),black_calc(100%_-_min(2.5rem,var(--scroll-area-overflow-x-end,0px))),transparent_100%)]",
-      withinFocusRingControlClass
+      "data-has-overflow-x:[mask-image:linear-gradient(var(--attachment-fade),transparent_0,black_min(2.5rem,var(--scroll-area-overflow-x-start,0px)),black_calc(100%_-_min(2.5rem,var(--scroll-area-overflow-x-end,0px))),transparent_100%)]"
     ),
     // The list pads 0.25rem so a tile's focus ring paints inside the viewport's clip.
     groupList: cn(

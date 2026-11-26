@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
 
+import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
-import { rows } from "../../../test/chart/sparkline";
 import { withForcedColors } from "../../../test/media-emulation";
-import { toSrgb } from "../../../test/surface-paint";
-import { cssVarColor, renderThemed } from "../../../test/themed-browser-render";
+import { expectTokenColor, pixelsAt, rows } from "../../../test/screenshot-pixels";
+import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { ScrollArea } from "./index";
 
 afterEach(() => {
@@ -23,7 +23,8 @@ function render(node: ReactNode) {
   styles.dataset.scrollAreaTestStyles = "";
   styles.textContent = [
     "html, body { margin: 0; height: 100%; overflow: hidden; }",
-    '[data-slot="scroll-area-viewport"] { width: 100%; height: 100%; box-sizing: border-box; }',
+    // A composed area sizes its viewport through the part's `className`, so the rule leaves it alone.
+    ':not([data-composed-area]) > [data-slot="scroll-area-viewport"] { width: 100%; height: 100%; box-sizing: border-box; }',
     // Visibility, not the fade, is the contract, so a hover bar reaches its end opacity at once.
     '[data-slot="scroll-area-scrollbar"] { transition: none; }',
   ].join("");
@@ -57,9 +58,9 @@ function viewportFromText(name: string): HTMLElement {
   return viewport;
 }
 
-function barsIn(root: HTMLElement): HTMLElement[] {
-  // Scrollbars have no role; locate them by the mandated data-slot.
-  return [...root.querySelectorAll("[data-slot=scroll-area-scrollbar]")].filter(
+function partsIn(root: HTMLElement, slot: "scroll-area-scrollbar" | "scroll-area-thumb"): HTMLElement[] {
+  // Base UI hides the scrollbar and its thumb from assistive technology, so query by data-slot.
+  return [...root.querySelectorAll(`[data-slot=${slot}]`)].filter(
     (node): node is HTMLElement => node instanceof HTMLElement
   );
 }
@@ -106,7 +107,7 @@ async function expectFocusPaint(forcedColors: "none" | "active"): Promise<void> 
   await waitForOverflow("Focus list", "data-has-overflow-y");
   const root = scrollRootFromText("Focus list");
   const viewport = viewportFromText("Focus list");
-  page.getByRole("button", { name: "Before the area" }).element().focus();
+  roleNamed("button", "Before the area").focus();
   const before = await topEdge(root);
   await userEvent.tab();
   expect(document.activeElement).toBe(viewport);
@@ -118,17 +119,33 @@ async function expectFocusPaint(forcedColors: "none" | "active"): Promise<void> 
   }
   expect(after.inner, "inner row").toEqual(before.inner);
   if (forcedColors === "none") {
-    const { r, g, b, alpha } = toSrgb(cssVarColor(viewport, "--ring"));
-    const ring = [r, g, b, alpha].map((channel) => channel * 255);
     for (const [index, row] of after.edge.entries()) {
-      for (const [channel, value] of ring.entries()) {
-        expect(
-          Math.abs((row[channel] ?? Number.NaN) - value),
-          `edge row ${String(index)}`
-        ).toBeLessThanOrEqual(1);
-      }
+      expectTokenColor(row, viewport, "--ring", `edge row ${String(index)}`);
     }
   }
+}
+
+/**
+ * A two-axis area composed from Base UI's root, content and corner around `ScrollArea.Viewport`,
+ * with an always-visible bar per axis after the viewport, as the docs' two-axis demo builds it.
+ */
+function ComposedArea({ children }: { children: ReactNode }) {
+  return (
+    // The data-slot is only this suite's locator for the overflow host, and the marker keeps the
+    // injected viewport sizing off this area.
+    <ScrollAreaPrimitive.Root
+      data-slot="scroll-area"
+      data-composed-area=""
+      className="relative overflow-hidden"
+      style={{ width: 320, height: 128 }}>
+      <ScrollArea.Viewport className="size-full">
+        <ScrollAreaPrimitive.Content>{children}</ScrollAreaPrimitive.Content>
+      </ScrollArea.Viewport>
+      <ScrollArea.Bar orientation="vertical" type="always" />
+      <ScrollArea.Bar orientation="horizontal" type="always" />
+      <ScrollAreaPrimitive.Corner />
+    </ScrollAreaPrimitive.Root>
+  );
 }
 
 describe("ScrollArea", () => {
@@ -147,13 +164,13 @@ describe("ScrollArea", () => {
     await waitForOverflow("Always on", "data-has-overflow-y");
     await waitForOverflow("Hover gated", "data-has-overflow-y");
 
-    const always = barsIn(scrollRootFromText("Always on"))[0];
+    const always = partsIn(scrollRootFromText("Always on"), "scroll-area-scrollbar")[0];
     if (!(always instanceof HTMLElement)) {
       throw new Error("expected an always-visible scrollbar");
     }
     expect(getComputedStyle(always).opacity).toBe("1");
 
-    const hover = barsIn(scrollRootFromText("Hover gated"))[0];
+    const hover = partsIn(scrollRootFromText("Hover gated"), "scroll-area-scrollbar")[0];
     if (!(hover instanceof HTMLElement)) {
       throw new Error("expected a hover-gated scrollbar");
     }
@@ -243,6 +260,14 @@ describe("ScrollArea", () => {
         ),
       },
       {
+        content: "an area composed around ScrollArea.Viewport",
+        area: (
+          <ComposedArea>
+            <TallList label="Focus list" items={30} />
+          </ComposedArea>
+        ),
+      },
+      {
         content: "a padded area whose render wraps its parts in a contents box",
         area: (
           <ScrollArea.Root
@@ -270,6 +295,97 @@ describe("ScrollArea", () => {
     });
   });
 
+  it("paints the focus outline over the visible thumb of ScrollArea.Root", async () => {
+    render(
+      <>
+        <button type="button">Before the area</button>
+        <ScrollArea.Root type="always" style={{ width: 320, height: 128 }}>
+          <TallList label="Focus list" items={30} />
+        </ScrollArea.Root>
+      </>
+    );
+    await waitForOverflow("Focus list", "data-has-overflow-y");
+    const root = scrollRootFromText("Focus list");
+    const [thumb] = partsIn(root, "scroll-area-thumb");
+    if (thumb === undefined) {
+      throw new Error("expected a thumb in the bar");
+    }
+    const box = thumb.getBoundingClientRect();
+    // The sample sits 1px inside the root's padding box, where the thumb's 1px inset puts its edge
+    // under the outline's inner row.
+    const sample = [
+      root.clientLeft + root.clientWidth - 2,
+      Math.round(box.top - root.getBoundingClientRect().top + box.height / 2),
+    ] as const;
+
+    roleNamed("button", "Before the area").focus();
+    const [before = []] = await pixelsAt(root, [sample]);
+    expectTokenColor(before, root, "--border", "thumb before focus");
+    await userEvent.tab();
+    expect(document.activeElement).toBe(viewportFromText("Focus list"));
+    const [after = []] = await pixelsAt(root, [sample]);
+    expectTokenColor(after, root, "--ring", "thumb after focus");
+  });
+
+  it("keeps both thumbs of a composed area painted over the focus outline and under the pointer", async () => {
+    render(
+      <>
+        <button type="button">Before the area</button>
+        <ComposedArea>
+          {/* A content color far from the thumb's, so a viewport painted over a thumb shows. */}
+          <div style={{ width: 640, height: 480, background: "rgb(0, 200, 0)" }}>Focus list</div>
+        </ComposedArea>
+      </>
+    );
+    await waitForOverflow("Focus list", "data-has-overflow-y");
+    await waitForOverflow("Focus list", "data-has-overflow-x");
+    const root = scrollRootFromText("Focus list");
+    const origin = root.getBoundingClientRect();
+    // The outline is the 2px band just inside the root's padding box. Each thumb runs along one edge,
+    // so its edge sample is the first whole pixel that lies in both the thumb and the band.
+    const band = {
+      right: root.clientLeft + root.clientWidth,
+      bottom: root.clientTop + root.clientHeight,
+    };
+    const thumbs = partsIn(root, "scroll-area-thumb").map((thumb) => {
+      const box = thumb.getBoundingClientRect();
+      const left = box.left - origin.left;
+      const top = box.top - origin.top;
+      const center = [Math.round(left + box.width / 2), Math.round(top + box.height / 2)] as const;
+      const vertical = thumb.dataset.orientation === "vertical";
+      const [start, end, bandEnd] = vertical
+        ? [left, left + box.width, band.right]
+        : [top, top + box.height, band.bottom];
+      const along = Math.ceil(Math.max(start, bandEnd - 2));
+      expect(along + 1, `${thumb.dataset.orientation ?? "unknown"} thumb meets the band`).toBeLessThanOrEqual(
+        Math.min(end, bandEnd)
+      );
+      const edge = vertical ? ([along, center[1]] as const) : ([center[0], along] as const);
+      return { thumb, center, edge };
+    });
+    expect(thumbs.map(({ thumb }) => thumb.dataset.orientation)).toEqual(["vertical", "horizontal"]);
+
+    roleNamed("button", "Before the area").focus();
+    await userEvent.tab();
+    const viewport = viewportFromText("Focus list");
+    expect(document.activeElement).toBe(viewport);
+    expect(viewport.matches(":focus-visible")).toBe(true);
+
+    const paint = await pixelsAt(
+      root,
+      thumbs.flatMap(({ center, edge }) => [center, edge])
+    );
+    for (const [index, { thumb, center }] of thumbs.entries()) {
+      const label = `${thumb.dataset.orientation ?? "unknown"} thumb`;
+      expectTokenColor(paint[index * 2] ?? [], root, "--border", `${label} center`);
+      // The thumb paints over the outline, so the band shows the thumb's color where it crosses it.
+      expectTokenColor(paint[index * 2 + 1] ?? [], root, "--border", `${label} on the outline`);
+      expect(document.elementFromPoint(origin.left + center[0], origin.top + center[1]), `${label} hit`).toBe(
+        thumb
+      );
+    }
+  });
+
   it("keeps the focus indicator under a host's sticky header that covers part of the area", async () => {
     const headerColor = "rgb(200, 30, 120)";
     render(
@@ -283,7 +399,7 @@ describe("ScrollArea", () => {
     );
     await waitForOverflow("Focus list", "data-has-overflow-y");
     const root = scrollRootFromText("Focus list");
-    page.getByRole("button", { name: "Before the area" }).element().focus();
+    roleNamed("button", "Before the area").focus();
     await userEvent.tab();
     expect(document.activeElement).toBe(viewportFromText("Focus list"));
 
@@ -295,6 +411,47 @@ describe("ScrollArea", () => {
       expect(await rows(root, column, [root.clientTop + 10]), `column ${String(column)}`).toEqual([header]);
     }
   });
+
+  it.each(["ScrollArea.Root", "an area composed around ScrollArea.Viewport"] as const)(
+    "keeps the focus indicator of %s under a later positioned host element that covers part of it",
+    async (area) => {
+      const list = <TallList label="Focus list" items={30} />;
+      render(
+        <>
+          <button type="button">Before the area</button>
+          {area === "ScrollArea.Root" ? (
+            <ScrollArea.Root style={{ width: 320, height: 128 }}>{list}</ScrollArea.Root>
+          ) : (
+            <ComposedArea>{list}</ComposedArea>
+          )}
+          <div
+            style={{
+              position: "relative",
+              zIndex: "auto",
+              marginTop: -20,
+              height: 40,
+              background: "rgb(200, 30, 120)",
+            }}
+          />
+        </>
+      );
+      await waitForOverflow("Focus list", "data-has-overflow-y");
+      const root = scrollRootFromText("Focus list");
+      roleNamed("button", "Before the area").focus();
+      await userEvent.tab();
+      expect(document.activeElement).toBe(viewportFromText("Focus list"));
+
+      // The footer covers the area's bottom 20px, so the side edges' rows 10px above the bottom lie under it.
+      const row = root.clientTop + root.clientHeight - 10;
+      const footer = [200, 30, 120, 255];
+      expect(
+        await pixelsAt(root, [
+          [root.clientLeft, row],
+          [root.clientLeft + root.clientWidth - 1, row],
+        ])
+      ).toEqual([footer, footer]);
+    }
+  );
 
   it("lets a raised element inside an unfocused area take the pointer over a lower sibling of the area", async () => {
     render(

@@ -81,21 +81,3 @@ export function settleStylesheet(): void {
     if (animation instanceof CSSAnimation || animation instanceof CSSTransition) animation.finish();
   }
 }
-
-/**
- * The colors of an element's screenshot at one column and several rows, in CSS pixels.
- *
- * @param element - The element to shoot.
- * @param column - The column, in CSS pixels from its left edge.
- * @param at - The rows, in CSS pixels from its top edge.
- * @returns Each row's RGBA channels.
- */
-export async function rows(element: Element, column: number, at: readonly number[]): Promise<number[][]> {
-  const base64 = await page.screenshot({ element, base64: true, save: false, scale: "css" });
-  const bitmap = await createImageBitmap(await (await fetch(`data:image/png;base64,${base64}`)).blob());
-  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-  const context = canvas.getContext("2d");
-  if (context === null) throw new Error("expected a 2d context");
-  context.drawImage(bitmap, 0, 0);
-  return at.map((row) => [...context.getImageData(column, row, 1, 1).data]);
-}
