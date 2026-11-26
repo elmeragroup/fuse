@@ -6,6 +6,10 @@
 import { expect } from "vitest";
 import { page } from "vitest/browser";
 
+import { getOrThrow } from "@elmeragroup/color/result";
+import * as Srgb from "@elmeragroup/color/srgb";
+import * as Wcag from "@elmeragroup/color/wcag";
+
 import { toSrgb } from "./surface-paint";
 import { cssVarColor } from "./themed-browser-render";
 
@@ -103,6 +107,39 @@ export async function differsFromCanvas(
       .splice(0, length)
       .some((pixel) => canvas.some((value, channel) => Math.abs((pixel[channel] ?? Number.NaN) - value) > 1))
   );
+}
+
+/**
+ * The WCAG contrast between the lightest and the darkest pixel inside the box of an element's
+ * text, inset by 1px, in one screenshot of the element. It measures the glyphs against whatever
+ * paints behind them, such as a forced-colors backplate, which computed styles do not report: a
+ * box of one color, where no glyph shows, reads 1.
+ *
+ * @param element - The element whose text to read.
+ * @returns The ratio, from 1 to 21.
+ * @throws When the element's text box is under 3px on a side, too small to inset.
+ */
+export async function glyphInkContrast(element: Element): Promise<number> {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  const text = range.getBoundingClientRect();
+  if (text.width < 3 || text.height < 3) throw new Error("expected a text box at least 3px on each side");
+  const box = element.getBoundingClientRect();
+  const left = Math.ceil(text.left - Math.floor(box.left)) + 1;
+  const top = Math.ceil(text.top - Math.floor(box.top)) + 1;
+  const right = Math.floor(text.right - Math.floor(box.left)) - 1;
+  const bottom = Math.floor(text.bottom - Math.floor(box.top)) - 1;
+  const points = Array.from({ length: right - left }, (_, column) =>
+    Array.from({ length: bottom - top }, (_, row): Point => [left + column, top + row])
+  ).flat();
+  const colors = (await pixelsAt(element, points)).map(([r = 0, g = 0, b = 0]) =>
+    getOrThrow(Srgb.make({ r: r / 255, g: g / 255, b: b / 255, alpha: 1 }))
+  );
+  const byLuminance = colors.toSorted((a, b) => Wcag.relativeLuminance(a) - Wcag.relativeLuminance(b));
+  const [darkest] = byLuminance;
+  const lightest = byLuminance.at(-1);
+  if (darkest === undefined || lightest === undefined) throw new Error("expected pixels in the text box");
+  return getOrThrow(Wcag.contrastRatio(darkest, lightest));
 }
 
 /**

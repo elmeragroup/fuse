@@ -1166,7 +1166,35 @@
       },
       {
         "part": "calendar-day-button",
+        "className": "forced-colors:data-in-range:not-data-selection-start:not-data-selection-end:enabled-hover:bg-[Highlight]"
+      },
+      {
+        "part": "calendar-day-button",
         "className": "forced-colors:data-selected:bg-[Highlight]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selected:data-invalid:not-data-in-range:bg-[Mark]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selected:data-invalid:not-data-in-range:text-[MarkText]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selected:data-unavailable:text-[HighlightText]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selected:focus-visible:-outline-offset-4"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selected:focus-visible:[box-shadow:none]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selected:focus-visible:outline-current"
       },
       {
         "part": "calendar-day-button",
@@ -1186,11 +1214,27 @@
       },
       {
         "part": "calendar-day-button",
+        "className": "forced-colors:data-selection-end:data-invalid:bg-[Mark]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selection-end:data-invalid:text-[MarkText]"
+      },
+      {
+        "part": "calendar-day-button",
         "className": "forced-colors:data-selection-end:text-[HighlightText]"
       },
       {
         "part": "calendar-day-button",
         "className": "forced-colors:data-selection-start:bg-[Highlight]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selection-start:data-invalid:bg-[Mark]"
+      },
+      {
+        "part": "calendar-day-button",
+        "className": "forced-colors:data-selection-start:data-invalid:text-[MarkText]"
       },
       {
         "part": "calendar-day-button",
@@ -3838,6 +3882,10 @@
       },
       {
         "part": "day-separator",
+        "className": "focus:forced-color-adjust-none"
+      },
+      {
+        "part": "day-separator",
         "className": "focus:text-primary-foreground"
       },
       {
@@ -3879,6 +3927,10 @@
       {
         "part": "day",
         "className": "focus:bg-primary"
+      },
+      {
+        "part": "day",
+        "className": "focus:forced-color-adjust-none"
       },
       {
         "part": "day",
@@ -4010,6 +4062,10 @@
       },
       {
         "part": "month-separator",
+        "className": "focus:forced-color-adjust-none"
+      },
+      {
+        "part": "month-separator",
         "className": "focus:text-primary-foreground"
       },
       {
@@ -4079,6 +4135,10 @@
       {
         "part": "year",
         "className": "focus:bg-primary"
+      },
+      {
+        "part": "year",
+        "className": "focus:forced-color-adjust-none"
       },
       {
         "part": "year",
@@ -4132,6 +4192,10 @@
       },
       {
         "part": "day-separator",
+        "className": "focus:forced-color-adjust-none"
+      },
+      {
+        "part": "day-separator",
         "className": "focus:text-primary-foreground"
       },
       {
@@ -4173,6 +4237,10 @@
       {
         "part": "day",
         "className": "focus:bg-primary"
+      },
+      {
+        "part": "day",
+        "className": "focus:forced-color-adjust-none"
       },
       {
         "part": "day",
@@ -4300,6 +4368,10 @@
       },
       {
         "part": "month-separator",
+        "className": "focus:forced-color-adjust-none"
+      },
+      {
+        "part": "month-separator",
         "className": "focus:text-primary-foreground"
       },
       {
@@ -4369,6 +4441,10 @@
       {
         "part": "year",
         "className": "focus:bg-primary"
+      },
+      {
+        "part": "year",
+        "className": "focus:forced-color-adjust-none"
       },
       {
         "part": "year",
@@ -5377,6 +5453,10 @@
       },
       {
         "part": "day",
+        "className": "focus:forced-color-adjust-none"
+      },
+      {
+        "part": "day",
         "className": "focus:text-primary-foreground"
       },
       {
@@ -5418,6 +5498,10 @@
       {
         "part": "day-separator",
         "className": "focus:bg-primary"
+      },
+      {
+        "part": "day-separator",
+        "className": "focus:forced-color-adjust-none"
       },
       {
         "part": "day-separator",
@@ -5569,6 +5653,10 @@
       },
       {
         "part": "month-separator",
+        "className": "focus:forced-color-adjust-none"
+      },
+      {
+        "part": "month-separator",
         "className": "focus:text-primary-foreground"
       },
       {
@@ -5610,6 +5698,10 @@
       {
         "part": "year",
         "className": "focus:bg-primary"
+      },
+      {
+        "part": "year",
+        "className": "focus:forced-color-adjust-none"
       },
       {
         "part": "year",
