@@ -48,8 +48,10 @@ export const tourVariants = tv({
       "pointer-events-none fixed top-0 left-0 h-(--tour-highlight-h) w-(--tour-highlight-w) translate-x-(--tour-highlight-x) translate-y-(--tour-highlight-y) rounded-(--tour-highlight-r)",
     ring: [tourOutlineClass, overlayLayer],
     beacon: "relative",
-    beaconDot: "size-2.5 rounded-full bg-primary",
+    beaconDot: "size-2.5 rounded-full mark-fill-primary",
+    // Forced-colors mode paints the pulse's fill in the canvas color, over the dot. The pulse is
+    // decoration and the dot carries the meaning, so that mode hides the pulse.
     beaconPulse:
-      "absolute inset-0 m-auto size-2.5 rounded-full bg-primary motion-safe:animate-[ping_1s_cubic-bezier(0,0,0.2,1)_3]",
+      "absolute inset-0 m-auto size-2.5 rounded-full bg-primary motion-safe:animate-[ping_1s_cubic-bezier(0,0,0.2,1)_3] forced-colors:hidden",
   },
 });

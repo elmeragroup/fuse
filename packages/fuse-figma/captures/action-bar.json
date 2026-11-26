@@ -172,7 +172,7 @@
     {"property":"--button-px-floor","value":"var(--button-label-px-min, 0px)","important":false,"longhands":["--button-px-floor"],"source":"fuse","layer":"","selector":".\\[--button-px-floor\\:var\\(--button-label-px-min\\,0px\\)\\]","className":"[--button-px-floor:var(--button-label-px-min,0px)]","owner":0},
     {"property":"margin","value":"0","important":false,"longhands":["margin-right","margin-left"],"source":"fuse","layer":"base","selector":":where([data-slot])","className":"fuse.css base layer","owner":0},
     {"property":"padding","value":"0","important":false,"longhands":["padding-top","padding-right","padding-bottom","padding-left"],"source":"fuse","layer":"base","selector":":where([data-slot])","className":"fuse.css base layer","owner":0},
-    {"property":"background-color","value":"var(--border)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".bg-border","className":"bg-border","owner":0},
+    {"property":"background-color","value":"var(--border)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".mark-fill-border","className":"mark-fill-border","owner":0},
     {"property":"margin-block","value":".25rem","important":false,"longhands":["margin-top","margin-bottom"],"source":"fuse","layer":"","selector":".data-vertical\\:my-1:where([data-orientation=\"vertical\"])","className":"data-vertical:my-1","owner":0},
     {"property":"width","value":"1px","important":false,"longhands":["width"],"source":"fuse","layer":"","selector":".data-vertical\\:w-px:where([data-orientation=\"vertical\"])","className":"data-vertical:w-px","owner":0},
     {"property":"align-self","value":"stretch","important":false,"longhands":["align-self"],"source":"fuse","layer":"","selector":".data-vertical\\:self-stretch:where([data-orientation=\"vertical\"])","className":"data-vertical:self-stretch","owner":0},
@@ -290,7 +290,7 @@
             {
               "tag": "div",
               "attributes": {"aria-orientation":"vertical","data-orientation":"vertical","data-slot":"action-bar-separator","role":"separator"},
-              "classes": ["shrink-0","bg-border","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","data-horizontal:mx-1","data-horizontal:w-auto","data-horizontal:self-stretch","data-vertical:my-1"],
+              "classes": ["shrink-0","mark-fill-border","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","data-horizontal:mx-1","data-horizontal:w-auto","data-horizontal:self-stretch","data-vertical:my-1"],
               "text": "",
               "declarations": [62,63,64,6,65,66,67,128,129,115,130,131,132,133],
               "initial": [64,67,128,129],

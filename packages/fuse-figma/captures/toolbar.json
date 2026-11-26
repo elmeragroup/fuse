@@ -163,7 +163,7 @@
     {"property":"display","value":"flex","important":false,"longhands":["display"],"source":"fuse","layer":"","selector":".flex","className":"flex","owner":0},
     {"property":"gap","value":".25rem","important":false,"longhands":["row-gap","column-gap"],"source":"fuse","layer":"","selector":".gap-1","className":"gap-1","owner":0},
     {"property":"margin","value":"0","important":false,"longhands":["margin-right","margin-left"],"source":"fuse","layer":"base","selector":":where([data-slot])","className":"fuse.css base layer","owner":0},
-    {"property":"background-color","value":"var(--border)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".bg-border","className":"bg-border","owner":0},
+    {"property":"background-color","value":"var(--border)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".mark-fill-border","className":"mark-fill-border","owner":0},
     {"property":"margin-block","value":".25rem","important":false,"longhands":["margin-top","margin-bottom"],"source":"fuse","layer":"","selector":".data-vertical\\:my-1:where([data-orientation=\"vertical\"])","className":"data-vertical:my-1","owner":0},
     {"property":"width","value":"1px","important":false,"longhands":["width"],"source":"fuse","layer":"","selector":".data-vertical\\:w-px:where([data-orientation=\"vertical\"])","className":"data-vertical:w-px","owner":0},
     {"property":"align-self","value":"stretch","important":false,"longhands":["align-self"],"source":"fuse","layer":"","selector":".data-vertical\\:self-stretch:where([data-orientation=\"vertical\"])","className":"data-vertical:self-stretch","owner":0},
@@ -273,7 +273,7 @@
             {
               "tag": "div",
               "attributes": {"aria-orientation":"vertical","data-orientation":"vertical","data-slot":"toolbar-separator","role":"separator"},
-              "classes": ["shrink-0","bg-border","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","data-horizontal:mx-1","data-horizontal:w-auto","data-horizontal:self-stretch","data-vertical:my-1"],
+              "classes": ["shrink-0","mark-fill-border","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","data-horizontal:mx-1","data-horizontal:w-auto","data-horizontal:self-stretch","data-vertical:my-1"],
               "text": "",
               "declarations": [62,63,79,6,114,115,116,120,117,92,121,122,123,124],
               "initial": [79,116,120,117],
@@ -399,7 +399,7 @@
             {
               "tag": "div",
               "attributes": {"aria-orientation":"horizontal","data-orientation":"horizontal","data-slot":"toolbar-separator","role":"separator"},
-              "classes": ["shrink-0","bg-border","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","data-horizontal:mx-1","data-horizontal:w-auto","data-horizontal:self-stretch","data-vertical:my-1"],
+              "classes": ["shrink-0","mark-fill-border","data-horizontal:h-px","data-vertical:w-px","data-vertical:self-stretch","data-horizontal:mx-1","data-horizontal:w-auto","data-horizontal:self-stretch","data-vertical:my-1"],
               "text": "",
               "declarations": [62,63,79,6,114,115,116,139,117,92,121,140,141,142,143],
               "initial": [79,116,139,117],

@@ -74,7 +74,7 @@ export function ButtonGroupSeparator({
       orientation={orientation}
       className={mergeClassName(
         className,
-        "relative self-stretch bg-input data-horizontal:w-auto data-vertical:h-auto"
+        "relative self-stretch mark-fill-input data-horizontal:w-auto data-vertical:h-auto"
       )}
       {...props}
     />

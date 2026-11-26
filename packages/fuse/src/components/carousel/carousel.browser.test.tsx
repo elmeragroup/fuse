@@ -16,7 +16,9 @@ import {
 import { CaughtError, caughtError } from "../../../test/caught-error";
 import { whileKeyHeld } from "../../../test/key-hold";
 import { withLocale } from "../../../test/locale-matrix";
+import { withForcedColors } from "../../../test/media-emulation";
 import { CROSS_ORIGIN, SAME_ORIGIN, frameRoot, navigableFrame, reuseId } from "../../../test/navigable-frame";
+import { differsFromCanvas, middleOf } from "../../../test/screenshot-pixels";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import type { CarouselIndexChangeReason } from "./carousel-context";
 import { useCarousel } from "./carousel-context";
@@ -127,6 +129,32 @@ describe("Carousel roles and controls", () => {
     await userEvent.click(roleNamed("button", "Jump to last"));
     await settledOn(viewport, 3 * WIDTH);
     expect(currentIndicator()).toBe(3);
+  });
+  it("draws the current pill, the other and a hovered indicator dot in forced-colors mode", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(<Fixture count={3} />);
+      const group = roleNamed("group", "Choose slide to display");
+      const [current, other] = carouselIndicators();
+      if (current === undefined || other === undefined) throw new Error("expected two indicators");
+      // Each dot is its button's `::after`, centered in the button's box.
+      for (const animation of document.getAnimations()) animation.finish();
+      // 6px to 10px right of center lies past an 8px dot's edge and inside the 28px pill.
+      const pastDot = (indicator: Element) => {
+        const { x, y } = middleOf(indicator, 4);
+        return new DOMRect(x + 8, y, 4, 4);
+      };
+      expect(
+        await differsFromCanvas(group, [
+          middleOf(current, 4),
+          middleOf(other, 4),
+          pastDot(current),
+          pastDot(other),
+        ])
+      ).toEqual([true, true, true, false]);
+      await userEvent.hover(other);
+      for (const animation of document.getAnimations()) animation.finish();
+      expect(await differsFromCanvas(group, [middleOf(other, 4)]), "hovered").toEqual([true]);
+    });
   });
 });
 

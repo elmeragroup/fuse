@@ -22,6 +22,10 @@ import { dataWithinInvalidFocusRingClass, withinFocusRingClass } from "../../sty
  * Base UI writes `data-disabled` and `data-invalid` on it. The track and indicator are parts.
  * The unfilled track takes the field-border tone `input`, the edge every field box shows, and
  * a disabled indicator drops to the muted foreground instead of dimming a second time.
+ * Forced-colors mode replaces both fills with the canvas, so there the indicator fills with
+ * `CanvasText` and the track takes a `CanvasText` outline, which keeps the filled share apart from
+ * the rest of the track. A disabled indicator fills with `GrayText`, the system color for disabled
+ * content, as its muted foreground does outside that mode.
  * The thumb sits on top of the track and indicator, so it keeps the face's `not-allowed`
  * cursor but cancels its `opacity-50` on both disabled arms, because a translucent thumb lets the
  * indicator show through its center. A disabled thumb keeps its opaque `bg-background` fill
@@ -36,8 +40,10 @@ export const sliderVariants = tv({
     root: "",
     value: cn("text-muted-foreground tabular-nums", labelTypeClass),
     control: "relative flex touch-none items-center select-none data-disabled:cursor-not-allowed",
-    track: "relative grow overflow-hidden rounded-full bg-input",
-    indicator: "rounded-full bg-primary data-disabled:bg-muted-foreground",
+    track:
+      "relative grow overflow-hidden rounded-full bg-input forced-colors:outline forced-colors:outline-[CanvasText]",
+    indicator:
+      "rounded-full mark-fill-primary data-disabled:bg-muted-foreground forced-colors:data-disabled:bg-[GrayText]",
     thumb: cn(
       "shadow-xs box-border block size-[16px] shrink-0 rounded-full border-2 border-primary bg-background transition-[box-shadow] after:absolute after:top-1/2 after:left-1/2 after:size-[24px] after:-translate-1/2 after:content-['']",
       withinFocusRingClass,

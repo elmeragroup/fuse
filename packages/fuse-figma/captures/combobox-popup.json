@@ -173,7 +173,7 @@
     {"property":"margin-inline","value":"calc(var(--surface-pad-sm) * -1)","important":false,"longhands":["margin-left","margin-right"],"source":"fuse","layer":"","selector":".-mx-\\(--surface-pad-sm\\)","className":"-mx-(--surface-pad-sm)","owner":0},
     {"property":"margin-block","value":".25rem","important":false,"longhands":["margin-top","margin-bottom"],"source":"fuse","layer":"","selector":".my-1","className":"my-1","owner":0},
     {"property":"height","value":"1px","important":false,"longhands":["height"],"source":"fuse","layer":"","selector":".h-px","className":"h-px","owner":0},
-    {"property":"background-color","value":"var(--border)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".bg-border","className":"bg-border","owner":0},
+    {"property":"background-color","value":"var(--border)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".mark-fill-border","className":"mark-fill-border","owner":0},
     {"property":"display","value":"flex","important":false,"longhands":["display"],"source":"fuse","layer":"","selector":".group-data-empty\\/combobox-content\\:flex:is(:where(.group\\/combobox-content)[data-empty] *)","className":"group-data-empty/combobox-content:flex","owner":0},
     {"property":"padding","value":"0","important":false,"longhands":["padding-top","padding-right","padding-bottom","padding-left"],"source":"fuse","layer":"","selector":".data-empty\\:p-0[data-empty]","className":"data-empty:p-0","owner":0},
     {"property":"--shell-inner","value":"calc(var(--radius) - var(--radius-step, 0px))","important":false,"longhands":["--shell-inner"],"source":"fuse","layer":"","selector":".data-empty\\:\\[--shell-inner\\:--theme\\(--radius-md\\)\\][data-empty]","className":"data-empty:[--shell-inner:--theme(--radius-md)]","owner":0}
@@ -441,7 +441,7 @@
                 {
                   "tag": "div",
                   "attributes": {"data-orientation":"horizontal","data-slot":"combobox-separator","role":"presentation"},
-                  "classes": ["-mx-(--surface-pad-sm)","my-1","h-px","bg-border"],
+                  "classes": ["-mx-(--surface-pad-sm)","my-1","h-px","mark-fill-border"],
                   "text": "",
                   "declarations": [62,63,67,6,68,69,70,103,128,129,130,131],
                   "initial": [67,70,103],

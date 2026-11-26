@@ -3,6 +3,8 @@ import { page } from "vitest/browser";
 
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
+import { withForcedColors } from "../../../test/media-emulation";
+import { differsFromCanvas } from "../../../test/screenshot-pixels";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { Separator } from "./separator";
 
@@ -28,4 +30,16 @@ describe("Separator", () => {
       expect(separator.getAttribute("aria-orientation")).toBe(expected);
     }
   );
+
+  it("draws its line in forced-colors mode", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(
+        <div data-testid="host" style={{ padding: 8 }}>
+          <Separator />
+        </div>
+      );
+      const host = page.getByTestId("host").element();
+      expect(await differsFromCanvas(host, [separatorNamed().getBoundingClientRect()])).toEqual([true]);
+    });
+  });
 });

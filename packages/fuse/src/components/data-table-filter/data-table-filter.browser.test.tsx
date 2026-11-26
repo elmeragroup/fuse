@@ -40,8 +40,10 @@ import {
   watchPressEndListeners,
 } from "../../../test/data-table-filter-fixture";
 import { withLocale } from "../../../test/locale-matrix";
+import { withForcedColors } from "../../../test/media-emulation";
 import { whilePointerPressed } from "../../../test/pointer-press";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
+import { differsFromCanvas } from "../../../test/screenshot-pixels";
 import { renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
 import type { Finger, Touchscreen } from "../../../test/touch-input";
 import { withTouchscreen } from "../../../test/touch-input";
@@ -1159,6 +1161,23 @@ describe("menu", () => {
       await expect.poll(visibleOrders).toBe("1 3");
       expect(roleNamed("menuitemcheckbox", "Paid").getAttribute("aria-checked")).toBe("true");
       expect(menuOpen()).toBe(true);
+    });
+
+    it("dots a filtered field's row in forced-colors mode", async () => {
+      await withForcedColors("active", async () => {
+        renderOrders({ initial: STATUS_THREE });
+        await openMenu();
+        await finishMotion();
+        // The dot is the row's one empty hidden span, between its label and its caret.
+        const dot = [...roleNamed("menuitem", "Status").children].find(
+          (child) =>
+            child.tagName === "SPAN" && child.hasAttribute("aria-hidden") && child.childNodes.length === 0
+        );
+        if (dot === undefined) throw new Error("expected the Status row's dot");
+        expect(
+          await differsFromCanvas(roleNamed("dialog", "Add filter"), [dot.getBoundingClientRect()])
+        ).toEqual([true]);
+      });
     });
 
     it("applies a date preset and closes the menu with focus on the Trigger", async () => {

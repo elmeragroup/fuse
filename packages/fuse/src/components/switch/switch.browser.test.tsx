@@ -9,6 +9,8 @@ import { getOrThrow } from "@elmeragroup/color/result";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import { withForcedColors } from "../../../test/media-emulation";
+import { differsFromCanvas, middleOf } from "../../../test/screenshot-pixels";
 import { consumerCss } from "../../../test/tailwind-consumer-build";
 import {
   computedContrast,
@@ -253,5 +255,18 @@ describe("Switch", () => {
       throw new Error("expected before button");
     }
     await assertFocusRingAtBothDensities(previous, switchNamed("Alerts"));
+  });
+
+  it("draws the thumb on and off in forced-colors mode", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(
+        <div data-testid="host" style={{ padding: 8 }}>
+          <Switch aria-label="On" defaultChecked /> <Switch aria-label="Off" />
+        </div>
+      );
+      for (const animation of document.getAnimations()) animation.finish();
+      const thumbs = ["On", "Off"].map((name) => middleOf(switchThumb(switchNamed(name), name), 4));
+      expect(await differsFromCanvas(page.getByTestId("host").element(), thumbs)).toEqual([true, true]);
+    });
   });
 });

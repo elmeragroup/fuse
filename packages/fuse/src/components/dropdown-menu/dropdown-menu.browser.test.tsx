@@ -7,6 +7,8 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
+import { withForcedColors } from "../../../test/media-emulation";
+import { differsFromCanvas } from "../../../test/screenshot-pixels";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { roleNamed } from "../../../test/themed-browser-render";
 import { DropdownMenu } from "./index";
@@ -90,6 +92,16 @@ describe("DropdownMenu", () => {
     await userEvent.click(itemNamed("Logout"));
     await vi.waitFor(() => {
       expect(page.getByRole("menu").query()).toBeNull();
+    });
+  });
+
+  it("draws its separator in forced-colors mode", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(<BasicMenu extra={<DropdownMenu.Separator />} />);
+      const menu = await openWithClick();
+      for (const animation of document.getAnimations()) animation.finish();
+      const line = page.getByRole("separator").element().getBoundingClientRect();
+      expect(await differsFromCanvas(menu, [line])).toEqual([true]);
     });
   });
 

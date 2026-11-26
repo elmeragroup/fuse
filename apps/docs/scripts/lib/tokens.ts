@@ -10,16 +10,17 @@
  *      `@theme inline` block of `packages/fuse/src/styles/fuse.css` — the library's own
  *      utility → token map, so no token name is ever hand-listed here.
  *
- * Only the utility *prefixes* in `COLOR_UTILITY_PREFIXES` are Tailwind knowledge; a
- * candidate becomes a token only when its suffix is present in that generated map, so
- * `text-sm` resolves to nothing while `text-primary` resolves to `--primary`.
+ * Only the utility *prefixes* in `COLOR_UTILITY_PREFIXES` are Tailwind knowledge, plus
+ * `mark-fill`, the library's own fill utility for marks in fuse.css; a candidate becomes a
+ * token only when its suffix is present in that generated map, so `text-sm` resolves to
+ * nothing while `text-primary` resolves to `--primary`.
  */
 
 import { readFileSync } from "node:fs";
 
 import type { TokenRef } from "../../src/lib/docs-model.ts";
 
-/** Tailwind utility namespaces whose value is a colour. */
+/** Tailwind utility namespaces whose value is a colour, and fuse.css's own `mark-fill`. */
 const COLOR_UTILITY_PREFIXES = [
   "accent",
   "bg",
@@ -37,6 +38,7 @@ const COLOR_UTILITY_PREFIXES = [
   "divide",
   "fill",
   "from",
+  "mark-fill",
   "outline",
   "placeholder",
   "ring",

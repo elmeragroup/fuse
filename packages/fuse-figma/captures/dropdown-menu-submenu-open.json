@@ -135,7 +135,7 @@
     {"property":"margin-inline","value":"calc(var(--surface-pad-sm) * -1)","important":false,"longhands":["margin-left","margin-right"],"source":"fuse","layer":"","selector":".-mx-\\(--surface-pad-sm\\)","className":"-mx-(--surface-pad-sm)","owner":0},
     {"property":"margin-block","value":".25rem","important":false,"longhands":["margin-top","margin-bottom"],"source":"fuse","layer":"","selector":".my-1","className":"my-1","owner":0},
     {"property":"height","value":"1px","important":false,"longhands":["height"],"source":"fuse","layer":"","selector":".h-px","className":"h-px","owner":0},
-    {"property":"background-color","value":"var(--border)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".bg-border","className":"bg-border","owner":0},
+    {"property":"background-color","value":"var(--border)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".mark-fill-border","className":"mark-fill-border","owner":0},
     {"property":"overflow-x","value":"hidden","important":false,"longhands":["overflow-x"],"source":"user-agent","layer":"","selector":"svg:not(:root)","className":"user agent","owner":0},
     {"property":"overflow-y","value":"hidden","important":false,"longhands":["overflow-y"],"source":"user-agent","layer":"","selector":"svg:not(:root)","className":"user agent","owner":0},
     {"property":"overflow-clip-margin","value":"content-box","important":false,"longhands":["overflow-clip-margin"],"source":"user-agent","layer":"","selector":"svg:not(:root)","className":"user agent","owner":0},
@@ -261,7 +261,7 @@
             {
               "tag": "div",
               "attributes": {"aria-orientation":"horizontal","data-orientation":"horizontal","data-slot":"dropdown-menu-separator","role":"separator"},
-              "classes": ["-mx-(--surface-pad-sm)","my-1","h-px","bg-border"],
+              "classes": ["-mx-(--surface-pad-sm)","my-1","h-px","mark-fill-border"],
               "text": "",
               "declarations": [62,63,64,6,65,66,67,69,90,91,92,93],
               "initial": [64,67,69],

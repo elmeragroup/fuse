@@ -140,7 +140,7 @@
     {"property":"--tw-translate-y","value":"calc(calc(1 / 2 * 100%) * -1)","important":false,"longhands":["--tw-translate-y"],"source":"fuse","layer":"","selector":".-translate-y-1\\/2","className":"-translate-y-1/2","owner":0},
     {"property":"translate","value":"var(--tw-translate-x) var(--tw-translate-y)","important":false,"longhands":["translate"],"source":"fuse","layer":"","selector":".-translate-y-1\\/2","className":"-translate-y-1/2","owner":0},
     {"property":"border-radius","value":"3.40282e38px","important":false,"longhands":["border-top-left-radius","border-top-right-radius","border-bottom-right-radius","border-bottom-left-radius"],"source":"fuse","layer":"","selector":".rounded-full","className":"rounded-full","owner":0},
-    {"property":"background-color","value":"var(--primary-foreground)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".bg-primary-foreground","className":"bg-primary-foreground","owner":0},
+    {"property":"background-color","value":"var(--primary-foreground)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".mark-fill-primary-foreground","className":"mark-fill-primary-foreground","owner":0},
     {"property":"margin","value":"0","important":false,"longhands":["margin-top","margin-right","margin-bottom","margin-left"],"source":"fuse","layer":"base","selector":":where([data-slot])","className":"fuse.css base layer","owner":0},
     {"property":"width","value":"1rem","important":false,"longhands":["width"],"source":"fuse","layer":"","selector":".size-4","className":"size-4","owner":0},
     {"property":"height","value":"1rem","important":false,"longhands":["height"],"source":"fuse","layer":"","selector":".size-4","className":"size-4","owner":0},
@@ -366,7 +366,7 @@
                                     {
                                       "tag": "span",
                                       "attributes": {},
-                                      "classes": ["absolute","top-1/2","left-1/2","size-2","-translate-x-1/2","-translate-y-1/2","rounded-full","bg-primary-foreground"],
+                                      "classes": ["absolute","top-1/2","left-1/2","size-2","-translate-x-1/2","-translate-y-1/2","rounded-full","mark-fill-primary-foreground"],
                                       "text": "",
                                       "declarations": [2,3,4,5,6,89,90,91,92,93,94,95,96,97,98],
                                       "initial": [3,4],
@@ -683,7 +683,7 @@
                                     {
                                       "tag": "span",
                                       "attributes": {},
-                                      "classes": ["absolute","top-1/2","left-1/2","size-2","-translate-x-1/2","-translate-y-1/2","rounded-full","bg-primary-foreground"],
+                                      "classes": ["absolute","top-1/2","left-1/2","size-2","-translate-x-1/2","-translate-y-1/2","rounded-full","mark-fill-primary-foreground"],
                                       "text": "",
                                       "declarations": [2,3,4,5,6,89,90,91,92,93,94,95,96,97,98],
                                       "initial": [3,4],
@@ -1000,7 +1000,7 @@
                                     {
                                       "tag": "span",
                                       "attributes": {},
-                                      "classes": ["absolute","top-1/2","left-1/2","size-2","-translate-x-1/2","-translate-y-1/2","rounded-full","bg-primary-foreground"],
+                                      "classes": ["absolute","top-1/2","left-1/2","size-2","-translate-x-1/2","-translate-y-1/2","rounded-full","mark-fill-primary-foreground"],
                                       "text": "",
                                       "declarations": [2,3,4,5,6,89,90,91,92,93,94,95,96,97,98],
                                       "initial": [3,4],
@@ -1331,7 +1331,7 @@
                                     {
                                       "tag": "span",
                                       "attributes": {},
-                                      "classes": ["absolute","top-1/2","left-1/2","size-2","-translate-x-1/2","-translate-y-1/2","rounded-full","bg-primary-foreground"],
+                                      "classes": ["absolute","top-1/2","left-1/2","size-2","-translate-x-1/2","-translate-y-1/2","rounded-full","mark-fill-primary-foreground"],
                                       "text": "",
                                       "declarations": [2,3,4,5,6,89,90,91,92,93,94,95,96,97,98],
                                       "initial": [3,4],
@@ -1649,7 +1649,7 @@
                                     {
                                       "tag": "span",
                                       "attributes": {},
-                                      "classes": ["absolute","top-1/2","left-1/2","size-2","-translate-x-1/2","-translate-y-1/2","rounded-full","bg-primary-foreground"],
+                                      "classes": ["absolute","top-1/2","left-1/2","size-2","-translate-x-1/2","-translate-y-1/2","rounded-full","mark-fill-primary-foreground"],
                                       "text": "",
                                       "declarations": [2,3,4,5,6,89,90,91,92,93,94,95,96,97,98],
                                       "initial": [3,4],
@@ -1967,7 +1967,7 @@
                                     {
                                       "tag": "span",
                                       "attributes": {},
-                                      "classes": ["absolute","top-1/2","left-1/2","size-2","-translate-x-1/2","-translate-y-1/2","rounded-full","bg-primary-foreground"],
+                                      "classes": ["absolute","top-1/2","left-1/2","size-2","-translate-x-1/2","-translate-y-1/2","rounded-full","mark-fill-primary-foreground"],
                                       "text": "",
                                       "declarations": [2,3,4,5,6,89,90,91,92,93,94,95,96,97,98],
                                       "initial": [3,4],

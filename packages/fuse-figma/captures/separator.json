@@ -114,7 +114,7 @@
     {"property":"padding","value":"0","important":false,"longhands":["padding-top","padding-right","padding-bottom","padding-left"],"source":"fuse","layer":"base","selector":":where([data-slot])","className":"fuse.css base layer","owner":0},
     {"property":"width","value":"calc(0.25rem * 64)","important":false,"longhands":["width"],"source":"page","layer":"utilities","selector":".data-horizontal\\:w-64:where([data-orientation=\"horizontal\"])","className":"data-horizontal:w-64","owner":0},
     {"property":"flex-shrink","value":"0","important":false,"longhands":["flex-shrink"],"source":"fuse","layer":"","selector":".shrink-0","className":"shrink-0","owner":0},
-    {"property":"background-color","value":"var(--border)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".bg-border","className":"bg-border","owner":0},
+    {"property":"background-color","value":"var(--border)","important":false,"longhands":["background-color"],"source":"fuse","layer":"","selector":".mark-fill-border","className":"mark-fill-border","owner":0},
     {"property":"height","value":"1px","important":false,"longhands":["height"],"source":"fuse","layer":"","selector":".data-horizontal\\:h-px:where([data-orientation=\"horizontal\"])","className":"data-horizontal:h-px","owner":0},
     {"property":"height","value":"calc(0.25rem * 4)","important":false,"longhands":["height"],"source":"page","layer":"utilities","selector":".data-vertical\\:h-4:where([data-orientation=\"vertical\"])","className":"data-vertical:h-4","owner":0},
     {"property":"align-self","value":"auto","important":false,"longhands":["align-self"],"source":"page","layer":"utilities","selector":".data-vertical\\:self-auto:where([data-orientation=\"vertical\"])","className":"data-vertical:self-auto","owner":0},
@@ -130,7 +130,7 @@
         "root": {
           "tag": "div",
           "attributes": {"aria-orientation":"horizontal","data-orientation":"horizontal","data-slot":"separator","role":"separator"},
-          "classes": ["shrink-0","bg-border","data-horizontal:h-px","data-vertical:w-px","data-horizontal:w-64","data-vertical:h-4","data-vertical:self-auto"],
+          "classes": ["shrink-0","mark-fill-border","data-horizontal:h-px","data-vertical:w-px","data-horizontal:w-64","data-vertical:h-4","data-vertical:self-auto"],
           "text": "",
           "declarations": [62,63,64,6,65,66,67,68,69,70,71,72,73],
           "initial": [64,67,68,69],
@@ -151,7 +151,7 @@
         "root": {
           "tag": "div",
           "attributes": {"aria-orientation":"vertical","data-orientation":"vertical","data-slot":"separator","role":"separator"},
-          "classes": ["shrink-0","bg-border","data-horizontal:h-px","data-vertical:w-px","data-horizontal:w-64","data-vertical:h-4","data-vertical:self-auto"],
+          "classes": ["shrink-0","mark-fill-border","data-horizontal:h-px","data-vertical:w-px","data-horizontal:w-64","data-vertical:h-4","data-vertical:self-auto"],
           "text": "",
           "declarations": [62,63,64,6,65,66,67,68,69,74,75,71,72,76],
           "initial": [64,67,68,69,75],

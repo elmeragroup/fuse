@@ -1,7 +1,7 @@
 /**
- * Pixel reads from a browser screenshot, and the check of a read pixel against a theme token's
- * color. A screenshot shows the painted result after stacking and clipping, which computed styles
- * do not report.
+ * Pixel reads from a browser screenshot, the check of a read pixel against a theme token's color,
+ * and the check of a region against the forced-colors canvas. A screenshot shows the painted
+ * result after stacking and clipping, which computed styles do not report.
  */
 import { expect } from "vitest";
 import { page } from "vitest/browser";
@@ -41,6 +41,67 @@ export async function rows(element: Element, column: number, at: readonly number
   return pixelsAt(
     element,
     at.map((row) => [column, row] as const)
+  );
+}
+
+/**
+ * The square at the center of an element's box, a region a centered mark fills whatever its edges
+ * and size.
+ *
+ * @param element - The element, such as a dot.
+ * @param size - The square's side, in CSS pixels.
+ * @returns The square, in CSS pixels from the viewport's top left corner.
+ */
+export function middleOf(element: Element, size: number): DOMRect {
+  const { x, y, width, height } = element.getBoundingClientRect();
+  return new DOMRect(x + (width - size) / 2, y + (height - size) / 2, size, size);
+}
+
+/**
+ * Whether each region of one screenshot of an element shows a pixel in a color other than
+ * `Canvas`. Forced-colors mode gives most backgrounds that system color, so a mark drawn only by
+ * a background fill shows nothing there unless a forced-colors rule gives it another color.
+ *
+ * @param element - The element to shoot, which holds every region.
+ * @param regions - Boxes in CSS pixels from the viewport's top left corner, as
+ * `getBoundingClientRect` reports them.
+ * @returns One answer per region, in order.
+ * @throws When a region is empty or leaves the element's box, where every answer would read alike.
+ */
+export async function differsFromCanvas(
+  element: Element,
+  regions: readonly DOMRectReadOnly[]
+): Promise<boolean[]> {
+  const box = element.getBoundingClientRect();
+  const probe = document.createElement("span");
+  probe.style.backgroundColor = "Canvas";
+  element.append(probe);
+  const { r, g, b, alpha } = toSrgb(getComputedStyle(probe).backgroundColor);
+  probe.remove();
+  const canvas = [r, g, b, alpha].map((value) => value * 255);
+  // The screenshot covers the whole pixels the box touches: a host from x = 0.5 to 8.5 gives
+  // columns 0 to 8, 9 wide. A region maps to the pixels it touches the same way. Subtracting the
+  // fractional box edge before rounding would read the pixel before the region.
+  const origin = { x: Math.floor(box.left), y: Math.floor(box.top) };
+  const size = { width: Math.ceil(box.right) - origin.x, height: Math.ceil(box.bottom) - origin.y };
+  const points = regions.map((region) => {
+    const left = Math.floor(region.left) - origin.x;
+    const top = Math.floor(region.top) - origin.y;
+    const right = Math.ceil(region.right) - origin.x;
+    const bottom = Math.ceil(region.bottom) - origin.y;
+    if (left < 0 || top < 0 || right > size.width || bottom > size.height) {
+      throw new Error(`the region at (${String(region.x)}, ${String(region.y)}) leaves the element's box`);
+    }
+    if (right <= left || bottom <= top) throw new Error("expected a region at least one pixel wide and tall");
+    return Array.from({ length: right - left }, (_, column) =>
+      Array.from({ length: bottom - top }, (_, row): Point => [left + column, top + row])
+    ).flat();
+  });
+  const pixels = await pixelsAt(element, points.flat());
+  return points.map(({ length }) =>
+    pixels
+      .splice(0, length)
+      .some((pixel) => canvas.some((value, channel) => Math.abs((pixel[channel] ?? Number.NaN) - value) > 1))
   );
 }
 

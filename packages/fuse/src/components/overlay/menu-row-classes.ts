@@ -29,7 +29,7 @@ const overlayMenuVariants = tv({
     /** The start padding of an inset row or label, which lines its text up with rows that start with an icon. */
     inset: "data-inset:pl-[calc(var(--row-px)+1.5rem)]",
     /** The hairline rule between option groups, shared by Select, Combobox and DropdownMenu. */
-    separator: "-mx-(--surface-pad-sm) my-1 h-px bg-border",
+    separator: "-mx-(--surface-pad-sm) my-1 h-px mark-fill-border",
     groupLabel: "text-xs px-(--row-px) py-1.5 text-muted-foreground",
   },
 });

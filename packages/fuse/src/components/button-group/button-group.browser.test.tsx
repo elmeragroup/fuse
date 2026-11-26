@@ -4,6 +4,8 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
+import { withForcedColors } from "../../../test/media-emulation";
+import { differsFromCanvas } from "../../../test/screenshot-pixels";
 import { fkasBranded } from "../../../test/theme-fixtures";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
@@ -87,6 +89,23 @@ describe("ButtonGroup", () => {
     expect(document.activeElement).toBe(buttonNamed("Save"));
     await userEvent.keyboard("{ArrowLeft}");
     expect(document.activeElement).toBe(buttonNamed("Save"));
+  });
+
+  it("draws the separator between two filled buttons in forced-colors mode", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(
+        <ButtonGroup.Root aria-label="Actions">
+          <Button>Save</Button>
+          <ButtonGroup.Separator />
+          <Button>Cancel</Button>
+        </ButtonGroup.Root>
+      );
+      const separator = page.getByRole("separator").element();
+      // The middle half of the hairline, clear of the buttons' top and bottom edges.
+      const { x, y, width, height } = separator.getBoundingClientRect();
+      const middle = new DOMRect(x, y + height / 4, width, height / 2);
+      expect(await differsFromCanvas(groupNamed("Actions"), [middle])).toEqual([true]);
+    });
   });
 
   // The fkas external theme has a 12px --radius and a 2px step, so rounded-md is 10px. A field alone

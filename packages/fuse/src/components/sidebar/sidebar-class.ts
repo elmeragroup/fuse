@@ -57,7 +57,7 @@ export const sidebarSectionClass = cn(sidebarSectionShellClass, "flex flex-col g
  * width carries `separatorClass`'s `data-horizontal:` modifier, so tailwind-merge drops that
  * `w-full`, which would otherwise outrank a bare `w-auto` and push the hairline 8px past the end.
  */
-export const sidebarSeparatorClass = cn("mx-2 bg-sidebar-border data-horizontal:w-auto");
+export const sidebarSeparatorClass = cn("mx-2 mark-fill-sidebar-border data-horizontal:w-auto");
 
 /**
  * `Sidebar.Content`: the column between header and footer that takes the remaining height and
