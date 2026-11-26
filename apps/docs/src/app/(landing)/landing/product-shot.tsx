@@ -37,7 +37,9 @@ const productShot = tv({
     headerTab: "px-2",
     // Phones scroll the tab row like a native tab bar instead of clipping it.
     headerTabs: "landing-rail min-w-0 flex-1 overflow-x-auto",
-    body: "sm:p-6 md:grid-cols-[minmax(0,26fr)_minmax(0,19fr)] md:min-h-170 grid grid-cols-1 content-start gap-6 p-4",
+    // The window clips what overflows it, so the panel draws its focus ring and forced-colors
+    // outline inside its own box, along the window's rounded bottom corners.
+    body: "sm:p-6 md:grid-cols-[minmax(0,26fr)_minmax(0,19fr)] md:min-h-170 rounded-b-2xl grid grid-cols-1 content-start gap-6 p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden focus-visible:-outline-offset-2 focus-visible:ring-inset",
     column: "flex min-w-0 flex-col gap-6",
     usageHead: "flex flex-wrap items-start justify-between gap-3",
     figureRow: "mt-4 flex flex-wrap items-center gap-3",

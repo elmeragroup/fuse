@@ -29,7 +29,7 @@ const siteSpotlight = tv({
     action: "mt-2",
     // The illustration frame closes with a plain underlined link, as its reference does.
     textLink:
-      "text-base font-medium mt-1 inline-flex min-h-6 items-center rounded-sm text-current underline decoration-current/40 underline-offset-4 transition-colors duration-150 outline-none hover:decoration-current focus-visible:ring-2 focus-visible:ring-ring",
+      "text-base font-medium mt-1 inline-flex min-h-6 items-center rounded-sm text-current underline decoration-current/40 underline-offset-4 transition-colors duration-150 outline-none hover:decoration-current focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden",
   },
   variants: {
     frame: {

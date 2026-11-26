@@ -42,7 +42,10 @@ const orderList = tv({
     // A 40px column the checkbox sits in, shown on hover, focus or once anything is checked.
     check:
       "absolute inset-y-0 left-0 z-10 flex w-10 items-center justify-center opacity-0 transition-opacity duration-150 group-hover/row:opacity-100 group-data-[checking=true]/list:opacity-100 focus-within:opacity-100 motion-reduce:transition-none",
-    row: "group/order text-sm flex h-10 w-full cursor-default items-center gap-3 pr-4 pl-10 text-left text-foreground transition-colors duration-100 outline-none hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset aria-[current=true]:bg-accent aria-[current=true]:text-accent-foreground motion-reduce:transition-none",
+    // The list clips its rows, so a row draws its focus inside its box. Forced colors drop the
+    // current row's fill, so there it takes a Highlight bar 4px in, between the focus outline and
+    // the checkbox. Presses pass through the bar.
+    row: "group/order text-sm flex h-10 w-full cursor-default items-center gap-3 pr-4 pl-10 text-left text-foreground transition-colors duration-100 outline-none hover:bg-muted/70 focus-visible:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-hidden focus-visible:-outline-offset-2 focus-visible:ring-inset aria-[current=true]:bg-accent aria-[current=true]:text-accent-foreground motion-reduce:transition-none forced-colors:aria-[current=true]:before:pointer-events-none forced-colors:aria-[current=true]:before:absolute forced-colors:aria-[current=true]:before:inset-y-1.5 forced-colors:aria-[current=true]:before:left-1 forced-colors:aria-[current=true]:before:w-0.75 forced-colors:aria-[current=true]:before:bg-[Highlight]",
     id: `text-xs w-13 shrink-0 font-mono tabular-nums ${MUTED_CELL}`,
     // The customer keeps its name; the product gives way first. The campaign is in the detail.
     customer: "font-medium w-32 shrink-0 truncate",

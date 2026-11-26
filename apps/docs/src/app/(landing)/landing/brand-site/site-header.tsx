@@ -22,18 +22,21 @@ const siteHeader = tv({
     utility:
       "landing-dark:bg-card landing-dark:text-card-foreground hidden bg-secondary text-secondary-foreground",
     utilityInner: "text-xs max-w-6xl @3xl:px-10 mx-auto flex h-9 w-full items-center gap-5 px-5",
+    // The header links draw focus as a box-shadow ring, which forced-colors mode drops, so each ring
+    // pairs with focus-visible:outline-hidden, a 2px outline there and nothing elsewhere. The utility
+    // and segment links draw both indicators inside their bounds to avoid clipping.
     utilityLink:
-      "aria-[current=page]:font-medium inline-flex h-full items-center gap-1.5 border-b-2 border-transparent text-current/85 no-underline outline-none hover:text-current focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset aria-[current=page]:border-current aria-[current=page]:text-current",
+      "aria-[current=page]:font-medium inline-flex h-full items-center gap-1.5 border-b-2 border-transparent text-current/85 no-underline outline-none hover:text-current focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden focus-visible:-outline-offset-2 focus-visible:ring-inset aria-[current=page]:border-current aria-[current=page]:text-current",
     utilityIcon: "size-3.5",
     utilityEnd: "ml-auto flex h-full items-center gap-5",
     bar: "max-w-6xl @3xl:gap-6 @3xl:px-10 mx-auto flex h-16 w-full items-center gap-4 px-4",
-    logo: "flex h-10 shrink-0 items-center rounded-sm text-brand no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+    logo: "flex h-10 shrink-0 items-center rounded-sm text-brand no-underline outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-hidden",
     logoArt: "@3xl:h-7 flex h-6 *:flex *:*:h-full *:h-full *:*:w-auto",
     wordmark: "text-foreground",
     utilitySegments: "flex h-full items-stretch gap-5",
     segments: "hidden h-16 items-stretch gap-5",
     segment:
-      "text-sm aria-[current=page]:font-semibold inline-flex items-center border-b-2 border-transparent text-muted-foreground no-underline outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset aria-[current=page]:border-primary aria-[current=page]:text-foreground",
+      "text-sm aria-[current=page]:font-semibold inline-flex items-center border-b-2 border-transparent text-muted-foreground no-underline outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden focus-visible:-outline-offset-2 focus-visible:ring-inset aria-[current=page]:border-primary aria-[current=page]:text-foreground",
     navSingle: "hidden flex-1 justify-center",
     navRow: "hidden",
     navRowInner: "max-w-6xl @3xl:px-8 mx-auto flex h-12 w-full items-center px-3",
@@ -49,7 +52,7 @@ const siteHeader = tv({
     sheetGroup: "flex flex-col gap-1",
     sheetHeading: "text-xs font-medium px-2 pb-1 text-muted-foreground",
     sheetLink:
-      "text-base flex min-h-11 items-center gap-3 rounded-md px-2 text-foreground no-underline outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
+      "text-base flex min-h-11 items-center gap-3 rounded-md px-2 text-foreground no-underline outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden",
     sheetSegments: "flex gap-2",
     sheetActions: "flex flex-col gap-2 border-t border-border pt-6",
   },
