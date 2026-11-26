@@ -5,7 +5,7 @@ import { dateInputShellClass } from "../../styles/inner-corner/date-field";
 import { pickerPresetsShellClass } from "../../styles/inner-corner/picker";
 import { dataStateFaceClass } from "../../styles/state-face";
 import { tv } from "../../styles/tv";
-import { dateBoxFocusRingClass } from "../../styles/utils";
+import { dateBoxFocusRingClass, withinFocusRingClass, withinFocusRingControlClass } from "../../styles/utils";
 import { buttonVariants } from "../button/button-variants";
 import { dateRowScrollClass } from "../date-field/date-input-variants";
 
@@ -50,7 +50,8 @@ import { dateRowScrollClass } from "../date-field/date-input-variants";
  *   the role stays beside the divider. The pane takes no padding or gap, so the divider runs edge to
  *   edge across the popover; the preset group and the calendar each carry their own inset.
  * - `presets` / `preset` are the radio group and each preset, a ghost `sm` button around a native
- *   radio, filled while checked and dimmed by the data-target state face while disabled.
+ *   radio, filled while checked and dimmed by the data-target state face while disabled. The
+ *   preset rings through {@link withinFocusRingClass} while its radio matches `:focus-visible`.
  */
 export const datePickerVariants = tv({
   slots: {
@@ -86,9 +87,9 @@ export const datePickerVariants = tv({
       "relative justify-start rounded-inner text-left",
       "data-checked:bg-accent data-checked:text-accent-foreground",
       dataStateFaceClass,
-      "has-focus-visible:ring-3 has-focus-visible:ring-ring/50"
+      withinFocusRingClass
     ),
-    presetInput: "sr-only",
+    presetInput: cn("sr-only", withinFocusRingControlClass),
   },
   variants: {
     size: {

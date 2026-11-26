@@ -856,7 +856,6 @@
       "rsc": "client",
       "sourcePath": "packages/fuse/src/components/date-picker/picker-shell.tsx",
       "forwardedFrom": [
-        "@base-ui/react",
         "@types/react"
       ],
       "forwardedCount": 280,
@@ -908,13 +907,11 @@
         },
         {
           "name": "render",
-          "origin": {
-            "packageName": "@base-ui/react"
-          },
+          "origin": "declared",
           "type": "ComponentRenderFn<HTMLProps, DatePickerPresetItemState> | ReactElement<unknown, string | JSXElementConstructor<any>> | undefined",
           "shortType": "Union",
           "defaultValue": null,
-          "description": "Allows you to replace the component's HTML element with a different tag, or compose it with another component. Accepts a `ReactElement` or a function that returns the element to render.",
+          "description": "The element that replaces the host `<label>`, or a callback of its props and state that returns one. Either way, keep the preset's children directly inside the DOM element that receives its props. The focus ring reads the radio as that element's direct child, so a wrapper around the children hides keyboard focus.",
           "required": false
         },
         {

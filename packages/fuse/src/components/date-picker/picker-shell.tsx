@@ -532,10 +532,17 @@ export type DatePickerPresetItemState = {
 /** Props for `DatePicker.PresetItem`: a `label`'s props, Base UI's `render` and the preset's own. */
 export type DatePickerPresetItemProps = Omit<
   useRender.ComponentProps<"label", DatePickerPresetItemState>,
-  "children" | "className"
+  "children" | "className" | "render"
 > & {
   /** Extra classes, or a callback of the preset's state that returns them. */
   className?: DatePickerClassName<DatePickerPresetItemState>;
+  /**
+   * The element that replaces the host `<label>`, or a callback of its props and state that
+   * returns one. Either way, keep the preset's children directly inside the DOM element that
+   * receives its props. The focus ring reads the radio as that element's direct child, so a wrapper
+   * around the children hides keyboard focus.
+   */
+  render?: useRender.ComponentProps<"label", DatePickerPresetItemState>["render"];
   /** The preset's key, which the pane reports. */
   value: string;
   /**
@@ -614,6 +621,7 @@ export function DatePickerPresetItem({
               <input
                 type="radio"
                 className={styles.presetInput()}
+                data-focus-ring-control=""
                 name={presets.name}
                 value={value}
                 checked={checked}
