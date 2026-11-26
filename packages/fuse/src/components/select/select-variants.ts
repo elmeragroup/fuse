@@ -15,6 +15,10 @@ import {
 } from "../overlay/menu-row-classes";
 import { overlayTimedPopupClass } from "../overlay/overlay-classes";
 
+const selectScrollArrowClass = cn(
+  "z-10 flex h-6 w-full cursor-default items-center justify-center bg-popover [--surface-muted-foreground:inherit] [--surface:inherit] [&_svg:not([class*='size-'])]:size-4"
+);
+
 /**
  * The module-private recipe for `Select.Trigger` and the value and caret it holds. It is not
  * exported from `@elmeragroup/fuse/select`, and the workspace-only recipe catalog re-exports it
@@ -68,11 +72,22 @@ export const selectTriggerVariants = tv({
 /**
  * The module-private recipe for the parts of the open Select. It is not exported from
  * `@elmeragroup/fuse/select`, and the workspace-only recipe catalog re-exports it for the Figma
- * component sync. The scroll arrows keep their classes in `select.tsx`.
+ * component sync.
  *
  * - `content` is the shared timed popup on the Select shell, which pads nothing. It is as wide as
- *   the trigger and at least 144px, scrolls within the available height, and skips its entrance
- *   animation while it aligns the selected item with the trigger.
+ *   the trigger and at least 144px, stops at the available height and clips, and skips its
+ *   entrance animation while it aligns the selected item with the trigger. Its column lets the list
+ *   shrink to that height.
+ * - `list` is Base UI's `Select.List`, which scrolls at the popup's height. Base UI reads its
+ *   overflow to show the scroll arrows. Its 24px scroll padding is the arrow's height, so a row that
+ *   comes into view by keyboard stays clear of the arrow over that end.
+ * - `scrollUpArrow` and `scrollDownArrow` are the public scroll arrows, 24px tall, which center
+ *   their 16px glyph. Base UI writes `position: absolute` inline on them, so they lie over the top
+ *   and bottom edges of the popup they are composed in.
+ * - `listScrollUpArrow` and `listScrollDownArrow` place the arrows `Select.Content` renders inside
+ *   its list, so a wheel gesture over one still scrolls the list. `sticky!` overrides the inline
+ *   position, so they stick over the top and bottom edges of the visible list. A negative margin
+ *   as tall as the arrow keeps each one out of the list's scroll height.
  * - `item` is the shared menu row with room for the trailing check, highlighted on `focus:`, which
  *   recolors its descendants. Its last span child, the indicator, lays out its glyph.
  * - `itemText` fills the row on one line.
@@ -86,8 +101,13 @@ export const selectContentVariants = tv({
     content: [
       overlayTimedPopupClass,
       selectPopupShellClass,
-      "relative max-h-(--available-height) w-(--anchor-width) min-w-36 overflow-x-hidden overflow-y-auto data-[align-trigger=true]:transition-none",
+      "relative flex max-h-(--available-height) w-(--anchor-width) min-w-36 flex-col overflow-hidden data-[align-trigger=true]:transition-none",
     ],
+    list: "min-h-0 scroll-py-6 overflow-x-hidden overflow-y-auto",
+    scrollUpArrow: [selectScrollArrowClass, "top-0"],
+    scrollDownArrow: [selectScrollArrowClass, "bottom-0"],
+    listScrollUpArrow: "sticky! -mb-6",
+    listScrollDownArrow: "sticky! -mt-6",
     item: [
       menuItemClass,
       menuItemIndicatorRoomClass,

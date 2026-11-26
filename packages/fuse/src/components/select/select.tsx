@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import type { ComponentProps, ReactElement } from "react";
 
 import { Select as SelectPrimitive } from "@base-ui/react/select";
@@ -70,8 +71,24 @@ export function SelectValue({
 }
 
 /** Props for {@link SelectContent}. */
-export type SelectContentProps = ComponentProps<typeof SelectPrimitive.Popup> &
+export type SelectContentProps = Omit<
+  ComponentProps<typeof SelectPrimitive.Popup>,
+  "onScroll" | "onScrollEnd"
+> &
   OverlayPositionerProps<ComponentProps<typeof SelectPrimitive.Positioner>> & {
+    /**
+     * Called when the list of options scrolls. The list scrolls inside the popup, so
+     * `event.currentTarget` is the `listbox` element, not the popup. Pass scroll listeners here.
+     * An `onScroll` on the `render` element never fires, because the popup does not scroll.
+     */
+    onScroll?: ComponentProps<typeof SelectPrimitive.List>["onScroll"];
+    /**
+     * Called when the list of options stops scrolling. Like `onScroll`, it fires on the list, so
+     * `event.currentTarget` is the `listbox` element. An `onScrollEnd` on the `render` element
+     * never fires. It forwards the native `scrollend` event, which Chrome fires from 114 and Safari
+     * from 26.2, so it never fires in Chrome 111 to 113 or Safari 16.4 to 26.1.
+     */
+    onScrollEnd?: ComponentProps<typeof SelectPrimitive.List>["onScrollEnd"];
     /**
      * Whether the popup opens over the trigger, with the selected item on the trigger's value, as
      * macOS menus do. Emitted as `data-align-trigger`. While it is on, the popup skips its entrance
@@ -97,8 +114,47 @@ export function SelectContent({
   alignOffset = 0,
   alignItemWithTrigger = true,
   container,
+  onScroll,
+  onScrollEnd,
+  onKeyDown,
   ...props
 }: SelectContentProps): ReactElement | null {
+  const listRef = useRef<HTMLDivElement>(null);
+  // Base UI focuses the popup while no option is highlighted, as after a mouse open, and leaves
+  // PageUp and PageDown to the browser, which scrolls the focused element. The list scrolls here,
+  // not the popup, so the popup pages the list itself and focus stays where Base UI put it. A page
+  // is the list's height less its scroll padding, the arrow at each end, so the row under the down
+  // arrow starts the next page clear of the up arrow. A list no taller than its padding pages by
+  // its whole height. A list that cannot scroll in the key's direction leaves the key to the
+  // browser, which scrolls the page when no scroll lock holds it. A consumer's `preventDefault()` or
+  // `preventBaseUIHandler()` cancels it.
+  const handleKeyDown: SelectContentProps["onKeyDown"] = (event) => {
+    onKeyDown?.(event);
+    const list = listRef.current;
+    if (
+      list === null ||
+      (event.key !== "PageDown" && event.key !== "PageUp") ||
+      event.target !== event.currentTarget ||
+      event.defaultPrevented ||
+      event.baseUIHandlerPrevented === true
+    ) {
+      return;
+    }
+    const down = event.key === "PageDown";
+    const style = getComputedStyle(list);
+    const padding =
+      (Number.parseFloat(style.scrollPaddingTop) || 0) + (Number.parseFloat(style.scrollPaddingBottom) || 0);
+    const usable = list.clientHeight - padding;
+    const page = usable > 0 ? usable : list.clientHeight;
+    // Scroll at once and keep the key only if the list moved. Measuring the room left first fails
+    // at a browser zoom, where rounding makes a list at its end report room and one with a sliver
+    // of room report none.
+    const before = list.scrollTop;
+    list.scrollBy({ top: down ? page : -page, behavior: "instant" });
+    if (list.scrollTop !== before) {
+      event.preventDefault();
+    }
+  };
   return (
     <OverlayPortal portal={SelectPrimitive.Portal} container={container}>
       <SelectPrimitive.Positioner
@@ -112,10 +168,19 @@ export function SelectContent({
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger ? "true" : "false"}
           className={mergeClassName(className, selectContentSlots.content())}
-          {...props}>
-          <SelectScrollUpButton />
-          <SelectPrimitive.List>{children}</SelectPrimitive.List>
-          <SelectScrollDownButton />
+          {...props}
+          onKeyDown={handleKeyDown}>
+          {/* Chromium puts a scroller with no tabbable descendant in the Tab order. `tabIndex={-1}`
+              keeps the list out of it, so Tab leaves the popup and closes it. */}
+          <SelectPrimitive.List
+            ref={listRef}
+            tabIndex={-1}
+            className={selectContentSlots.list()}
+            {...definedProps({ onScroll, onScrollEnd })}>
+            <SelectScrollUpButton className={selectContentSlots.listScrollUpArrow()} />
+            {children}
+            <SelectScrollDownButton className={selectContentSlots.listScrollDownArrow()} />
+          </SelectPrimitive.List>
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>
     </OverlayPortal>
@@ -189,7 +254,11 @@ export function SelectSeparator({
   );
 }
 
-/** The arrow at the top of a popup that scrolls. `Select.Content` renders one. */
+/**
+ * The arrow that covers the top edge of the list while the list can scroll up. Hovering it scrolls
+ * the list up. `Select.Content` renders one inside its list. One composed anywhere else keeps Base
+ * UI's absolute position, so give its popup `position: relative`.
+ */
 export function SelectScrollUpButton({
   className,
   ...props
@@ -197,17 +266,18 @@ export function SelectScrollUpButton({
   return (
     <SelectPrimitive.ScrollUpArrow
       data-slot="select-scroll-up-button"
-      className={mergeClassName(
-        className,
-        "top-0 z-10 flex w-full cursor-default items-center justify-center bg-popover [--surface-muted-foreground:inherit] [--surface:inherit] py-1 [&_svg:not([class*='size-'])]:size-4"
-      )}
+      className={mergeClassName(className, selectContentSlots.scrollUpArrow())}
       {...props}>
       <CaretUp />
     </SelectPrimitive.ScrollUpArrow>
   );
 }
 
-/** The arrow at the bottom of a popup that scrolls. `Select.Content` renders one. */
+/**
+ * The arrow that covers the bottom edge of the list while the list can scroll down. Hovering it
+ * scrolls the list down. `Select.Content` renders one inside its list. One composed anywhere else
+ * keeps Base UI's absolute position, so give its popup `position: relative`.
+ */
 export function SelectScrollDownButton({
   className,
   ...props
@@ -215,10 +285,7 @@ export function SelectScrollDownButton({
   return (
     <SelectPrimitive.ScrollDownArrow
       data-slot="select-scroll-down-button"
-      className={mergeClassName(
-        className,
-        "bottom-0 z-10 flex w-full cursor-default items-center justify-center bg-popover [--surface-muted-foreground:inherit] [--surface:inherit] py-1 [&_svg:not([class*='size-'])]:size-4"
-      )}
+      className={mergeClassName(className, selectContentSlots.scrollDownArrow())}
       {...props}>
       <CaretDown />
     </SelectPrimitive.ScrollDownArrow>
