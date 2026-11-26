@@ -88,9 +88,11 @@ export const dataTableFilterVariants = tv({
      * row. A menu row lights on `data-highlighted`, not on focus, since a filtering menu keeps real
      * focus in its search and moves a virtual highlight. It is 44px tall under a coarse pointer.
      */
+    // oxlint-disable-next-line fuse/forced-state-arm -- `menuItemClass` gives an enabled highlighted row its `forced-highlight` and a highlighted disabled row a CanvasText outline.
     row: "data-highlighted:bg-accent data-highlighted:text-accent-foreground pointer-coarse:min-h-11",
     /** row. A field row stays lit while its value submenu is open. */
     fieldRow:
+      // oxlint-disable-next-line fuse/forced-state-arm -- the companion covers only an enabled field row; one disabled while its popup is open drops the fill and shows its GrayText disabled face
       "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-popup-open:not-data-disabled:forced-highlight",
     /** The caret at the end of a field row, which leads to a further step. */
     caret: "ms-auto text-muted-foreground",
@@ -200,6 +202,7 @@ export const dataTableFilterVariants = tv({
      * control. A preset in the column, the date pickers' preset face: start-aligned, rounding with
      * the inner corner, and lit with the accent while pressed.
      */
+    // oxlint-disable-next-line fuse/forced-state-arm -- the preset renders through the Toggle recipe, which supplies `data-pressed:forced-highlight`
     presetBeside: "justify-start rounded-inner data-pressed:bg-accent data-pressed:text-accent-foreground",
     /** The wrapper of a date editor's function child, boxless under the presets. */
     dateSlot: "contents",

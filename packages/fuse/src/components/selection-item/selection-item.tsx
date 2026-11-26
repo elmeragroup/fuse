@@ -82,6 +82,7 @@ const firstLineClass = cn(
 // the control keeps its 50% face.
 const shellFillClass = cn(
   "bg-card [--item-foreground:--theme(--color-card-foreground)] [--surface-muted-foreground:--theme(--color-muted-foreground)] [--surface:--theme(--color-card)]",
+  // oxlint-disable-next-line fuse/forced-state-arm -- the checked control inside shows the state
   "has-[>label>[data-slot=selection-item-control]_[data-checked]]:bg-muted has-[>label>[data-slot=selection-item-control]_[data-checked]]:[--item-foreground:--theme(--color-foreground)] has-[>label>[data-slot=selection-item-control]_[data-checked]]:[--surface-muted-foreground:--theme(--color-muted-foreground)] has-[>label>[data-slot=selection-item-control]_[data-checked]]:[--surface:--theme(--color-muted)]"
 );
 

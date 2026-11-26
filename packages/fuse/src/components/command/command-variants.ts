@@ -22,6 +22,7 @@ export const commandVariants = tv({
   slots: {
     input: "m-(--surface-gap-sm) mb-0 w-auto shrink-0",
     list: "max-h-80 min-h-0 flex-1 scroll-py-(--surface-gap-sm) overflow-y-auto overscroll-contain",
+    // oxlint-disable-next-line fuse/forced-state-arm -- `menuItemClass` gives an enabled highlighted row its `forced-highlight` and a highlighted disabled row a CanvasText outline.
     item: cn(menuItemClass, "w-full data-highlighted:bg-accent data-highlighted:text-accent-foreground"),
     trailing: "ms-auto text-muted-foreground in-data-highlighted:text-accent-foreground",
     empty: "text-sm px-(--row-px) py-6 text-center text-muted-foreground empty:p-0",
