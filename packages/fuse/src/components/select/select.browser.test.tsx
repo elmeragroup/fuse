@@ -8,6 +8,9 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
 import { render } from "../../../test/browser-render";
+import { expectFocusInsideFill, expectStateFill } from "../../../test/forced-highlight";
+import { withForcedColors } from "../../../test/media-emulation";
+import { differsFromCanvas, finishPopupEntrance } from "../../../test/screenshot-pixels";
 import { cssVarColor, fkasPrivate, renderThemed } from "../../../test/themed-browser-render";
 import { ThemeScope } from "../../theme/theme-scope";
 import { Select } from "./index";
@@ -105,10 +108,13 @@ function FruitSelect({
   );
 }
 
-// The popup mounts after the opening event settles, so both openers wait for the listbox.
+// The popup mounts after the opening event settles, so both openers wait for the listbox and for
+// the popup's entrance.
 async function openedListbox(): Promise<HTMLElement> {
   await expect.element(page.getByRole("listbox")).toBeInTheDocument();
-  return listboxNamed();
+  const listbox = listboxNamed();
+  await finishPopupEntrance(listbox);
+  return listbox;
 }
 
 async function openWithClick(name = "Fruit"): Promise<HTMLElement> {
@@ -280,17 +286,8 @@ describe("Select", () => {
     });
 
     async function openedContentAndTrigger(): Promise<{ content: DOMRect; trigger: DOMRect }> {
+      // The entrance slide shifts the popup until it settles in place, and the opener finishes it.
       await openWithClick();
-      // The entrance slide shifts the popup until it settles in place. It is a transition, which
-      // starts once Base UI drops the starting style, so the wait outlasts that frame first.
-      await vi.waitFor(() => {
-        expect(selectContent().hasAttribute("data-starting-style")).toBe(false);
-      });
-      await Promise.all(
-        selectContent()
-          .getAnimations()
-          .map((animation) => animation.finished)
-      );
       return {
         content: selectContent().getBoundingClientRect(),
         trigger: comboboxNamed("Fruit").getBoundingClientRect(),
@@ -434,5 +431,94 @@ describe("Select", () => {
     expect(inherited.matches(":disabled")).toBe(true);
     expect(inherited).not.toHaveAttribute("data-disabled");
     expect(fill("Fieldset-disabled read-only")).toBe(cssVarColor(inherited, "--card"));
+  });
+});
+
+describe("Select highlighted option in forced-colors mode", () => {
+  it("fills the option the keyboard highlights, apart from its neighbor", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(<FruitSelect />);
+      await openWithArrowDown();
+      expect(highlightedOption()).toBe(optionNamed("Apple"));
+      await expectStateFill(optionNamed("Apple"), optionNamed("Banana"), "keyboard-highlighted option");
+      await expectFocusInsideFill(optionNamed("Apple"), "keyboard-highlighted option focus outline");
+    });
+  });
+
+  it("fills the option the pointer highlights in a menu opened by a click, apart from its neighbor", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(<FruitSelect />);
+      await openWithClick();
+      await userEvent.hover(optionNamed("Banana"));
+      await vi.waitFor(() => expect(highlightedOption()).toBe(optionNamed("Banana")));
+      await expectStateFill(optionNamed("Banana"), optionNamed("Date"), "pointer-highlighted option");
+    });
+  });
+
+  it("outlines the focused option while the pointer on the scroll arrow clears its highlight", async () => {
+    await withForcedColors("active", async () => {
+      // The trigger sits mid-page, so the popup aligns its item with the trigger and its list
+      // scrolls under a scroll arrow. Twenty rows overflow the popup by less than the tenth row's
+      // offset, so that row stays in view once the arrow scrolls the list to its end.
+      const fruits = Array.from({ length: 20 }, (_, index) => `Fruit ${String(index + 1)}`);
+      renderThemed(
+        <div style={{ paddingTop: 400 }}>
+          <Select.Root>
+            <Select.Trigger aria-label="Fruit">
+              <Select.Value placeholder="Pick a fruit" />
+            </Select.Trigger>
+            <Select.Content>
+              {fruits.map((fruit) => (
+                <Select.Item key={fruit} value={fruit}>
+                  {fruit}
+                </Select.Item>
+              ))}
+            </Select.Content>
+          </Select.Root>
+        </div>
+      );
+      await openWithArrowDown();
+      await userEvent.keyboard("{ArrowDown>9/}");
+      const row = optionNamed("Fruit 10");
+      await vi.waitFor(() => expect(document.activeElement).toBe(row));
+      const arrow = await vi.waitUntil(() =>
+        document.querySelector<HTMLElement>("[data-slot=select-scroll-down-button]")
+      );
+      // Base UI's arrow acts on a mouse move with movement. The first move onto the page reports
+      // none, so the pointer moves to the backdrop first.
+      await userEvent.hover(document.body);
+      await userEvent.hover(arrow);
+      await vi.waitFor(() => expect(arrow.isConnected).toBe(false));
+      expect(row.hasAttribute("data-highlighted")).toBe(false);
+      expect(row.matches(":focus-visible")).toBe(true);
+      for (const animation of document.getAnimations()) animation.finish();
+      // One pixel 3px in from the left and top edges of the focused row, where a 2px outline 2px
+      // in paints, beside the text. The same pixels of the next row show the popup's Canvas.
+      const inset = (option: HTMLElement): DOMRect[] => {
+        const box = option.getBoundingClientRect();
+        return [
+          new DOMRect(box.left + 3, box.top + box.height / 2, 1, 1),
+          new DOMRect(box.right - 10, box.top + 3, 1, 1),
+        ];
+      };
+      expect(
+        await differsFromCanvas(selectContent(), [...inset(row), ...inset(optionNamed("Fruit 11"))])
+      ).toEqual([true, true, false, false]);
+    });
+  });
+
+  it("draws no box around an option it does not highlight", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(<FruitSelect />);
+      await openWithArrowDown();
+      for (const animation of document.getAnimations()) animation.finish();
+      const date = optionNamed("Date").getBoundingClientRect();
+      const apple = optionNamed("Apple").getBoundingClientRect();
+      // A pixel 3px above the row, where a 2px outline 2px out would paint, over the empty end of
+      // the row above it. The empty end of the highlighted row shows the popup paints at all.
+      const above = new DOMRect(date.right - 10, date.top - 3, 1, 1);
+      const highlighted = new DOMRect(apple.right - 10, apple.top + apple.height / 2, 1, 1);
+      expect(await differsFromCanvas(selectContent(), [above, highlighted])).toEqual([false, true]);
+    });
   });
 });

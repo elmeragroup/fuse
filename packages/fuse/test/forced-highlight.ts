@@ -10,7 +10,7 @@ import { userEvent } from "vitest/browser";
 
 import * as Srgb from "@elmeragroup/color/srgb";
 
-import { systemFace } from "./media-emulation";
+import { systemColor, systemFace } from "./media-emulation";
 import { finishAnimations, pixelContrast, rgbAt, screenshotOf } from "./screenshot-pixels";
 import type { Point } from "./screenshot-pixels";
 import { toSrgb } from "./surface-paint";
@@ -183,6 +183,8 @@ type TextPaint = {
   readonly underText: number;
   /** The highest WCAG contrast between a pixel inside the run's boxes and the fill, from 1 to 21. */
   readonly ink: number;
+  /** The RGB channels, 0 to 255, of the pixel inside the run's boxes with that contrast. */
+  readonly strongest: readonly number[];
 };
 
 /**
@@ -206,6 +208,7 @@ function textPaint(element: HTMLElement, shot: ImageData, fill: readonly number[
     let inside = 0;
     let onFill = 0;
     let ink = 1;
+    let strongest: readonly number[] = fill.slice(0, 3);
     for (const glyph of run.boxes) {
       for (let row = Math.ceil(glyph.top - box.top); row < Math.floor(glyph.bottom - box.top); row++) {
         for (
@@ -217,11 +220,12 @@ function textPaint(element: HTMLElement, shot: ImageData, fill: readonly number[
           const pixel = rgbAt(shot, [column, row]);
           inside++;
           if (pixel.every((channel, index) => Math.abs(channel - (fill[index] ?? 0)) <= 2)) onFill++;
-          ink = Math.max(ink, pixelContrast(pixel, fill));
+          const contrast = pixelContrast(pixel, fill);
+          if (contrast > ink) [ink, strongest] = [contrast, pixel.slice(0, 3)];
         }
       }
     }
-    if (inside > 0) paints.push({ text: run.text, underText: onFill / inside, ink });
+    if (inside > 0) paints.push({ text: run.text, underText: onFill / inside, ink, strongest });
   }
   if (paints.length === 0) throw new Error("expected text inside the element");
   return paints;
@@ -305,6 +309,40 @@ function pixelChannels({ r, g, b }: Srgb.Srgb): number[] {
 }
 
 /**
+ * A computed color's RGB channels, to compare with a screenshot pixel.
+ *
+ * @param color - A color as `getComputedStyle` serializes it, such as a {@link systemFace} value.
+ * @returns Its RGB channels from 0 to 255, unrounded.
+ */
+export function colorPixel(color: string): number[] {
+  return pixelChannels(toSrgb(color));
+}
+
+/** The two colors a forced highlight paints, as RGB from 0 to 255. */
+type HighlightPixels = {
+  /** The translucent `Highlight` over `Canvas`, since a part's fill lies on a forced `Canvas`. */
+  readonly fill: number[];
+  /** `HighlightText`. */
+  readonly stroke: number[];
+};
+
+/** Reads the {@link HighlightPixels} from the system colors the page resolves. */
+function highlightPixels(): HighlightPixels {
+  const highlight = systemFace("Highlight");
+  return {
+    fill: pixelChannels(
+      Srgb.compositeOver(toSrgb(highlight.background), toSrgb(systemFace("Canvas").background))
+    ),
+    stroke: colorPixel(highlight.text),
+  };
+}
+
+/** Whether a pixel shows a color, each channel within one 8-bit step. */
+function shows(pixel: readonly number[], color: readonly number[]): boolean {
+  return color.every((channel, index) => Math.abs(channel - (pixel[index] ?? 0)) <= 1);
+}
+
+/**
  * Checks that a focused part draws a 2px `HighlightText` outline inside its `Highlight` fill, 2px
  * in from each edge. Along the lines through the element's center it reads 8 pixels inward from
  * each edge, from the first pixel wholly inside the box. It places each pixel on the line from
@@ -325,20 +363,13 @@ function pixelChannels({ r, g, b }: Srgb.Srgb): number[] {
  */
 export async function expectFocusInsideFill(element: HTMLElement, label: string): Promise<void> {
   finishAnimations([element], { ancestors: true });
-  const highlight = systemFace("Highlight");
-  const fill = pixelChannels(
-    Srgb.compositeOver(toSrgb(highlight.background), toSrgb(systemFace("Canvas").background))
-  );
-  const stroke = pixelChannels(toSrgb(highlight.text));
+  const { fill, stroke } = highlightPixels();
   const span = stroke.map((channel, index) => channel - (fill[index] ?? 0));
   const length = span.reduce((sum, channel) => sum + channel * channel, 0);
   /** Where a pixel lies on the line from the fill, 0, to the stroke, 1. */
   const along = (pixel: readonly number[]): number =>
     span.reduce((sum, channel, index) => sum + ((pixel[index] ?? 0) - (fill[index] ?? 0)) * channel, 0) /
     length;
-  /** Whether a pixel shows the fill, each channel within one 8-bit step. */
-  const isFill = (pixel: readonly number[]): boolean =>
-    fill.every((channel, index) => Math.abs(channel - (pixel[index] ?? 0)) <= 1);
   const shot = await screenshotOf(element);
   // The screenshot starts at the whole pixel the box's edge falls in. Each side reads its pixels
   // from the first one wholly inside the box, at `start`, inward by `step`, and `point` places a
@@ -384,10 +415,92 @@ export async function expectFocusInsideFill(element: HTMLElement, label: string)
       width: Math.abs(width - 2) <= 0.4,
       // A 2px stroke from 2px to 4px in has its middle 3px in.
       inset: Math.abs(middle - 3) <= 0.5,
-      inner: pixels.slice(last + 1).some(isFill),
+      inner: pixels.slice(last + 1).some((pixel) => shows(pixel, fill)),
     };
   });
   expect(read, label).toEqual(
     sides.map(({ side }) => ({ side, outer: true, width: true, inset: true, inner: true }))
   );
+}
+
+/**
+ * Names the color a screenshot pixel shows, from the two a forced highlight paints. Call it under
+ * `withForcedColors("active", …)`.
+ *
+ * @returns A function that returns `"Highlight"` for the fill, `"HighlightText"` for the stroke,
+ * each within one 8-bit step per channel, and the pixel's `rgb()` otherwise.
+ */
+export function highlightColors(): (pixel: readonly number[]) => string {
+  const { fill, stroke } = highlightPixels();
+  return (pixel) => {
+    if (shows(pixel, fill)) return "Highlight";
+    if (shows(pixel, stroke)) return "HighlightText";
+    return `rgb(${pixel.slice(0, 3).join(", ")})`;
+  };
+}
+
+/**
+ * A part's ground: the most common color of a screenshot of it, taken once its animations finish.
+ *
+ * @param element - The part to screenshot.
+ * @returns Its RGB channels, 0 to 255.
+ */
+export async function groundOf(element: HTMLElement): Promise<number[]> {
+  finishAnimations([element], { ancestors: true });
+  return mostCommon(await screenshotOf(element));
+}
+
+/** Where an inset outline paints on a part, and the part's ground. */
+type InsetOutline = {
+  /** The pixel 3px in from the part's left edge, on the row through its middle, RGB from 0 to 255. */
+  readonly pixel: number[];
+  /** The part's ground, the most common color of the same screenshot, RGB from 0 to 255. */
+  readonly ground: number[];
+};
+
+/**
+ * Reads the pixel of a 2px outline drawn 2px to 4px in from a part's edge, and the part's ground,
+ * from one screenshot taken once the animations on the part and its ancestors finish. The pixel
+ * 3px in from the left edge, on the row through the part's middle, lies wholly inside such an
+ * outline.
+ *
+ * @param element - The part, such as a menu row.
+ * @returns The outline's pixel and the part's ground.
+ * @throws When the part is too small for the pixel to fall inside its screenshot.
+ */
+export async function insetOutline(element: HTMLElement): Promise<InsetOutline> {
+  finishAnimations([element], { ancestors: true });
+  const shot = await screenshotOf(element);
+  const box = element.getBoundingClientRect();
+  // A fractional point reads the pixel it falls in, as `pixelsAt` does.
+  const column = Math.trunc(box.left - Math.floor(box.left) + 3);
+  const row = Math.trunc(box.height / 2);
+  if (column >= shot.width || row >= shot.height)
+    throw new Error("the outline's pixel leaves the screenshot");
+  return { pixel: rgbAt(shot, [column, row]), ground: mostCommon(shot) };
+}
+
+/**
+ * Checks that a disabled part paints `GrayText` on `Canvas`, from one screenshot taken once the
+ * animations on the part and its ancestors finish. The part's ground, the most common color of the
+ * screenshot, lies within 1.1:1 of `Canvas`. The strongest ink of each of its text runs lies within
+ * 1.1:1 of `GrayText`, since glyph stems ink their color in full. Each run counts alone, so one run
+ * in `GrayText` cannot hide another that is not. Call it under `withForcedColors("active", …)`.
+ *
+ * @param element - The disabled part, which holds text.
+ * @param label - What the part is, for the failure message.
+ * @throws When no text run of the part shows.
+ */
+export async function expectGrayTextOnCanvas(element: HTMLElement, label: string): Promise<void> {
+  finishAnimations([element], { ancestors: true });
+  const shot = await screenshotOf(element);
+  const ground = mostCommon(shot);
+  expect(
+    pixelContrast(ground, colorPixel(systemFace("Canvas").background)),
+    `${label} against Canvas`
+  ).toBeLessThan(1.1);
+  const grayText = colorPixel(systemColor("GrayText"));
+  for (const { text, strongest } of textPaint(element, shot, ground)) {
+    expect(pixelContrast(strongest, grayText), `${label} "${text}" ink against GrayText`).toBeLessThan(1.1);
+  }
 }

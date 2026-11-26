@@ -8,7 +8,10 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { expectFocusRing } from "../../../test/assert-focus-ring";
+import { expectStateFill } from "../../../test/forced-highlight";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { withForcedColors } from "../../../test/media-emulation";
+import { finishPopupEntrance } from "../../../test/screenshot-pixels";
 import { MUTED, expectSameColor, roleFill, toSrgb } from "../../../test/surface-paint";
 import { fieldBoxOf, formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Field } from "../field";
@@ -67,13 +70,17 @@ function addonRail(): HTMLElement {
   return rail;
 }
 
-/** Base UI mounts the popup a frame or more after the opening event, so wait for it. */
+/**
+ * Base UI mounts the popup a frame or more after the opening event, so wait for it and for its
+ * entrance.
+ */
 async function openedListbox(): Promise<HTMLElement> {
   await expect.element(page.getByRole("listbox")).toBeInTheDocument();
   const listbox = page.getByRole("listbox").element();
   if (!(listbox instanceof HTMLElement)) {
     throw new Error("expected a listbox");
   }
+  await finishPopupEntrance(listbox);
   return listbox;
 }
 
@@ -574,4 +581,41 @@ describe("Autocomplete", () => {
       expectSameColor(toSrgb(getComputedStyle(box).backgroundColor), roleFill(box, fill));
     }
   );
+});
+
+describe("Autocomplete highlighted option in forced-colors mode", () => {
+  function optionNamed(name: string): HTMLElement {
+    return roleNamed("option", name);
+  }
+
+  function highlighted(): Element | undefined {
+    return page
+      .getByRole("option")
+      .elements()
+      .find((option) => option.hasAttribute("data-highlighted"));
+  }
+
+  it("fills the option the keyboard highlights, apart from its neighbor", async () => {
+    await withForcedColors("active", async () => {
+      renderAutocomplete(<FruitAutocomplete />);
+      autocompleteNamed("Fruit").focus();
+      await userEvent.keyboard("{ArrowDown}");
+      await openedListbox();
+      // The key that opens the list highlights nothing; the next one highlights the first option.
+      await userEvent.keyboard("{ArrowDown}");
+      await vi.waitFor(() => expect(highlighted()).toBe(optionNamed("Apple")));
+      await expectStateFill(optionNamed("Apple"), optionNamed("Banana"), "keyboard-highlighted option");
+    });
+  });
+
+  it("fills the option the pointer highlights in a list opened by its trigger, apart from its neighbor", async () => {
+    await withForcedColors("active", async () => {
+      renderAutocomplete(<FruitAutocomplete showTrigger />);
+      await userEvent.click(roleNamed("button", TOGGLE_COPY["en-US"]));
+      await openedListbox();
+      await userEvent.hover(optionNamed("Banana"));
+      await vi.waitFor(() => expect(highlighted()).toBe(optionNamed("Banana")));
+      await expectStateFill(optionNamed("Banana"), optionNamed("Date"), "pointer-highlighted option");
+    });
+  });
 });

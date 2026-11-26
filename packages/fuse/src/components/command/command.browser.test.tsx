@@ -8,9 +8,12 @@ import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { expectFocusRing } from "../../../test/assert-focus-ring";
 import { CaughtError, caughtError } from "../../../test/caught-error";
+import { expectStateFill } from "../../../test/forced-highlight";
 import { withLocale } from "../../../test/locale-matrix";
+import { withForcedColors } from "../../../test/media-emulation";
 import { waitForPopupSettled } from "../../../test/popup-settled";
 import { fieldBoxOf, renderThemed, roleNamed } from "../../../test/themed-browser-render";
+import { Kbd } from "../kbd/kbd";
 import { Command } from "./index";
 
 type Entry = { readonly value: string; readonly label: string; readonly page?: string };
@@ -691,5 +694,56 @@ describe("Command composition errors", () => {
       </CaughtError>
     );
     expect(caughtError()).toEqual({ name: "CommandCompositionError", message });
+  });
+});
+
+describe("Command highlighted row in forced-colors mode", () => {
+  /** Rows of the same shape, each with a shortcut in key caps. */
+  function ShortcutPalette(): ReactElement {
+    return (
+      <Command.Root items={["Bold", "Cold", "Hold"]}>
+        <Command.Input aria-label="Commands" />
+        <Command.List>
+          {(item: string) => (
+            <Command.Item key={item} value={item}>
+              {item}
+              <Command.Shortcut>
+                <Kbd>⌘</Kbd>
+                <Kbd>{item.charAt(0)}</Kbd>
+              </Command.Shortcut>
+            </Command.Item>
+          )}
+        </Command.List>
+      </Command.Root>
+    );
+  }
+
+  it("moves the fill to the row ArrowDown highlights, apart from the row it left", async () => {
+    await withForcedColors("active", async () => {
+      renderPalette(<ShortcutPalette />);
+      comboboxNamed("Commands").focus();
+      // Command.Root highlights its first row on its own, so the key press is what moves it.
+      await vi.waitFor(() => expect(highlightedLabel()?.startsWith("Bold")).toBe(true));
+      await userEvent.keyboard("{ArrowDown}");
+      await vi.waitFor(() => expect(highlightedLabel()?.startsWith("Cold")).toBe(true));
+      await expectStateFill(
+        roleNamed("option", "Cold"),
+        roleNamed("option", "Bold"),
+        "keyboard-highlighted row"
+      );
+    });
+  });
+
+  it("fills the row the pointer highlights, apart from its neighbor", async () => {
+    await withForcedColors("active", async () => {
+      renderPalette(<ShortcutPalette />);
+      await userEvent.hover(roleNamed("option", "Cold"));
+      await vi.waitFor(() => expect(highlightedLabel()?.startsWith("Cold")).toBe(true));
+      await expectStateFill(
+        roleNamed("option", "Cold"),
+        roleNamed("option", "Hold"),
+        "pointer-highlighted row"
+      );
+    });
   });
 });

@@ -55,7 +55,7 @@ export const dropdownMenuVariants = tv({
     itemIndicator: menuItemIndicatorClass,
     subTrigger: [
       itemClass,
-      "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-open:bg-accent data-open:text-accent-foreground",
+      "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-popup-open:not-data-disabled:forced-highlight",
     ],
     subTriggerCaret: "ml-auto",
     label: [menuGroupLabelClass, menuItemInsetClass, "font-medium"],

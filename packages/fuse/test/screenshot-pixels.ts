@@ -4,7 +4,7 @@
  * canvas. A screenshot shows the painted result after stacking and clipping, which computed
  * styles do not report.
  */
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 import { page } from "vitest/browser";
 
 import { getOrThrow } from "@elmeragroup/color/result";
@@ -98,6 +98,23 @@ export function finishAnimations(
     }
     finishFinite(element.getAnimations({ subtree: true }));
   }
+}
+
+/**
+ * Waits for the popup around a part to start its entrance, then finishes it, so a screenshot shows
+ * the popup at full opacity. Fuse's CSS sets `opacity: 0` while a popup carries
+ * `data-starting-style`, and the fade starts only once Base UI drops it, so an open helper that
+ * returns once the popup mounts can return before there is a fade to finish. Once the attribute
+ * is absent the helper finishes whatever transition remains; a popup Base UI opens without an
+ * entrance, such as one with `defaultOpen`, has none.
+ * The fill helpers finish only the animations on the rows they read, and a screenshot taken during
+ * the fade shows the rows at part opacity, their ink too faint against their fill.
+ *
+ * @param part - The popup, or a part inside it, such as its listbox.
+ */
+export async function finishPopupEntrance(part: Element): Promise<void> {
+  await vi.waitFor(() => expect(part.closest("[data-starting-style]")).toBeNull());
+  finishAnimations([part], { ancestors: true });
 }
 
 /**
