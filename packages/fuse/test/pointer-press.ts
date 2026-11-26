@@ -5,6 +5,7 @@ declare module "vitest/browser" {
   interface BrowserCommands {
     pointerDown: () => Promise<void>;
     pointerUp: () => Promise<void>;
+    pointerWheel: (deltaY: number) => Promise<void>;
   }
 }
 
@@ -24,4 +25,15 @@ export async function whilePointerPressed<T>(read: () => T | Promise<T>): Promis
   } finally {
     await commands.pointerUp();
   }
+}
+
+/**
+ * Turns the mouse wheel by `deltaY` pixels where the pointer is. `userEvent.wheel` moves the
+ * pointer to its target's center first; this leaves it where `userEvent.hover` put it, so the
+ * wheel lands on whatever now sits under it.
+ *
+ * @param deltaY - How far to scroll, positive for down.
+ */
+export async function wheelAtPointer(deltaY: number): Promise<void> {
+  await commands.pointerWheel(deltaY);
 }

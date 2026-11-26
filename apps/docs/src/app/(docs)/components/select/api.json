@@ -421,7 +421,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 275,
+      "forwardedCount": 273,
       "props": [
         {
           "name": "align",
@@ -484,6 +484,24 @@
           "shortType": "function",
           "defaultValue": null,
           "description": "Determines the element to focus when the select popup is closed. - `false`: Do not move focus. - `true`: Move focus based on the default behavior (trigger or previously focused element). - `RefObject`: Move focus to the ref element. - `function`: Called with the interaction type (`mouse`, `touch`, `pen`, or `keyboard`). Return an element to focus, `true` to use the default behavior, or `false`/`undefined` to do nothing.",
+          "required": false
+        },
+        {
+          "name": "onScroll",
+          "origin": "declared",
+          "type": "((event: BaseUIEvent<UIEvent<HTMLDivElement, UIEvent>>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called when the list of options scrolls. The list scrolls inside the popup, so `event.currentTarget` is the `listbox` element, not the popup. Pass scroll listeners here. An `onScroll` on the `render` element never fires, because the popup does not scroll.",
+          "required": false
+        },
+        {
+          "name": "onScrollEnd",
+          "origin": "declared",
+          "type": "((event: BaseUIEvent<UIEvent<HTMLDivElement, UIEvent>>) => void) | undefined",
+          "shortType": "function",
+          "defaultValue": null,
+          "description": "Called when the list of options stops scrolling. Like `onScroll`, it fires on the list, so `event.currentTarget` is the `listbox` element. An `onScrollEnd` on the `render` element never fires. It forwards the native `scrollend` event, which Chrome fires from 114 and Safari from 26.2, so it never fires in Chrome 111 to 113 or Safari 16.4 to 26.1.",
           "required": false
         },
         {

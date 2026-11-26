@@ -12,6 +12,10 @@ export const pointerCommands = {
   pointerUp: (async (context) => {
     await context.page.mouse.up();
   }) satisfies BrowserCommand<[]>,
+  /** Turns the mouse wheel by `deltaY` pixels where the pointer is, without moving it. */
+  pointerWheel: (async (context, deltaY: number) => {
+    await context.page.mouse.wheel(0, deltaY);
+  }) satisfies BrowserCommand<[deltaY: number]>,
   /** Moves the pointer off the page, above and left of its corner, so it hovers nothing. */
   parkPointer: (async (context) => {
     await context.page.mouse.move(-1, -1);
