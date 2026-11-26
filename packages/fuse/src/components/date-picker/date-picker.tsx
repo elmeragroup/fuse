@@ -106,7 +106,11 @@ export type DatePickerRootProps<T extends DateInputValue = Temporal.PlainDate> =
   useRender.ComponentProps<"div", DatePickerRootState>,
   "defaultValue" | "onChange" | "className" | "aria-label"
 > & {
-  /** Extra classes, or a callback of the Root's state that returns them. */
+  /**
+   * Extra classes, or a callback of the Root's state that returns them. The Root is a grid of one
+   * column, so pass `justify-items-center` to center its parts across it. `items-center` aligns
+   * each part down its own row and moves nothing.
+   */
   className?: DatePickerClassName<DatePickerRootState>;
   /**
    * The value, when the parent owns it: a Temporal value of `T`'s kind from any implementation. A

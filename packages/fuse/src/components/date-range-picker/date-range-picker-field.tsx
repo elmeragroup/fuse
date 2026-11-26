@@ -162,7 +162,11 @@ export type DateRangePickerFieldProps<T extends DateInputValue = Temporal.PlainD
   "aria-label"?: string;
   /** The popup's portal target. Defaults to the nearest `ThemeScope`. */
   container?: OverlayContainerProps["container"];
-  /** Extra classes, merged onto the picker's root. */
+  /**
+   * Extra classes, merged onto the picker's root. The root is a grid of one column, so pass
+   * `justify-items-center` to center the label, field box, error and description across it.
+   * `items-center` aligns each part down its own row and moves nothing.
+   */
   className?: string;
 };
 

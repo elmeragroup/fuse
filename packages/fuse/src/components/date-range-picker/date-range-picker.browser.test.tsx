@@ -6,7 +6,9 @@
  * details, typing across the two ends, and the popup's time inputs. In a box narrower than its
  * segments, each segment focus reaches lies whole inside the box, a press at the trigger's center
  * opens the calendar, and the ends share a line only where their measured widths fit it. In a parent
- * that sizes to its content, the box is as wide as its parts on one line.
+ * that sizes to its content, the box is as wide as its parts on one line, and in a clipping panel
+ * narrower than that line the trigger stays inside that parent and the panel. In a block parent
+ * narrower than the box, the description and the error keep the parent's width.
  */
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
@@ -23,6 +25,7 @@ import { expectRenderTypeError } from "../../../test/caught-error";
 import {
   atEachDensity,
   expectFocusedSegmentsShow,
+  expectInside,
   expectTriggerPressOpens,
 } from "../../../test/date-row-reach";
 import { freezeToday } from "../../../test/freeze-today";
@@ -530,6 +533,69 @@ describe("DateRangePickerField in a parent that sizes to its content", () => {
       }
       expect(start.scrollWidth, `${label}: the start row scrolls`).toBeLessThanOrEqual(start.clientWidth);
       expect(end.scrollWidth, `${label}: the end row scrolls`).toBeLessThanOrEqual(end.clientWidth);
+    });
+  });
+});
+
+// A minute range in Oslo shows each end's zone, so its one line is wider than a 256px panel that
+// clips, at either density. The inline-block in the panel asks the picker for its width and takes
+// the panel's, so the inline-block holds the field box, the trigger lies inside both, and nothing
+// overflows the panel.
+describe("DateRangePickerField in a clipping panel narrower than one line", () => {
+  it("keeps the trigger inside the inline-block and the panel", async () => {
+    const zoned = {
+      start: Temporal.ZonedDateTime.from("2026-10-05T08:00[Europe/Oslo]"),
+      end: Temporal.ZonedDateTime.from("2026-10-09T17:30[Europe/Oslo]"),
+    };
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div data-testid="panel" style={{ width: 256, overflow: "hidden" }}>
+          <div data-testid="parent" style={{ display: "inline-block" }}>
+            <DateRangePickerField label="Stay" granularity="minute" defaultValue={zoned} />
+          </div>
+        </div>
+      )
+    );
+    const panel = page.getByTestId("panel").element();
+    const parent = page.getByTestId("parent").element();
+    await atEachDensity((density) => {
+      const parts = rangeParts(density);
+      expectInside(parts.group, parent, `${density}: the field box in the inline-block`);
+      expectInside(parts.trigger, panel, `${density}: the trigger in the panel`);
+      expect(panel.scrollWidth, `${density}: nothing overflows the panel`).toBeLessThanOrEqual(
+        panel.clientWidth
+      );
+    });
+  });
+});
+
+// A block parent 200px wide is narrower than the box's 208px floor. The box draws past it, while
+// the description and the error, which the Root stacks under the box, take the parent's width, as
+// a block's children do (CSS 2.1 §10.3.3).
+describe("DateRangePickerField in a block parent narrower than the box", () => {
+  it("keeps the description and the error at the parent's width", async () => {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div data-testid="parent" style={{ width: 200 }}>
+          <DateRangePickerField
+            label="Stay"
+            description="Pick the nights you stay"
+            errorMessage="That range is taken"
+            isInvalid
+          />
+        </div>
+      )
+    );
+    const parent = page.getByTestId("parent").element();
+    const description = parent.querySelector('[data-slot="field-description"]');
+    const error = parent.querySelector('[data-slot="field-error"]');
+    if (description === null || error === null) throw new Error("expected the description and the error");
+    await atEachDensity((density) => {
+      const width = parent.getBoundingClientRect().width;
+      expect(description.getBoundingClientRect().width, `${density}: the description`).toBe(width);
+      expect(error.getBoundingClientRect().width, `${density}: the error`).toBe(width);
     });
   });
 });

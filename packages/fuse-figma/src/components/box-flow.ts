@@ -385,6 +385,18 @@ export const HUGGING_ROWS_DETAIL =
   "the grid's height hugs its rows, so each row is its one item's height and leaves the item nowhere to move";
 
 /**
+ * The one `grid-template-columns` a grid in one column may set: a single `100%` track, as the date
+ * pickers' Root sets. In layout the track is the grid's content width (CSS Grid 1 §7.2.1), and while
+ * the grid's own width depends on its content the track sizes as `auto`, so it draws as the `auto`
+ * column does wherever the capture measured `trackFits`.
+ */
+const FULL_WIDTH_COLUMN = "100%";
+
+/** Why a grid in one column drops a `grid-template-columns` of {@link FULL_WIDTH_COLUMN}. */
+export const FULL_WIDTH_COLUMN_DETAIL =
+  "the grid's one column is its content box's width, as its `100%` track sets";
+
+/**
  * Whether a grid puts every item in one column, one row each: it sets no track, template or alignment
  * of its own, flows its items in rows, which is the default, and holds only parts that set no
  * placement. Its one `auto` column then stretches to a definite grid width (CSS Grid 1 §7.1, §8.5,
@@ -392,20 +404,23 @@ export const HUGGING_ROWS_DETAIL =
  * grid as a column only where the capture measured that width inside the grid (`trackFits`). Each
  * item stretches across the column (CSS Box Alignment 3 §6.1), and each row takes its item's
  * height. Where the grid's height hugs its rows, a property of {@link HUGGING_ROWS} at a value it
- * lists keeps that so. A box, icon or label that is no part may sit in the grid as an anonymous
- * item, which the rule does not model.
+ * lists keeps that so. The one template it may set is {@link FULL_WIDTH_COLUMN}. A box, icon or
+ * label that is no part may sit in the grid as an anonymous item, which the rule does not model.
  */
 function placesInOneColumn(reader: LayerStyle, flow: FlowLayers, rowsHug: boolean): boolean {
   const autoFlow = normalizeCss(reader.raw("grid-auto-flow") ?? "row");
-  const leavesRows = (property: string): boolean => {
-    const keeps = HUGGING_ROWS.get(property);
-    return rowsHug && keeps?.(normalizeCss(reader.raw(property) ?? "")) === true;
+  const keeps = (property: string): boolean => {
+    const value = normalizeCss(reader.raw(property) ?? "");
+    if (property === "grid-template-columns") {
+      return value === FULL_WIDTH_COLUMN;
+    }
+    return rowsHug && HUGGING_ROWS.get(property)?.(value) === true;
   };
   return (
     flow.parts.length > 0 &&
     flow.others.length === 0 &&
     autoFlow === "row" &&
-    GRID_TRACKS.every((property) => !reader.has(property) || leavesRows(property)) &&
+    GRID_TRACKS.every((property) => !reader.has(property) || keeps(property)) &&
     flow.parts.every(({ style }) => ITEM_PLACEMENT.every((property) => !style.has(property)))
   );
 }

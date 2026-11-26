@@ -332,7 +332,9 @@ describe("a grid in one column", () => {
     );
     const rows = coverage
       .filter(
-        (row) => row.part === "chip" && ["display", "grid-auto-rows", "align-items"].includes(row.property)
+        (row) =>
+          row.part === "chip" &&
+          ["display", "grid-auto-rows", "align-items", "grid-template-columns"].includes(row.property)
       )
       .map((row) => `${row.property}: ${row.outcome}`)
       .toSorted();
@@ -366,6 +368,34 @@ describe("a grid in one column", () => {
     const { rows } = await build(classes, ITEM, FITS);
     expect(rows).toEqual(expected);
   });
+
+  // Oracle: CSS Grid 1 §7.2.1. A `100%` track is the grid's content width in layout, the width the
+  // `auto` column takes where the capture measured `trackFits`, so the item fills across it.
+  it("draws a column whose items fill across under a 100% track, and drops the template", async () => {
+    const { root, rows } = await build("grid grid-cols-[100%] auto-rows-min", ITEM, FITS);
+    expect(root?.direction).toEqual("VERTICAL");
+    expect(
+      root?.children.map((child) => (child.kind === "frame" ? child.sizing.horizontal : undefined))
+    ).toEqual([FILL]);
+    expect(rows).toEqual(["display: literal", "grid-auto-rows: dropped", "grid-template-columns: dropped"]);
+  });
+
+  // Each template here is one track as wide as the grid, so a real capture can measure `trackFits`
+  // under it. A bare `1fr` is `minmax(auto,1fr)`, whose `auto` floor widens the column past the grid
+  // for a wide item (§12.5). A fixed floor keeps the column at the grid's width for a wide item but
+  // not for a narrow grid: in Chromium a `minmax(208px,1fr)` column in a 256px grid stays 256px wide
+  // with a 400px descendant, and in a 192px grid it grows to 208px. A filling Figma child stays the
+  // grid's width in both. The rule reads no `min()`, so the clamped floor stays unmapped too.
+  it.each(["minmax(208px,1fr)", "minmax(min(208px,100%),1fr)", "1fr"])(
+    "stays unmapped under the template %s",
+    async (template) => {
+      const { root, rows } = await build(`grid grid-cols-[${template}] auto-rows-min`, ITEM, FITS);
+      expect(rows).toContain("grid-template-columns: unmapped");
+      expect(
+        root?.children.map((child) => (child.kind === "frame" ? child.sizing.horizontal : undefined))
+      ).not.toEqual([FILL]);
+    }
+  );
 
   it("stays unmapped where its column is wider than the grid, as an item's least width makes it", async () => {
     const wide: FixtureElement = {
