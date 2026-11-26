@@ -7,7 +7,12 @@ import "../../../dist/styles.css";
 // Role tokens live in themes.css only; the dark highlight test reads them.
 import "../../../dist/themes.css";
 import { render } from "../../../test/browser-render";
-import { expectFocusInsideFill, expectStateFill, focusByKeyboard } from "../../../test/forced-highlight";
+import {
+  expectFocusInsideFill,
+  expectStateFill,
+  focusByKeyboard,
+  stateShare,
+} from "../../../test/forced-highlight";
 import { withForcedColors } from "../../../test/media-emulation";
 import { panelControlledBy } from "../../../test/panel-transition";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
@@ -486,6 +491,88 @@ describe("NavigationMenu.Link in forced-colors mode", () => {
       await focusByKeyboard(current);
       await expectFocusInsideFill(current, "focused current link");
       await expectStateFill(current, other, "focused current link");
+    });
+  });
+});
+
+describe("NavigationMenu vertical trigger in forced-colors mode", () => {
+  it("fills the trigger whose content is open, apart from a closed one, with focus in the content", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(
+        <NavigationMenu.Root aria-label="Site">
+          <NavigationMenu.List>
+            <NavigationMenu.Item>
+              <NavigationMenu.Trigger>Audiences</NavigationMenu.Trigger>
+              <NavigationMenu.Content>
+                <NavigationMenu.Root orientation="vertical" inline defaultValue="homes">
+                  <NavigationMenu.List>
+                    {[
+                      ["homes", "Homes", "Spot price"],
+                      ["farms", "Farms", "Fixed price"],
+                    ].map(([value, label, link]) => (
+                      <NavigationMenu.Item key={value} value={value}>
+                        <NavigationMenu.Trigger>{label}</NavigationMenu.Trigger>
+                        <NavigationMenu.Content>
+                          <NavigationMenu.Link href={`#${value}`}>{link}</NavigationMenu.Link>
+                        </NavigationMenu.Content>
+                      </NavigationMenu.Item>
+                    ))}
+                  </NavigationMenu.List>
+                  <NavigationMenu.Viewport />
+                </NavigationMenu.Root>
+              </NavigationMenu.Content>
+            </NavigationMenu.Item>
+          </NavigationMenu.List>
+        </NavigationMenu.Root>
+      );
+      await userEvent.click(roleNamed("button", "Audiences"));
+      const spot = await openedLink("Spot price");
+      spot.focus();
+      expect(document.activeElement).toBe(spot);
+      const homes = roleNamed("button", "Homes");
+      const farms = roleNamed("button", "Farms");
+      expect(homes.hasAttribute("data-popup-open")).toBe(true);
+      expect(farms.hasAttribute("data-popup-open")).toBe(false);
+      for (const animation of document.getAnimations()) animation.finish();
+      await expectStateFill(homes, farms, "open vertical trigger");
+    });
+  });
+
+  it("paints a trigger disabled while its content is open as a closed disabled one, without the fill", async () => {
+    await withForcedColors("active", async () => {
+      function AudienceMenu({ homesDisabled }: { readonly homesDisabled: boolean }) {
+        const items = [
+          ["homes", "Homes", homesDisabled],
+          ["farms", "Farms", true],
+        ] as const;
+        return (
+          <NavigationMenu.Root orientation="vertical" inline defaultValue="homes" aria-label="Audiences">
+            <NavigationMenu.List>
+              {items.map(([value, label, disabled]) => (
+                <NavigationMenu.Item key={value} value={value}>
+                  <NavigationMenu.Trigger disabled={disabled}>{label}</NavigationMenu.Trigger>
+                  <NavigationMenu.Content>
+                    <NavigationMenu.Link href={`#${value}`}>Spot price</NavigationMenu.Link>
+                  </NavigationMenu.Content>
+                </NavigationMenu.Item>
+              ))}
+            </NavigationMenu.List>
+            <NavigationMenu.Viewport />
+          </NavigationMenu.Root>
+        );
+      }
+      const { rerender } = renderThemed(<AudienceMenu homesDisabled={false} />);
+      const homes = roleNamed("button", "Homes");
+      const farms = roleNamed("button", "Farms");
+      await vi.waitFor(() => expect(homes.hasAttribute("data-popup-open")).toBe(true));
+      rerender(<AudienceMenu homesDisabled />);
+      await vi.waitFor(() => expect(homes.hasAttribute("data-disabled")).toBe(true));
+      expect(homes.hasAttribute("data-popup-open"), "content still open").toBe(true);
+      expect(farms.hasAttribute("data-popup-open")).toBe(false);
+      // Oracle: Farms, a trigger disabled from the start whose content never opened.
+      expect(await stateShare(homes, farms), "open disabled trigger apart from a closed one").toBeLessThan(
+        0.05
+      );
     });
   });
 });

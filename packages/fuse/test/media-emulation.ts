@@ -84,3 +84,23 @@ export function systemFace(keyword: "Canvas" | "Highlight" | "Mark"): ColorFace 
     probe.remove();
   }
 }
+
+/**
+ * Resolves a system color, such as `GrayText`, as the page computes it right now. It reads a probe
+ * element that opts out of forced-color adjustment, so call it inside {@link withForcedColors} to
+ * get the forced palette's value.
+ *
+ * @param keyword - The system color to read.
+ * @returns The computed color, as `getComputedStyle` serializes it.
+ */
+export function systemColor(keyword: "GrayText"): string {
+  const probe = document.createElement("span");
+  probe.style.color = keyword;
+  probe.style.forcedColorAdjust = "none";
+  document.body.append(probe);
+  try {
+    return getComputedStyle(probe).color;
+  } finally {
+    probe.remove();
+  }
+}

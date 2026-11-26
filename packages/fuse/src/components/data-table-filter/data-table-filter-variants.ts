@@ -90,7 +90,8 @@ export const dataTableFilterVariants = tv({
      */
     row: "data-highlighted:bg-accent data-highlighted:text-accent-foreground pointer-coarse:min-h-11",
     /** row. A field row stays lit while its value submenu is open. */
-    fieldRow: "data-popup-open:bg-accent data-popup-open:text-accent-foreground",
+    fieldRow:
+      "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-popup-open:not-data-disabled:forced-highlight",
     /** The caret at the end of a field row, which leads to a further step. */
     caret: "ms-auto text-muted-foreground",
     /** row. A value row. A count of 0 mutes its label too. */

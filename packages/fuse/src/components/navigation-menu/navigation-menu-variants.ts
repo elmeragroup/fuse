@@ -114,7 +114,7 @@ export const navigationMenuVariants = tv({
         trigger: [
           contentRowClass,
           "h-auto w-full justify-between text-start font-[number:inherit]",
-          "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-popup-open:**:text-accent-foreground enabled-hover:bg-accent enabled-hover:text-accent-foreground enabled-hover:**:text-accent-foreground",
+          "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-popup-open:**:text-accent-foreground data-popup-open:not-disabled-state:forced-highlight enabled-hover:bg-accent enabled-hover:text-accent-foreground enabled-hover:**:text-accent-foreground",
         ],
       },
     },

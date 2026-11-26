@@ -1483,6 +1483,54 @@
       {
         "part": "dropdown-menu-checkbox-item",
         "className": "data-[variant=destructive]:*:[svg]:text-error"
+      },
+      {
+        "part": "dropdown-menu-checkbox-item",
+        "className": "data-highlighted:not-data-disabled:forced-highlight"
+      },
+      {
+        "part": "dropdown-menu-checkbox-item",
+        "className": "forced-colors:data-highlighted:data-disabled:-outline-offset-4"
+      },
+      {
+        "part": "dropdown-menu-checkbox-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-2"
+      },
+      {
+        "part": "dropdown-menu-checkbox-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-[CanvasText]"
+      },
+      {
+        "part": "dropdown-menu-checkbox-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-solid"
+      },
+      {
+        "part": "dropdown-menu-checkbox-item",
+        "className": "forced-colors:focus-visible:-outline-offset-4"
+      },
+      {
+        "part": "dropdown-menu-checkbox-item",
+        "className": "forced-colors:focus-visible:outline-2"
+      },
+      {
+        "part": "dropdown-menu-checkbox-item",
+        "className": "forced-colors:focus-visible:outline-[CanvasText]"
+      },
+      {
+        "part": "dropdown-menu-checkbox-item",
+        "className": "forced-colors:focus-visible:outline-solid"
+      },
+      {
+        "part": "dropdown-menu-checkbox-item",
+        "className": "forced-colors:data-disabled:opacity-100"
+      },
+      {
+        "part": "dropdown-menu-checkbox-item",
+        "className": "forced-colors:data-disabled:text-[GrayText]!"
+      },
+      {
+        "part": "dropdown-menu-checkbox-item",
+        "className": "forced-colors:data-disabled:**:text-[GrayText]!"
       }
     ],
     "dropdown-menu-popup": [
@@ -1511,6 +1559,54 @@
       {
         "part": "dropdown-menu-radio-item",
         "className": "data-[variant=destructive]:*:[svg]:text-error"
+      },
+      {
+        "part": "dropdown-menu-radio-item",
+        "className": "data-highlighted:not-data-disabled:forced-highlight"
+      },
+      {
+        "part": "dropdown-menu-radio-item",
+        "className": "forced-colors:data-highlighted:data-disabled:-outline-offset-4"
+      },
+      {
+        "part": "dropdown-menu-radio-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-2"
+      },
+      {
+        "part": "dropdown-menu-radio-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-[CanvasText]"
+      },
+      {
+        "part": "dropdown-menu-radio-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-solid"
+      },
+      {
+        "part": "dropdown-menu-radio-item",
+        "className": "forced-colors:focus-visible:-outline-offset-4"
+      },
+      {
+        "part": "dropdown-menu-radio-item",
+        "className": "forced-colors:focus-visible:outline-2"
+      },
+      {
+        "part": "dropdown-menu-radio-item",
+        "className": "forced-colors:focus-visible:outline-[CanvasText]"
+      },
+      {
+        "part": "dropdown-menu-radio-item",
+        "className": "forced-colors:focus-visible:outline-solid"
+      },
+      {
+        "part": "dropdown-menu-radio-item",
+        "className": "forced-colors:data-disabled:opacity-100"
+      },
+      {
+        "part": "dropdown-menu-radio-item",
+        "className": "forced-colors:data-disabled:text-[GrayText]!"
+      },
+      {
+        "part": "dropdown-menu-radio-item",
+        "className": "forced-colors:data-disabled:**:text-[GrayText]!"
       }
     ],
     "dropdown-menu-sub-trigger": [
@@ -1536,11 +1632,55 @@
       },
       {
         "part": "dropdown-menu-sub-trigger",
-        "className": "data-open:bg-accent"
+        "className": "data-highlighted:not-data-disabled:forced-highlight"
       },
       {
         "part": "dropdown-menu-sub-trigger",
-        "className": "data-open:text-accent-foreground"
+        "className": "data-popup-open:not-data-disabled:forced-highlight"
+      },
+      {
+        "part": "dropdown-menu-sub-trigger",
+        "className": "forced-colors:data-highlighted:data-disabled:-outline-offset-4"
+      },
+      {
+        "part": "dropdown-menu-sub-trigger",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-2"
+      },
+      {
+        "part": "dropdown-menu-sub-trigger",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-[CanvasText]"
+      },
+      {
+        "part": "dropdown-menu-sub-trigger",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-solid"
+      },
+      {
+        "part": "dropdown-menu-sub-trigger",
+        "className": "forced-colors:focus-visible:-outline-offset-4"
+      },
+      {
+        "part": "dropdown-menu-sub-trigger",
+        "className": "forced-colors:focus-visible:outline-2"
+      },
+      {
+        "part": "dropdown-menu-sub-trigger",
+        "className": "forced-colors:focus-visible:outline-[CanvasText]"
+      },
+      {
+        "part": "dropdown-menu-sub-trigger",
+        "className": "forced-colors:focus-visible:outline-solid"
+      },
+      {
+        "part": "dropdown-menu-sub-trigger",
+        "className": "forced-colors:data-disabled:opacity-100"
+      },
+      {
+        "part": "dropdown-menu-sub-trigger",
+        "className": "forced-colors:data-disabled:text-[GrayText]!"
+      },
+      {
+        "part": "dropdown-menu-sub-trigger",
+        "className": "forced-colors:data-disabled:**:text-[GrayText]!"
       }
     ],
     "empty": [
@@ -2441,6 +2581,10 @@
       {
         "part": "Caret",
         "className": "data-[side=inline-start]:rtl:-rotate-90"
+      },
+      {
+        "part": "navigation-menu-trigger",
+        "className": "data-popup-open:not-disabled-state:forced-highlight"
       }
     ],
     "number-field": [
@@ -6082,6 +6226,206 @@
       {
         "part": "combobox-chips",
         "className": "has-[>[data-focus-ring-control][readonly]:not(:disabled)]:bg-muted"
+      }
+    ],
+    "select-item": [
+      {
+        "part": "select-item",
+        "className": "data-highlighted:not-data-disabled:forced-highlight"
+      },
+      {
+        "part": "select-item",
+        "className": "forced-colors:data-highlighted:data-disabled:-outline-offset-4"
+      },
+      {
+        "part": "select-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-2"
+      },
+      {
+        "part": "select-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-[CanvasText]"
+      },
+      {
+        "part": "select-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-solid"
+      },
+      {
+        "part": "select-item",
+        "className": "forced-colors:focus-visible:-outline-offset-4"
+      },
+      {
+        "part": "select-item",
+        "className": "forced-colors:focus-visible:outline-2"
+      },
+      {
+        "part": "select-item",
+        "className": "forced-colors:focus-visible:outline-[CanvasText]"
+      },
+      {
+        "part": "select-item",
+        "className": "forced-colors:focus-visible:outline-solid"
+      },
+      {
+        "part": "select-item",
+        "className": "forced-colors:data-disabled:opacity-100"
+      },
+      {
+        "part": "select-item",
+        "className": "forced-colors:data-disabled:text-[GrayText]!"
+      },
+      {
+        "part": "select-item",
+        "className": "forced-colors:data-disabled:**:text-[GrayText]!"
+      }
+    ],
+    "dropdown-menu-item": [
+      {
+        "part": "dropdown-menu-item",
+        "className": "data-highlighted:not-data-disabled:forced-highlight"
+      },
+      {
+        "part": "dropdown-menu-item",
+        "className": "forced-colors:data-highlighted:data-disabled:-outline-offset-4"
+      },
+      {
+        "part": "dropdown-menu-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-2"
+      },
+      {
+        "part": "dropdown-menu-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-[CanvasText]"
+      },
+      {
+        "part": "dropdown-menu-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-solid"
+      },
+      {
+        "part": "dropdown-menu-item",
+        "className": "forced-colors:focus-visible:-outline-offset-4"
+      },
+      {
+        "part": "dropdown-menu-item",
+        "className": "forced-colors:focus-visible:outline-2"
+      },
+      {
+        "part": "dropdown-menu-item",
+        "className": "forced-colors:focus-visible:outline-[CanvasText]"
+      },
+      {
+        "part": "dropdown-menu-item",
+        "className": "forced-colors:focus-visible:outline-solid"
+      },
+      {
+        "part": "dropdown-menu-item",
+        "className": "forced-colors:data-disabled:opacity-100"
+      },
+      {
+        "part": "dropdown-menu-item",
+        "className": "forced-colors:data-disabled:text-[GrayText]!"
+      },
+      {
+        "part": "dropdown-menu-item",
+        "className": "forced-colors:data-disabled:**:text-[GrayText]!"
+      }
+    ],
+    "combobox-item": [
+      {
+        "part": "combobox-item",
+        "className": "data-highlighted:not-data-disabled:forced-highlight"
+      },
+      {
+        "part": "combobox-item",
+        "className": "forced-colors:data-highlighted:data-disabled:-outline-offset-4"
+      },
+      {
+        "part": "combobox-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-2"
+      },
+      {
+        "part": "combobox-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-[CanvasText]"
+      },
+      {
+        "part": "combobox-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-solid"
+      },
+      {
+        "part": "combobox-item",
+        "className": "forced-colors:focus-visible:-outline-offset-4"
+      },
+      {
+        "part": "combobox-item",
+        "className": "forced-colors:focus-visible:outline-2"
+      },
+      {
+        "part": "combobox-item",
+        "className": "forced-colors:focus-visible:outline-[CanvasText]"
+      },
+      {
+        "part": "combobox-item",
+        "className": "forced-colors:focus-visible:outline-solid"
+      },
+      {
+        "part": "combobox-item",
+        "className": "forced-colors:data-disabled:opacity-100"
+      },
+      {
+        "part": "combobox-item",
+        "className": "forced-colors:data-disabled:text-[GrayText]!"
+      },
+      {
+        "part": "combobox-item",
+        "className": "forced-colors:data-disabled:**:text-[GrayText]!"
+      }
+    ],
+    "command-item": [
+      {
+        "part": "command-item",
+        "className": "data-highlighted:not-data-disabled:forced-highlight"
+      },
+      {
+        "part": "command-item",
+        "className": "forced-colors:data-highlighted:data-disabled:-outline-offset-4"
+      },
+      {
+        "part": "command-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-2"
+      },
+      {
+        "part": "command-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-[CanvasText]"
+      },
+      {
+        "part": "command-item",
+        "className": "forced-colors:data-highlighted:data-disabled:outline-solid"
+      },
+      {
+        "part": "command-item",
+        "className": "forced-colors:focus-visible:-outline-offset-4"
+      },
+      {
+        "part": "command-item",
+        "className": "forced-colors:focus-visible:outline-2"
+      },
+      {
+        "part": "command-item",
+        "className": "forced-colors:focus-visible:outline-[CanvasText]"
+      },
+      {
+        "part": "command-item",
+        "className": "forced-colors:focus-visible:outline-solid"
+      },
+      {
+        "part": "command-item",
+        "className": "forced-colors:data-disabled:opacity-100"
+      },
+      {
+        "part": "command-item",
+        "className": "forced-colors:data-disabled:text-[GrayText]!"
+      },
+      {
+        "part": "command-item",
+        "className": "forced-colors:data-disabled:**:text-[GrayText]!"
       }
     ]
   },

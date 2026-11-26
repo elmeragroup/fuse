@@ -6,7 +6,10 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { expectFocusRing } from "../../../test/assert-focus-ring";
+import { expectStateFill, insetOutline } from "../../../test/forced-highlight";
 import { withLocale } from "../../../test/locale-matrix";
+import { withForcedColors } from "../../../test/media-emulation";
+import { finishPopupEntrance, pixelContrast } from "../../../test/screenshot-pixels";
 import { MUTED, expectSameColor, roleFill, toSrgb } from "../../../test/surface-paint";
 import { fieldBoxOf, formNamed, renderThemed } from "../../../test/themed-browser-render";
 import type { SupportedLocale } from "../../intl/locale-context";
@@ -158,10 +161,15 @@ function FruitCombobox({
   );
 }
 
-/** Base UI mounts the popup a frame or more after the opening event, so wait for it. */
+/**
+ * Base UI mounts the popup a frame or more after the opening event, so wait for it and for its
+ * entrance.
+ */
 async function openedListbox(): Promise<HTMLElement> {
   await expect.element(page.getByRole("listbox")).toBeInTheDocument();
-  return listboxNamed();
+  const listbox = listboxNamed();
+  await finishPopupEntrance(listbox);
+  return listbox;
 }
 
 async function openWithArrowDown(name = "Fruit"): Promise<HTMLElement> {
@@ -698,4 +706,65 @@ describe("Combobox", () => {
       expectSameColor(toSrgb(getComputedStyle(box).backgroundColor), roleFill(box, fill));
     }
   );
+});
+
+describe("Combobox highlighted option in forced-colors mode", () => {
+  it("fills the option the keyboard highlights, apart from its neighbor", async () => {
+    await withForcedColors("active", async () => {
+      renderCombobox(<FruitCombobox />);
+      await openWithArrowDown();
+      expect(highlightedOption()).toBe(optionNamed("Apple"));
+      await expectStateFill(optionNamed("Apple"), optionNamed("Banana"), "keyboard-highlighted option");
+    });
+  });
+
+  it("fills the option the pointer highlights in a list opened by its trigger, apart from its neighbor", async () => {
+    await withForcedColors("active", async () => {
+      renderCombobox(<FruitCombobox />);
+      await userEvent.click(buttonNamed(TOGGLE_COPY["en-US"]));
+      await openedListbox();
+      await userEvent.hover(optionNamed("Banana"));
+      await vi.waitFor(() => expect(highlightedOption()).toBe(optionNamed("Banana")));
+      await expectStateFill(optionNamed("Banana"), optionNamed("Date"), "pointer-highlighted option");
+    });
+  });
+
+  it("outlines a disabled option the keyboard highlights, apart from a disabled neighbor", async () => {
+    await withForcedColors("active", async () => {
+      renderCombobox(
+        <Combobox.Root items={[...FRUITS]}>
+          <Combobox.Input aria-label="Fruit" />
+          <Combobox.Content>
+            <Combobox.List>
+              <Combobox.Collection>
+                {(item: string) => (
+                  <Combobox.Item key={item} value={item} disabled={item !== "Apple"}>
+                    {item}
+                  </Combobox.Item>
+                )}
+              </Combobox.Collection>
+            </Combobox.List>
+          </Combobox.Content>
+        </Combobox.Root>
+      );
+      await openWithArrowDown();
+      await userEvent.keyboard("{ArrowDown}");
+      await vi.waitFor(() => expect(highlightedOption()).toBe(optionNamed("Banana")));
+      expect(document.activeElement, "focus stays in the input").toBe(comboboxNamed("Fruit"));
+      // Unit under test: the forced-colors outline of a highlighted disabled row, which shows no
+      // fill. Oracle: WCAG 1.4.11's 3:1 for a focus indicator against what it sits on, read at the
+      // outline's pixel. Cherry, disabled and not highlighted, shows the row's ground at that pixel.
+      const [highlighted, neighbor] = await Promise.all([
+        insetOutline(optionNamed("Banana")),
+        insetOutline(optionNamed("Cherry")),
+      ]);
+      expect(
+        pixelContrast(highlighted.pixel, highlighted.ground),
+        "outline against the row"
+      ).toBeGreaterThanOrEqual(3);
+      expect(pixelContrast(neighbor.pixel, neighbor.ground), "neighbor at the outline's pixel").toBeLessThan(
+        1.1
+      );
+    });
+  });
 });

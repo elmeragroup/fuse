@@ -1333,3 +1333,100 @@ describe("DataTableFilter date presets beside a custom editor in forced-colors m
     });
   });
 });
+
+describe("DataTableFilter add menu rows in forced-colors mode", () => {
+  async function openMenu(): Promise<void> {
+    await userEvent.click(roleNamed("button", "Filter"));
+    await expect.poll(() => focusIs("searchbox", "Search fields")).toBe(true);
+    await finishMotion();
+  }
+
+  function highlightedRow(): Element | undefined {
+    return (
+      document.querySelector(
+        "[data-slot=data-table-filter-field][data-highlighted], [role=menuitemcheckbox][data-highlighted]"
+      ) ?? undefined
+    );
+  }
+
+  /** Opens Status's value submenu with a click and puts focus in the submenu's own search. */
+  async function openStatusValues(): Promise<HTMLElement> {
+    await openMenu();
+    await userEvent.click(roleNamed("menuitem", "Status"));
+    await expect
+      .element(page.getByRole("searchbox", { name: "Search Status", exact: true }))
+      .toBeInTheDocument();
+    await finishMotion();
+    const search = roleNamed("searchbox", "Search Status");
+    search.focus();
+    return search;
+  }
+
+  it("fills the field row the keyboard highlights, apart from its neighbor", async () => {
+    await withForcedColors("active", async () => {
+      renderOrders({ initial: [] });
+      await openMenu();
+      await userEvent.keyboard("{ArrowDown}");
+      await vi.waitFor(() => expect(highlightedRow()).toBe(roleNamed("menuitem", "Status")));
+      await expectStateFill(
+        roleNamed("menuitem", "Status"),
+        roleNamed("menuitem", "Tags"),
+        "keyboard-highlighted field row"
+      );
+    });
+  });
+
+  it("fills the field row the pointer highlights, apart from its neighbor", async () => {
+    await withForcedColors("active", async () => {
+      renderOrders({ initial: [] });
+      await openMenu();
+      // Customer and Amount step to an editor, so hovering them opens no submenu.
+      await userEvent.hover(roleNamed("menuitem", "Customer"));
+      await vi.waitFor(() => expect(highlightedRow()).toBe(roleNamed("menuitem", "Customer")));
+      await expectStateFill(
+        roleNamed("menuitem", "Customer"),
+        roleNamed("menuitem", "Amount"),
+        "pointer-highlighted field row"
+      );
+    });
+  });
+
+  it("fills the value row the keyboard highlights, apart from its neighbor", async () => {
+    await withForcedColors("active", async () => {
+      renderOrders({ initial: [] });
+      await openStatusValues();
+      const draft = roleNamed("menuitemcheckbox", "Draft");
+      await userEvent.keyboard("{ArrowDown}");
+      await vi.waitFor(() => expect(draft.hasAttribute("data-highlighted")).toBe(true));
+      await expectStateFill(
+        draft,
+        roleNamed("menuitemcheckbox", "Pending"),
+        "keyboard-highlighted value row"
+      );
+    });
+  });
+
+  it("fills the value row the pointer highlights, apart from its neighbor", async () => {
+    await withForcedColors("active", async () => {
+      renderOrders({ initial: [] });
+      await openStatusValues();
+      const pending = roleNamed("menuitemcheckbox", "Pending");
+      await userEvent.hover(pending);
+      await vi.waitFor(() => expect(highlightedRow()).toBe(pending));
+      await expectStateFill(pending, roleNamed("menuitemcheckbox", "Paid"), "pointer-highlighted value row");
+    });
+  });
+
+  it("fills the field row whose value submenu is open, apart from a closed one, with focus in the submenu", async () => {
+    await withForcedColors("active", async () => {
+      renderOrders({ initial: [] });
+      const search = await openStatusValues();
+      await userEvent.hover(roleNamed("menuitemcheckbox", "Draft"));
+      const status = roleNamed("menuitem", "Status");
+      await vi.waitFor(() => expect(status.hasAttribute("data-highlighted")).toBe(false));
+      expect(status.hasAttribute("data-popup-open")).toBe(true);
+      expect(document.activeElement).toBe(search);
+      await expectStateFill(status, roleNamed("menuitem", "Tags"), "open field row");
+    });
+  });
+});

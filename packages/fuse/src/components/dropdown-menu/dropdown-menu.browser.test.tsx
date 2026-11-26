@@ -7,8 +7,23 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
-import { withForcedColors } from "../../../test/media-emulation";
-import { differsFromCanvas } from "../../../test/screenshot-pixels";
+import {
+  colorPixel,
+  expectFocusInsideFill,
+  expectGrayTextOnCanvas,
+  expectStateFill,
+  expectTextOnFill,
+  highlightColors,
+  groundOf,
+  insetOutline,
+} from "../../../test/forced-highlight";
+import { systemFace, withForcedColors } from "../../../test/media-emulation";
+import {
+  differsFromCanvas,
+  finishPopupEntrance,
+  pixelContrast,
+  pixelsAt,
+} from "../../../test/screenshot-pixels";
 import { renderThemed } from "../../../test/themed-browser-render";
 import { roleNamed } from "../../../test/themed-browser-render";
 import { DropdownMenu } from "./index";
@@ -17,7 +32,7 @@ type ItemRole = "menuitem" | "menuitemcheckbox" | "menuitemradio";
 
 /**
  * Base UI mounts the menu popup and moves focus into it a frame or more after the
- * opening event, so the open helpers wait for it before reading the element.
+ * opening event, so the open helpers wait for it and for its entrance before reading the element.
  */
 async function openedMenu(): Promise<HTMLElement> {
   await expect.element(page.getByRole("menu")).toBeInTheDocument();
@@ -25,6 +40,7 @@ async function openedMenu(): Promise<HTMLElement> {
   if (!(element instanceof HTMLElement)) {
     throw new Error("expected a menu");
   }
+  await finishPopupEntrance(element);
   return element;
 }
 
@@ -99,7 +115,6 @@ describe("DropdownMenu", () => {
     await withForcedColors("active", async () => {
       renderThemed(<BasicMenu extra={<DropdownMenu.Separator />} />);
       const menu = await openWithClick();
-      for (const animation of document.getAnimations()) animation.finish();
       const line = page.getByRole("separator").element().getBoundingClientRect();
       expect(await differsFromCanvas(menu, [line])).toEqual([true]);
     });
@@ -285,5 +300,185 @@ describe("DropdownMenu", () => {
     const team = await mountedItem("Team");
     const subIsland = roleNamed("region", "Sub island");
     expect(subIsland.contains(team)).toBe(true);
+  });
+});
+
+describe("DropdownMenu highlighted row in forced-colors mode", () => {
+  /** A square icon that fills its box, so its ink reads at its middle. */
+  const SQUARE = (
+    <svg viewBox="0 0 16 16" aria-hidden>
+      <rect x="2" y="2" width="12" height="12" fill="currentColor" />
+    </svg>
+  );
+
+  /** Pairs of rows of each kind, the first of a pair the one the tests highlight. */
+  function KindsMenu() {
+    return (
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger>Open</DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.Item>Profile</DropdownMenu.Item>
+          <DropdownMenu.Item>Billing</DropdownMenu.Item>
+          <DropdownMenu.CheckboxItem defaultChecked>Pinned</DropdownMenu.CheckboxItem>
+          <DropdownMenu.CheckboxItem defaultChecked>Starred</DropdownMenu.CheckboxItem>
+          <DropdownMenu.RadioGroup defaultValue="alpha">
+            <DropdownMenu.RadioItem value="alpha">Alpha</DropdownMenu.RadioItem>
+            <DropdownMenu.RadioItem value="bravo">Bravo</DropdownMenu.RadioItem>
+          </DropdownMenu.RadioGroup>
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>Share</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent>
+              <DropdownMenu.Item>Email</DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>Moved</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent>
+              <DropdownMenu.Item>Archive</DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
+          <DropdownMenu.Item variant="destructive">
+            {SQUARE}
+            Delete
+          </DropdownMenu.Item>
+          <DropdownMenu.Item variant="destructive">
+            {SQUARE}
+            Remove
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
+    );
+  }
+
+  const KINDS = [
+    ["item", "menuitem", "Profile", "Billing"],
+    ["checkbox item", "menuitemcheckbox", "Pinned", "Starred"],
+    ["radio item", "menuitemradio", "Alpha", "Bravo"],
+    ["sub-trigger", "menuitem", "Share", "Moved"],
+  ] as const;
+
+  async function highlightWithKeyboard(name: string, role: ItemRole): Promise<HTMLElement> {
+    await openWithArrowDown();
+    const row = await mountedItem(name, role);
+    for (let step = 0; step < 12 && !row.hasAttribute("data-highlighted"); step++) {
+      await userEvent.keyboard("{ArrowDown}");
+    }
+    expect(row.hasAttribute("data-highlighted")).toBe(true);
+    return row;
+  }
+
+  it.each(KINDS)(
+    "fills the %s the keyboard highlights, apart from its neighbor",
+    async (kind, role, name, neighbor) => {
+      await withForcedColors("active", async () => {
+        renderThemed(<KindsMenu />);
+        const row = await highlightWithKeyboard(name, role);
+        await expectStateFill(row, itemNamed(neighbor, role), `keyboard-highlighted ${kind}`);
+        await expectFocusInsideFill(row, `keyboard-highlighted ${kind} focus outline`);
+      });
+    }
+  );
+
+  // A hovered sub-trigger opens its submenu, so the pointer cases leave it out.
+  it.each(KINDS.slice(0, 3))(
+    "fills the %s the pointer highlights in a menu opened by a click, apart from its neighbor",
+    async (kind, role, name, neighbor) => {
+      await withForcedColors("active", async () => {
+        renderThemed(<KindsMenu />);
+        await openWithClick();
+        const row = await mountedItem(name, role);
+        await userEvent.hover(row);
+        await vi.waitFor(() => expect(row.hasAttribute("data-highlighted")).toBe(true));
+        await expectStateFill(row, itemNamed(neighbor, role), `pointer-highlighted ${kind}`);
+      });
+    }
+  );
+
+  it("fills a highlighted destructive item, with its label legible on the fill and its icon in HighlightText", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(<KindsMenu />);
+      const row = await highlightWithKeyboard("Delete", "menuitem");
+      const icon = row.querySelector("svg");
+      if (icon === null) throw new Error("expected the destructive item's icon");
+      // Oracle: the Highlight and HighlightText system colors the page resolves, and WCAG's 4.5:1
+      // text minimum, which the destructive red on Highlight misses.
+      const colorOf = highlightColors();
+      const fill = await groundOf(row);
+      expect(colorOf(fill), "row fill").toBe("Highlight");
+      await expectTextOnFill(row, fill, "destructive label");
+      const box = icon.getBoundingClientRect();
+      const [center] = await pixelsAt(icon, [[box.width / 2, box.height / 2]]);
+      if (center === undefined) throw new Error("expected the icon's center pixel");
+      expect(colorOf(center), "icon ink").toBe("HighlightText");
+    });
+  });
+
+  it("draws a keyboard-highlighted disabled item in GrayText on Canvas, inside an undimmed outline", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>Open</DropdownMenu.Trigger>
+          <DropdownMenu.Content>
+            <DropdownMenu.Item>Download</DropdownMenu.Item>
+            <DropdownMenu.Item disabled>
+              Send <span>reminder</span>
+            </DropdownMenu.Item>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      );
+      const row = await highlightWithKeyboard("Send reminder", "menuitem");
+      expect(row.matches(":focus-visible"), "keyboard focus on the row").toBe(true);
+      // Oracle: the Canvas, CanvasText and GrayText system colors the page resolves, and WCAG
+      // 1.4.11's 3:1 for a focus indicator against what it sits on.
+      const { pixel: outline, ground } = await insetOutline(row);
+      expect(pixelContrast(outline, ground), "focus outline against the row").toBeGreaterThanOrEqual(3);
+      expect(
+        pixelContrast(outline, colorPixel(systemFace("Canvas").text)),
+        "focus outline against CanvasText"
+      ).toBeLessThan(1.1);
+      // The row's own text and the span's, which a descendant color arm reaches, each count as a run.
+      await expectGrayTextOnCanvas(row, "disabled item");
+    });
+  });
+
+  it("draws a sub-trigger disabled while its submenu is open in GrayText on Canvas, without the fill", async () => {
+    await withForcedColors("active", async () => {
+      function ShareMenu({ disabled }: { readonly disabled: boolean }) {
+        return (
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger>Open</DropdownMenu.Trigger>
+            <DropdownMenu.Content>
+              <DropdownMenu.Item>Download</DropdownMenu.Item>
+              <DropdownMenu.Sub>
+                <DropdownMenu.SubTrigger disabled={disabled}>Share</DropdownMenu.SubTrigger>
+                <DropdownMenu.SubContent>
+                  <DropdownMenu.Item>Email</DropdownMenu.Item>
+                </DropdownMenu.SubContent>
+              </DropdownMenu.Sub>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+        );
+      }
+      const { rerender } = renderThemed(<ShareMenu disabled={false} />);
+      const share = await highlightWithKeyboard("Share", "menuitem");
+      await userEvent.keyboard("{ArrowRight}");
+      await vi.waitFor(() => expect(document.activeElement).toBe(itemNamed("Email")));
+      rerender(<ShareMenu disabled />);
+      await vi.waitFor(() => expect(share.hasAttribute("data-disabled")).toBe(true));
+      expect(share.hasAttribute("data-popup-open"), "submenu still open").toBe(true);
+      // Oracle: the Canvas and GrayText system colors the page resolves.
+      await expectGrayTextOnCanvas(share, "disabled open sub-trigger");
+    });
+  });
+
+  it("fills the sub-trigger whose submenu is open, apart from a closed one, with focus in the submenu", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(<KindsMenu />);
+      const share = await highlightWithKeyboard("Share", "menuitem");
+      await userEvent.keyboard("{ArrowRight}");
+      await vi.waitFor(() => expect(document.activeElement).toBe(itemNamed("Email")));
+      expect(share.hasAttribute("data-popup-open")).toBe(true);
+      await expectStateFill(share, itemNamed("Moved"), "open sub-trigger");
+    });
   });
 });

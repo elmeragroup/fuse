@@ -22,6 +22,9 @@ const FORCED_HIGHLIGHT_ROOTS = [
   '.data-checked\\:forced-highlight:where([data-state="checked"]),.data-checked\\:forced-highlight:where([data-checked]:not([data-checked="false"]))',
   '.data-active\\:forced-highlight:where([data-state="active"]),.data-active\\:forced-highlight:where([data-active]:not([data-active="false"]))',
   ':is(.data-active\\:not-disabled-state\\:forced-highlight:where([data-state="active"]),.data-active\\:not-disabled-state\\:forced-highlight:where([data-active]:not([data-active="false"]))):not(:where([data-disabled]:not([data-disabled="false"]),:disabled,[aria-disabled="true"]))',
+  '.data-highlighted\\:not-data-disabled\\:forced-highlight[data-highlighted]:not(:where([data-disabled="true"]),:where([data-disabled]:not([data-disabled="false"])))',
+  '.data-popup-open\\:not-data-disabled\\:forced-highlight[data-popup-open]:not(:where([data-disabled="true"]),:where([data-disabled]:not([data-disabled="false"])))',
+  '.data-popup-open\\:not-disabled-state\\:forced-highlight[data-popup-open]:not(:where([data-disabled]:not([data-disabled="false"]),:disabled,[aria-disabled="true"]))',
 ] as const;
 
 /**
