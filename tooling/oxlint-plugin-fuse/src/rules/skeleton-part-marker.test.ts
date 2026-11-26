@@ -1,21 +1,11 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { ruleTester } from "../rule-tester.ts";
 import { skeletonPartMarker } from "./skeleton-part-marker.ts";
 
-const directory = mkdtempSync(join(tmpdir(), "fuse-skeleton-roles-"));
-const roles = join(directory, "skeleton-roles.ts");
-writeFileSync(
-  roles,
-  `export const PART_SKELETON = {
-  badge: "block",
-  loader: "ignore",
-} as const satisfies Record<string, SkeletonRole>;
-`
-);
-const options = [{ roles }];
+/** The fixture that holds both rules' role tables. */
+const fixtures = join(import.meta.dirname, "../fixtures");
+const options = [{ roles: join(fixtures, "part-roles.ts") }];
 
 ruleTester.run("skeleton-part-marker", skeletonPartMarker, {
   valid: [
@@ -92,7 +82,7 @@ ruleTester.run("skeleton-part-marker", skeletonPartMarker, {
     },
     {
       code: '<span data-slot="badge" />',
-      options: [{ roles: join(directory, "missing.ts") }],
+      options: [{ roles: join(fixtures, "missing.ts") }],
       errors: [{ messageId: "table" }],
     },
   ],

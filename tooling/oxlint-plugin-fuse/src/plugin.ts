@@ -15,6 +15,7 @@ import { noHookCalls } from "./rules/no-hook-calls.ts";
 import { noHostInCheck } from "./rules/no-host-in-check.ts";
 import { noKeptWindowCleanup } from "./rules/no-kept-window-cleanup.ts";
 import { noRingShadowRead } from "./rules/no-ring-shadow-read.ts";
+import { noTempDirAtCollection } from "./rules/no-temp-dir-at-collection.ts";
 import { noThemeColorWrite } from "./rules/no-theme-color-write.ts";
 import { noUseClient } from "./rules/no-use-client.ts";
 import { oneBrowserTestPerModule } from "./rules/one-browser-test-per-module.ts";
@@ -50,6 +51,7 @@ const plugin: Plugin = {
     "no-host-in-check": noHostInCheck,
     "no-kept-window-cleanup": noKeptWindowCleanup,
     "no-ring-shadow-read": noRingShadowRead,
+    "no-temp-dir-at-collection": noTempDirAtCollection,
     "no-theme-color-write": noThemeColorWrite,
     "no-use-client": noUseClient,
     "one-browser-test-per-module": oneBrowserTestPerModule,

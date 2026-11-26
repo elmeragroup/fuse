@@ -57,8 +57,10 @@ import { staticText } from "./static-text.ts";
  *     operation needs an exact value and is `opaque` on a `text`; a member read off one is a
  *     `member` as for any other value (step 4). By default no `text` exists, so a rule that judges
  *     exact values sees the same alternatives, and as many, as it would without step 11.
- * 12. A call to an imported function (step 7) to a `call` that keeps the import and the call
- *     node. Its value is not known, and step 4 reads members off it as `member`s, as off `opaque`.
+ * 12. A call to an imported function (step 7), or to a member read off one through members and
+ *     such calls (`describe.each(rows)`), to a `call` that keeps the callee and the call node. Its
+ *     value is not known, and step 4 reads members off it as `member`s, as off `opaque`. A member
+ *     call step 6 or step 10 follows keeps that step's value instead.
  *
  * Every walk carries its active path, the bindings and nodes it is inside right now. A step back
  * onto that path is `unknown`, so a self-referencing binding stops, and a call back into a function
@@ -140,7 +142,7 @@ export type Alt =
   | { readonly kind: "member"; readonly object: Alt; readonly key: string }
   | {
       readonly kind: "call";
-      readonly callee: Extract<Alt, { kind: "import" }>;
+      readonly callee: Extract<Alt, { kind: "import" | "member" }>;
       readonly node: ESTree.CallExpression;
     }
   | { readonly kind: "opaque" }
@@ -371,6 +373,20 @@ function isText(alternative: Alt): boolean {
   return alternative.kind === "string" || alternative.kind === "text";
 }
 
+/** Whether a value is an import, or is read or called off one through members and calls (step 12). */
+function importRooted(alternative: Alt): boolean {
+  switch (alternative.kind) {
+    case "import":
+      return true;
+    case "member":
+      return importRooted(alternative.object);
+    case "call":
+      return importRooted(alternative.callee);
+    default:
+      return false;
+  }
+}
+
 /** The values of a combination when every alternative in it is a typed primitive. */
 function primitives(combination: ReadonlyArray<Alt>): Primitive[] | undefined {
   const values = combination.flatMap((alternative) => primitiveOf(alternative).map((boxed) => boxed.value));
@@ -533,7 +549,7 @@ function evaluator(context: Context, strings: Strings, memo: Memo) {
         }
       );
     }
-    return [OPAQUE];
+    return importRooted(receiver) ? [{ kind: "call", callee, node: call }] : [OPAQUE];
   };
 
   /** A template literal's values (step 10). */

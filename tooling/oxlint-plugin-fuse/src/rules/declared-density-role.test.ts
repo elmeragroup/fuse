@@ -1,21 +1,11 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { ruleTester } from "../rule-tester.ts";
 import { declaredDensityRole } from "./declared-density-role.ts";
 
-const directory = mkdtempSync(join(tmpdir(), "fuse-density-roles-"));
-const roles = join(directory, "density-roles.ts");
-writeFileSync(
-  roles,
-  `export const PART_DENSITY = {
-  "button": "control",
-  "card-header": "surface",
-  "sidebar-group:where([data-collapsible=icon] *)": "fixed",
-} as const satisfies Readonly<Record<string, string>>;
-`
-);
+/** The fixture that holds both rules' role tables. */
+const fixtures = join(import.meta.dirname, "../fixtures");
+const roles = join(fixtures, "part-roles.ts");
 const options = [{ roles }];
 
 ruleTester.run("declared-density-role", declaredDensityRole, {
@@ -35,7 +25,7 @@ ruleTester.run("declared-density-role", declaredDensityRole, {
     { code: 'useRender({ state: { slot: "badge" } });', options, errors: [{ messageId: "undeclared" }] },
     {
       code: '<div data-slot="button" />',
-      options: [{ roles: join(directory, "missing.ts") }],
+      options: [{ roles: join(fixtures, "missing.ts") }],
       errors: [{ messageId: "table" }],
     },
   ],

@@ -84,8 +84,9 @@ export const noKeptWindowCleanup: Rule = {
  */
 function keptWindow(receiver: Alt, cleanup: ESTree.Node, alwaysLeaks: boolean, filename: string): boolean {
   if (receiver.kind === "member") return receiver.key === "defaultView";
-  if (receiver.kind !== "call" || !fromDomNode(receiver.callee.source, filename)) return false;
-  const { imported } = receiver.callee;
+  if (receiver.kind !== "call" || receiver.callee.kind !== "import") return false;
+  const { imported, source } = receiver.callee;
+  if (!fromDomNode(source, filename)) return false;
   return (
     imported === "windowOf" ||
     (imported === "windowShowing" && (alwaysLeaks || readOutside(receiver.node, cleanup)))

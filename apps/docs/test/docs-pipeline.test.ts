@@ -1,7 +1,7 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { inspectComponentDemos } from "../scripts/lib/docs-inspection.ts";
@@ -401,10 +401,8 @@ describe("authored page.mdx as generation input", () => {
 });
 
 describe("demo file checks", () => {
-  const demosDir = mkdtempSync(join(here, ".demos-"));
-  afterAll(() => rmSync(demosDir, { recursive: true, force: true }));
-  writeFileSync(join(demosDir, "button-demo.tsx"), '"use client";\n\nexport function ButtonDemo() {}\n');
-  writeFileSync(join(demosDir, "button-server.tsx"), "export function ButtonServer() {}\n");
+  /** A client demo and a server file, so only the directive tells the two apart. */
+  const demosDir = join(here, "fixtures", "demo-file-checks");
 
   /** The problems generation reports for a Usage-shaped Button page with this default stage. */
   function problemsFor(defaultDemo: string): readonly string[] {

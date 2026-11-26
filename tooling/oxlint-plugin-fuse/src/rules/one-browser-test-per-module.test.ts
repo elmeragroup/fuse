@@ -1,29 +1,11 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll } from "vitest";
 
 import { ruleTester } from "../rule-tester.ts";
 import { oneBrowserTestPerModule } from "./one-browser-test-per-module.ts";
 
-// A component folder on disk: the rule reads the linted file's siblings.
-const folder = mkdtempSync(join(tmpdir(), "one-browser-test-"));
-for (const name of [
-  "button.tsx",
-  "button-focus.browser.test.tsx",
-  "button-keyboard.browser.test.tsx",
-  "menu.tsx",
-  "menu-keyboard.browser.test.tsx",
-  "select.tsx",
-  "select.browser.test.tsx",
-  "select-variants.ts",
-  "select-format.engines.browser.test.ts",
-  "select-keyboard.test.ts",
-  "fuse.css",
-]) {
-  writeFileSync(join(folder, name), "");
-}
-afterAll(() => rmSync(folder, { recursive: true, force: true }));
+// A component folder: the rule reads the linted file's siblings. It sits outside `src`, so Vitest
+// does not collect its empty test files.
+const folder = join(import.meta.dirname, "../../test/fixtures/one-browser-test-per-module");
 
 const code = 'it("opens", () => {});';
 
