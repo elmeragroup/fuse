@@ -18,8 +18,8 @@
  *   destructive row takes the `error` tone, and an inset row pads its start by the room a checkable
  *   row's indicator takes.
  * - `Dropdown menu checkbox item` and `Dropdown menu radio item` are the checkable rows, checked off
- *   and on, in the same 4 states: 8 cells each. Base UI mounts the indicator's Check only while the
- *   row is checked. While unchecked, the indicator `<span>` is empty and draws nothing.
+ *   and on, in the same 4 states: 8 cells each. Base UI mounts the indicator `<span>`, which holds
+ *   the Check, only while the row is checked.
  *
  * Each row cell except the sub trigger's is `DROPDOWN_ROW_CELL_WIDTH` wide, a popup width the kit
  * picks. The popups, the sub content and the open menu sit in `dropdown-popup-kit.ts`.
@@ -36,6 +36,7 @@ import {
   DROPDOWN_MENU_SUB_TRIGGER_TEXT,
   DROPDOWN_ROW_CELL_WIDTH,
 } from "./dropdown-menu-text";
+import { MENU_CHECK } from "./menu-kit";
 import { always } from "./popup-facts";
 
 /** A row's text, the default of its `Label` property. */
@@ -129,20 +130,9 @@ export const DROPDOWN_MENU_ITEM_MANIFEST: SetManifest = {
 
 const isChecked = (cell: Cell): boolean => cell.checked === "true";
 
-/** The Check Base UI's indicator `<span>` holds inside the row's indicator `<span>`, fixed. */
-const CHECK: IconManifest = {
-  key: "check",
-  name: "Check",
-  side: "end",
-  direct: false,
-  dataIcon: undefined,
-  icon: "Check",
-  swapProperty: undefined,
-};
-
 /**
- * A checkable row's manifest: its key, name and slot, its indicator's slot and its text. The
- * indicator `<span>` shows while the row is checked, when Base UI mounts the Check in it.
+ * A checkable row's manifest: its key, name and slot, its indicator's slot and its text. Only the
+ * checked variants hold the indicator `<span>` and its Check.
  */
 function checkableRowManifest(row: {
   readonly key: string;
@@ -171,7 +161,7 @@ function checkableRowManifest(row: {
         slot: row.indicator,
         shownIn: isChecked,
         label: undefined,
-        iconsFor: () => [CHECK],
+        iconsFor: () => [MENU_CHECK],
       },
     ],
     swapProperties: [],

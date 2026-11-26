@@ -115,7 +115,7 @@ export const selectContentVariants = tv({
       "w-full focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
     ],
     itemText: "flex flex-1 shrink-0 gap-2 whitespace-nowrap",
-    itemIndicator: [menuItemIndicatorClass, "size-4"],
+    itemIndicator: menuItemIndicatorClass,
     group: [selectGroupShellClass, "scroll-my-1"],
     label: menuGroupLabelClass,
     separator: [menuSeparatorClass, "pointer-events-none"],
