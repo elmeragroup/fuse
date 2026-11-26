@@ -39,16 +39,18 @@ import {
   tapShownStart,
   watchPressEndListeners,
 } from "../../../test/data-table-filter-fixture";
+import { centerY } from "../../../test/first-line";
 import { expectFocusInsideFill, expectStateFill } from "../../../test/forced-highlight";
 import { withLocale } from "../../../test/locale-matrix";
 import { withForcedColors } from "../../../test/media-emulation";
 import { whilePointerPressed } from "../../../test/pointer-press";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
 import { differsFromCanvas } from "../../../test/screenshot-pixels";
-import { renderThemed, roleNamed, textNamed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed, stampDensity, textNamed } from "../../../test/themed-browser-render";
 import type { Finger, Touchscreen } from "../../../test/touch-input";
 import { withTouchscreen } from "../../../test/touch-input";
 import "../../temporal-polyfill";
+import { DENSITIES } from "../../theme/density";
 import { DateField } from "../date-field/date-field";
 import { useDataTableFilterChip } from "./data-table-filter-context";
 import type { FilterField, FilterFieldMap } from "./filter-fields";
@@ -1243,6 +1245,23 @@ describe("menu", () => {
       ]);
       expect(roleNamed("menuitemcheckbox", "Paid").getAttribute("aria-checked")).toBe("true");
       expect(page.getByRole("separator").elements()).toHaveLength(1);
+    });
+
+    it.each(DENSITIES)("centers the check of a checked value on its row at %s density", async (density) => {
+      stampDensity(density);
+      renderOrders({
+        initial: [{ id: "status", value: { kind: "option", operator: "is", values: ["paid"] } }],
+      });
+      await openMenu();
+      await userEvent.click(roleNamed("menuitem", "Status"));
+      await expect.poll(() => page.getByRole("menuitemcheckbox", { name: "Paid" }).query()).not.toBeNull();
+      await finishMotion();
+      const row = roleNamed("menuitemcheckbox", "Paid");
+      const icon = row.querySelector("svg");
+      if (icon === null) {
+        throw new Error("expected a check icon");
+      }
+      expect(Math.abs(centerY(icon) - centerY(row))).toBeLessThanOrEqual(0.5);
     });
   });
 

@@ -7,6 +7,7 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingOnKeyboardAbsentOnMouse } from "../../../test/assert-focus-ring";
+import { centerY } from "../../../test/first-line";
 import {
   colorPixel,
   expectFocusInsideFill,
@@ -24,8 +25,8 @@ import {
   pixelContrast,
   pixelsAt,
 } from "../../../test/screenshot-pixels";
-import { renderThemed } from "../../../test/themed-browser-render";
-import { roleNamed } from "../../../test/themed-browser-render";
+import { renderThemed, roleNamed, stampDensity } from "../../../test/themed-browser-render";
+import { DENSITIES } from "../../theme/density";
 import { DropdownMenu } from "./index";
 
 type ItemRole = "menuitem" | "menuitemcheckbox" | "menuitemradio";
@@ -207,6 +208,33 @@ describe("DropdownMenu", () => {
     expect(itemNamed("Panel", "menuitemradio").getAttribute("aria-checked")).toBe("true");
     expect(itemNamed("Panel", "menuitemradio").querySelector("svg")).not.toBeNull();
     expect(itemNamed("Status bar", "menuitemradio").querySelector("svg")).toBeNull();
+  });
+
+  it.each(DENSITIES)("centers the check of a checked item on its row at %s density", async (density) => {
+    stampDensity(density);
+    renderThemed(
+      <DropdownMenu.Root defaultOpen>
+        <DropdownMenu.Trigger>Open</DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.CheckboxItem checked>Show toolbar</DropdownMenu.CheckboxItem>
+          <DropdownMenu.RadioGroup value="status">
+            <DropdownMenu.RadioItem value="status">Status bar</DropdownMenu.RadioItem>
+          </DropdownMenu.RadioGroup>
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
+    );
+    for (const [name, role] of [
+      ["Show toolbar", "menuitemcheckbox"],
+      ["Status bar", "menuitemradio"],
+    ] as const) {
+      const row = await mountedItem(name, role);
+      for (const animation of document.getAnimations()) animation.finish();
+      const icon = row.querySelector("svg");
+      if (icon === null) {
+        throw new Error(`expected a check icon in ${name}`);
+      }
+      expect(Math.abs(centerY(icon) - centerY(row)), name).toBeLessThanOrEqual(0.5);
+    }
   });
 
   it("renders LinkItem as a menuitem backed by an anchor", async () => {

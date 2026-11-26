@@ -57,8 +57,13 @@ const overlayMenuVariants = tv({
       // oxlint-disable-next-line fuse/state-face -- a menu row is an option part, not a control, so it keeps its own disabled dim and drops pointer events so the pointer never highlights a disabled row; forced colors set it and its descendants in GrayText at full opacity instead
       "data-disabled:pointer-events-none data-disabled:opacity-50 forced-colors:data-disabled:text-[GrayText]! forced-colors:data-disabled:opacity-100 forced-colors:data-disabled:**:text-[GrayText]!",
     ],
-    /** The trailing check slot on a selectable option row, positioned once for all three menu families. */
-    indicator: "pointer-events-none absolute right-(--row-px) flex items-center justify-center",
+    /**
+     * The trailing check slot on a selectable option row, positioned once for every menu family that shows one.
+     * Each family renders its Base UI indicator as this 16px box, so the check is the box's direct
+     * flex child and centers on the row whether or not the host loads a preflight that makes an `svg`
+     * a block.
+     */
+    indicator: "pointer-events-none absolute right-(--row-px) flex size-4 items-center justify-center",
     /** The end padding of a row with a trailing indicator. */
     indicatorRoom: "pr-[calc(var(--row-px)+1.5rem)]",
     /** The start padding of an inset row or label, which lines its text up with rows that start with an icon. */

@@ -220,11 +220,15 @@ export function DropdownMenuCheckboxItem({
       className={mergeClassName(className, dropdownMenuCheckableItemClassName)}
       checked={checked}
       {...props}>
-      <span className={dropdownMenuItemIndicatorClassName} data-slot="dropdown-menu-checkbox-item-indicator">
-        <MenuPrimitive.CheckboxItemIndicator>
-          <Check />
-        </MenuPrimitive.CheckboxItemIndicator>
-      </span>
+      <MenuPrimitive.CheckboxItemIndicator
+        render={
+          <span
+            className={dropdownMenuItemIndicatorClassName}
+            data-slot="dropdown-menu-checkbox-item-indicator"
+          />
+        }>
+        <Check />
+      </MenuPrimitive.CheckboxItemIndicator>
       {children}
     </MenuPrimitive.CheckboxItem>
   );
@@ -289,11 +293,15 @@ export function DropdownMenuRadioItem({
       data-inset={inset ? true : undefined}
       className={mergeClassName(className, dropdownMenuCheckableItemClassName)}
       {...props}>
-      <span className={dropdownMenuItemIndicatorClassName} data-slot="dropdown-menu-radio-item-indicator">
-        <MenuPrimitive.RadioItemIndicator>
-          <Check />
-        </MenuPrimitive.RadioItemIndicator>
-      </span>
+      <MenuPrimitive.RadioItemIndicator
+        render={
+          <span
+            className={dropdownMenuItemIndicatorClassName}
+            data-slot="dropdown-menu-radio-item-indicator"
+          />
+        }>
+        <Check />
+      </MenuPrimitive.RadioItemIndicator>
       {children}
     </MenuPrimitive.RadioItem>
   );

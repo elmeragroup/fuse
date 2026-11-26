@@ -526,7 +526,7 @@
             {
               "tag": "span",
               "attributes": {"aria-hidden":"true","data-selected":""},
-              "classes": ["pointer-events-none","absolute","right-(--row-px)","flex","items-center","justify-center","size-4"],
+              "classes": ["pointer-events-none","absolute","right-(--row-px)","flex","size-4","items-center","justify-center"],
               "text": "",
               "declarations": [2,3,4,5,6,134,135,136,137,138,139,140,141,142],
               "initial": [3,4],
@@ -637,7 +637,7 @@
             {
               "tag": "span",
               "attributes": {"aria-hidden":"true","data-selected":""},
-              "classes": ["pointer-events-none","absolute","right-(--row-px)","flex","items-center","justify-center","size-4"],
+              "classes": ["pointer-events-none","absolute","right-(--row-px)","flex","size-4","items-center","justify-center"],
               "text": "",
               "declarations": [2,3,4,5,6,134,135,136,137,138,139,120,140,141,142],
               "initial": [3,4],
@@ -748,7 +748,7 @@
             {
               "tag": "span",
               "attributes": {"aria-hidden":"true","data-selected":""},
-              "classes": ["pointer-events-none","absolute","right-(--row-px)","flex","items-center","justify-center","size-4"],
+              "classes": ["pointer-events-none","absolute","right-(--row-px)","flex","size-4","items-center","justify-center"],
               "text": "",
               "declarations": [2,3,4,5,6,134,135,136,137,138,139,140,141,142],
               "initial": [3,4],

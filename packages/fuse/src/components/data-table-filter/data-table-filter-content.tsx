@@ -723,11 +723,9 @@ function ValueItem({
         actions.toggle(fieldId, option.value);
       }}
       className={cn(menuItemClass, menuItemIndicatorRoomClass, slots.row(), slots.option())}>
-      <span className={menuItemIndicatorClass}>
-        <MenuPrimitive.CheckboxItemIndicator>
-          <Check aria-hidden />
-        </MenuPrimitive.CheckboxItemIndicator>
-      </span>
+      <MenuPrimitive.CheckboxItemIndicator render={<span className={menuItemIndicatorClass} />}>
+        <Check aria-hidden />
+      </MenuPrimitive.CheckboxItemIndicator>
       {option.icon === undefined ? null : (
         <span aria-hidden className="contents">
           {option.icon}
