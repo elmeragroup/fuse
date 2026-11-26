@@ -432,6 +432,7 @@ export default defineConfig({
         "shadcn/no-unknown-classes": "error",
         "fuse/container-surface": "error",
         "fuse/defined-props-wiring": "error",
+        "fuse/forced-state-arm": "error",
         "fuse/declared-density-role": [
           "error",
           {

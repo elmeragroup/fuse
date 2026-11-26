@@ -29,6 +29,7 @@ export const switchVariants = tv({
     // on every surface by the matrix rule in `contrast-matrix.test.ts`, and the surface shows
     // through. The checked track is the `primary` fill with a `background` thumb, so on versus
     // off reads as outline versus fill in every palette, as on Checkbox and Radio.
+    // oxlint-disable-next-line fuse/forced-state-arm -- the thumb's position shows the checked state
     root: "shadow-xs relative inline-flex shrink-0 items-center justify-start rounded-full border border-muted-foreground transition-colors data-checked:border-primary data-checked:bg-primary",
     thumb:
       "pointer-events-none block rounded-full mark-fill-muted-foreground ring-0 transition-transform data-checked:translate-x-[calc(100%-2px)] data-checked:mark-fill-background data-unchecked:translate-x-0 data-unchecked:scale-75",

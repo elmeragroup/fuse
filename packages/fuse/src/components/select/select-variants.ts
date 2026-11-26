@@ -91,6 +91,7 @@ export const selectContentVariants = tv({
     item: [
       menuItemClass,
       menuItemIndicatorRoomClass,
+      // oxlint-disable-next-line fuse/forced-state-arm -- Base UI sets `data-highlighted` on the focused row, where `menuItemClass` gives an enabled row its `forced-highlight`; a focused row that loses it to the scroll arrow, and a highlighted disabled row, draw its CanvasText outline.
       "w-full focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
     ],
     itemText: "flex flex-1 shrink-0 gap-2 whitespace-nowrap",

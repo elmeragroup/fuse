@@ -16,6 +16,7 @@ const itemClass = cn(
   selfFocusRingClass,
   menuItemClass,
   menuItemInsetClass,
+  // oxlint-disable-next-line fuse/forced-state-arm -- Base UI sets `data-highlighted` on every focused row, and `menuItemClass` gives an enabled highlighted row its `forced-highlight` and a highlighted disabled row a CanvasText outline.
   "group/dropdown-menu-item focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error data-[variant=destructive]:*:[svg]:text-error"
 );
 
@@ -55,6 +56,7 @@ export const dropdownMenuVariants = tv({
     itemIndicator: menuItemIndicatorClass,
     subTrigger: [
       itemClass,
+      // oxlint-disable-next-line fuse/forced-state-arm -- the companion covers only an enabled sub-trigger; one disabled while its popup is open drops the fill and shows its GrayText disabled face
       "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-popup-open:not-data-disabled:forced-highlight",
     ],
     subTriggerCaret: "ml-auto",

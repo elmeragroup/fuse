@@ -80,10 +80,13 @@ export const buttonVariants = tv({
     variant: {
       default: "bg-primary text-primary-foreground enabled-hover:bg-primary/80",
       outline:
+        // oxlint-disable-next-line fuse/forced-state-arm -- the open popup shows the expanded state
         "border-[length:var(--button-outline-width,1px)] border-button-outline bg-transparent shadow-[0_1px_max(0px,4px-2*var(--button-outline-width,1px))_min(0px,2px-2*var(--button-outline-width,1px))_rgb(0_0_0/0.05)] aria-expanded:bg-muted aria-expanded:text-foreground enabled-hover:bg-muted enabled-hover:text-foreground",
       secondary:
+        // oxlint-disable-next-line fuse/forced-state-arm -- the open popup shows the expanded state
         "bg-secondary text-secondary-foreground aria-expanded:bg-secondary aria-expanded:text-secondary-foreground enabled-hover:bg-secondary-hover",
       ghost:
+        // oxlint-disable-next-line fuse/forced-state-arm -- the open popup shows the expanded state
         "aria-expanded:bg-muted aria-expanded:text-foreground enabled-hover:bg-muted enabled-hover:text-foreground",
       destructive:
         "border-error/20 bg-error/10 text-error enabled-hover:border-error enabled-hover:bg-error/20",

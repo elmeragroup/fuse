@@ -165,7 +165,7 @@ function TableBody({ className, ...props }: TableBodyProps): ReactElement {
         // through one plain `text-(color:--table-body-foreground)`, and the framed arm sets only
         // the property, so a `text-*` in `className` replaces the utility in every state. Cells
         // inherit the body's and row's color, so a cell's own color wins too.
-        // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
+        // oxlint-disable-next-line fuse/state-face, fuse/forced-state-arm -- table rows are not controls and have no disabled state; in forced colors the selected row's `Highlight` frame on its `::after` shows the state
         "before:shadow-[0_1px_--theme(--color-black/6%)] relative text-(color:--table-body-foreground) [--table-body-foreground:currentColor] before:pointer-events-none before:absolute before:inset-px not-framed-table:before:hidden framed-table:shadow-[shadow:0_var(--frame-shadow-y,1px)_var(--frame-shadow-blur,2px)_0_black]/5 framed-table:[--table-body-foreground:--theme(--color-panel-foreground)] [&_tr:last-child]:border-0 framed-table:*:[tr]:border-0 framed-table:*:[tr]:*:[td]:border-b framed-table:*:[tr]:*:[td]:bg-panel framed-table:*:[tr]:*:[td]:bg-clip-padding framed-table:*:[tr]:*:[td]:[--surface-muted-foreground:--theme(--color-muted-foreground)] framed-table:*:[tr]:*:[td]:[--surface:--theme(--color-panel)] framed-table:*:[tr]:*:[td]:first:border-s framed-table:*:[tr]:first:*:[td]:border-t framed-table:*:[tr]:*:[td]:last:border-e framed-table:*:[tr]:hover:*:[td]:bg-transparent framed-table:*:[tr]:data-[state=selected]:*:[td]:bg-muted/72",
         className
       )}
@@ -197,7 +197,7 @@ function TableRow({ className, ...props }: TableRowProps): ReactElement {
         // its text takes `foreground`, the gated pair on `muted`; at rest it keeps the text around
         // it. The state arms set only `--table-row-foreground`, which one plain text utility reads,
         // so a `text-*` in `className` replaces it in every state.
-        // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
+        // oxlint-disable-next-line fuse/state-face, fuse/forced-state-arm -- table rows are not controls and have no disabled state; in forced colors a selected row draws the `Highlight` frame on its `::after` below
         "border-b text-(color:--table-row-foreground) transition-colors [--table-row-foreground:currentColor] hover:bg-muted/72 hover:[--table-row-foreground:--theme(--color-foreground)] data-[state=selected]:bg-muted/72 data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)] framed-table:hover:bg-transparent framed-table:data-[state=selected]:bg-transparent",
         // Forced colors replace the selected fill. A fill in `Highlight` would cover what the
         // cells draw themselves, such as a Meter's bar, a sticky cell's background or a text

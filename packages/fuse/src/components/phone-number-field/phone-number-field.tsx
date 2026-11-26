@@ -312,7 +312,7 @@ function CountryTrigger({ label, description, isEditable, children }: CountryTri
           // No UA button border or fill in a preflight-free host.
           "flex min-h-[max(1.5rem,24px)] shrink-0 items-center rounded-inner border-0 bg-transparent px-1 transition-[color,background-color,scale] duration-150",
           isEditable
-            ? // oxlint-disable-next-line fuse/state-face -- the country trigger takes these faces only while the field is editable
+            ? // oxlint-disable-next-line fuse/state-face, fuse/forced-state-arm -- the country trigger takes these faces only while the field is editable; the open popup shows the pressed state
               "cursor-pointer hover:bg-muted active:scale-[0.97] data-pressed:bg-muted"
             : "cursor-default"
         )}>

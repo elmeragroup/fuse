@@ -107,6 +107,7 @@ export const navigationMenuVariants = tv({
   variants: {
     orientation: {
       horizontal: {
+        // oxlint-disable-next-line fuse/forced-state-arm -- the open popup's content shows the state; the caret turns only on bottom placement
         trigger: [barBoxClass, "w-max justify-center data-popup-open:bg-muted enabled-hover:bg-muted"],
       },
       // A vertical trigger is full width and start-aligned, so it can hold a title and a description.
@@ -114,6 +115,7 @@ export const navigationMenuVariants = tv({
         trigger: [
           contentRowClass,
           "h-auto w-full justify-between text-start font-[number:inherit]",
+          // oxlint-disable-next-line fuse/forced-state-arm -- the companion covers only an enabled trigger; one disabled while its popup is open drops the fill and dims like any disabled trigger
           "data-popup-open:bg-accent data-popup-open:text-accent-foreground data-popup-open:**:text-accent-foreground data-popup-open:not-disabled-state:forced-highlight enabled-hover:bg-accent enabled-hover:text-accent-foreground enabled-hover:**:text-accent-foreground",
         ],
       },

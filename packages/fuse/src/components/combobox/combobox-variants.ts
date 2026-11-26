@@ -62,6 +62,7 @@ export const comboboxVariants = tv({
     item: [
       menuItemClass,
       menuItemIndicatorRoomClass,
+      // oxlint-disable-next-line fuse/forced-state-arm -- `menuItemClass` gives an enabled highlighted row its `forced-highlight` and a highlighted disabled row a CanvasText outline.
       "w-full data-highlighted:bg-accent data-highlighted:text-accent-foreground data-highlighted:**:text-accent-foreground",
     ],
     itemIndicator: [menuItemIndicatorClass, "size-4"],

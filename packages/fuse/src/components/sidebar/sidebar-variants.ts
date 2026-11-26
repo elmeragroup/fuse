@@ -102,6 +102,7 @@ export const sidebarGroupActionBoxClass = cn(
  */
 export const sidebarMenuButtonVariants = tv({
   base: [
+    // oxlint-disable-next-line fuse/forced-state-arm -- the `forced-highlight` companion covers only an enabled active row; a disabled active row draws the 2px Highlight frame on its `::after` below instead
     "peer/menu-button group/menu-button text-sm data-active:font-medium flex w-full items-center gap-2 overflow-hidden border-0 p-2 text-left transition-[color,background-color,box-shadow] group-has-data-[slot=sidebar-menu-action]/menu-item:pr-[calc(var(--menu-action-size)+(--spacing(2)))] data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground data-active:not-disabled-state:forced-highlight enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground data-open:enabled-hover:bg-sidebar-accent data-open:enabled-hover:text-sidebar-accent-foreground enabled-active:bg-sidebar-accent enabled-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
     // A disabled row dims to half, and so would a Highlight fill, which the action and badge
     // beside the row would then sit on. A disabled active row draws a 2px Highlight frame on its

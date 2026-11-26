@@ -20,6 +20,7 @@ export const fileUploadVariants = tv({
       "flex min-w-0 items-center gap-(--surface-gap-sm) border-dashed border-border transition-colors duration-100",
       // The border strengthens on hover and while a control inside has keyboard focus.
       "has-focus-visible:border-muted-foreground/50 enabled-hover:border-muted-foreground/50",
+      // oxlint-disable-next-line fuse/forced-state-arm -- the dashed border turns solid on a drop target
       "data-drop-target:border-solid data-drop-target:border-primary data-drop-target:bg-primary-soft",
       dataStateFaceClass
     ),
