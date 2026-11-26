@@ -90,15 +90,6 @@ export const withinFocusRingClass = focusRing({ target: "within" }).root();
 export const withinFocusRingControlClass = focusRing({ target: "within" }).control();
 
 /**
- * The keyboard focus outline drawn 2px inside the element, in the `--ring` color, for a box that a
- * clipping parent would cut an outer ring from, such as a scrolling table. An outline paints above
- * the element's in-flow content but below a positioned descendant, and forced-colors mode keeps it.
- */
-export const insetFocusOutlineClass = cn(
-  "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
-);
-
-/**
  * The overlay-target focus ring class, resolved once at module scope, for the empty element that
  * follows a clipped control as its sibling and draws the control's focus outline. Pair it with
  * {@link overlayFocusRingControlClass} on the control.

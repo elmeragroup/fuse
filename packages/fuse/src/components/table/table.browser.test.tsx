@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from "react";
+import type { CSSProperties, ReactElement, ReactNode } from "react";
 
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -8,6 +8,7 @@ import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { axFocused, axNodes } from "../../../test/ax-tree";
 import { assertNoAxeViolations } from "../../../test/axe";
+import { pixelsAt, rows } from "../../../test/screenshot-pixels";
 import { PANEL, describePartPaint } from "../../../test/surface-paint";
 import type { Layer, PartCase } from "../../../test/surface-paint";
 import {
@@ -203,37 +204,119 @@ describe("VerticalTable", () => {
 type MeterTableProps = TableRootProps & {
   /** The width of the box around the table. The default is narrower than the table. */
   width?: string;
+  /** Whether a `Frame.Root` holds the table. */
+  framed?: boolean;
+  /** The two cells' text, each kept on one line. */
+  cells?: readonly [string, string];
+  /** The first cell's style. */
+  firstCell?: CSSProperties;
   /** Content placed before the first cell's text. */
   control?: ReactNode;
   /** The table's caption, rendered as `Table.Caption`. */
-  caption?: string;
+  caption?: ReactNode;
 };
 
-function MeterTable({ width = "200px", control, caption, ...tableProps }: MeterTableProps): ReactElement {
+function MeterTable({
+  width = "200px",
+  framed = false,
+  cells = ["Meter 1200 at Storgata 1, Oslo", "1200 kWh read on 24 November 2026"],
+  firstCell,
+  control,
+  caption,
+  ...tableProps
+}: MeterTableProps): ReactElement {
+  const table = (
+    <Table.Root {...tableProps}>
+      {caption === undefined ? null : <Table.Caption>{caption}</Table.Caption>}
+      <Table.Body>
+        <Table.Row>
+          <Table.Cell className="whitespace-nowrap" style={firstCell}>
+            {control}
+            {cells[0]}
+          </Table.Cell>
+          <Table.Cell className="whitespace-nowrap">{cells[1]}</Table.Cell>
+        </Table.Row>
+      </Table.Body>
+    </Table.Root>
+  );
+  return <div style={{ width }}>{framed ? <Frame.Root>{table}</Frame.Root> : table}</div>;
+}
+
+/** A wide table of six rows under a sticky header, in a Frame capped shorter than the rows. */
+function CappedTable(tableProps: TableRootProps): ReactElement {
+  const meters = [1, 2, 3, 4, 5, 6];
   return (
-    <div style={{ width }}>
-      <Table.Root {...tableProps}>
-        {caption === undefined ? null : <Table.Caption>{caption}</Table.Caption>}
-        <Table.Body>
-          <Table.Row>
-            <Table.Cell className="whitespace-nowrap">{control}Meter 1200 at Storgata 1, Oslo</Table.Cell>
-            <Table.Cell className="whitespace-nowrap">1200 kWh read on 24 November 2026</Table.Cell>
-          </Table.Row>
-        </Table.Body>
-      </Table.Root>
+    <div style={{ width: "240px" }}>
+      <Frame.Root style={{ maxHeight: "140px" }}>
+        <Table.Root {...tableProps}>
+          <Table.Header style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--background)" }}>
+            <Table.Row>
+              <Table.Head className="whitespace-nowrap">Meter at Storgata 1, Oslo</Table.Head>
+              <Table.Head className="whitespace-nowrap">Reading on 24 November 2026</Table.Head>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {meters.map((meter) => (
+              <Table.Row key={meter}>
+                <Table.Cell>{`Meter ${meter}`}</Table.Cell>
+                <Table.Cell>{`${meter * 100} kWh`}</Table.Cell>
+              </Table.Row>
+            ))}
+          </Table.Body>
+        </Table.Root>
+      </Frame.Root>
     </div>
   );
 }
 
-function container(): HTMLElement {
-  const element = document.querySelector('[data-slot="table-container"]');
-  if (!(element instanceof HTMLElement)) throw new Error("expected the table's container");
+/** The Table's outer box, which the Frame caps, so it is the table's visible area. */
+function cappedBox(): HTMLElement {
+  const box = document.querySelector('[data-slot="table-container"]');
+  if (!(box instanceof HTMLElement)) throw new Error("expected the table's container");
+  return box;
+}
+
+/** Whether the capped table is wider and taller than its visible area. */
+function cappedOverflow() {
+  const table = htmlTable("Meter readings").getBoundingClientRect();
+  const box = cappedBox().getBoundingClientRect();
+  return { wider: table.width > box.width, taller: table.height > box.height };
+}
+
+/**
+ * The colors of one screenshot of a box at the midpoints of its four edges, each 1px inside the
+ * edge, so each point lies inside a 2px outline drawn on the box's border edge.
+ */
+async function edgePixels(box: Element): Promise<number[][]> {
+  const { width, height } = box.getBoundingClientRect();
+  return pixelsAt(box, [
+    [1, height / 2],
+    [width - 2, height / 2],
+    [width / 2, 1],
+    [width / 2, height - 2],
+  ]);
+}
+
+/** A square in the theme's `--ring` color, the color a focus outline draws in. */
+function RingSwatch(): ReactElement {
+  return <div data-testid="ring" style={{ width: "8px", height: "8px", background: "var(--ring)" }} />;
+}
+
+/** The color at the middle of the rendered `RingSwatch`. */
+async function ringColor(): Promise<number[] | undefined> {
+  const [color] = await rows(page.getByTestId("ring").element(), 4, [4]);
+  return color;
+}
+
+function viewport(): HTMLElement {
+  const element = document.querySelector('[data-slot="table-viewport"]');
+  if (!(element instanceof HTMLElement)) throw new Error("expected the table's viewport");
   return element;
 }
 
-/** The container's role and tab index, both `null` while it is no stop. */
+/** The viewport's role and tab index, both `null` while it is no stop. */
 function scrollStop() {
-  return { role: container().getAttribute("role"), tabIndex: container().getAttribute("tabindex") };
+  return { role: viewport().getAttribute("role"), tabIndex: viewport().getAttribute("tabindex") };
 }
 
 const STOP = { role: "group", tabIndex: "0" };
@@ -254,10 +337,10 @@ describe("Table", () => {
     await userEvent.tab();
     expect(document.activeElement).toBe(roleNamed("group", "Meter readings"));
     await userEvent.keyboard("{ArrowRight}");
-    await expect.poll(() => container().scrollLeft).toBeGreaterThan(0);
+    await expect.poll(() => viewport().scrollLeft).toBeGreaterThan(0);
   });
 
-  it("stops on a scrolling table's container before the text input in its cells", async () => {
+  it("stops on a scrolling table's viewport before the text input in its cells", async () => {
     renderThemed(
       <>
         <button type="button">Before</button>
@@ -285,7 +368,7 @@ describe("Table", () => {
       name: "Readings in Oslo",
     },
     { label: "the table's caption", props: { caption: "November readings" }, name: "November readings" },
-  ])("names the scrolling container by $label", async ({ props, name }) => {
+  ])("names the scrolling viewport by $label", async ({ props, name }) => {
     const { host } = renderThemed(
       <>
         <h2 id="meter-heading">Readings in Oslo</h2>
@@ -293,18 +376,18 @@ describe("Table", () => {
       </>
     );
     await expect.poll(scrollStop).toEqual(STOP);
-    expect(roleNamed("group", name)).toBe(container());
+    expect(roleNamed("group", name)).toBe(viewport());
     await assertNoAxeViolations(host);
   });
 
   it.each([
     { label: "an unnamed, uncaptioned", props: {} },
     { label: "an empty-captioned", props: { caption: "" } },
-  ])("gives $label scrolling table's container no name in Chromium", async ({ props }) => {
+  ])("gives $label scrolling table's viewport no name in Chromium", async ({ props }) => {
     renderThemed(<MeterTable {...props} />);
     await expect.poll(scrollStop).toEqual(STOP);
 
-    container().focus();
+    viewport().focus();
     // ARIA names a group from its author only, so Chromium must not take the cells' text.
     const focused = axFocused(await axNodes());
     expect(focused?.role?.value).toBe("group");
@@ -319,9 +402,9 @@ describe("Table", () => {
     await expect.poll(scrollStop).toEqual(NO_STOP);
   });
 
-  it("drops the stop when the container stops clipping the table", async () => {
+  it("drops the stop when the viewport stops clipping the table", async () => {
     const style = document.createElement("style");
-    style.textContent = '.meter-unclipped [data-slot="table-container"] { overflow: visible; }';
+    style.textContent = '.meter-unclipped [data-slot="table-viewport"] { overflow: visible; }';
     document.head.append(style);
     try {
       const { rerender } = renderThemed(
@@ -353,9 +436,9 @@ describe("Table", () => {
         <button type="button">After</button>
       </>
     );
-    // Give the container's first measurement a frame to land.
+    // Give the viewport's first measurement a frame to land.
     await nextFrames(2);
-    expect(container().scrollWidth).toBeGreaterThan(container().clientWidth);
+    expect(viewport().scrollWidth).toBeGreaterThan(viewport().clientWidth);
     roleNamed("button", "Before").focus();
     await userEvent.tab();
     expect(document.activeElement).toBe(lands());
@@ -365,7 +448,7 @@ describe("Table", () => {
     renderThemed(<MeterTable aria-label="Meter readings" tabIndex={0} />);
     htmlTable("Meter readings").focus();
     await userEvent.keyboard("{ArrowRight}");
-    await expect.poll(() => container().scrollLeft).toBeGreaterThan(0);
+    await expect.poll(() => viewport().scrollLeft).toBeGreaterThan(0);
   });
 
   it.each([
@@ -405,6 +488,158 @@ describe("Table", () => {
       expect(htmlTable("Meter readings").getBoundingClientRect().width).toBe(tableWidth);
     }
   );
+
+  it.each([
+    { label: "its body rows", firstCell: {} },
+    {
+      label: "a sticky first cell",
+      firstCell: { position: "sticky", insetInlineStart: 0, zIndex: 10, background: "var(--background)" },
+    },
+  ] as const)(
+    "paints a framed scrolling table's focus outline over $label at either scroll end",
+    async ({ firstCell }) => {
+      renderThemed(
+        <>
+          <button type="button">Before</button>
+          <MeterTable aria-label="Meter readings" width="240px" framed firstCell={firstCell} />
+          <RingSwatch />
+        </>
+      );
+      // The stop is found by its role and name, so the check samples whichever element the DOM
+      // makes the stop.
+      const stop = page.getByRole("group", { name: "Meter readings" });
+      await expect.poll(() => stop.query()).not.toBeNull();
+      const ring = await ringColor();
+      const box = stop.element();
+      // The framed body fills the whole box, so each edge point lies over a body row.
+      for (const pixel of await edgePixels(box)) expect(pixel, "an edge before focus").not.toEqual(ring);
+
+      roleNamed("button", "Before").focus();
+      await userEvent.tab();
+      expect(document.activeElement).toBe(box);
+      expect(box.matches(":focus-visible")).toBe(true);
+      for (const end of [0, box.scrollWidth - box.clientWidth]) {
+        box.scrollLeft = end;
+        await nextFrames(2);
+        expect(Math.abs(box.scrollLeft - end)).toBeLessThanOrEqual(1);
+        for (const pixel of await edgePixels(box))
+          expect(pixel, `the outline at scrollLeft ${end}`).toEqual(ring);
+      }
+    }
+  );
+
+  it("keeps a framed table's width, positioned controls and cell clicks while its viewport has focus", async () => {
+    // A consumer's own minimum width is wider than the box and wider than the cells need.
+    const style = document.createElement("style");
+    style.textContent = ".meter-wide { min-width: 600px; }";
+    document.head.append(style);
+    let clicks = 0;
+    try {
+      renderThemed(
+        <>
+          <button type="button">Before</button>
+          <MeterTable
+            aria-label="Meter readings"
+            className="meter-wide"
+            width="240px"
+            framed
+            cells={["Meter 1200", "1200 kWh"]}
+            caption={
+              <>
+                Readings
+                {/* No part between the caption and the viewport is positioned, so the viewport
+                    places this control at its own end. */}
+                <button type="button" style={{ position: "absolute", insetInlineEnd: 0, top: 0 }}>
+                  Export
+                </button>
+              </>
+            }
+            control={
+              <button type="button" onClick={() => (clicks += 1)}>
+                Edit
+              </button>
+            }
+          />
+        </>
+      );
+      await expect.poll(scrollStop).toEqual(STOP);
+      const box = viewport();
+      const end = box.scrollWidth - box.clientWidth;
+      box.scrollLeft = end;
+      await nextFrames(2);
+      expect(Math.abs(box.scrollLeft - end)).toBeLessThanOrEqual(1);
+      const scrolled = box.scrollLeft;
+      const exportAt = () => {
+        const { x, y } = roleNamed("button", "Export").getBoundingClientRect();
+        return { x, y };
+      };
+      const placed = exportAt();
+
+      roleNamed("button", "Before").focus();
+      await userEvent.tab();
+      expect(box.matches(":focus-visible")).toBe(true);
+      // The viewport's observers measure on the next frame.
+      await nextFrames(3);
+      expect(document.activeElement).toBe(box);
+      expect(scrollStop()).toEqual(STOP);
+      expect(box.scrollLeft).toBe(scrolled);
+      expect(exportAt()).toEqual(placed);
+
+      // A pointer over the last cell, scrolled into view, hits the cell.
+      const cell = roleNamed("cell", "1200 kWh");
+      const shown = cell.getBoundingClientRect();
+      expect(shown.right).toBeLessThanOrEqual(box.getBoundingClientRect().right);
+      expect(document.elementFromPoint(shown.x + shown.width / 2, shown.y + shown.height / 2)).toBe(cell);
+      await userEvent.click(roleNamed("button", "Edit"));
+      expect(clicks).toBe(1);
+    } finally {
+      style.remove();
+    }
+  });
+
+  it("keeps a height-capped framed table's sticky header and focus outline on its visible box as it scrolls down", async () => {
+    renderThemed(
+      <>
+        <button type="button">Before</button>
+        <CappedTable aria-label="Meter readings" />
+        <RingSwatch />
+      </>
+    );
+    const stop = page.getByRole("group", { name: "Meter readings" });
+    await expect.poll(() => stop.query()).not.toBeNull();
+    expect(cappedOverflow()).toEqual({ wider: true, taller: true });
+    const ring = await ringColor();
+    roleNamed("button", "Before").focus();
+    await userEvent.tab();
+    expect(document.activeElement).toBe(stop.element());
+
+    await userEvent.keyboard("{End}");
+    const lastRow = roleNamed("cell", "Meter 6");
+    await expect
+      .poll(() => lastRow.getBoundingClientRect().bottom <= cappedBox().getBoundingClientRect().bottom + 1)
+      .toBe(true);
+    expect(htmlTable("Meter readings").tHead?.getBoundingClientRect().top).toBeCloseTo(
+      cappedBox().getBoundingClientRect().top,
+      0
+    );
+    for (const pixel of await edgePixels(cappedBox()))
+      expect(pixel, "an edge of the scrolled box").toEqual(ring);
+  });
+
+  it("adds no tab stop around a height-capped table that sets its tabIndex to -1", async () => {
+    renderThemed(
+      <>
+        <button type="button">Before</button>
+        <CappedTable aria-label="Meter readings" tabIndex={-1} />
+        <button type="button">After</button>
+      </>
+    );
+    await nextFrames(2);
+    expect(cappedOverflow()).toEqual({ wider: true, taller: true });
+    roleNamed("button", "Before").focus();
+    await userEvent.tab();
+    expect(document.activeElement).toBe(roleNamed("button", "After"));
+  });
 
   it("renders a plain table where the browser has no ResizeObserver", async () => {
     const resizeObserver = Object.getOwnPropertyDescriptor(window, "ResizeObserver");

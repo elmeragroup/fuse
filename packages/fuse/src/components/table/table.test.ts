@@ -7,6 +7,8 @@ import { Table, VerticalTable } from "./table";
 
 const TABLE_SLOTS = [
   "table-container",
+  "table-viewport",
+  "table-focus-indicator",
   "table",
   "table-header",
   "table-body",
@@ -70,18 +72,18 @@ describe("Table structure", () => {
     }
   });
 
-  it("sends Root props and className to the table, not the scroll container", () => {
+  it("renders the Root label on the table and keeps its id and className unique", () => {
     const html = renderToStaticMarkup(
       createElement(Table.Root, { id: "orders", className: "min-w-xl", "aria-label": "Orders" })
     );
-    const containerEnd = html.indexOf(">", html.indexOf('data-slot="table-container"'));
-    const container = html.slice(0, containerEnd);
-    expect(container).not.toContain('id="orders"');
-    expect(container).not.toContain("min-w-xl");
-    expect(html).toContain('id="orders"');
-    expect(html).toContain("min-w-xl");
-    expect(html).toContain('aria-label="Orders"');
-    expect(html).toContain('data-slot="table"');
+    const tableStart = html.indexOf("<table");
+    const table = html.slice(tableStart, html.indexOf(">", tableStart));
+    expect(table).toContain('data-slot="table"');
+    expect(table).toContain('id="orders"');
+    expect(table).toMatch(/class="[^"]*\bmin-w-xl\b/);
+    expect(table).toContain('aria-label="Orders"');
+    expect(html.match(/id="orders"/g)).toEqual(['id="orders"']);
+    expect(html.match(/min-w-xl/g)).toEqual(["min-w-xl"]);
   });
 });
 
