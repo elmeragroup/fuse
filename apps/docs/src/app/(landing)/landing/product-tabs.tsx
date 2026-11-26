@@ -239,12 +239,12 @@ export function InvoicesTab(): ReactElement {
                 </DescriptionList.Item>
               </DescriptionList.Content>
             </DescriptionList.Root>
-            <TimelineList.Root>
-              <TimelineList.Item>
+            <TimelineList.Root indicatorSize="md">
+              <TimelineList.Item status="complete">
                 <TimelineList.Title>Invoice issued</TimelineList.Title>
                 <TimelineList.Time date={invoice.issued.date}>{invoice.issued.label}</TimelineList.Time>
               </TimelineList.Item>
-              <TimelineList.Item>
+              <TimelineList.Item status={invoice.status === "paid" ? "complete" : "upcoming"}>
                 <TimelineList.Title>
                   {invoice.status === "paid" ? "Paid by AvtaleGiro" : "Payment scheduled"}
                 </TimelineList.Title>

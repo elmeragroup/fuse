@@ -6,6 +6,15 @@ lede: >
 import { TimelineListDemo } from "./demos/timeline-list-demo";
 import { TimelineListDateTime } from "./demos/timeline-list-date-time";
 import { TimelineListLinks } from "./demos/timeline-list-links";
+import { TimelineListAlternate } from "./demos/timeline-list-alternate";
+import { TimelineListHorizontal } from "./demos/timeline-list-horizontal";
+import { TimelineListOpposite } from "./demos/timeline-list-opposite";
+import { TimelineListHorizontalOpposite } from "./demos/timeline-list-horizontal-opposite";
+import { TimelineListCompact } from "./demos/timeline-list-compact";
+import { TimelineListMediumIndicators } from "./demos/timeline-list-medium-indicators";
+import { TimelineListLargeIndicators } from "./demos/timeline-list-large-indicators";
+import { TimelineListCustomIndicator } from "./demos/timeline-list-custom-indicator";
+import { TimelineListStatus } from "./demos/timeline-list-status";
 
 import { componentMetadata } from "../../../../lib/component-page";
 
@@ -40,6 +49,62 @@ import { TimelineList } from "@elmeragroup/fuse/timeline-list";
 
 <Demo slug="timeline-list" id="links" title="Links in descriptions" level={3} file="timeline-list-links.tsx">
   <TimelineListLinks />
+</Demo>
+
+<Demo slug="timeline-list" id="alternate" title="Alternate" level={3} file="timeline-list-alternate.tsx">
+  <TimelineListAlternate />
+</Demo>
+
+<Demo slug="timeline-list" id="horizontal" title="Horizontal" level={3} file="timeline-list-horizontal.tsx">
+  <TimelineListHorizontal />
+</Demo>
+
+<Demo slug="timeline-list" id="opposite" title="Opposite dates" level={3} file="timeline-list-opposite.tsx">
+  <TimelineListOpposite />
+</Demo>
+
+<Demo
+  slug="timeline-list"
+  id="horizontal-opposite"
+  title="Horizontal with opposite dates"
+  level={3}
+  file="timeline-list-horizontal-opposite.tsx">
+  <TimelineListHorizontalOpposite />
+</Demo>
+
+<Demo slug="timeline-list" id="compact" title="Compact spacing" level={3} file="timeline-list-compact.tsx">
+  <TimelineListCompact />
+</Demo>
+
+<Demo
+  slug="timeline-list"
+  id="medium-indicators"
+  title="Medium indicators"
+  level={3}
+  file="timeline-list-medium-indicators.tsx">
+  <TimelineListMediumIndicators />
+</Demo>
+
+<Demo
+  slug="timeline-list"
+  id="large-indicators"
+  title="Large indicators"
+  level={3}
+  file="timeline-list-large-indicators.tsx">
+  <TimelineListLargeIndicators />
+</Demo>
+
+<Demo
+  slug="timeline-list"
+  id="custom-indicator"
+  title="Custom indicator"
+  level={3}
+  file="timeline-list-custom-indicator.tsx">
+  <TimelineListCustomIndicator />
+</Demo>
+
+<Demo slug="timeline-list" id="status" title="Status" level={3} file="timeline-list-status.tsx">
+  <TimelineListStatus />
 </Demo>
 
 <ApiReference slug="timeline-list" />

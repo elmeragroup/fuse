@@ -436,7 +436,7 @@ export const KIT_PARITY = {
     kind: "partial",
     sets: ["timeline-list", "timeline-list-links"],
     missing:
-      "`TimelineList.Title`'s `align`, `size` and `font`, and a description link's hover state and its target, since the links demo's `href` is a fragment, which Figma refuses as a link.",
+      "`TimelineList.Root`'s `layout`, `spacing` and `indicatorSize`, `TimelineList.Item`'s `status`, `statusLabel`, `indicator` and `opposite`, `TimelineList.Title`'s `align`, `size` and `font`, and a description link's hover state and its target, since the links demo's `href` is a fragment, which Figma refuses as a link.",
     issue: NICE_TO_HAVE,
   },
   toast: {

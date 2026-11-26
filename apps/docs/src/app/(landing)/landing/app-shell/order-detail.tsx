@@ -333,6 +333,16 @@ function properties(order: Order, brand: string): readonly Property[] {
   ];
 }
 
+/** The author's Avatar in an activity event's lane, or the default mark for a system event. */
+function authorAvatar(author: Order["activity"][number]["author"]): ReactNode {
+  if (author === undefined) return undefined;
+  return (
+    <Avatar.Root>
+      <Avatar.Fallback>{SELLERS[author].initials}</Avatar.Fallback>
+    </Avatar.Root>
+  );
+}
+
 function Activity({ order }: { order: Order }): ReactElement {
   const { dispatch, now, notify } = useDashboard();
   const [draft, setDraft] = useState("");
@@ -350,9 +360,9 @@ function Activity({ order }: { order: Order }): ReactElement {
       <h3 id={`activity-${String(order.id)}`} className={styles.sectionHead()}>
         Activity
       </h3>
-      <TimelineList.Root>
+      <TimelineList.Root indicatorSize="lg">
         {order.activity.map((event) => (
-          <TimelineList.Item key={event.id}>
+          <TimelineList.Item key={event.id} indicator={authorAvatar(event.author)}>
             <TimelineList.Title>{event.title}</TimelineList.Title>
             <TimelineList.Time date={event.at}>{dateTime(event.at)}</TimelineList.Time>
             <TimelineList.Description>

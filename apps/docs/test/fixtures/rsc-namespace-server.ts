@@ -1,7 +1,7 @@
 /**
  * Server module. Renders every public namespace part of the compound components whose
  * implementation is `"use client"`, plus Alert, SelectField, AutocompleteField, ComboboxField,
- * DateField, DatePickerField, DateRangePickerField and AspectRatio.
+ * DateField, DatePickerField, DateRangePickerField, AspectRatio and TimelineList.
  *
  * The part lists are the public namespace shape. They are not read from the
  * implementation: a missing or renamed part fails here even if the source still parses.
@@ -61,6 +61,7 @@ import { SelectionItem } from "@elmeragroup/fuse/selection-item";
 import { Sheet } from "@elmeragroup/fuse/sheet";
 import { Sidebar } from "@elmeragroup/fuse/sidebar";
 import { Tabs } from "@elmeragroup/fuse/tabs";
+import { TimelineList } from "@elmeragroup/fuse/timeline-list";
 import { Toast } from "@elmeragroup/fuse/toast";
 import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";
 import { Toolbar } from "@elmeragroup/fuse/toolbar";
@@ -68,7 +69,7 @@ import { Tooltip } from "@elmeragroup/fuse/tooltip";
 import { Tour } from "@elmeragroup/fuse/tour";
 
 import { flightElements, flightModels } from "./rsc-flight-payload.ts";
-import type { FlightObject } from "./rsc-flight-payload.ts";
+import type { FlightJson, FlightObject } from "./rsc-flight-payload.ts";
 import { renderFlight } from "./rsc-flight-server.ts";
 
 const ALERT_PARTS = ["Root", "Icon", "Title", "Description"] as const;
@@ -108,16 +109,16 @@ function unexpectedParts(name: string, problem: string, parts: readonly string[]
 }
 
 /**
- * Check a namespace against its handwritten part lists and render its components.
- * Client components and helpers must be Flight client references; server components must not be.
+ * Check a namespace against its handwritten part lists. Client components and helpers must be
+ * Flight client references; server components must not be.
  */
-function renderNamespace<Client extends string, Server extends string = never, Helper extends string = never>(
+function checkNamespace<Client extends string, Server extends string = never, Helper extends string = never>(
   name: string,
   namespace: Readonly<Record<NoInfer<Client | Server>, ComponentType<never>>> &
     Readonly<Record<NoInfer<Helper>, ClientHelper>>,
   client: readonly Client[],
   { server = [], helpers = [] }: OtherParts<Server, Helper> = {}
-): ReactElement[] {
+): void {
   // Read each part before comparing keys. On a client-module object this throws
   // "Cannot access X.Y on the server" instead of reporting an empty key list.
   const references: readonly (Client | Helper)[] = [...client, ...helpers];
@@ -136,7 +137,18 @@ function renderNamespace<Client extends string, Server extends string = never, H
   if (actual.join("\n") !== expected.join("\n")) {
     throw new Error(`${name} parts\nactual: ${actual.join(", ")}\nexpected: ${expected.join(", ")}`);
   }
-  const components: readonly (Client | Server)[] = [...client, ...server];
+}
+
+/** Check a namespace as {@link checkNamespace} does, then render its components with no props. */
+function renderNamespace<Client extends string, Server extends string = never, Helper extends string = never>(
+  name: string,
+  namespace: Readonly<Record<NoInfer<Client | Server>, ComponentType<never>>> &
+    Readonly<Record<NoInfer<Helper>, ClientHelper>>,
+  client: readonly Client[],
+  other: OtherParts<Server, Helper> = {}
+): ReactElement[] {
+  checkNamespace(name, namespace, client, other);
+  const components: readonly (Client | Server)[] = [...client, ...(other.server ?? [])];
   return components.map((part) => createElement(namespace[part]));
 }
 
@@ -602,6 +614,46 @@ function attachmentTree(): ReactElement {
   );
 }
 
+const TIMELINE_STATUS_LABEL = "Delivered on time";
+
+/**
+ * TimelineList's parts are directive-free markup, so the server runs them. `Time` needs a `date`,
+ * so the parts render in a list of their own rather than bare. An explicit `statusLabel` renders
+ * on the server as a native `span`; a dictionary status crosses as a client element.
+ */
+function timelineListTree(): ReactElement {
+  checkNamespace("TimelineList", TimelineList, [], {
+    server: ["Root", "Item", "Title", "Time", "Description"],
+  });
+  return createElement(
+    "section",
+    { "data-fixture": "timeline-list" },
+    createElement(
+      TimelineList.Root,
+      { layout: "horizontal", indicatorSize: "md" },
+      createElement(
+        TimelineList.Item,
+        { status: "complete", statusLabel: TIMELINE_STATUS_LABEL },
+        createElement(TimelineList.Title, null, "Delivered")
+      ),
+      createElement(
+        TimelineList.Item,
+        { status: "current" },
+        createElement(TimelineList.Title, null, "Invoiced"),
+        createElement(TimelineList.Time, { date: "2026-04-01" }, "1 April 2026")
+      ),
+      createElement(
+        TimelineList.Item,
+        {
+          status: "upcoming",
+          opposite: createElement(TimelineList.Time, { date: "2026-04-15" }, "15 April 2026"),
+        },
+        createElement(TimelineList.Description, null, "Payment due.")
+      )
+    )
+  );
+}
+
 const CAROUSEL_OFFERS = ["Spot price this winter", "Fixed price for a year"] as const;
 
 /** A server component: the Flight payload holds its output, not a reference to it. */
@@ -820,6 +872,7 @@ function Fixture(): ReactElement {
     selectFieldTree(),
     labeledComboboxTrees(),
     attachmentTree(),
+    timelineListTree(),
     carouselTree(),
     calendarTree(),
     rangeCalendarTree(),
@@ -874,10 +927,9 @@ if (payload.includes("/components/button/button.tsx")) {
 
 // Each SubSection crosses Flight as its rendered root, marked for `partitionSubSections`. Where
 // each band lands after Flight is `rsc-selection-item.test.ts`'s.
-const models = flightModels(payload);
-const bands = models
-  .flatMap(flightElements)
-  .filter(({ props }) => "data-selection-item-sub-section" in props);
+// Every Flight element of the payload, flattened once for the checks below.
+const elements = flightModels(payload).flatMap(flightElements);
+const bands = elements.filter(({ props }) => "data-selection-item-sub-section" in props);
 if (bands.length !== 2) {
   throw new Error(`SubSections were not rendered on the server:\n${JSON.stringify(bands)}`);
 }
@@ -904,7 +956,7 @@ if (!payload.includes("meter.jpg")) {
 }
 // The `"div"` type tells a server-rendered Attachment.AspectRatio from a client one, which
 // Flight would write as a module reference carrying the same props.
-const attachmentFrame = models.flatMap(flightElements).some(
+const attachmentFrame = elements.some(
   ({ type, props }) =>
     type === "div" &&
     props["data-slot"] === "attachment-aspect-ratio" &&
@@ -916,11 +968,28 @@ if (!attachmentFrame) {
   throw new Error(`Attachment.AspectRatio was not rendered on the server:\n${payload.slice(0, 1500)}`);
 }
 
+// The Items ran on the server: the root's `ol`, the `li` that `current` marks, the explicit status
+// text as a native `span`, and the dictionary text as a client element that carries the status.
+const isClientElement = (type: FlightJson | undefined): boolean =>
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- a Flight type is parsed JSON, so the JSON type is the only tag it has
+  typeof type === "string" && type.startsWith("$L");
+const timelineChecks = {
+  root: elements.some(({ type, props }) => type === "ol" && props["data-layout"] === "horizontal"),
+  current: elements.some(({ type, props }) => type === "li" && props["aria-current"] === "step"),
+  label: elements.some(
+    ({ type, props }) => type === "span" && props.children === `${TIMELINE_STATUS_LABEL} `
+  ),
+  dictionary: elements.some(
+    ({ type, props }) => isClientElement(type) && props.status === "upcoming" && !("statusLabel" in props)
+  ),
+};
+if (Object.values(timelineChecks).includes(false)) {
+  throw new Error(`TimelineList did not render on the server as expected: ${JSON.stringify(timelineChecks)}`);
+}
+
 // Each offer is the server component's own `<p>`, and the Root is a client reference.
 for (const title of CAROUSEL_OFFERS) {
-  const rendered = models
-    .flatMap(flightElements)
-    .some(({ type, props }) => type === "p" && props["data-carousel-offer"] === title);
+  const rendered = elements.some(({ type, props }) => type === "p" && props["data-carousel-offer"] === title);
   if (!rendered) {
     throw new Error(`Carousel slide content was not rendered on the server:\n${payload.slice(0, 1500)}`);
   }
@@ -935,9 +1004,9 @@ function withoutDates(props: FlightObject): boolean {
 }
 
 // The Root crosses once, as a client reference.
-const calendarRoots = models
-  .flatMap(flightElements)
-  .filter(({ props }) => props["aria-label"] === "Delivery" && props.visibleMonths === 2);
+const calendarRoots = elements.filter(
+  ({ props }) => props["aria-label"] === "Delivery" && props.visibleMonths === 2
+);
 if (calendarRoots.length !== 1) {
   throw new Error(`Calendar.Root did not cross once:\n${payload.slice(0, 1500)}`);
 }
@@ -946,9 +1015,9 @@ if (!payload.includes("/components/calendar/calendar.tsx")) {
 }
 
 // The RangeCalendar Root crosses once, as a client reference.
-const rangeCalendarRoots = models
-  .flatMap(flightElements)
-  .filter(({ props }) => props["aria-label"] === "Stay" && props.visibleMonths === 2);
+const rangeCalendarRoots = elements.filter(
+  ({ props }) => props["aria-label"] === "Stay" && props.visibleMonths === 2
+);
 if (rangeCalendarRoots.length !== 1) {
   throw new Error(`RangeCalendar.Root did not cross once:\n${payload.slice(0, 1500)}`);
 }
@@ -961,9 +1030,9 @@ if (!payload.includes("/components/range-calendar/range-calendar.tsx")) {
 if (!payload.includes("Outage starts")) {
   throw new Error(`DateField's label is missing from the server payload:\n${payload.slice(0, 1500)}`);
 }
-const dateInputRoots = models
-  .flatMap(flightElements)
-  .filter(({ props }) => props.granularity === "minute" && props.timeZone === "Europe/Oslo");
+const dateInputRoots = elements.filter(
+  ({ props }) => props.granularity === "minute" && props.timeZone === "Europe/Oslo"
+);
 if (
   dateInputRoots.length !== 1 ||
   dateInputRoots[0]?.props.hourCycle !== 24 ||
@@ -982,13 +1051,11 @@ for (const label of ["Moving day", "Maintenance window", "First weekday"]) {
     throw new Error(`"${label}" is missing from the server payload:\n${payload.slice(0, 1500)}`);
   }
 }
-const datePickerRoots = models.flatMap(flightElements).filter(({ props }) => props.firstDayOfWeek === "mon");
+const datePickerRoots = elements.filter(({ props }) => props.firstDayOfWeek === "mon");
 if (datePickerRoots.length !== 1 || !withoutDates(datePickerRoots[0]?.props ?? {})) {
   throw new Error(`DatePicker.Root did not cross with DatePickerField's props:\n${payload.slice(0, 1500)}`);
 }
-const rangeRoots = models
-  .flatMap(flightElements)
-  .filter(({ props }) => props.startName === "from" && props.endName === "to");
+const rangeRoots = elements.filter(({ props }) => props.startName === "from" && props.endName === "to");
 if (
   rangeRoots.length !== 1 ||
   rangeRoots[0]?.props.granularity !== "minute" ||

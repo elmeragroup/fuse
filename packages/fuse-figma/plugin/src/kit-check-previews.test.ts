@@ -80,13 +80,13 @@ describe("the kit check's docs", () => {
 });
 
 describe("the kit check's lengths a placement sets", () => {
-  /** A layer and the layers below it, with every `::before`'s placement dropped. */
+  /** A layer and the layers below it, with every `::after`'s placement dropped. */
   const unplaced = (layer: ChildLayerSpec): ChildLayerSpec => {
     if (layer.kind !== "frame") {
       return layer;
     }
     const { placement: _placement, ...rest } = layer;
-    const own = layer.key === "::before" ? rest : layer;
+    const own = layer.key === "::after" ? rest : layer;
     return { ...own, children: own.children.map(unplaced) };
   };
 
@@ -95,7 +95,7 @@ describe("the kit check's lengths a placement sets", () => {
     const edited: KitSpec = {
       ...kit,
       componentSets: kit.componentSets.map((set) =>
-        set.key !== "timeline-list"
+        set.key !== "tabs-trigger"
           ? set
           : {
               ...set,
@@ -107,7 +107,7 @@ describe("the kit check's lengths a placement sets", () => {
       ),
     };
     expect(verdict(edited)).toBe(
-      "Timeline list: ::before in the variant timeline-list/state=rest leaves its vertical length to a placement that does not stretch it."
+      "Tabs trigger: ::after in the variant tabs-trigger/variant=default,state=rest leaves its horizontal length to a placement that does not stretch it."
     );
   });
 });

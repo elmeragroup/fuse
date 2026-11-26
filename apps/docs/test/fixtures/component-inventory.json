@@ -1672,7 +1672,20 @@
   },
   "timeline-list": {
     "title": "Timeline List",
-    "demos": ["timeline-list-demo.tsx", "timeline-list-date-time.tsx", "timeline-list-links.tsx"]
+    "demos": [
+      "timeline-list-demo.tsx",
+      "timeline-list-date-time.tsx",
+      "timeline-list-links.tsx",
+      "timeline-list-alternate.tsx",
+      "timeline-list-horizontal.tsx",
+      "timeline-list-opposite.tsx",
+      "timeline-list-horizontal-opposite.tsx",
+      "timeline-list-compact.tsx",
+      "timeline-list-medium-indicators.tsx",
+      "timeline-list-large-indicators.tsx",
+      "timeline-list-custom-indicator.tsx",
+      "timeline-list-status.tsx"
+    ]
   },
   "toast": {
     "title": "Toast",

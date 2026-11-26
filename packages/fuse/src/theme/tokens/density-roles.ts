@@ -742,7 +742,12 @@ export const PART_DENSITY = {
 
   "timeline-list": "fixed",
   "timeline-list-item": "fixed",
-  "timeline-list-dot": "fixed",
+  "timeline-list-opposite": "layout",
+  "timeline-list-rail": "fixed",
+  "timeline-list-connector": "fixed",
+  "timeline-list-indicator": "fixed",
+  "timeline-list-mark": "fixed",
+  "timeline-list-content": "layout",
   "timeline-list-title": "fixed",
   "timeline-list-time": "fixed",
   "timeline-list-description": "fixed",

@@ -3163,6 +3163,338 @@
         "className": "aria-disabled:opacity-50"
       }
     ],
+    "timeline-list": [
+      {
+        "part": "timeline-list-connector",
+        "className": "timeline-list-horizontal-rail:h-px"
+      },
+      {
+        "part": "timeline-list-connector",
+        "className": "timeline-list-horizontal-rail:w-[max(0px,calc(var(--timeline-inset)-var(--timeline-reach)))]"
+      },
+      {
+        "part": "timeline-list-connector",
+        "className": "timeline-list-horizontal-rail:w-auto"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-alternate-cell:@max-[32rem]/timeline-list:[[data-slot=timeline-list-opposite]~&]:pbs-0"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-even-cell:@min-[32rem]/timeline-list:text-end"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-horizontal-cell:[grid-area:content/1]"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-horizontal-cell:max-w-64"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-horizontal-cell:pbe-0"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-horizontal-cell:pbs-2"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-horizontal-cell:pe-(--timeline-trail)"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-horizontal-cell:ps-(--timeline-inset)"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-placed:[grid-area:content]"
+      },
+      {
+        "part": "timeline-list-indicator",
+        "className": "timeline-list-horizontal-rail:h-(--timeline-mark)"
+      },
+      {
+        "part": "timeline-list-indicator",
+        "className": "timeline-list-horizontal-rail:mbe-0"
+      },
+      {
+        "part": "timeline-list-indicator",
+        "className": "timeline-list-horizontal-rail:mbs-0"
+      },
+      {
+        "part": "timeline-list-indicator",
+        "className": "timeline-list-horizontal-rail:me-(--timeline-gap)"
+      },
+      {
+        "part": "timeline-list-indicator",
+        "className": "timeline-list-horizontal-rail:ms-(--timeline-inset)"
+      },
+      {
+        "part": "timeline-list-indicator",
+        "className": "timeline-list-horizontal-rail:w-(--timeline-drawn)"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:@max-[32rem]/timeline-list:[grid-template-areas:'rail_content']"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:@max-[32rem]/timeline-list:grid-cols-[var(--timeline-mark)_minmax(0,1fr)]"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:@max-[32rem]/timeline-list:timeline-list-dated:[grid-template-areas:'rail_opposite'_'rail_content']"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:@min-[32rem]/timeline-list:[grid-template-areas:'opposite_rail_content']"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:@min-[32rem]/timeline-list:even:[grid-template-areas:'content_rail_opposite']"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:@min-[32rem]/timeline-list:grid-cols-[minmax(0,1fr)_var(--timeline-mark)_minmax(0,1fr)]"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:grid"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:[--timeline-inset:var(--timeline-gap)]"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:first:[--timeline-inset:0px]"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:gap-x-0"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:grid"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:grid-cols-[minmax(0,1fr)]"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:grid-rows-subgrid"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:row-span-full"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:supports-[not(grid-template-rows:subgrid)]:grid-rows-[[rail]_auto_[opposite]_auto_[content]_1fr]"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-opposite:[grid-template-areas:'opposite_rail_content']"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-opposite:grid"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-opposite:grid-cols-[7rem_var(--timeline-mark)_minmax(0,1fr)]"
+      },
+      {
+        "part": "timeline-list-rail",
+        "className": "timeline-list-horizontal-cell:[grid-area:rail/1]"
+      },
+      {
+        "part": "timeline-list-rail",
+        "className": "timeline-list-horizontal-cell:flex-row"
+      },
+      {
+        "part": "timeline-list-rail",
+        "className": "timeline-list-horizontal-cell:h-(--timeline-mark)"
+      },
+      {
+        "part": "timeline-list-rail",
+        "className": "timeline-list-horizontal-cell:w-auto"
+      },
+      {
+        "part": "timeline-list-rail",
+        "className": "timeline-list-placed:[grid-area:rail]"
+      }
+    ],
+    "timeline-list-links": [
+      {
+        "part": "timeline-list-connector",
+        "className": "timeline-list-horizontal-rail:h-px"
+      },
+      {
+        "part": "timeline-list-connector",
+        "className": "timeline-list-horizontal-rail:w-[max(0px,calc(var(--timeline-inset)-var(--timeline-reach)))]"
+      },
+      {
+        "part": "timeline-list-connector",
+        "className": "timeline-list-horizontal-rail:w-auto"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-alternate-cell:@max-[32rem]/timeline-list:[[data-slot=timeline-list-opposite]~&]:pbs-0"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-even-cell:@min-[32rem]/timeline-list:text-end"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-horizontal-cell:[grid-area:content/1]"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-horizontal-cell:max-w-64"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-horizontal-cell:pbe-0"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-horizontal-cell:pbs-2"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-horizontal-cell:pe-(--timeline-trail)"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-horizontal-cell:ps-(--timeline-inset)"
+      },
+      {
+        "part": "timeline-list-content",
+        "className": "timeline-list-placed:[grid-area:content]"
+      },
+      {
+        "part": "timeline-list-indicator",
+        "className": "timeline-list-horizontal-rail:h-(--timeline-mark)"
+      },
+      {
+        "part": "timeline-list-indicator",
+        "className": "timeline-list-horizontal-rail:mbe-0"
+      },
+      {
+        "part": "timeline-list-indicator",
+        "className": "timeline-list-horizontal-rail:mbs-0"
+      },
+      {
+        "part": "timeline-list-indicator",
+        "className": "timeline-list-horizontal-rail:me-(--timeline-gap)"
+      },
+      {
+        "part": "timeline-list-indicator",
+        "className": "timeline-list-horizontal-rail:ms-(--timeline-inset)"
+      },
+      {
+        "part": "timeline-list-indicator",
+        "className": "timeline-list-horizontal-rail:w-(--timeline-drawn)"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:@max-[32rem]/timeline-list:[grid-template-areas:'rail_content']"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:@max-[32rem]/timeline-list:grid-cols-[var(--timeline-mark)_minmax(0,1fr)]"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:@max-[32rem]/timeline-list:timeline-list-dated:[grid-template-areas:'rail_opposite'_'rail_content']"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:@min-[32rem]/timeline-list:[grid-template-areas:'opposite_rail_content']"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:@min-[32rem]/timeline-list:even:[grid-template-areas:'content_rail_opposite']"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:@min-[32rem]/timeline-list:grid-cols-[minmax(0,1fr)_var(--timeline-mark)_minmax(0,1fr)]"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-alternate:grid"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:[--timeline-inset:var(--timeline-gap)]"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:first:[--timeline-inset:0px]"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:gap-x-0"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:grid"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:grid-cols-[minmax(0,1fr)]"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:grid-rows-subgrid"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:row-span-full"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-horizontal:supports-[not(grid-template-rows:subgrid)]:grid-rows-[[rail]_auto_[opposite]_auto_[content]_1fr]"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-opposite:[grid-template-areas:'opposite_rail_content']"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-opposite:grid"
+      },
+      {
+        "part": "timeline-list-item",
+        "className": "timeline-list-opposite:grid-cols-[7rem_var(--timeline-mark)_minmax(0,1fr)]"
+      },
+      {
+        "part": "timeline-list-rail",
+        "className": "timeline-list-horizontal-cell:[grid-area:rail/1]"
+      },
+      {
+        "part": "timeline-list-rail",
+        "className": "timeline-list-horizontal-cell:flex-row"
+      },
+      {
+        "part": "timeline-list-rail",
+        "className": "timeline-list-horizontal-cell:h-(--timeline-mark)"
+      },
+      {
+        "part": "timeline-list-rail",
+        "className": "timeline-list-horizontal-cell:w-auto"
+      },
+      {
+        "part": "timeline-list-rail",
+        "className": "timeline-list-placed:[grid-area:rail]"
+      }
+    ],
     "toggle-group": [
       {
         "part": "toggle-group",
@@ -7450,26 +7782,6 @@
         "date-range-picker/content=value,state=rest 0/root/0/0",
         "date-range-picker/content=value,state=rest 0/root/2/0"
       ]
-    },
-    {
-      "set": "timeline-list",
-      "part": "timeline-list-item",
-      "declarations": [
-        {
-          "className": "tailwind preflight",
-          "property": "border"
-        }
-      ],
-      "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
-      "at": ["timeline-list/state=rest 0/root/0::before", "timeline-list/state=rest 0/root/1::before"]
-    },
-    {
-      "set": "timeline-list-links",
-      "part": "timeline-list-item",
-      "className": "tailwind preflight",
-      "property": "border",
-      "reason": "Tailwind's preflight sets `border: 0 solid` on every element and pseudo-element, which here wins only the `border-image` longhands, each at its initial value, or a zero width that paints no border and takes no room.",
-      "at": ["timeline-list-links/state=rest 0/root/0::before"]
     },
     {
       "set": "tabs-trigger",

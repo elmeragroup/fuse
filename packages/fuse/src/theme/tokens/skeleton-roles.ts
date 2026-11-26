@@ -52,7 +52,7 @@ export const PART_SKELETON = {
   skeleton: "block",
   slider: "block",
   switch: "block",
-  "timeline-list-dot": "block",
+  "timeline-list-mark": "block",
   toggle: "block",
   "toggle-group-item": "block",
   "toolbar-button": "block",

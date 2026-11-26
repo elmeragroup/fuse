@@ -3,6 +3,42 @@
 /** One client reference a payload sends: the module and the export the client loads. */
 export type FlightClientReference = { readonly module: string; readonly name: string };
 
+/** One row of a Flight payload: its hex id, its tag letter (empty for a model row) and its body. */
+type FlightRow = { readonly id: string; readonly tag: string; readonly body: string };
+
+/**
+ * The rows of a Flight payload, in order. A row is `<hex id>:<body>` ending in a line feed, except
+ * a text row, `<hex id>:T<hex byte length>,<text>`, which ends after that many UTF-8 bytes with no
+ * line feed, so the next row can follow on the same line. The body keeps its tag letter, such as
+ * `I[…]` for a client reference.
+ *
+ * @param payload - The Flight payload text.
+ * @returns The rows in payload order.
+ */
+function flightRows(payload: string): FlightRow[] {
+  const bytes = new TextEncoder().encode(payload);
+  const decoder = new TextDecoder();
+  const rows: FlightRow[] = [];
+  let at = 0;
+  while (at < bytes.length) {
+    const colon = bytes.indexOf(0x3a, at);
+    if (colon < 0) break;
+    const id = decoder.decode(bytes.subarray(at, colon)).trim();
+    let stop: number;
+    if (bytes[colon + 1] === 0x54) {
+      const comma = bytes.indexOf(0x2c, colon);
+      stop = comma + 1 + Number.parseInt(decoder.decode(bytes.subarray(colon + 2, comma)), 16);
+    } else {
+      const end = bytes.indexOf(0x0a, colon);
+      stop = end < 0 ? bytes.length : end;
+    }
+    const body = decoder.decode(bytes.subarray(colon + 1, stop));
+    rows.push({ id, tag: /^[A-Z]/u.exec(body)?.[0] ?? "", body });
+    at = bytes[stop] === 0x0a ? stop + 1 : stop;
+  }
+  return rows;
+}
+
 /**
  * Every client reference in a payload, from its `I[...]` rows. A development payload can send the
  * module id or the export name as a separate string row and point at it with `"$<row>"`, so those
@@ -12,19 +48,14 @@ export type FlightClientReference = { readonly module: string; readonly name: st
  * @returns The references in payload order.
  */
 export function flightClientReferences(payload: string): FlightClientReference[] {
-  const rows = new Map<string, string>();
-  for (const line of payload.split("\n")) {
-    const match = /^([0-9a-f]+):(.*)$/u.exec(line);
-    if (match?.[1] !== undefined && match[2] !== undefined) {
-      rows.set(match[1], match[2]);
-    }
-  }
+  const all = flightRows(payload);
+  const rows = new Map(all.map(({ id, body }) => [id, body]));
   // A repeated string, such as an export name two references share, also moves to its own row.
   const resolved = (value: string): string =>
     value.startsWith("$") ? String(JSON.parse(rows.get(value.slice(1)) ?? '""')) : value;
   const references: FlightClientReference[] = [];
-  for (const body of rows.values()) {
-    if (!body.startsWith("I[")) continue;
+  for (const { tag, body } of all) {
+    if (tag !== "I") continue;
     const parsed: unknown = JSON.parse(body.slice(1));
     if (!Array.isArray(parsed)) continue;
     const entries: readonly unknown[] = parsed;
@@ -57,14 +88,11 @@ export type FlightObject = { readonly [key: string]: FlightJson };
 
 /** The JSON models of a Flight payload's model rows (`<hex id>:[…]` or `<hex id>:{…}`). */
 export function flightModels(payload: string): FlightJson[] {
-  return payload.split("\n").flatMap((line) => {
-    const [, body] = /^[0-9a-f]+:(.*)$/u.exec(line) ?? [];
+  return flightRows(payload).flatMap(({ body }) =>
     // SAFETY: Flight model rows are the I/O boundary. The body starts with `[` or `{`, and
     // JSON.parse yields only JSON values, so the result is a FlightJson array or object.
-    return body !== undefined && (body.startsWith("[") || body.startsWith("{"))
-      ? [JSON.parse(body) as FlightJson]
-      : [];
-  });
+    body.startsWith("[") || body.startsWith("{") ? [JSON.parse(body) as FlightJson] : []
+  );
 }
 
 function isFlightArray(value: FlightJson): value is readonly FlightJson[] {

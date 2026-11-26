@@ -10,7 +10,49 @@
         "@types/react"
       ],
       "forwardedCount": 283,
-      "props": []
+      "props": [
+        {
+          "name": "indicatorSize",
+          "origin": "declared",
+          "type": "\"dot\" | \"lg\" | \"md\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"dot\"",
+          "description": "The size of the lane every `TimelineList.Item`'s indicator sits in: `dot` is 8.75px, `md` 24px and `lg` 32px. The status marks fill the lane, and at `md` and `lg` the complete and error marks carry a check and a cross. An Item without `status` keeps the 8.75px dot. In a vertical or alternate list the text moves down so a first line 22px tall centers on the mark. A `TimelineList.Title` has that line from level 3 down; a title at level 1 or 2 does not center on the mark. In a horizontal list the text sits under the rail, its start on the mark's start.",
+          "required": false,
+          "values": [
+            "dot",
+            "lg",
+            "md"
+          ]
+        },
+        {
+          "name": "layout",
+          "origin": "declared",
+          "type": "\"alternate\" | \"horizontal\" | \"vertical\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"vertical\"",
+          "description": "The direction the list runs. `alternate` is a vertical list with the body and the `opposite` content on either side of the rail, swapped on every other `TimelineList.Item`. It folds to one side, the `opposite` content above the body, when the list is narrower than 32rem. It measures its own width, so give an alternate list a definite inline size, such as a block parent's width; in a parent that sizes to its content it has no width of its own. `horizontal` runs along the inline axis, with each `TimelineList.Item` at least 10rem wide. A horizontal list wider than its parent overflows and neither clips nor scrolls, so wrap it in `ScrollArea.Root` with `orientation=\"horizontal\"`.",
+          "required": false,
+          "values": [
+            "alternate",
+            "horizontal",
+            "vertical"
+          ]
+        },
+        {
+          "name": "spacing",
+          "origin": "declared",
+          "type": "\"compact\" | \"default\" | undefined",
+          "shortType": "Union",
+          "defaultValue": "\"default\"",
+          "description": "The space between the list's `TimelineList.Item`s.",
+          "required": false,
+          "values": [
+            "compact",
+            "default"
+          ]
+        }
+      ]
     },
     {
       "name": "TimelineList.Item",
@@ -20,7 +62,50 @@
         "@types/react"
       ],
       "forwardedCount": 281,
-      "props": []
+      "props": [
+        {
+          "name": "indicator",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "What shows in the lane. Unset, it shows the default mark for its `status`. `null`, `true`, `false` and `\"\"` show nothing, and the line runs on to the Item's text. A node replaces the mark, centered in the lane, so pair it with an `indicatorSize` of `md` or `lg` on `TimelineList.Root`. The node is decorative and hidden from assistive technology, so keep its meaning in the text, and render no focusable control in it.",
+          "required": false
+        },
+        {
+          "name": "opposite",
+          "origin": "declared",
+          "type": "ReactNode",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The content across the rail from the body, such as a `TimelineList.Time`. A vertical list then gives every `TimelineList.Item` a 7rem column before the rail, and a horizontal list puts the content above the rail. Below Chrome 117, which lacks row subgrid, a horizontal list shows it under the rail. `true`, `false` and `\"\"` render no cell, so a condition such as `showDates && date` works. A `TimelineList.Time` among the children stays inline with the body.",
+          "required": false
+        },
+        {
+          "name": "status",
+          "origin": "declared",
+          "type": "\"complete\" | \"current\" | \"error\" | \"upcoming\" | undefined",
+          "shortType": "Union",
+          "defaultValue": null,
+          "description": "The event's status, which draws its own mark. `current` sets `aria-current=\"step\"` and adds no text. An `aria-current` the Item gets, `false` included, replaces it. `complete`, `upcoming` and `error` add visually hidden text before the children: \"Completed\", \"Upcoming\" or \"Error\" in the reader's locale. That text needs a `LocaleProvider` above the list. Unset, the lane shows the default dot and the content gains no text.",
+          "required": false,
+          "values": [
+            "complete",
+            "current",
+            "error",
+            "upcoming"
+          ]
+        },
+        {
+          "name": "statusLabel",
+          "origin": "declared",
+          "type": "string | undefined",
+          "shortType": null,
+          "defaultValue": null,
+          "description": "The visually hidden text that names the status, in place of the locale text. It also renders for `current`. An empty string renders no text. Not allowed without `status`.",
+          "required": false
+        }
+      ]
     },
     {
       "name": "TimelineList.Title",
