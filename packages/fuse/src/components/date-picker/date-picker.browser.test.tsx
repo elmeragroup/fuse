@@ -30,6 +30,7 @@ import {
   expectInside,
   expectTriggerPressOpens,
 } from "../../../test/date-row-reach";
+import { expectFocusInsideFill, expectStateFill, focusByKeyboard } from "../../../test/forced-highlight";
 import { freezeToday } from "../../../test/freeze-today";
 import { withLocale } from "../../../test/locale-matrix";
 import { withForcedColors } from "../../../test/media-emulation";
@@ -1461,12 +1462,14 @@ describe("DatePicker presets", () => {
 
       await userEvent.click(tomorrow);
       expect(await halos(), "after a press").toEqual([false, false]);
-      await userEvent.keyboard("{ArrowUp}");
-      expect(roleNamed("radio", "Today").matches(":focus-visible")).toBe(true);
-      expect(await halos(), "Today focused by keyboard").toEqual([true, false]);
+      // An arrow key checks the radio it moves to, so the unchecked preset takes focus directly.
+      await focusByKeyboard(roleNamed("radio", "Today"));
+      expect(await halos(), "unchecked Today focused by keyboard").toEqual([true, false]);
+      // A checked preset outlines itself inside its fill instead.
       await userEvent.keyboard("{ArrowDown}");
       expect(roleNamed("radio", "Tomorrow").matches(":focus-visible")).toBe(true);
-      expect(await halos(), "Tomorrow focused by keyboard").toEqual([false, true]);
+      expect(await halos(), "checked Tomorrow focused by keyboard").toEqual([false, false]);
+      await expectFocusInsideFill(tomorrow, "checked Tomorrow focused by keyboard");
     });
   });
 
@@ -2263,5 +2266,54 @@ describe("preset dateValue of another kind", () => {
         value={{ start: Temporal.PlainDate.from("2026-10-05"), end: Temporal.PlainDate.from("2026-10-09") }}
       />
     );
+  });
+});
+
+describe("DatePicker checked preset in forced-colors mode", () => {
+  /** A preset's label, its face: the radio inside it is visually hidden. */
+  function presetFace(name: string): HTMLLabelElement {
+    const label = roleNamed("radio", name).closest("label");
+    if (label === null) throw new Error(`expected the label of preset ${name}`);
+    return label;
+  }
+
+  // A preset takes keyboard focus on its hidden radio, so the face itself never matches
+  // `:focus-visible`. The fill must hold while the radio inside it has focus, and the face draws
+  // the outline.
+  it("fills the checked preset apart from another, and outlines it inside its fill while its radio has keyboard focus", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(
+        withLocale(
+          "en-US",
+          <DatePicker.Root
+            aria-label="Start date"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
+            defaultOpen>
+            {/* Without an anchor the popup screenshots blank. */}
+            <DatePicker.Group>
+              <DatePicker.Input />
+              <DatePicker.Trigger />
+            </DatePicker.Group>
+            <DatePicker.Popup>
+              <DatePicker.Presets defaultValue="today">
+                <DatePicker.PresetItem value="today">Today</DatePicker.PresetItem>
+                <DatePicker.PresetItem value="later">Later</DatePicker.PresetItem>
+              </DatePicker.Presets>
+              <DatePicker.Calendar />
+            </DatePicker.Popup>
+          </DatePicker.Root>
+        )
+      );
+      await waitForPopupSettled();
+      const checked = presetFace("Today");
+      const unchecked = presetFace("Later");
+      const day = page.getByRole("button", { name: /October 5, 2026/u }).element();
+      if (!(day instanceof HTMLElement)) throw new Error("expected the selected day");
+      day.focus();
+      await expectStateFill(checked, unchecked, "checked preset");
+      await focusByKeyboard(roleNamed("radio", "Today"));
+      await expectStateFill(checked, unchecked, "focused checked preset");
+      await expectFocusInsideFill(checked, "focused checked preset");
+    });
   });
 });

@@ -94,7 +94,7 @@ export const navigationMenuVariants = tv({
     link: [
       selfFocusRingClass,
       // oxlint-disable-next-line elmera/no-local-focus-ring -- native outline off; the ring comes from the shared adapter
-      "data-active:font-medium flex items-center text-inherit no-underline outline-none data-active:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+      "data-active:font-medium flex items-center text-inherit no-underline outline-none data-active:forced-highlight data-active:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
     ],
     indicator:
       "pointer-events-none absolute inset-x-0 top-full flex h-1.5 items-end justify-center overflow-hidden opacity-0 transition-opacity duration-200 data-popup-open:opacity-100",

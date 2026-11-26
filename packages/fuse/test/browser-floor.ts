@@ -464,7 +464,7 @@ export function browserFloorProblems(
 export function describeFloorProblem(problem: FloorProblem): string {
   switch (problem._tag) {
     case "Unapproved":
-      return `${problem.use.sheet} relies on ${featureList(problem.use.features)} above the floor. Approve it in browser-floor-approvals.ts: ${skeleton(problem.use)}`;
+      return `${problem.use.sheet} relies on ${featureList(problem.use.features)} above the floor. Approve it in browser-floor-approvals.ts, or in forced-highlight-approvals.ts for the forced-highlight utility and the Sidebar parts beside a highlighted row: ${skeleton(problem.use)}`;
     case "CountMismatch":
       return `${problem.use.sheet} repeats ${identity(problem.use)} ${String(problem.use.count)} times, but its approval counts ${String(problem.approval.count ?? 1)}`;
     case "FallbackMissing":

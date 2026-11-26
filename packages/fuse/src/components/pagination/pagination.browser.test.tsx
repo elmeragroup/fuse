@@ -5,7 +5,9 @@ import { describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
 
 import "../../../dist/styles.css";
+import { expectFocusInsideFill, expectStateFill, focusByKeyboard } from "../../../test/forced-highlight";
 import { SUPPORTED_LOCALES, withLocale } from "../../../test/locale-matrix";
+import { withForcedColors } from "../../../test/media-emulation";
 import { renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { Pagination } from "./index";
 
@@ -216,5 +218,50 @@ describe("Pagination", () => {
     await userEvent.click(roleNamed("link", "Go to next page"));
     await expect.poll(() => roleNamed("link", "3").getAttribute("aria-current")).toBe("page");
     expect(roleNamed("link", "2").getAttribute("aria-current")).toBeNull();
+  });
+});
+
+describe("Pagination current page in forced-colors mode", () => {
+  /** Two links with the same label, the first for the current page. */
+  function renderPair() {
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div style={{ padding: 8 }}>
+          <Pagination.Root>
+            <Pagination.Content>
+              {[true, false].map((isActive) => (
+                <Pagination.Item key={String(isActive)}>
+                  <Pagination.Link href={isActive ? "#current" : "#other"} isActive={isActive}>
+                    2
+                  </Pagination.Link>
+                </Pagination.Item>
+              ))}
+            </Pagination.Content>
+          </Pagination.Root>
+        </div>
+      )
+    );
+    const [current, other] = page.getByRole("link", { name: "2", exact: true }).elements();
+    if (!(current instanceof HTMLElement && other instanceof HTMLElement)) {
+      throw new Error("expected two links");
+    }
+    return { current, other };
+  }
+
+  it("fills the current page's link, apart from another page's link", async () => {
+    await withForcedColors("active", async () => {
+      const { current, other } = renderPair();
+      await expectStateFill(current, other, "current page");
+    });
+  });
+
+  it("keeps the fill under keyboard focus and outlines the focused link inside its fill", async () => {
+    await withForcedColors("active", async () => {
+      const { current, other } = renderPair();
+      await focusByKeyboard(current);
+      await expectFocusInsideFill(current, "focused current page");
+      await expectStateFill(current, other, "focused current page");
+    });
   });
 });

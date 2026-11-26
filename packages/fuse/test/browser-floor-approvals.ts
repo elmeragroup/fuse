@@ -1,6 +1,8 @@
 /**
  * The approved uses of CSS features above Fuse's browser floor in the sheets `dist/` ships, which
- * `src/styles/browser-floor.test.ts` holds `dist/styles.css` and `dist/chart.css` to.
+ * `src/styles/browser-floor.test.ts` holds `dist/styles.css` and `dist/chart.css` to. The
+ * `forced-highlight` utility's uses are in `forced-highlight-approvals.ts`, which the test reads
+ * beside this list.
  *
  * Each entry pins one use as the sheet writes it: the at-rules around it, its selector or at-rule,
  * its declaration and the above-floor MDN rows it relies on, plus `count` when the sheet repeats
@@ -43,7 +45,7 @@ const WEBKIT_PRINT_EXACT: FloorFallback = {
   property: "-webkit-print-color-adjust",
   value: "exact",
 };
-const FORCED_COLORS = "Forced colors only: Safari has no forced-colors mode to opt out of.";
+export const FORCED_COLORS = "Forced colors only: Safari has no forced-colors mode to opt out of.";
 const TEXT_WRAP = "Below the floor the text wraps greedily, as text-wrap: wrap does.";
 const OVERSCROLL =
   "Below Chrome 144 and in Safari the property does not hold a container whose content fits, which is always at its scroll boundary, so a scroll there, as in a short Command or Combobox list, can move the page behind it.";

@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactElement, ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import { afterEach, describe, expect, it } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -8,9 +8,29 @@ import "../../../dist/themes.css";
 import { nextFrames } from "../../../test/animation-frames";
 import { axFocused, axNodes } from "../../../test/ax-tree";
 import { assertNoAxeViolations } from "../../../test/axe";
-import { pixelsAt, rows } from "../../../test/screenshot-pixels";
+import { focusByKeyboard } from "../../../test/forced-highlight";
+import { withLocale } from "../../../test/locale-matrix";
+import { withForcedColors } from "../../../test/media-emulation";
+import { finishAnimations, glyphInkContrast, pixelContrast, pixelsAt } from "../../../test/screenshot-pixels";
+import type { Point } from "../../../test/screenshot-pixels";
 import { PANEL, describePartPaint } from "../../../test/surface-paint";
 import type { Layer, PartCase } from "../../../test/surface-paint";
+import {
+  CappedTable,
+  MeterTable,
+  NO_STOP,
+  RingSwatch,
+  STOP,
+  cappedBox,
+  cappedOverflow,
+  edgePixels,
+  htmlTable,
+  ringColor,
+  scrollStop,
+  shownHeader,
+  shownHeaderBox,
+  viewport,
+} from "../../../test/table-browser-fixtures";
 import {
   ROW,
   px,
@@ -21,17 +41,9 @@ import {
 } from "../../../test/themed-browser-render";
 import { DENSITIES } from "../../theme/density";
 import { Frame } from "../frame/frame";
+import { Meter } from "../meter/meter";
 import { Table, VerticalTable } from "./table";
-import type { TableRootProps, VerticalTableItem } from "./table";
-
-function htmlTable(name?: string): HTMLTableElement {
-  const element =
-    name === undefined ? page.getByRole("table").element() : page.getByRole("table", { name }).element();
-  if (!(element instanceof HTMLTableElement)) {
-    throw new Error(`expected a table${name === undefined ? "" : ` named ${name}`}`);
-  }
-  return element;
-}
+import type { VerticalTableItem } from "./table";
 
 describe("VerticalTable", () => {
   afterEach(() => {
@@ -200,127 +212,6 @@ describe("VerticalTable", () => {
     expect(page.getByRole("cell", { name: "Kari Nordmann", exact: true }).element().tagName).toBe("TD");
   });
 });
-
-type MeterTableProps = TableRootProps & {
-  /** The width of the box around the table. The default is narrower than the table. */
-  width?: string;
-  /** Whether a `Frame.Root` holds the table. */
-  framed?: boolean;
-  /** The two cells' text, each kept on one line. */
-  cells?: readonly [string, string];
-  /** The first cell's style. */
-  firstCell?: CSSProperties;
-  /** Content placed before the first cell's text. */
-  control?: ReactNode;
-  /** The table's caption, rendered as `Table.Caption`. */
-  caption?: ReactNode;
-};
-
-function MeterTable({
-  width = "200px",
-  framed = false,
-  cells = ["Meter 1200 at Storgata 1, Oslo", "1200 kWh read on 24 November 2026"],
-  firstCell,
-  control,
-  caption,
-  ...tableProps
-}: MeterTableProps): ReactElement {
-  const table = (
-    <Table.Root {...tableProps}>
-      {caption === undefined ? null : <Table.Caption>{caption}</Table.Caption>}
-      <Table.Body>
-        <Table.Row>
-          <Table.Cell className="whitespace-nowrap" style={firstCell}>
-            {control}
-            {cells[0]}
-          </Table.Cell>
-          <Table.Cell className="whitespace-nowrap">{cells[1]}</Table.Cell>
-        </Table.Row>
-      </Table.Body>
-    </Table.Root>
-  );
-  return <div style={{ width }}>{framed ? <Frame.Root>{table}</Frame.Root> : table}</div>;
-}
-
-/** A wide table of six rows under a sticky header, in a Frame capped shorter than the rows. */
-function CappedTable(tableProps: TableRootProps): ReactElement {
-  const meters = [1, 2, 3, 4, 5, 6];
-  return (
-    <div style={{ width: "240px" }}>
-      <Frame.Root style={{ maxHeight: "140px" }}>
-        <Table.Root {...tableProps}>
-          <Table.Header style={{ position: "sticky", top: 0, zIndex: 10, background: "var(--background)" }}>
-            <Table.Row>
-              <Table.Head className="whitespace-nowrap">Meter at Storgata 1, Oslo</Table.Head>
-              <Table.Head className="whitespace-nowrap">Reading on 24 November 2026</Table.Head>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {meters.map((meter) => (
-              <Table.Row key={meter}>
-                <Table.Cell>{`Meter ${meter}`}</Table.Cell>
-                <Table.Cell>{`${meter * 100} kWh`}</Table.Cell>
-              </Table.Row>
-            ))}
-          </Table.Body>
-        </Table.Root>
-      </Frame.Root>
-    </div>
-  );
-}
-
-/** The Table's outer box, which the Frame caps, so it is the table's visible area. */
-function cappedBox(): HTMLElement {
-  const box = document.querySelector('[data-slot="table-container"]');
-  if (!(box instanceof HTMLElement)) throw new Error("expected the table's container");
-  return box;
-}
-
-/** Whether the capped table is wider and taller than its visible area. */
-function cappedOverflow() {
-  const table = htmlTable("Meter readings").getBoundingClientRect();
-  const box = cappedBox().getBoundingClientRect();
-  return { wider: table.width > box.width, taller: table.height > box.height };
-}
-
-/**
- * The colors of one screenshot of a box at the midpoints of its four edges, each 1px inside the
- * edge, so each point lies inside a 2px outline drawn on the box's border edge.
- */
-async function edgePixels(box: Element): Promise<number[][]> {
-  const { width, height } = box.getBoundingClientRect();
-  return pixelsAt(box, [
-    [1, height / 2],
-    [width - 2, height / 2],
-    [width / 2, 1],
-    [width / 2, height - 2],
-  ]);
-}
-
-/** A square in the theme's `--ring` color, the color a focus outline draws in. */
-function RingSwatch(): ReactElement {
-  return <div data-testid="ring" style={{ width: "8px", height: "8px", background: "var(--ring)" }} />;
-}
-
-/** The color at the middle of the rendered `RingSwatch`. */
-async function ringColor(): Promise<number[] | undefined> {
-  const [color] = await rows(page.getByTestId("ring").element(), 4, [4]);
-  return color;
-}
-
-function viewport(): HTMLElement {
-  const element = document.querySelector('[data-slot="table-viewport"]');
-  if (!(element instanceof HTMLElement)) throw new Error("expected the table's viewport");
-  return element;
-}
-
-/** The viewport's role and tab index, both `null` while it is no stop. */
-function scrollStop() {
-  return { role: viewport().getAttribute("role"), tabIndex: viewport().getAttribute("tabindex") };
-}
-
-const STOP = { role: "group", tabIndex: "0" };
-const NO_STOP = { role: null, tabIndex: null };
 
 describe("Table", () => {
   it("puts a table wider than its container in the tab order as a named group the arrow keys scroll", async () => {
@@ -838,5 +729,195 @@ const TABLE_PARTS: readonly PartCase[] = [
     fill: [{ role: "--background" }],
   },
 ];
+
+describe("Table.Row selected in forced-colors mode", () => {
+  /**
+   * Rows that take focus, as in a row-focused treegrid. By default there are four, the second
+   * selected and the third not, so the middle two sit between the same neighbors. Each row holds
+   * a name and a Meter, whose fill forced colors keep in `Highlight`.
+   */
+  function renderRows(
+    framed: boolean,
+    ids: readonly string[] = ["first", "selected", "unselected", "last"]
+  ): void {
+    const table = (
+      <Table.Root>
+        <Table.Body>
+          {ids.map((id) => (
+            <Table.Row
+              key={id}
+              tabIndex={0}
+              data-testid={id}
+              data-state={id === "selected" ? "selected" : undefined}>
+              <Table.Cell data-testid={`${id}-name`}>Name</Table.Cell>
+              <Table.Cell>
+                <Meter value={55} aria-label="Storage" className="w-24" data-testid={`${id}-meter`} />
+              </Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table.Root>
+    );
+    renderThemed(
+      withLocale(
+        "en-US",
+        <div style={{ width: 320, padding: 8 }}>{framed ? <Frame.Root>{table}</Frame.Root> : table}</div>
+      )
+    );
+  }
+
+  function testElement(id: string): HTMLElement {
+    const element = page.getByTestId(id).element();
+    if (!(element instanceof HTMLElement)) throw new Error(`expected an HTML element ${id}`);
+    return element;
+  }
+
+  /**
+   * A row's pixels 1px, 3px, 5px and 7px in from its left edge, at its vertical middle, and from
+   * its top edge, 7px in from its left: the selection mark, the gap after it, the focus outline
+   * and the row's inside, which the cell's padding keeps clear of text.
+   */
+  async function rowEdges(
+    row: HTMLElement
+  ): Promise<Record<"mark" | "gap" | "focus" | "inside", number[][]>> {
+    finishAnimations([row]);
+    const middle = row.getBoundingClientRect().height / 2;
+    const insets = [1, 3, 5, 7];
+    const pixels = await pixelsAt(row, [
+      ...insets.map((inset): Point => [inset, middle]),
+      ...insets.map((inset): Point => [7, inset]),
+    ]);
+    const at = (index: number): number[][] =>
+      [pixels[index], pixels[index + insets.length]].map((pixel) => pixel ?? []);
+    return { mark: at(0), gap: at(1), focus: at(2), inside: at(3) };
+  }
+
+  // Oracle: WCAG 1.4.11's 3:1 for a state indicator against the color beside it, and an
+  // unselected row's pixels for what the selection leaves alone.
+  it.each([
+    ["plain", false],
+    ["framed", true],
+  ])(
+    "marks a selected row of a %s table along its edge and leaves its inside as an unselected row's",
+    async (_layout, framed) => {
+      await withForcedColors("active", async () => {
+        renderRows(framed);
+        const selected = await rowEdges(testElement("selected"));
+        const unselected = await rowEdges(testElement("unselected"));
+        for (const [side, mark] of selected.mark.entries()) {
+          expect(
+            pixelContrast(mark, selected.gap[side] ?? []),
+            "mark against the gap"
+          ).toBeGreaterThanOrEqual(3);
+          expect(
+            pixelContrast(mark, unselected.mark[side] ?? []),
+            "mark against an unselected row's edge"
+          ).toBeGreaterThanOrEqual(3);
+        }
+        expect(selected.gap, "gap").toEqual(unselected.gap);
+        expect(selected.inside, "inside").toEqual(unselected.inside);
+      });
+    }
+  );
+
+  it.each([
+    ["selected", "plain", false],
+    ["selected", "framed", true],
+    ["unselected", "plain", false],
+    ["unselected", "framed", true],
+  ])("outlines a focused %s row inside its edge, the only row of a %s table", async (id, _layout, framed) => {
+    await withForcedColors("active", async () => {
+      // The table's scrolling container clips whatever the row draws outside its own box.
+      renderRows(framed, [id]);
+      const row = testElement(id);
+      const unfocused = await rowEdges(row);
+      await focusByKeyboard(row);
+      const focused = await rowEdges(row);
+      expect(focused.mark, "mark").toEqual(unfocused.mark);
+      for (const [side, outline] of focused.focus.entries()) {
+        expect(
+          pixelContrast(outline, focused.gap[side] ?? []),
+          "outline against the gap"
+        ).toBeGreaterThanOrEqual(3);
+        expect(
+          pixelContrast(outline, unfocused.focus[side] ?? []),
+          "outline against the unfocused row"
+        ).toBeGreaterThanOrEqual(3);
+      }
+      expect(focused.inside, "inside").toEqual(unfocused.inside);
+    });
+  });
+
+  // Oracle: the same header before the rows scroll under it.
+  it("keeps a focused selected row's frame and outline under a sticky header with no z-index", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(<CappedTable aria-label="Meter readings" headerZIndex="none" selectedMeter={2} />);
+      const selected = testElement("meter-2");
+      await focusByKeyboard(selected);
+      viewport().scrollTop = 0;
+      await nextFrames(2);
+      const alone = await shownHeader();
+      // The selected row's top edge goes 8px under the header's bottom edge.
+      const header = shownHeaderBox();
+      viewport().scrollTop = selected.getBoundingClientRect().top - header.bottom + 8;
+      await nextFrames(2);
+      expect(selected.getBoundingClientRect().top).toBeLessThan(header.bottom);
+      expect(await shownHeader()).toEqual(alone);
+    });
+  });
+
+  // Oracle: WCAG 1.4.11's 3:1 for a graphic, here the Meter's fill against its empty track.
+  it("keeps a Meter's fill apart from its track inside a selected row", async () => {
+    await withForcedColors("active", async () => {
+      renderRows(false);
+      const meter = testElement("selected-meter");
+      const fill = meter.querySelector('[data-slot="meter-bar-fill"]');
+      if (fill === null) throw new Error("expected the meter's fill");
+      const bar = fill.getBoundingClientRect();
+      const box = meter.getBoundingClientRect();
+      const row = bar.top + bar.height / 2 - box.top;
+      // The value is 55, so the fill ends at 55% of the bar and the track shows from there.
+      const [inFill, inTrack] = await pixelsAt(meter, [
+        [bar.left - box.left + bar.width / 2, row],
+        [bar.right - box.left + 4, row],
+      ]);
+      expect(pixelContrast(inFill ?? [], inTrack ?? [])).toBeGreaterThanOrEqual(3);
+    });
+  });
+
+  // Oracle: WCAG 1.4.11's 3:1 for the selection against the ground beside the text, and 1.4.3's
+  // 4.5:1 for the selected text against the selection.
+  it("shows text selected inside a selected row in the dark forced palette", async () => {
+    await withForcedColors(
+      "active",
+      async () => {
+        renderRows(false);
+        const name = testElement("selected-name");
+        const range = document.createRange();
+        range.selectNodeContents(name);
+        const selection = window.getSelection();
+        if (selection === null) throw new Error("expected a selection");
+        selection.removeAllRanges();
+        selection.addRange(range);
+        await nextFrames(2);
+        const text = range.getBoundingClientRect();
+        const box = name.getBoundingClientRect();
+        // 1px in from the text box's top start corner, above the capitals, and 3px before the box.
+        const top = text.top - box.top + 1;
+        const [selected, ground] = await pixelsAt(name, [
+          [text.left - box.left + 1, top],
+          [text.left - box.left - 3, top],
+        ]);
+        expect(
+          pixelContrast(selected ?? [], ground ?? []),
+          "selection against the row"
+        ).toBeGreaterThanOrEqual(3);
+        expect(await glyphInkContrast(name), "text against the selection").toBeGreaterThanOrEqual(4.5);
+        selection.removeAllRanges();
+      },
+      { colorScheme: "dark" }
+    );
+  });
+});
 
 describePartPaint(TABLE_PARTS);

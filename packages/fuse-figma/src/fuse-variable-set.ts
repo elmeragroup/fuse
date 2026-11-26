@@ -218,7 +218,7 @@ const ROLE_TINTS = [
   ["brand-ink", 35],
   ["muted-foreground", 35],
   ["error", 35],
-  // Tour.Progress's inactive dot, `bg-muted-foreground/30`.
+  // Tour.Progress's inactive dot, `mark-fill-muted-foreground/30`.
   ["muted-foreground", 30],
 ] as const satisfies readonly (readonly [ColorTokenName, number])[];
 

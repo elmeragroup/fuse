@@ -10,6 +10,12 @@ import {
   assertFocusRingAtBothDensities,
   assertFocusRingOnKeyboardAbsentOnMouse,
 } from "../../../test/assert-focus-ring";
+import {
+  expectFocusInsideFill,
+  expectStateFill,
+  focusByKeyboard,
+  stateShare,
+} from "../../../test/forced-highlight";
 import { withForcedColors } from "../../../test/media-emulation";
 import { differsFromCanvas } from "../../../test/screenshot-pixels";
 import {
@@ -253,6 +259,66 @@ describe("Tabs", () => {
       }
     }
   );
+
+  describe("active tab in forced-colors mode", () => {
+    function testElement(id: string): HTMLElement {
+      const element = page.getByTestId(id).element();
+      if (!(element instanceof HTMLElement)) throw new Error(`Expected an HTML element ${id}`);
+      return element;
+    }
+
+    /** Two lists of one variant, Account active in the first and Password in the second. */
+    function renderPair(variant: "default" | "line") {
+      renderThemed(
+        <div data-testid="host" style={{ padding: 8, display: "grid", gap: 16 }}>
+          {(["account", "password"] as const).map((value) => (
+            <Tabs.Root key={value} defaultValue={value}>
+              <Tabs.List variant={variant} activateOnFocus={false}>
+                <Tabs.Trigger value="account" data-testid={`account-in-${value}`}>
+                  Account
+                </Tabs.Trigger>
+                <Tabs.Trigger value="password">Password</Tabs.Trigger>
+              </Tabs.List>
+            </Tabs.Root>
+          ))}
+        </div>
+      );
+      return {
+        host: testElement("host"),
+        active: testElement("account-in-account"),
+        inactive: testElement("account-in-password"),
+      };
+    }
+
+    it("fills the active tab of a default list in HighlightText on Highlight", async () => {
+      await withForcedColors("active", async () => {
+        const { host, active, inactive } = renderPair("default");
+        await expectStateFill(active, inactive, "active tab");
+        // Oracle: the system color itself, on a probe in the same page. The list's
+        // `text-card-foreground` arm for the active tab must not keep the author text color.
+        const probe = document.createElement("span");
+        probe.style.color = "HighlightText";
+        host.append(probe);
+        expect(getComputedStyle(active).color).toBe(getComputedStyle(probe).color);
+      });
+    });
+
+    it("gives the active tab of a line list no fill", async () => {
+      await withForcedColors("active", async () => {
+        const { active, inactive } = renderPair("line");
+        expect(await stateShare(active, inactive)).toBe(0);
+      });
+    });
+
+    it("keeps the fill under keyboard focus and outlines the focused tab inside its fill", async () => {
+      await withForcedColors("active", async () => {
+        const { active, inactive } = renderPair("default");
+        await focusByKeyboard(active);
+        await expectFocusInsideFill(active, "focused active tab");
+        await expectStateFill(active, inactive, "focused active tab");
+      });
+    });
+  });
 
   it("underlines the active line tab in forced-colors mode", async () => {
     await withForcedColors("active", async () => {

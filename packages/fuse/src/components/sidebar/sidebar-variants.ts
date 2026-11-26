@@ -102,7 +102,12 @@ export const sidebarGroupActionBoxClass = cn(
  */
 export const sidebarMenuButtonVariants = tv({
   base: [
-    "peer/menu-button group/menu-button text-sm data-active:font-medium flex w-full items-center gap-2 overflow-hidden border-0 p-2 text-left transition-[color,background-color,box-shadow] group-has-data-[slot=sidebar-menu-action]/menu-item:pr-[calc(var(--menu-action-size)+(--spacing(2)))] data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground data-open:enabled-hover:bg-sidebar-accent data-open:enabled-hover:text-sidebar-accent-foreground enabled-active:bg-sidebar-accent enabled-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
+    "peer/menu-button group/menu-button text-sm data-active:font-medium flex w-full items-center gap-2 overflow-hidden border-0 p-2 text-left transition-[color,background-color,box-shadow] group-has-data-[slot=sidebar-menu-action]/menu-item:pr-[calc(var(--menu-action-size)+(--spacing(2)))] data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground data-active:not-disabled-state:forced-highlight enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground data-open:enabled-hover:bg-sidebar-accent data-open:enabled-hover:text-sidebar-accent-foreground enabled-active:bg-sidebar-accent enabled-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
+    // A disabled row dims to half, and so would a Highlight fill, which the action and badge
+    // beside the row would then sit on. A disabled active row draws a 2px Highlight frame on its
+    // edge instead, clear of the action and badge, so they keep the forced colors of any other
+    // row.
+    "forced-colors:data-active:disabled-state:relative forced-colors:data-active:disabled-state:after:absolute forced-colors:data-active:disabled-state:after:inset-0 forced-colors:data-active:disabled-state:after:rounded-[inherit] forced-colors:data-active:disabled-state:after:border-2 forced-colors:data-active:disabled-state:after:border-[Highlight]",
     sidebarRowCollapsedClass,
     sidebarRowShellClass,
     selfFocusRingClass,
@@ -139,7 +144,7 @@ function subButtonSize(size: "sm" | "md"): string {
  */
 export const sidebarMenuSubButtonVariants = tv({
   base: [
-    "flex min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground enabled-active:bg-sidebar-accent enabled-active:text-sidebar-accent-foreground [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
+    "flex min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground transition-colors group-data-[collapsible=icon]:hidden data-active:forced-highlight data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground enabled-hover:bg-sidebar-accent enabled-hover:text-sidebar-accent-foreground enabled-active:bg-sidebar-accent enabled-active:text-sidebar-accent-foreground [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
     selfFocusRingClass,
     nativeStateFaceClass,
   ],

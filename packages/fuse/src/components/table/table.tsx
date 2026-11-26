@@ -142,6 +142,10 @@ function TableHeader({ className, ...props }: TableHeaderProps): ReactElement {
     <thead
       data-slot="table-header"
       className={cn(
+        // In forced colors a selected or focused row draws its frame and outline on a positioned
+        // pseudo-element, which would paint over a header a consumer makes sticky with no
+        // z-index. The z-index lifts a positioned header above it, and does nothing otherwise.
+        "forced-colors:z-1",
         // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
         "[&_tr]:border-b framed-table:*:[tr]:border-none framed-table:*:[tr]:hover:bg-transparent framed-table:*:[tr]:hover:[--table-row-foreground:currentColor]",
         className
@@ -195,6 +199,15 @@ function TableRow({ className, ...props }: TableRowProps): ReactElement {
         // so a `text-*` in `className` replaces it in every state.
         // oxlint-disable-next-line fuse/state-face -- table rows are not controls and have no disabled state
         "border-b text-(color:--table-row-foreground) transition-colors [--table-row-foreground:currentColor] hover:bg-muted/72 hover:[--table-row-foreground:--theme(--color-foreground)] data-[state=selected]:bg-muted/72 data-[state=selected]:[--table-row-foreground:--theme(--color-foreground)] framed-table:hover:bg-transparent framed-table:data-[state=selected]:bg-transparent",
+        // Forced colors replace the selected fill. A fill in `Highlight` would cover what the
+        // cells draw themselves, such as a Meter's bar, a sticky cell's background or a text
+        // selection, so a selected row draws a 2px `Highlight` frame on its edge instead. Under
+        // keyboard focus it draws a 2px `CanvasText` outline 4px in, inside the frame and inside
+        // the scrolling container, which clips anything drawn outside the row. Both paint on a
+        // pseudo-element over the cells, so a sticky cell without a `z-index` does not cover them
+        // as it covers the row's own outline.
+        "forced-colors:data-[state=selected]:relative forced-colors:data-[state=selected]:after:pointer-events-none forced-colors:data-[state=selected]:after:absolute forced-colors:data-[state=selected]:after:inset-0 forced-colors:data-[state=selected]:after:border-2 forced-colors:data-[state=selected]:after:border-[Highlight]",
+        "forced-colors:focus-visible:relative forced-colors:focus-visible:after:pointer-events-none forced-colors:focus-visible:after:absolute forced-colors:focus-visible:after:inset-0 forced-colors:focus-visible:after:outline-2 forced-colors:focus-visible:after:-outline-offset-6 forced-colors:focus-visible:after:outline-[CanvasText]",
         className
       )}
       {...props}

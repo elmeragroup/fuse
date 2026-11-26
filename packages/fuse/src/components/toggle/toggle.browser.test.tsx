@@ -6,6 +6,8 @@ import { page, userEvent } from "vitest/browser";
 import "../../../dist/styles.css";
 import "../../../dist/themes.css";
 import { assertFocusRingAtBothDensities } from "../../../test/assert-focus-ring";
+import { expectFocusInsideFill, expectStateFill, focusByKeyboard } from "../../../test/forced-highlight";
+import { withForcedColors } from "../../../test/media-emulation";
 import {
   renderThemed,
   cssVarColor,
@@ -171,4 +173,67 @@ describe("pressed face", () => {
       expect(await faceOf("Pressed")).toEqual({ fill: "rgb(1, 2, 3)", text: "rgb(250, 251, 252)" });
     });
   });
+});
+
+describe("pressed face in forced-colors mode", () => {
+  type Variant = "default" | "outline";
+
+  /** Two toggles with the same label, the first pressed, in each place `toggleVariants` paints one. */
+  const PAIRS = {
+    standalone: (variant: Variant): ReactNode => (
+      <>
+        <Toggle variant={variant} defaultPressed data-testid="pressed">
+          Bold
+        </Toggle>
+        <Toggle variant={variant} data-testid="unpressed">
+          Bold
+        </Toggle>
+      </>
+    ),
+    spaced: (variant: Variant): ReactNode => (
+      <ToggleGroup.Root aria-label="Spaced" variant={variant} multiple defaultValue={["first"]}>
+        <ToggleGroup.Item value="first" data-testid="pressed">
+          Bold
+        </ToggleGroup.Item>
+        <ToggleGroup.Item value="second" data-testid="unpressed">
+          Bold
+        </ToggleGroup.Item>
+      </ToggleGroup.Root>
+    ),
+  };
+
+  function testElement(id: string): HTMLElement {
+    const element = page.getByTestId(id).element();
+    if (!(element instanceof HTMLElement)) throw new Error(`Expected an HTML element ${id}`);
+    return element;
+  }
+
+  it.each(
+    (["standalone", "spaced"] as const).flatMap((layout) =>
+      (["default", "outline"] as const).map((variant) => [layout, variant] as const)
+    )
+  )("fills a pressed %s %s toggle, apart from an unpressed one", async (layout, variant) => {
+    await withForcedColors("active", async () => {
+      renderThemed(<div style={{ padding: 8 }}>{PAIRS[layout](variant)}</div>);
+      await expectStateFill(testElement("pressed"), testElement("unpressed"), "pressed");
+    });
+  });
+
+  // A fractional translate puts the toggle's edges and its outline's between device pixels.
+  it.each([
+    ["on whole pixels", "none"],
+    ["at a fractional position", "translate(0.3px, 0.7px)"],
+  ])(
+    "keeps the fill under keyboard focus and outlines the focused toggle inside its fill, %s",
+    async (_position, transform) => {
+      await withForcedColors("active", async () => {
+        renderThemed(
+          <div style={{ padding: 8, display: "flex", gap: 16, transform }}>{PAIRS.standalone("outline")}</div>
+        );
+        await focusByKeyboard(testElement("pressed"));
+        await expectFocusInsideFill(testElement("pressed"), "focused pressed");
+        await expectStateFill(testElement("pressed"), testElement("unpressed"), "focused pressed");
+      });
+    }
+  );
 });

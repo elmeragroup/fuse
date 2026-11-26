@@ -37,7 +37,7 @@ export const tourVariants = tv({
     header: "flex items-center justify-between gap-2",
     progress: "text-xs flex items-center gap-2 text-muted-foreground tabular-nums",
     dots: "flex items-center gap-1",
-    dot: "size-1.5 rounded-full bg-muted-foreground/30 data-current:bg-primary",
+    dot: "size-1.5 rounded-full mark-fill-muted-foreground/30 data-current:forced-highlight data-current:mark-fill-primary",
     title: "font-medium text-balance",
     description: "text-pretty text-muted-foreground",
     footer: "flex items-center justify-end gap-2",

@@ -39,6 +39,7 @@ import {
   tapShownStart,
   watchPressEndListeners,
 } from "../../../test/data-table-filter-fixture";
+import { expectFocusInsideFill, expectStateFill } from "../../../test/forced-highlight";
 import { withLocale } from "../../../test/locale-matrix";
 import { withForcedColors } from "../../../test/media-emulation";
 import { whilePointerPressed } from "../../../test/pointer-press";
@@ -1280,6 +1281,55 @@ describe("menu", () => {
       await expect.poll(() => page.getByRole("dialog", { name: "Rush only" }).query()).toBeNull();
       await expect.poll(() => focusIs("button", "Remove Rush only filter")).toBe(true);
       expect(page.elementLocator(chip()).getByRole("combobox").query()).toBeNull();
+    });
+  });
+});
+
+describe("DataTableFilter date presets beside a custom editor in forced-colors mode", () => {
+  it("opens again from the keyboard on the pressed preset, filled and outlined inside its fill", async () => {
+    // Today stays one date for the whole test, whatever the clock does.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-12T12:00:00Z"));
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    await withForcedColors("active", async () => {
+      renderOrders({
+        initial: [
+          {
+            id: "created",
+            value: { kind: "date", operator: "isBetween", values: ["2026-01-31", "2026-01-31"] },
+          },
+        ],
+        children: (
+          <>
+            <DataTableFilter.Bar />
+            <DataTableFilter.ValueContent>
+              <DataTableFilter.Editor>
+                <DataTableFilter.DateEditor>{() => <span>Custom range</span>}</DataTableFilter.DateEditor>
+              </DataTableFilter.Editor>
+            </DataTableFilter.ValueContent>
+          </>
+        ),
+      });
+      // The presets stand beside the editor's child from a 40rem viewport up.
+      await page.viewport(1024, 896);
+      await userEvent.click(roleNamed("button", "Jan 31, 2026"));
+      await finishMotion();
+      // A press applies the preset and closes the editor; it opens again with the preset pressed.
+      await userEvent.click(roleNamed("button", "Today"));
+      await finishMotion();
+      const value = document.querySelector('[data-slot="data-table-filter-value"]');
+      if (!(value instanceof HTMLElement)) throw new Error("expected Created's value");
+      value.focus();
+      await userEvent.keyboard("{Enter}");
+      await finishMotion();
+      const pressed = roleNamed("button", "Today");
+      expect(pressed.getAttribute("aria-pressed")).toBe("true");
+      expect(document.activeElement).toBe(pressed);
+      expect(pressed.matches(":focus-visible")).toBe(true);
+      await expectStateFill(pressed, roleNamed("button", "Last 7 days"), "focused pressed preset");
+      await expectFocusInsideFill(pressed, "focused pressed preset");
     });
   });
 });

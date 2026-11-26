@@ -85,7 +85,7 @@ export const datePickerVariants = tv({
     preset: cn(
       buttonVariants({ size: "sm", variant: "ghost" }),
       "relative justify-start rounded-inner text-left",
-      "data-checked:bg-accent data-checked:text-accent-foreground",
+      "data-checked:forced-highlight data-checked:bg-accent data-checked:text-accent-foreground",
       dataStateFaceClass,
       withinFocusRingClass
     ),

@@ -86,7 +86,7 @@ export function TabsTrigger({ className, ...props }: ComponentProps<typeof TabsP
         nativeStateFaceClass,
         dataStateFaceClass,
         "bg-transparent group-data-[variant=line]/tabs-list:data-active:bg-transparent",
-        "data-active:bg-card data-active:text-foreground group-data-[variant=default]/tabs-list:data-active:text-card-foreground",
+        "data-active:bg-card data-active:text-foreground group-data-[variant=default]/tabs-list:data-active:text-card-foreground group-data-[variant=default]/tabs-list:data-active:forced-highlight",
         "after:absolute after:mark-fill-foreground after:opacity-0 after:transition-opacity group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[-5px] group-data-horizontal/tabs:after:h-0.5 group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-1 group-data-vertical/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-active:after:opacity-100"
       )}
       {...props}

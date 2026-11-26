@@ -134,5 +134,14 @@ export const sidebarGroupLabelClass = cn(
  */
 export const sidebarMenuBadgeClass = cn(
   sidebarMenuBadgeOffsetClass,
-  "text-xs font-medium pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-sidebar-foreground tabular-nums select-none group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-active/menu-button:text-sidebar-accent-foreground"
+  "text-xs font-medium pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-sidebar-foreground tabular-nums select-none group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-active/menu-button:text-sidebar-accent-foreground",
+  // The badge is a sibling of the active row, outside its forced highlight, so forced colors
+  // would paint a Canvas backplate behind its count on the row's Highlight fill. On an enabled
+  // active row it opts out and draws the count in HighlightText, a child that sets its own color
+  // included. A filled child, such as a secondary Badge, drops its background and shadow, apart
+  // from a mark-fill mark, and keeps its shape as a HighlightText border, as the forced-highlight
+  // utility does. A mark-fill mark, such as an unread dot, fills with HighlightText through
+  // `--mark-fill-forced`. A disabled active row has no fill,
+  // so there the badge keeps the usual forced colors.
+  "forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:text-[HighlightText]! forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:forced-color-adjust-none forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:[--mark-fill-forced:HighlightText] forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:**:border-[HighlightText]! forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:**:text-[HighlightText]! forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:**:[box-shadow:none]! forced-colors:peer-data-active/menu-button:peer-not-disabled-state/menu-button:**:not-[[class*=mark-fill-]]:bg-transparent!"
 );
