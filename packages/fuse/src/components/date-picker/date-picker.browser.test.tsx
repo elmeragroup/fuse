@@ -32,11 +32,13 @@ import {
 } from "../../../test/date-row-reach";
 import { freezeToday } from "../../../test/freeze-today";
 import { withLocale } from "../../../test/locale-matrix";
+import { withForcedColors } from "../../../test/media-emulation";
 import { parentHandle } from "../../../test/parent-handle";
 import type { ParentHandle } from "../../../test/parent-handle";
 import { popupFocusRestored } from "../../../test/popup-focus";
 import { waitForPopupFocus, waitForPopupSettled } from "../../../test/popup-settled";
 import { emulateReducedMotion } from "../../../test/reduced-motion";
+import { differsFromCanvas } from "../../../test/screenshot-pixels";
 import { formNamed, renderThemed, roleNamed } from "../../../test/themed-browser-render";
 import { wrappedSegment } from "../../../test/wrapped-date-segment";
 import { definedProps } from "../../internal/defined-props";
@@ -1416,6 +1418,56 @@ describe("DatePicker presets", () => {
     await userEvent.dblClick(presetLabel("Christmas Eve"));
     await expect.element(page.getByRole("dialog")).not.toBeInTheDocument();
     expect(closes).toEqual(["preset-press"]);
+  });
+
+  it("outlines the keyboard-focused preset in forced-colors mode", async () => {
+    await withForcedColors("active", async () => {
+      renderThemed(
+        withLocale(
+          "en-US",
+          <DatePicker.Root
+            aria-label="Start date"
+            defaultValue={Temporal.PlainDate.from("2026-10-05")}
+            defaultOpen>
+            <DatePicker.Group>
+              <DatePicker.Input />
+              <DatePicker.Trigger />
+            </DatePicker.Group>
+            <DatePicker.Popup>
+              <DatePicker.Presets defaultValue="today">
+                <DatePicker.PresetItem value="today">Today</DatePicker.PresetItem>
+                <DatePicker.PresetItem value="tomorrow">Tomorrow</DatePicker.PresetItem>
+              </DatePicker.Presets>
+              <DatePicker.Calendar />
+            </DatePicker.Popup>
+          </DatePicker.Root>
+        )
+      );
+      await waitForPopupSettled();
+      const popup = page.getByRole("dialog").element();
+      const today = presetLabel("Today");
+      const tomorrow = presetLabel("Tomorrow");
+      // Sample the 4px strip to the left of each preset. It catches a 2px outline whether it starts
+      // at the preset's edge or 2px away. The strip lies inside the popup's box, and the popup's
+      // edge ring paints outside it.
+      const halos = (): Promise<boolean[]> =>
+        differsFromCanvas(
+          popup,
+          [today, tomorrow].map((label) => {
+            const box = label.getBoundingClientRect();
+            return new DOMRect(Math.floor(box.left) - 4, box.top + box.height / 2 - 2, 4, 4);
+          })
+        );
+
+      await userEvent.click(tomorrow);
+      expect(await halos(), "after a press").toEqual([false, false]);
+      await userEvent.keyboard("{ArrowUp}");
+      expect(roleNamed("radio", "Today").matches(":focus-visible")).toBe(true);
+      expect(await halos(), "Today focused by keyboard").toEqual([true, false]);
+      await userEvent.keyboard("{ArrowDown}");
+      expect(roleNamed("radio", "Tomorrow").matches(":focus-visible")).toBe(true);
+      expect(await halos(), "Tomorrow focused by keyboard").toEqual([false, true]);
+    });
   });
 
   it("reports a pressed preset with its reason and keeps the checked preset when canceled", async () => {
