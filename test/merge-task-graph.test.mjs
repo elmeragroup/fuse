@@ -126,6 +126,10 @@ it("the merge checks schedule all required gates without browser work", () => {
     "static-theme#build",
     "static-theme#type-check",
     "static-theme#test",
+    "mcp#build",
+    "mcp#type-check",
+    "mcp#test",
+    "mcp#test:catalog",
     "@elmeragroup/oxlint-plugin-fuse#test",
     "@elmeragroup/oxlint-plugin-fuse#type-check",
   ]) {
@@ -364,6 +368,13 @@ it("runs the color package's unit tests without waiting on any other task", () =
     "@elmeragroup/color#test must not wait for the Fuse build"
   ).toBe(false);
   expect(testDependencies("@elmeragroup/color#test")).toEqual([]);
+}, 30_000);
+
+it("runs the MCP server's unit tests without waiting on the Fuse build or the docs catalog", () => {
+  // apps/mcp/turbo.json clears the root test edge: the suites read a fixture catalog under
+  // apps/mcp/test and skill folders that need no build, so neither the Fuse build nor
+  // docs#generate may order them. The check against the generated catalog is test:catalog.
+  expect(testDependencies("mcp#test")).toEqual([]);
 }, 30_000);
 
 it("runs docs build before type-check, not against the same .next", () => {
