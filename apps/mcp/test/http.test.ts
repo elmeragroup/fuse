@@ -180,6 +180,26 @@ describe("with skills", () => {
   });
 });
 
+describe("with the shipped skills", () => {
+  // Oracle: the skill names fixed at launch. A client keys its user's approval of a skill to its
+  // name, so a renamed, missing or extra folder changes what every client offers.
+  const fixtures = writeFixtures([]);
+  const handler = serve({ ...fixtures, skillsDirectory: join(import.meta.dirname, "..", "skills") }, 2);
+
+  it("lists exactly fuse-build-ui, fuse-setup and fuse-theming", async () => {
+    const Listed = Schema.Struct({ uri: Schema.String, frontmatter: Schema.Struct({ name: Schema.String }) });
+    const { skills } = await resultOf(
+      await handler(rpc("skills/list")),
+      Schema.Struct({ skills: Schema.Array(Listed) })
+    );
+    expect(skills.map(({ uri, frontmatter }) => ({ name: frontmatter.name, uri }))).toEqual([
+      { name: "fuse-build-ui", uri: "skill://fuse-build-ui/SKILL.md" },
+      { name: "fuse-setup", uri: "skill://fuse-setup/SKILL.md" },
+      { name: "fuse-theming", uri: "skill://fuse-theming/SKILL.md" },
+    ]);
+  });
+});
+
 describe("without skills", () => {
   const handler = serve(writeFixtures([]), 2);
 
