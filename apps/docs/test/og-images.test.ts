@@ -20,7 +20,7 @@ import { decodePng } from "./png";
 const docsAppDir = path.join(docsRoot, "src/app/(docs)");
 const studioAppDir = path.join(docsRoot, "src/app/(studio)");
 
-/** Every authored docs route on disk: a `page.tsx` outside the component pages. */
+/** Every authored docs route on disk: a `page.tsx` or `page.mdx` outside the component pages. */
 function authoredDocsRoutes(dir: string, prefix = ""): string[] {
   const routes: string[] = [];
   for (const entry of readdirSync(dir)) {
@@ -30,7 +30,7 @@ function authoredDocsRoutes(dir: string, prefix = ""): string[] {
         continue;
       }
       routes.push(...authoredDocsRoutes(absolute, `${prefix}/${entry}`));
-    } else if (entry === "page.tsx") {
+    } else if (entry === "page.tsx" || entry === "page.mdx") {
       routes.push(prefix);
     }
   }

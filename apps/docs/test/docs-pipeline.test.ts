@@ -1,3 +1,4 @@
+import { fromMarkdown } from "mdast-util-from-markdown";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,13 +7,13 @@ import { describe, expect, it } from "vitest";
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { inspectComponentDemos } from "../scripts/lib/docs-inspection.ts";
 import { ProblemLog } from "../scripts/lib/errors.ts";
-import { componentSections, joinSections } from "../scripts/lib/markdown.ts";
+import { componentPropAnchors, componentSections, joinSections } from "../scripts/lib/markdown.ts";
 import { COMPOSITION_PAGES, parseComponentPage } from "../scripts/lib/page-source.ts";
 import { repoRelative } from "../scripts/lib/paths.ts";
 import {
   missingNavRoutes,
   missingStudioRoutes,
-  staticRouteFile,
+  staticRouteFiles,
   studioRouteFile,
 } from "../scripts/lib/routes.ts";
 import { readRscStatus } from "../scripts/lib/rsc-status.ts";
@@ -172,7 +173,7 @@ describe("authored page.mdx as generation input", () => {
     [
       "a <Demo> heading level other than 3",
       usagePage([...USAGE, "## Examples", '<Demo slug="button" id="a" title="A" level={4} file="a.tsx" />']),
-      /must be a level=\{3\} example, not level 4/,
+      /must be a level=\{3\} example, not level=\{4\}/,
     ],
     [
       "a Usage-shaped page with no code block under Usage",
@@ -209,6 +210,20 @@ describe("authored page.mdx as generation input", () => {
         "",
         "## Examples",
         '<Demo slug="button" id="a" title="A" file="a.tsx" />',
+      ]),
+      /must be a level=\{3\} example, not level unset/,
+    ],
+    [
+      'a demo whose level is the string "3", which the demo frame renders as an h2',
+      usagePage([...USAGE, "## Examples", '<Demo slug="button" id="a" title="A" level="3" file="a.tsx" />']),
+      /must be a level=\{3\} example, not level="3"/,
+    ],
+    [
+      "a demo whose only level is data-level={3}, which the demo frame does not read",
+      usagePage([
+        ...USAGE,
+        "## Examples",
+        '<Demo slug="button" id="a" title="A" data-level={3} file="a.tsx" />',
       ]),
       /must be a level=\{3\} example, not level unset/,
     ],
@@ -451,8 +466,10 @@ describe("nav destination verification", () => {
   it("names the entry that would ship a 404, so generation fails instead of the SideNav", () => {
     // The probe stands in for a deleted or renamed route file. The generation pass turns
     // exactly this list into problems, and a non-empty problem log fails the docs build.
-    const gone = staticRouteFile("/handbook/tokens");
-    expect(missingNavRoutes(STATIC_PAGES, (file) => file !== gone)).toEqual(["/handbook/tokens"]);
+    const gone = new Set(staticRouteFiles("/handbook/tokens"));
+    expect(missingNavRoutes(STATIC_PAGES, (file) => !gone.has(file))).toEqual(["/handbook/tokens"]);
+    // A route authored as MDX alone is a route.
+    expect(missingNavRoutes(STATIC_PAGES, (file) => file.endsWith("page.mdx"))).toEqual([]);
     expect(missingNavRoutes(STATIC_PAGES, () => false)).toEqual(STATIC_PAGES.map((page) => page.href));
   });
 
@@ -684,6 +701,49 @@ describe("markdown endpoint rendering", () => {
       depth: 2,
       markdown: '# Widget\n\nA widget.\n\n- Import: `import { ... } from "@elmeragroup/fuse/widget-extra";`',
     });
+  });
+
+  it("fences a demo source holding a three-backtick line so the whole source stays code", () => {
+    // Unit under test: componentSections. Oracle: CommonMark, which must read the demo's section
+    // as its heading, its file line and one code block holding the source byte for byte.
+    const source = "const doc = `\n```ts\nconst a = 1;\n```\n`;";
+    const demo = componentSections({
+      ...component,
+      demos: [{ id: "basic", title: "Basic", sourcePath: "demo.tsx", source }],
+    }).find((section) => section.id === "basic");
+    const code = fromMarkdown(demo?.markdown ?? "").children.filter((node) => node.type === "code");
+
+    expect(code.map((node) => node.value)).toEqual([source]);
+  });
+
+  it("anchors each prop row the API reference prints, and none on an alias page", () => {
+    // Unit under test: componentPropAnchors. Oracle: the props tables componentSections prints for
+    // the same component, which give a part that repeats another page's part, or a function, none.
+    const [widget] = component.parts;
+    if (widget === undefined) throw new Error("the fixture has no part");
+    const parts = [
+      widget,
+      { ...widget, name: "Widget.Same", sameAs: { slug: "other", name: "Other.Part" } },
+      {
+        ...widget,
+        name: "useWidget",
+        function: {
+          signature: "useWidget(): void",
+          description: "Reads the widget.",
+          parameters: [],
+          returns: { type: "void", description: "" },
+        },
+      },
+    ];
+    const printed = componentSections({ ...component, parts }).flatMap((section) =>
+      [...section.markdown.matchAll(/^\| `([^`]+)` \|/gmu)].map(([, prop = ""]) => `${section.id}-${prop}`)
+    );
+
+    expect(componentPropAnchors({ ...component, parts })).toEqual(new Set(printed));
+    expect(printed).toEqual(["api-widget-tone", "api-widget-label"]);
+    expect(
+      componentPropAnchors({ ...component, parts, alias: { slug: "other", name: "Widget", owner: "Other" } })
+    ).toEqual(new Set());
   });
 
   it("keeps the Examples heading of a page with no titled demo, as the page and its TOC do", () => {

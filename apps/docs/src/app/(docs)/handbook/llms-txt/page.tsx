@@ -42,6 +42,11 @@ export default function LlmsTxtPage(): ReactElement {
         )}
       </p>
       <p>
+        Some other pages, such as the quick start and the theming guide, have a twin too, at their own path
+        with <code>.md</code> added. Each row of <code>/llms.txt</code> that ends in a <code>Markdown:</code>{" "}
+        link names one.
+      </p>
+      <p>
         These are not a second rendering of the docs. The API tables, the RSC status, the tokens-consumed list
         and the demo source in a markdown endpoint come out of the same build pass that renders the HTML page
         — one pipeline with two live consumers today: the HTML docs you are reading, and anything reading

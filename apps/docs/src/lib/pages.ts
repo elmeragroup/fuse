@@ -128,7 +128,7 @@ export const STATIC_PAGES: readonly StaticPage[] = [
     href: "/handbook/llms-txt",
     label: "llms.txt",
     description:
-      "The AI-docs surface: the generated llms.txt index and the per-component markdown endpoints.",
+      "The AI-docs surface: the generated llms.txt index and the markdown twin of each page that has one.",
     group: "handbook",
   },
   {

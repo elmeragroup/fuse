@@ -25,5 +25,8 @@ next-env.d.ts
 apps/docs/src/generated/
 apps/docs/public/llms.txt
 apps/docs/public/components/
+# Generation owns every .md under apps/docs/public and deletes any that is not a page's twin,
+# so keep hand-authored markdown out of that folder.
+apps/docs/public/**/*.md
 # Local scratch output, such as `pnpm shots` screenshots (tooling/pr-shots)
 .scratch/

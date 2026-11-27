@@ -1,0 +1,171 @@
+import { DocsPage, pageMetadata } from "../../../components/docs-page";
+import { InstallCommand } from "../../../components/page-data";
+
+export const metadata = pageMetadata("/quick-start");
+
+<DocsPage href="/quick-start">
+
+<h2 id="install">Install</h2>
+
+The library is a packaged dependency, not copy-paste source. `react` and `react-dom` are peers; every
+component lives behind its own subpath, so importing `Button` never pays for anything else.
+
+<InstallCommand />
+
+Tailwind v4 apps compile Fuse's classes with their own build: import `@elmeragroup/fuse/css` and
+`themes.css`, and point `@source` at the installed package root. Adjust the `@source` path only when
+the stylesheet is not one directory below the app root.
+
+Fuse gives every element, your own markup included, a base-layer default border colour, the `--border`
+role, and any border colour utility still wins. Native form widgets outside Fuse parts keep their own
+border colour and native look. Import Fuse after `tailwindcss`. A preflight-free build that imports
+Tailwind's sheets into layers declares `@layer theme, base, components, utilities;` before them.
+
+{/* prettier-ignore */}
+```css
+/* app/globals.css — Tailwind v4.1 or newer */
+@import "tailwindcss";
+@import "@elmeragroup/fuse/css";
+@import "@elmeragroup/fuse/themes.css";
+@source "../node_modules/@elmeragroup/fuse";
+```
+
+Apps without Tailwind import the prebuilt standalone stylesheet and `themes.css`. It includes the
+library utilities without Tailwind's preflight, so keep your own reset. Fuse's own elements, the ones
+that carry a `data-slot`, still take preflight's element rules from the base layer, and every utility
+and your own unlayered reset win over them, except `hidden`, which preflight makes
+`display: none !important` so it beats a part's display class.
+
+{/* prettier-ignore */}
+```tsx
+// app/layout.tsx — apps without Tailwind, once at the document root
+import "@elmeragroup/fuse/styles.css";
+import "@elmeragroup/fuse/themes.css";
+```
+
+<h2 id="temporal">Temporal for dates</h2>
+
+Fuse's Temporal date code reads `Temporal` from `globalThis` when it runs, and not every engine Fuse
+supports ships it yet. Fuse never installs it for you: import `@elmeragroup/fuse/temporal-polyfill`
+once in each runtime that renders. In a Next.js App Router app that is the root layout for the server,
+and `instrumentation-client.ts` for the browser, which runs before any of the app's client modules. A
+client module such as `app/providers.tsx` is too late when another module that builds a Temporal value
+at its top level evaluates first. Other hosts import it first in the module their bundler starts the
+client from. The root `@elmeragroup/fuse` entry never imports it.
+
+{/* prettier-ignore */}
+```tsx
+// Once per runtime, before any Temporal date code runs: the server entry, and the client
+// entry (instrumentation-client.ts in Next.js).
+import "@elmeragroup/fuse/temporal-polyfill";
+```
+
+The entry installs `temporal-polyfill` only where no `Temporal` exists, and leaves an engine's own one
+in place. Where it installs, it also replaces `Intl.DateTimeFormat` with the polyfill's, which formats
+Temporal values. It adds about 20 kB gzipped to the bundle that imports it. Without it, development
+builds warn once in every engine, and an engine without Temporal throws a `TypeError` that names the
+entry.
+
+Fuse's type declarations, the root entry's included, name the global `Temporal` types, which come from
+TypeScript's own lib rather than from the polyfill. Type-check with TypeScript 6.0 or later and a `lib`
+that includes `esnext` (or `esnext.temporal`). With an older compiler or lib, Fuse's declarations
+report `Cannot find namespace 'Temporal'`, or, under `skipLibCheck`, the date props are typed `any`.
+
+The date components' date props (`value`, `defaultValue`, `minValue`, `maxValue` and a range's `start`
+and `end`) take Temporal objects, never ISO text, so a value is built in a client component. React
+passes a Temporal object from a server component to a client one as its ISO text, which the components
+refuse with a `TypeError`. A server component that holds a date as text, from a database or a URL,
+passes that text to its own small client component, which builds the value:
+
+{/* prettier-ignore */}
+```tsx
+// app/delivery/page.tsx, a server component: the date arrives as ISO text.
+import { DeliveryDate } from "./delivery-date";
+
+export default async function Page() {
+  const order = await loadOrder();
+  return <DeliveryDate iso={order.deliveryDate} />;
+}
+
+// app/delivery/delivery-date.tsx
+"use client";
+
+import { DatePickerField } from "@elmeragroup/fuse/date-picker";
+
+export function DeliveryDate({ iso }: { readonly iso: string }) {
+  return <DatePickerField label="Delivery date" defaultValue={Temporal.PlainDate.from(iso)} />;
+}
+```
+
+A server component can still render `DateField`, `DatePickerField` and `DateRangePickerField` without
+a date value. The kind of value a field emits follows its value or default value, and without either
+its `granularity` and `timeZone`, so `onChange` is typed without a type argument.
+
+<h2 id="page-scaffold">The page scaffold</h2>
+
+Page structure is the app's responsibility, not the library's: landmarks, heading order, the skip link
+and `lang` all live in your root layout. This is the expected scaffold — the docs show it once, here,
+and no component page repeats it.
+
+- **`lang`** on `<html>`, matching the locale you pass the provider.
+- **Theme and density attributes** on `<html>` so brand and density are correct before any JavaScript
+  runs. `documentAttributes` stamps both, and the density is always yours to name: `dense` or
+  `comfortable`, whatever the identity.
+- **`ColorSchemeScript`** in `<head>`, ahead of anything paintable, and leave the provider's
+  `injectColorSchemeScript` at its default, `false`, so the bootstrap is emitted once.
+- **A skip link** as the first focusable element in `<body>`, targeting the `<main>` element's id.
+- **Landmarks** — one `<main>`, labelled `<nav>`s, and a heading hierarchy that starts at `h1` and does
+  not skip levels.
+
+{/* prettier-ignore */}
+```tsx
+import { ColorSchemeScript, LocaleProvider, ThemeProvider } from "@elmeragroup/fuse/theme";
+import { documentAttributes } from "@elmeragroup/fuse/theme";
+
+const THEME = { identity: "branded", brand: "fkas", segment: "private" } as const;
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html
+      lang="nb-NO"
+      {...documentAttributes({ theme: THEME, density: "comfortable" })}
+      suppressHydrationWarning>
+      <head>
+        <ColorSchemeScript storageKey="color-scheme" defaultColorScheme="system" enableSystem />
+      </head>
+      <body>
+        <ThemeProvider theme={THEME} storageKey="color-scheme" injectColorSchemeScript={false}>
+          <LocaleProvider locale="nb-NO">
+            <a className="skip-link" href="#main">
+              Hopp til innholdet
+            </a>
+            <header>{/* site header */}</header>
+            <nav aria-label="Hovedmeny">{/* primary navigation */}</nav>
+            <main id="main">{children}</main>
+            <footer>{/* site footer */}</footer>
+          </LocaleProvider>
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+Focus management across route changes is yours too: after a client-side navigation, move focus to the
+new page's heading or main landmark.
+
+<h2 id="using-a-component">Using a component</h2>
+
+Components read their colours from the theme in scope. Nothing in the snippet below names a brand —
+the attributes on `<html>` already decided that.
+
+{/* prettier-ignore */}
+```tsx
+import { Button } from "@elmeragroup/fuse/button";
+
+export function SaveButton() {
+  return <Button>Lagre</Button>;
+}
+```
+
+</DocsPage>

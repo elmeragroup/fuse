@@ -54,6 +54,13 @@ reference, tokens. It carries no prose, except a short `## Composition` between 
 Examples on a page in `COMPOSITION_PAGES` (`apps/docs/scripts/lib/page-source.ts`). A consumer
 rule goes into the JSDoc of the prop it concerns, which the API reference and the markdown
 endpoint render.
+An authored page written as `page.mdx` holds one `<DocsPage>`. Write each anchored heading as
+`<h2 id="…">` or `<h3 id="…">` on its own line, give every fence a language and a
+`{/* prettier-ignore */}` line, write every link inline rather than as a reference, and print
+library data only through an element in `src/components/page-data.tsx`. `scripts/lib/prose-page.ts` splits the page into its markdown twin
+and fails on whatever it cannot print.
+Generation owns every `.md` file under `apps/docs/public/` and deletes any that is not a page's
+twin, so keep hand-authored markdown out of that folder.
 Each example stages one instance of the page's component, with its own parts and plain HTML.
 Another Fuse component appears only when the subject cannot work without it. A clickable
 control that the subject does not style itself, such as an overlay trigger, is a Fuse `Button`.

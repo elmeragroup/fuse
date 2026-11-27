@@ -18,7 +18,7 @@ import type { ProblemLog } from "./errors.ts";
 import { readComponentPage } from "./page-source.ts";
 import type { ComponentPageSource } from "./page-source.ts";
 import { repoRelative, fuseRoot } from "./paths.ts";
-import { missingNavRoutes, missingStudioRoutes, staticRouteFile, studioRouteFile } from "./routes.ts";
+import { missingNavRoutes, missingStudioRoutes, staticRouteFiles, studioRouteFile } from "./routes.ts";
 import { readRscStatus } from "./rsc-status.ts";
 import { assertDocsFuseCssExports } from "./workspace-css.ts";
 
@@ -177,7 +177,9 @@ function readRenderedDemo(
 export function inspectGlobalDocs(problems: ProblemLog): void {
   assertDocsFuseCssExports(fuseRoot);
   for (const href of missingNavRoutes()) {
-    problems.add(`nav entry ${href} has no route at ${repoRelative(staticRouteFile(href))}`);
+    problems.add(
+      `nav entry ${href} has no route at ${staticRouteFiles(href).map(repoRelative).join(" or ")}`
+    );
   }
   for (const href of missingStudioRoutes()) {
     problems.add(`studio page ${href} has no route at ${repoRelative(studioRouteFile(href))}`);

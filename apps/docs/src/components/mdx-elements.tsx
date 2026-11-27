@@ -1,16 +1,19 @@
 import { Children, cloneElement, createElement, isValidElement } from "react";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
 
+import Link from "next/link";
+
 import { slugifyHeading } from "../lib/slug";
-import { DocsCodeBlock } from "./docs-code-block";
+import { DocsCodeBlock, DocsPlainCodeBlock } from "./docs-code-block";
 import { DocsInlineCode } from "./docs-inline-code";
 import { DocsSectionHeading } from "./docs-section-heading";
 
 /**
  * The element overrides `@next/mdx` applies to every authored `page.mdx`
- * (`mdx-components.tsx`). They exist for two reasons only: heading anchors, so the
- * QuickNav TOC and the rendered page agree on ids without a rehype plugin, and fenced code
- * rendered through `DocsCodeBlock` — the one highlighted code renderer.
+ * (`mdx-components.tsx`). They exist for three reasons only: heading anchors, so the
+ * QuickNav TOC and the rendered page agree on ids without a rehype plugin, fenced code
+ * rendered through `DocsCodeBlock`, the one highlighted code renderer, and links to the
+ * site's own pages through `next/link`.
  */
 
 const HEADING_LEVELS = [2, 3, 4] as const;
@@ -66,26 +69,50 @@ export const MDX_HEADINGS = {
 const LANGUAGE_CLASS = "language-";
 
 /**
+ * The fence languages printed as plain text. The highlighter reads only JavaScript and misreads
+ * CSS comments and shell commands, so these fences render through `DocsPlainCodeBlock`. A fence
+ * needs a language either way: one without a class reaches `MdxCode` as inline code.
+ */
+const PLAIN_LANGUAGES = ["css", "sh", "text"].map((language) => `${LANGUAGE_CLASS}${language}`);
+
+/**
  * Inline code stays a plain element. A fenced block — which MDX marks with a
  * `language-*` class and hands over as one string — becomes a `DocsCodeBlock`, the same
- * renderer the demo frames show their source with. MDX ends a fence's text with the
- * newline before the closing backticks; stripping it keeps the block from ending on an
- * empty line.
+ * renderer the demo frames show their source with, or a `DocsPlainCodeBlock` for a
+ * language in {@link PLAIN_LANGUAGES}. MDX ends a fence's text with the newline before the
+ * closing backticks; stripping it keeps the block from ending on an empty line.
  */
 export function MdxCode({ className, children, ...rest }: ComponentProps<"code">): ReactElement {
-  if (!(className ?? "").includes(LANGUAGE_CLASS)) {
+  const classes = (className ?? "").split(/\s+/);
+  if (!classes.some((name) => name.startsWith(LANGUAGE_CLASS))) {
     return (
       <DocsInlineCode className={className} {...rest}>
         {children}
       </DocsInlineCode>
     );
   }
+  const text = plainText(children).replace(/\n+$/, "");
+  if (classes.some((name) => PLAIN_LANGUAGES.includes(name))) return <DocsPlainCodeBlock text={text} />;
+  return <DocsCodeBlock variant="standalone" className={className} source={text} />;
+}
+
+/**
+ * A markdown link. A link to one of the site's own pages goes through `next/link`, so it navigates
+ * on the client and prefetches as the links of a TSX page do. Any other link, a same-page fragment
+ * included, stays a plain anchor.
+ */
+export function MdxLink({ href, children, ...rest }: ComponentProps<"a">): ReactElement {
+  if (href !== undefined && href.startsWith("/") && !href.startsWith("//")) {
+    return (
+      <Link href={href} {...rest}>
+        {children}
+      </Link>
+    );
+  }
   return (
-    <DocsCodeBlock
-      variant="standalone"
-      className={className}
-      source={plainText(children).replace(/\n+$/, "")}
-    />
+    <a href={href} {...rest}>
+      {children}
+    </a>
   );
 }
 

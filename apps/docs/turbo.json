@@ -1,7 +1,7 @@
 {
   "extends": ["//"],
   "tasks": {
-    // The docs pipeline writes src/generated and public/components before anything
+    // The docs pipeline writes src/generated and the markdown endpoints under public before anything
     // reads them. It is its own task so turbo orders it ahead of build, type-check and
     // the root lint, instead of a build script racing them for the same files.
     "generate": {
@@ -26,12 +26,28 @@
         "src/generated/**",
         "src/app/\\(docs\\)/components/*/api.json",
         "src/app/\\(docs\\)/components/*/*.api.json",
-        "public/components/**",
+        "public/**/*.md",
         "public/llms.txt"
       ]
     },
-    "build": {
+    // A cache hit on `generate` restores the current twins under public but leaves a twin an earlier
+    // run wrote for a since renamed route, which Next would serve. This uncached task removes every
+    // markdown file there that src/generated/catalog.json names no twin for, before Next builds or
+    // serves. The `start` script runs the same script before `next start`.
+    "reconcile-markdown": {
       "dependsOn": ["generate"],
+      "cache": false
+    },
+    // `dev` waits for generation and for the markdown reconcile, so Next serves no stale twin. The
+    // dev script generates on its own only when turbo did not start it (turbo sets TURBO_HASH for
+    // every task), so `pnpm --filter docs dev` still generates before Next starts.
+    "dev": {
+      "dependsOn": ["^build", "generate", "reconcile-markdown"],
+      "cache": false,
+      "persistent": true
+    },
+    "build": {
+      "dependsOn": ["generate", "reconcile-markdown"],
       // A replay needs the compiled app, not Next's build cache or a local `next dev` cache;
       // archiving those put about 3.9 GB into every local docs#build cache entry.
       "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**"],
@@ -45,7 +61,7 @@
     // stays the production build the unit suite asserts on. Only this task declares the variable:
     // strict env mode hides it from `build`, which the container image runs.
     "build:e2e": {
-      "dependsOn": ["generate"],
+      "dependsOn": ["generate", "reconcile-markdown"],
       "outputs": [".cache/next-e2e/**", "!.cache/next-e2e/cache/**", "!.cache/next-e2e/dev/**"],
       "env": ["DOCS_ORIGIN", "PORT", "DOCS_E2E_BUILD"]
     },

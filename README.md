@@ -115,7 +115,7 @@ Once publishing is activated, every push to `main` publishes a **canary** and th
 | Task                              | Start here                                                                                                    |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | Change or add a component         | [AGENTS.md](AGENTS.md), then the component's source, tests and docs page                                      |
-| Integrate the library into an app | [Package README](packages/fuse/README.md) and [theming](<apps/docs/src/app/(docs)/handbook/theming/page.tsx>) |
+| Integrate the library into an app | [Package README](packages/fuse/README.md) and [theming](<apps/docs/src/app/(docs)/handbook/theming/page.mdx>) |
 | Diagnose build or test failures   | The failing workspace's scripts and [Turbo dependencies](turbo.json)                                          |
 | Understand theme vocabulary       | [Domain glossary](CONTEXT.md)                                                                                 |
 | Find unfinished work              | [GitHub issues](https://github.com/elmeragroup/fuse/issues)                                                   |

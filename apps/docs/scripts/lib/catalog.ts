@@ -58,20 +58,33 @@ function destinations(node: Nodes): readonly string[] {
 }
 
 /**
+ * What a link is checked against: every document by href, the site path of every file served
+ * from `public/` that is not a document's twin, such as `/llms.txt`, and the prop row ids each
+ * page's API reference renders, by href.
+ */
+type LinkTargets = {
+  readonly documents: ReadonlyMap<string, CatalogDocument>;
+  readonly siteFiles: ReadonlySet<string>;
+  readonly propAnchors: ReadonlyMap<string, ReadonlySet<string>>;
+};
+
+/**
  * Why one link destination points at nothing, or `null` when it resolves. The destination
  * resolves against the document's own URL, so a relative link counts, and a link to another
- * origin is not checked. A link resolves when its path names a document and its fragment, if any,
- * names a section of it. A `.md` path names the markdown endpoint, which only a document with
- * sections has. The query plays no part.
+ * origin is not checked. A link resolves when its path names a site file, or names a document and
+ * its fragment, if any, names a section of it or a prop row its API reference renders. A document
+ * with no sections has no ids to check a fragment against, so any fragment on it resolves. A `.md`
+ * path names the markdown endpoint, which only a document with sections has. The query plays no
+ * part.
  */
 function brokenLink(
   destination: string,
   from: string,
-  documents: ReadonlyMap<string, CatalogDocument>
+  { documents, siteFiles, propAnchors }: LinkTargets
 ): string | null {
   const url = URL.parse(destination, new URL(from, SITE));
   if (url === null) return `${destination}, which is no URL`;
-  if (url.origin !== SITE.origin) return null;
+  if (url.origin !== SITE.origin || siteFiles.has(url.pathname)) return null;
   const endpoint = url.pathname.endsWith(".md");
   const href = endpoint ? url.pathname.slice(0, -".md".length) : url.pathname;
   const document = documents.get(href);
@@ -80,17 +93,17 @@ function brokenLink(
     return `${destination}, which is no markdown endpoint: ${href} has no sections`;
   }
   const fragment = url.hash.slice(1);
-  if (fragment !== "" && !document.sections.some((section) => section.id === fragment)) {
+  const named =
+    document.sections.some((section) => section.id === fragment) ||
+    (propAnchors.get(href)?.has(fragment) ?? false);
+  if (fragment !== "" && document.sections.length > 0 && !named) {
     return `${destination}, which names no section of ${href}`;
   }
   return null;
 }
 
 /** The problems of one document's sections: repeated ids, oversized sections and broken links. */
-function sectionProblems(
-  document: CatalogDocument,
-  documents: ReadonlyMap<string, CatalogDocument>
-): readonly string[] {
+function sectionProblems(document: CatalogDocument, targets: LinkTargets): readonly string[] {
   const problems: string[] = [];
   const seen = new Set<string>();
   for (const section of document.sections) {
@@ -103,7 +116,7 @@ function sectionProblems(
       );
     }
     for (const destination of destinations(fromMarkdown(section.markdown))) {
-      const broken = brokenLink(destination, document.href, documents);
+      const broken = brokenLink(destination, document.href, targets);
       if (broken !== null) problems.push(`${at} links to ${broken}`);
     }
   }
@@ -113,15 +126,25 @@ function sectionProblems(
 /**
  * Every reason the catalog may not be written: a component route with no sections, two documents
  * with one href, a document that repeats a section id, a section over
- * {@link SECTION_CHARACTER_LIMIT} characters, and a link to the site that points at no document,
- * at no section of one, or at the `.md` endpoint of a document without sections. Links are read
- * from the parsed markdown, so code holds none, and a relative or reference-style link counts.
+ * {@link SECTION_CHARACTER_LIMIT} characters, and a link to the site that points at neither a
+ * site file nor a document, at neither a section nor a rendered prop row of a document that
+ * has sections, or at the `.md` endpoint of a document without sections. Links are read from the parsed markdown, so code holds
+ * none, and a relative or reference-style link counts.
  *
  * @param catalog - The catalog to check.
  * @param componentHrefs - The href of every component route, each of which must have sections.
+ * @param siteFiles - The site path of every file served from `public/` that is not a document's
+ *   twin, such as `/llms.txt`, which a link may name.
+ * @param propAnchors - The anchor id of every prop row each page's API reference renders, keyed by
+ *   the page's href. The catalog holds no prop names, so a prop link is checked against these.
  * @returns One line per problem, empty when the catalog may be written.
  */
-export function catalogProblems(catalog: Catalog, componentHrefs: readonly string[]): readonly string[] {
+export function catalogProblems(
+  catalog: Catalog,
+  componentHrefs: readonly string[],
+  siteFiles: ReadonlySet<string>,
+  propAnchors: ReadonlyMap<string, ReadonlySet<string>>
+): readonly string[] {
   const problems: string[] = [];
   const documents = new Map<string, CatalogDocument>();
   for (const document of catalog.documents) {
@@ -133,6 +156,8 @@ export function catalogProblems(catalog: Catalog, componentHrefs: readonly strin
       problems.push(`the component route ${href} has no sections`);
     }
   }
-  for (const document of catalog.documents) problems.push(...sectionProblems(document, documents));
+  for (const document of catalog.documents) {
+    problems.push(...sectionProblems(document, { documents, siteFiles, propAnchors }));
+  }
   return problems;
 }
