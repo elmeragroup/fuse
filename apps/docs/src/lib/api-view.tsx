@@ -8,10 +8,10 @@
  */
 
 import { DocsCodeBlock } from "../components/docs-code-block";
+import { apiPartAnchor, apiPropAnchor } from "./anchors";
 import type { ApiPropView } from "./api-row";
 import type { ApiPart, ApiProp, RscStatus } from "./docs-model";
 import { groupApiProps, propDescription } from "./docs-model";
-import { apiPartAnchor, apiPropAnchor } from "./nav";
 
 /** One compound part's reference block. */
 export type ApiPartView = {

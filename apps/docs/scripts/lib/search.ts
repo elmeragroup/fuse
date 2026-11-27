@@ -68,8 +68,8 @@ function blockEntry(page: StaticPage): SearchEntry {
   return { ...entry, keywords: [...entry.keywords, "block", "example", "template"] };
 }
 
-/** Every searchable destination, in SideNav order. */
-function buildSearchIndex(components: readonly DocsComponent[]): readonly SearchEntry[] {
+/** Every searchable destination, in SideNav order. The docs catalog lists the same pages. */
+export function buildSearchIndex(components: readonly DocsComponent[]): readonly SearchEntry[] {
   return [
     pageEntry(HOME_PAGE, GROUP_LABELS.overview),
     ...staticPagesIn("overview").map((page) => pageEntry(page, GROUP_LABELS.overview)),
@@ -80,15 +80,11 @@ function buildSearchIndex(components: readonly DocsComponent[]): readonly Search
   ];
 }
 
-/** Renders the generated module the palette imports. */
-export function renderSearchIndex(components: readonly DocsComponent[]): string {
+/** Renders the generated module the palette imports, from {@link buildSearchIndex}'s entries. */
+export function renderSearchIndex(entries: readonly SearchEntry[]): string {
   return `import type { SearchEntry } from "../lib/docs-model";
 
 /** Every destination the ⌘K palette can navigate to. */
-export const SEARCH_ENTRIES: readonly SearchEntry[] = ${JSON.stringify(
-    buildSearchIndex(components),
-    null,
-    2
-  )};
+export const SEARCH_ENTRIES: readonly SearchEntry[] = ${JSON.stringify(entries, null, 2)};
 `;
 }

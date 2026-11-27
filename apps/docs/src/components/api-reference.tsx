@@ -4,12 +4,12 @@ import type { ReactElement, ReactNode } from "react";
 import { tv } from "tailwind-variants";
 
 import { API_EXTRA_ENTRIES, API_FUNCTIONS, API_SAME_AS } from "../generated/api-reference-extras";
+import { API_SECTION_ID, apiPartAnchor } from "../lib/anchors";
 import { readComponentApi } from "../lib/api-source";
 import { toPartView } from "../lib/api-view";
 import type { ApiPartView } from "../lib/api-view";
 import { CLIENT_PART_NOTE } from "../lib/docs-model";
 import type { ApiFunction, ApiPart } from "../lib/docs-model";
-import { API_SECTION_ID, apiPartAnchor } from "../lib/nav";
 import { componentHref } from "../lib/pages";
 import { ApiPropRows } from "./api-prop-rows";
 import { DocsCodeBlock } from "./docs-code-block";

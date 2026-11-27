@@ -1,4 +1,5 @@
 import { COMPONENT_OUTLINES } from "../generated/component-outlines";
+import { API_SECTION_ID, apiPartAnchor, TOKENS_SECTION_ID } from "./anchors";
 import type { ComponentOutline, TocItem } from "./docs-model";
 import { COMPONENTS_PREFIX, componentHref, staticPagesIn } from "./pages";
 
@@ -12,24 +13,6 @@ export type NavGroup = {
   label: string;
   items: readonly NavItem[];
 };
-
-export const API_SECTION_ID = "api-reference";
-export const TOKENS_SECTION_ID = "tokens-consumed";
-
-/** Anchor id for one compound part's generated API table. */
-export function apiPartAnchor(partName: string): string {
-  return `api-${partName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-}
-
-/**
- * Anchor id for one prop row of a part's reference, so a single prop is linkable.
- *
- * The prop's own casing survives — `#api-button-isVisuallyDisabled` reads as the prop it
- * names, and a row that a hash points at opens itself.
- */
-export function apiPropAnchor(partName: string, propName: string): string {
-  return `${apiPartAnchor(partName)}-${propName}`;
-}
 
 /** The component pages that pass `keep`, alphabetical by their nav label. */
 function navItems(keep: (component: ComponentOutline) => boolean): readonly NavItem[] {

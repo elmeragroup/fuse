@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { inspectComponentDemos } from "../scripts/lib/docs-inspection.ts";
 import { ProblemLog } from "../scripts/lib/errors.ts";
-import { renderComponentMarkdown } from "../scripts/lib/markdown.ts";
+import { componentSections, renderComponentMarkdown } from "../scripts/lib/markdown.ts";
 import { COMPOSITION_PAGES, parseComponentPage } from "../scripts/lib/page-source.ts";
 import { repoRelative } from "../scripts/lib/paths.ts";
 import {
@@ -669,6 +669,27 @@ describe("markdown endpoint rendering", () => {
     expect(markdown).toContain("export function WidgetBasic() {}");
     // The Usage code imports the page's one entry, so the endpoint lists no other import.
     expect(markdown).not.toContain("- Import:");
+  });
+
+  it("splits the page at the site's anchors, with the title, lede and imports alone in `overview`", () => {
+    const sections = componentSections({
+      ...component,
+      apis: [...component.apis, { slug: "widget-extra", entry: "@elmeragroup/fuse/widget-extra" }],
+    });
+    // The ids the page renders: the title, the MDX headings, the demo, the API reference, the
+    // part's table and the tokens heading.
+    expect(sections.map(({ id, depth }) => ({ id, depth }))).toEqual([
+      { id: "overview", depth: 2 },
+      { id: "usage", depth: 2 },
+      { id: "examples", depth: 2 },
+      { id: "basic", depth: 3 },
+      { id: "api-reference", depth: 2 },
+      { id: "api-widget", depth: 3 },
+      { id: "tokens-consumed", depth: 2 },
+    ]);
+    expect(sections[0]?.markdown).toBe(
+      '# Widget\n\nA widget.\n\n- Import: `import { ... } from "@elmeragroup/fuse/widget-extra";`'
+    );
   });
 });
 

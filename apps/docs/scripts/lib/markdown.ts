@@ -2,8 +2,20 @@
  * The per-component markdown endpoint: the same generated API model
  * and the same extracted demo source the HTML page renders, emitted as markdown so the
  * page's **View as Markdown** link and any AI consumer read one pipeline, not two.
+ *
+ * A page is rendered as ordered catalog sections, split at the headings the site anchors, and
+ * the endpoint is those sections joined. The docs catalog holds the same sections, so the
+ * endpoint and the catalog cannot differ.
  */
 
+import type { CatalogSection } from "@elmeragroup/docs-catalog";
+
+import {
+  API_SECTION_ID,
+  apiPartAnchor,
+  OVERVIEW_SECTION_ID,
+  TOKENS_SECTION_ID,
+} from "../../src/lib/anchors.ts";
 import type { ApiSameAs } from "../../src/lib/api-same-as.ts";
 import type { ApiFunction, ApiPart, DocsApiPart, DocsComponent } from "../../src/lib/docs-model.ts";
 import { groupApiProps, propDescription } from "../../src/lib/docs-model.ts";
@@ -101,16 +113,47 @@ function renderFunction(part: DocsApiPart, reference: ApiFunction): string {
   return lines.join("\n");
 }
 
-/** The API reference section, or one sentence when the page repeats another page whole. */
-function renderApiReference(component: DocsComponent): string[] {
+/**
+ * One catalog section from its lines. Blank runs collapse as {@link finishMarkdown} collapses
+ * them, and the blank lines at either edge go, because {@link joinSections} puts one blank line
+ * between sections.
+ */
+function catalogSection(
+  id: string,
+  depth: CatalogSection["depth"],
+  lines: readonly string[]
+): CatalogSection {
+  const markdown = lines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/^\n+|\n+$/g, "");
+  return { id, depth, markdown };
+}
+
+/** The API reference sections: the heading, with one sentence on an alias page, then one section per part. */
+function apiReferenceSections(component: DocsComponent): CatalogSection[] {
   const { alias } = component;
   if (alias !== undefined) {
-    return [`\`${alias.name}\` is [\`${alias.owner}\`](${ownerMarkdownUrl(alias)}) under another name.`, ""];
+    return [
+      catalogSection(API_SECTION_ID, 2, [
+        "## API reference",
+        "",
+        `\`${alias.name}\` is [\`${alias.owner}\`](${ownerMarkdownUrl(alias)}) under another name.`,
+      ]),
+    ];
   }
-  return component.parts.map((part) => {
-    if (part.sameAs !== undefined) return renderSameAsPart(part, part.sameAs);
-    return part.function === undefined ? renderPart(part) : renderFunction(part, part.function);
-  });
+  return [
+    catalogSection(API_SECTION_ID, 2, ["## API reference"]),
+    ...component.parts.map((part) => {
+      const markdown =
+        part.sameAs !== undefined
+          ? renderSameAsPart(part, part.sameAs)
+          : part.function === undefined
+            ? renderPart(part)
+            : renderFunction(part, part.function);
+      return catalogSection(apiPartAnchor(part.name), 3, [markdown]);
+    }),
+  ];
 }
 
 /** One demo as a markdown section at the page's heading level: its title, file and whole source. */
@@ -123,42 +166,57 @@ function renderDemo(demo: DocsComponent["demos"][number], depth: number): string
     "```tsx",
     demo.source,
     "```",
-    "",
   ];
 }
 
-/** The Tokens consumed section, or nothing when the recipe reads no token. */
-function renderTokens(component: DocsComponent): string[] {
+/** The Tokens consumed section, or none when the recipe reads no token. */
+function tokenSections(component: DocsComponent): CatalogSection[] {
   if (component.tokens.length === 0) return [];
   return [
-    "## Tokens consumed",
-    "",
-    ...component.tokens.map((token) => `- \`${token.name}\`${token.isColor ? " (colour)" : ""}`),
-    "",
+    catalogSection(TOKENS_SECTION_ID, 2, [
+      "## Tokens consumed",
+      "",
+      ...component.tokens.map((token) => `- \`${token.name}\`${token.isColor ? " (colour)" : ""}`),
+    ]),
   ];
 }
 
 /**
- * The page's headings and demos in page order. A demo prints at its heading level with its
- * source, the Usage heading carries the Usage code, and the Composition heading its markdown.
- * Other headings carry no prose, so a heading that nothing follows before the next heading or demo
- * of its level or above is left out.
+ * The catalog depth of an authored heading. The page reader admits only the Usage shape's `##`
+ * headings, so a deeper one here means that reader changed without this function.
  */
-function renderSections(component: DocsComponent): string[] {
+function headingDepth(depth: number): CatalogSection["depth"] {
+  if (depth === 2 || depth === 3) return depth;
+  throw new Error(`a component page heading has depth ${String(depth)}; the catalog holds depths 2 and 3`);
+}
+
+/**
+ * The page's headings and demos in page order, one section each. A demo prints at its heading
+ * level with its source, the Usage heading carries the Usage code, and the Composition heading its
+ * markdown. Other headings carry no prose, so a heading that nothing follows before the next
+ * heading or demo of its level or above is left out.
+ */
+function pageSections(component: DocsComponent): CatalogSection[] {
   const demos = new Map(component.demos.map((demo) => [demo.id, demo]));
   const { sections, usage, composition } = component;
-  return sections.flatMap((section, index): string[] => {
+  return sections.flatMap((section, index): CatalogSection[] => {
     if (section.kind === "demo") {
       const demo = demos.get(section.id);
-      return demo === undefined ? [] : renderDemo(demo, section.depth);
+      return demo === undefined
+        ? []
+        : [catalogSection(section.id, section.depth, renderDemo(demo, section.depth))];
     }
-    const heading = [`${"#".repeat(section.depth)} ${section.title}`, ""];
-    if (section.id === "usage") return [...heading, "```tsx", usage, "```", ""];
-    if (section.id === "composition" && composition !== null) return [...heading, composition, ""];
+    const depth = headingDepth(section.depth);
+    const heading = [`${"#".repeat(depth)} ${section.title}`, ""];
+    if (section.id === "usage")
+      return [catalogSection(section.id, depth, [...heading, "```tsx", usage, "```"])];
+    if (section.id === "composition" && composition !== null) {
+      return [catalogSection(section.id, depth, [...heading, composition])];
+    }
     const next = sections[index + 1];
     // A demo prints its own heading, so one at this level or above ends the section too.
     const empty = next === undefined || next.depth <= section.depth;
-    return empty ? [] : heading;
+    return empty ? [] : [catalogSection(section.id, depth, heading)];
   });
 }
 
@@ -168,23 +226,33 @@ function importLine({ entry }: { readonly entry: string }): string {
 }
 
 /**
- * Renders one component's markdown endpoint: the H1 and lede, the import of each extra entry, the
- * page's sections in page order, the API reference and the tokens. The Usage code imports only the
- * page's own entry, so the endpoint lists the import of each extra entry, such as
- * `@elmeragroup/fuse/command-virtual` on the Command page.
+ * One component's page as ordered catalog sections: the lead section with the H1, the lede and
+ * the import of each extra entry, the page's sections in page order, the API reference and its
+ * parts, and the tokens. The Usage code imports only the page's own entry, so the lead section
+ * lists the import of each extra entry, such as `@elmeragroup/fuse/command-virtual` on the
+ * Command page.
  */
+export function componentSections(component: DocsComponent): readonly CatalogSection[] {
+  return [
+    catalogSection(OVERVIEW_SECTION_ID, 2, [
+      `# ${component.title}`,
+      "",
+      component.lede,
+      "",
+      ...component.apis.slice(1).map(importLine),
+    ]),
+    ...pageSections(component),
+    ...apiReferenceSections(component),
+    ...tokenSections(component),
+  ];
+}
+
+/** The markdown endpoint of a page: its sections in order, one blank line apart. */
+export function joinSections(sections: readonly CatalogSection[]): string {
+  return `${sections.map((section) => section.markdown).join("\n\n")}\n`;
+}
+
+/** Renders one component's markdown endpoint from its sections. */
 export function renderComponentMarkdown(component: DocsComponent): string {
-  return finishMarkdown([
-    `# ${component.title}`,
-    "",
-    component.lede,
-    "",
-    ...component.apis.slice(1).map(importLine),
-    "",
-    ...renderSections(component),
-    "## API reference",
-    "",
-    ...renderApiReference(component),
-    ...renderTokens(component),
-  ]);
+  return joinSections(componentSections(component));
 }
