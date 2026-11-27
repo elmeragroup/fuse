@@ -4,6 +4,9 @@
  * joins, every other page with none yet, and the `llms.txt` text as the index.
  */
 
+import type { Nodes } from "mdast";
+import { fromMarkdown } from "mdast-util-from-markdown";
+
 import type { Catalog, CatalogDocument, CatalogSection } from "@elmeragroup/docs-catalog";
 
 import type { SearchEntry } from "../../src/lib/docs-model.ts";
@@ -45,29 +48,40 @@ export function buildCatalog({ entries, sections, index }: CatalogInput): Catalo
   };
 }
 
-const CODE_FENCE = /^\s*(?:```|~~~)/u;
-const SITE_LINK = /\]\((\/[^)\s]*)\)/gu;
+/** The origin a document's href is resolved against. Only links that resolve to it are checked. */
+const SITE = new URL("https://docs.invalid");
 
-/** The site-relative link targets in a section's markdown, outside its code blocks. */
-function siteLinks(markdown: string): readonly string[] {
-  let inFence = false;
-  return markdown.split("\n").flatMap((line) => {
-    if (CODE_FENCE.test(line)) {
-      inFence = !inFence;
-      return [];
-    }
-    return inFence ? [] : [...line.matchAll(SITE_LINK)].map((match) => match[1] ?? "");
-  });
+/** The link destinations in a parsed section: each inline link and each reference definition. */
+function destinations(node: Nodes): readonly string[] {
+  if (node.type === "link" || node.type === "definition") return [node.url];
+  return "children" in node ? node.children.flatMap(destinations) : [];
 }
 
-/** Why one link points at nothing, or `null` when its document, and section if it names one, exist. */
-function brokenLink(target: string, documents: ReadonlyMap<string, CatalogDocument>): string | null {
-  const [path = "", fragment] = target.split("#", 2);
-  const href = path.replace(/\.md$/u, "");
+/**
+ * Why one link destination points at nothing, or `null` when it resolves. The destination
+ * resolves against the document's own URL, so a relative link counts, and a link to another
+ * origin is not checked. A link resolves when its path names a document and its fragment, if any,
+ * names a section of it. A `.md` path names the markdown endpoint, which only a document with
+ * sections has. The query plays no part.
+ */
+function brokenLink(
+  destination: string,
+  from: string,
+  documents: ReadonlyMap<string, CatalogDocument>
+): string | null {
+  const url = URL.parse(destination, new URL(from, SITE));
+  if (url === null) return `${destination}, which is no URL`;
+  if (url.origin !== SITE.origin) return null;
+  const endpoint = url.pathname.endsWith(".md");
+  const href = endpoint ? url.pathname.slice(0, -".md".length) : url.pathname;
   const document = documents.get(href);
-  if (document === undefined) return `${target}, which is no document`;
-  if (fragment !== undefined && !document.sections.some((section) => section.id === fragment)) {
-    return `${target}, which names no section of ${href}`;
+  if (document === undefined) return `${destination}, which is no document`;
+  if (endpoint && document.sections.length === 0) {
+    return `${destination}, which is no markdown endpoint: ${href} has no sections`;
+  }
+  const fragment = url.hash.slice(1);
+  if (fragment !== "" && !document.sections.some((section) => section.id === fragment)) {
+    return `${destination}, which names no section of ${href}`;
   }
   return null;
 }
@@ -88,8 +102,8 @@ function sectionProblems(
         `${at} holds ${String(section.markdown.length)} characters, over the ${String(SECTION_CHARACTER_LIMIT)} a section may hold`
       );
     }
-    for (const target of siteLinks(section.markdown)) {
-      const broken = brokenLink(target, documents);
+    for (const destination of destinations(fromMarkdown(section.markdown))) {
+      const broken = brokenLink(destination, document.href, documents);
       if (broken !== null) problems.push(`${at} links to ${broken}`);
     }
   }
@@ -99,8 +113,9 @@ function sectionProblems(
 /**
  * Every reason the catalog may not be written: a component route with no sections, two documents
  * with one href, a document that repeats a section id, a section over
- * {@link SECTION_CHARACTER_LIMIT} characters, and a site-relative link outside a code block that
- * points at no document or at no section of one. A link may name the page or its `.md` endpoint.
+ * {@link SECTION_CHARACTER_LIMIT} characters, and a link to the site that points at no document,
+ * at no section of one, or at the `.md` endpoint of a document without sections. Links are read
+ * from the parsed markdown, so code holds none, and a relative or reference-style link counts.
  *
  * @param catalog - The catalog to check.
  * @param componentHrefs - The href of every component route, each of which must have sections.

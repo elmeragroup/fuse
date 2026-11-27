@@ -31,12 +31,12 @@
  * build.
  */
 
+import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { Catalog } from "@elmeragroup/docs-catalog";
-import type { CatalogSection } from "@elmeragroup/docs-catalog";
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ResolvedThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/internal";
@@ -71,7 +71,7 @@ import {
 } from "./lib/docs-inspection.ts";
 import type { ComponentInspection, DocsApiComponent } from "./lib/docs-inspection.ts";
 import { identityComparedParts } from "./lib/element-type-comparisons.ts";
-import { ProblemLog } from "./lib/errors.ts";
+import { DocsGenerationError, ProblemLog } from "./lib/errors.ts";
 import { functionReferences } from "./lib/function-reference.ts";
 import { openFuseProgram } from "./lib/fuse-program.ts";
 import type { FuseProgram } from "./lib/fuse-program.ts";
@@ -85,6 +85,7 @@ import { partIdentities } from "./lib/part-identity.ts";
 import {
   generatedDir,
   llmsTxtFile,
+  markdownEndpointFile,
   markdownOutDir,
   REPO_BLOB_BASE,
   repoRelative,
@@ -439,19 +440,18 @@ export const API_EXTRA_ENTRIES: Readonly<Partial<Record<string, readonly ApiEntr
   );
 }
 
-/** Each component's markdown endpoint, its catalog sections joined. */
-function emitMarkdownEndpoints(sections: ReadonlyMap<string, readonly CatalogSection[]>): void {
-  for (const [slug, page] of sections) {
-    writeFile(path.join(markdownOutDir, `${slug}.md`), joinSections(page));
+/** The markdown endpoint of each document that has sections, its sections joined. */
+function emitMarkdownEndpoints(catalog: Catalog): void {
+  for (const document of catalog.documents) {
+    if (document.sections.length > 0) {
+      writeFile(markdownEndpointFile(document.href), joinSections(document.sections));
+    }
   }
 }
 
-/** The docs catalog as JSON, written through the schema's own codec. */
-function emitCatalog(catalog: Catalog): void {
-  writeFile(
-    path.join(generatedDir, "catalog.json"),
-    Schema.encodeSync(Schema.fromJsonString(Catalog))(catalog)
-  );
+/** The docs catalog, already encoded as JSON through the schema's own codec. */
+function emitCatalog(json: string): void {
+  writeFile(path.join(generatedDir, "catalog.json"), json);
 }
 
 /** The theme tokens the Tokens page lists, read from the library's own `@theme` block. */
@@ -590,15 +590,15 @@ async function main(): Promise<void> {
     const component = buildComponent(inspection, demos, api.parts, api.functions, colors);
     return linkSharedParts(component, shared);
   });
-  // The markdown endpoints, the search index, `llms.txt` and the catalog come from these three
-  // values, and the catalog checks run before any of them is written.
-  const sections = new Map(components.map((component) => [component.slug, componentSections(component)]));
+  // The markdown endpoints, the search index, `llms.txt` and the catalog all come from the
+  // checked catalog, so it is checked and encoded before any of them is written.
   const entries = buildSearchIndex(components);
-  const index = renderLlmsTxt(components);
   const docsCatalog = buildCatalog({
     entries,
-    sections: new Map([...sections].map(([slug, page]) => [componentHref(slug), page])),
-    index,
+    sections: new Map(
+      components.map((component) => [componentHref(component.slug), componentSections(component)])
+    ),
+    index: renderLlmsTxt(components),
   });
   for (const problem of catalogProblems(
     docsCatalog,
@@ -607,6 +607,10 @@ async function main(): Promise<void> {
     problems.add(problem);
   }
   problems.throwIfFailed();
+  const encoded = Schema.encodeResult(Schema.fromJsonString(Catalog))(docsCatalog);
+  if (Result.isFailure(encoded)) {
+    throw new DocsGenerationError([`the docs catalog does not encode: ${encoded.failure.message}`]);
+  }
 
   emitComponentPages(components);
   emitComponentOutlines(components);
@@ -621,10 +625,10 @@ async function main(): Promise<void> {
   emitDensityCatalog(catalog);
   emitPaletteCatalog(catalog);
   await emitStudio(catalog, inspections, components);
-  emitMarkdownEndpoints(sections);
+  emitMarkdownEndpoints(docsCatalog);
   emitSearchIndex(entries);
-  emitLlmsTxt(index);
-  emitCatalog(docsCatalog);
+  emitLlmsTxt(docsCatalog.index);
+  emitCatalog(encoded.success);
   pruneStale(generatedDir);
   pruneStale(markdownOutDir);
   process.stdout.write(

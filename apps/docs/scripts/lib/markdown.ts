@@ -193,13 +193,13 @@ function headingDepth(depth: number): CatalogSection["depth"] {
 /**
  * The page's headings and demos in page order, one section each. A demo prints at its heading
  * level with its source, the Usage heading carries the Usage code, and the Composition heading its
- * markdown. Other headings carry no prose, so a heading that nothing follows before the next
- * heading or demo of its level or above is left out.
+ * markdown. Every other heading is a section of its own, even with nothing under it, because the
+ * page renders it and its anchor: Examples on a page with no titled demo is one.
  */
 function pageSections(component: DocsComponent): CatalogSection[] {
   const demos = new Map(component.demos.map((demo) => [demo.id, demo]));
   const { sections, usage, composition } = component;
-  return sections.flatMap((section, index): CatalogSection[] => {
+  return sections.flatMap((section): CatalogSection[] => {
     if (section.kind === "demo") {
       const demo = demos.get(section.id);
       return demo === undefined
@@ -213,10 +213,7 @@ function pageSections(component: DocsComponent): CatalogSection[] {
     if (section.id === "composition" && composition !== null) {
       return [catalogSection(section.id, depth, [...heading, composition])];
     }
-    const next = sections[index + 1];
-    // A demo prints its own heading, so one at this level or above ends the section too.
-    const empty = next === undefined || next.depth <= section.depth;
-    return empty ? [] : [catalogSection(section.id, depth, heading)];
+    return [catalogSection(section.id, depth, heading)];
   });
 }
 
@@ -250,9 +247,4 @@ export function componentSections(component: DocsComponent): readonly CatalogSec
 /** The markdown endpoint of a page: its sections in order, one blank line apart. */
 export function joinSections(sections: readonly CatalogSection[]): string {
   return `${sections.map((section) => section.markdown).join("\n\n")}\n`;
-}
-
-/** Renders one component's markdown endpoint from its sections. */
-export function renderComponentMarkdown(component: DocsComponent): string {
-  return joinSections(componentSections(component));
 }

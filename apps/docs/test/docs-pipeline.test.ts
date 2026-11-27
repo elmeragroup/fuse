@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { inspectComponentDemos } from "../scripts/lib/docs-inspection.ts";
 import { ProblemLog } from "../scripts/lib/errors.ts";
-import { componentSections, renderComponentMarkdown } from "../scripts/lib/markdown.ts";
+import { componentSections, joinSections } from "../scripts/lib/markdown.ts";
 import { COMPOSITION_PAGES, parseComponentPage } from "../scripts/lib/page-source.ts";
 import { repoRelative } from "../scripts/lib/paths.ts";
 import {
@@ -623,7 +623,7 @@ describe("markdown endpoint rendering", () => {
   };
 
   it("carries the demo source, RSC per part on the heading, the tokens list, and a recipe-axis label", () => {
-    const markdown = renderComponentMarkdown(component);
+    const markdown = joinSections(componentSections(component));
     expect(markdown).toContain("export function WidgetBasic() {}");
     // RSC is a per-part fact: a badge on the part heading, not a column.
     expect(markdown).toContain("### Widget · RSC: client");
@@ -640,16 +640,18 @@ describe("markdown endpoint rendering", () => {
   it("mirrors a Usage-shaped page: H1, lede, Usage code, Composition, the examples with their source, API, tokens", () => {
     const { usage } = component;
     const composition = "Put each `Widget.Item` inside a `Widget`.";
-    const markdown = renderComponentMarkdown({
-      ...component,
-      composition,
-      sections: [
-        { kind: "heading", id: "usage", title: "Usage", depth: 2 },
-        { kind: "heading", id: "composition", title: "Composition", depth: 2 },
-        { kind: "heading", id: "examples", title: "Examples", depth: 2 },
-        { kind: "demo", id: "basic", title: "Basic", depth: 3 },
-      ],
-    });
+    const markdown = joinSections(
+      componentSections({
+        ...component,
+        composition,
+        sections: [
+          { kind: "heading", id: "usage", title: "Usage", depth: 2 },
+          { kind: "heading", id: "composition", title: "Composition", depth: 2 },
+          { kind: "heading", id: "examples", title: "Examples", depth: 2 },
+          { kind: "demo", id: "basic", title: "Basic", depth: 3 },
+        ],
+      })
+    );
     const headings = markdown.split("\n").filter((line) => /^#{1,3} /u.test(line));
     expect(headings).toEqual([
       "# Widget",
@@ -671,25 +673,38 @@ describe("markdown endpoint rendering", () => {
     expect(markdown).not.toContain("- Import:");
   });
 
-  it("splits the page at the site's anchors, with the title, lede and imports alone in `overview`", () => {
-    const sections = componentSections({
+  it("holds the title, the lede and the import of each extra entry alone in `overview`", () => {
+    // The page the generated-output suite reads has one entry, so only this case shows the import lines.
+    const [overview] = componentSections({
       ...component,
       apis: [...component.apis, { slug: "widget-extra", entry: "@elmeragroup/fuse/widget-extra" }],
     });
-    // The ids the page renders: the title, the MDX headings, the demo, the API reference, the
-    // part's table and the tokens heading.
+    expect(overview).toEqual({
+      id: "overview",
+      depth: 2,
+      markdown: '# Widget\n\nA widget.\n\n- Import: `import { ... } from "@elmeragroup/fuse/widget-extra";`',
+    });
+  });
+
+  it("keeps the Examples heading of a page with no titled demo, as the page and its TOC do", () => {
+    // No page is in this state today, so only a hand-built one shows it.
+    const sections = componentSections({
+      ...component,
+      demos: [],
+      sections: [
+        { kind: "heading", id: "usage", title: "Usage", depth: 2 },
+        { kind: "heading", id: "examples", title: "Examples", depth: 2 },
+      ],
+    });
     expect(sections.map(({ id, depth }) => ({ id, depth }))).toEqual([
       { id: "overview", depth: 2 },
       { id: "usage", depth: 2 },
       { id: "examples", depth: 2 },
-      { id: "basic", depth: 3 },
       { id: "api-reference", depth: 2 },
       { id: "api-widget", depth: 3 },
       { id: "tokens-consumed", depth: 2 },
     ]);
-    expect(sections[0]?.markdown).toBe(
-      '# Widget\n\nA widget.\n\n- Import: `import { ... } from "@elmeragroup/fuse/widget-extra";`'
-    );
+    expect(sections[2]?.markdown).toBe("## Examples");
   });
 });
 

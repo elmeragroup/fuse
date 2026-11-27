@@ -405,6 +405,9 @@ importers:
       '@tailwindcss/typography':
         specifier: 'catalog:'
         version: 0.5.20(tailwindcss@4.3.3)
+      '@types/mdast':
+        specifier: 'catalog:'
+        version: 4.0.4
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
@@ -417,6 +420,9 @@ importers:
       effect:
         specifier: 'catalog:'
         version: 4.1.4
+      mdast-util-from-markdown:
+        specifier: 'catalog:'
+        version: 2.0.3(supports-color@8.1.1)
       oxc-parser:
         specifier: 'catalog:'
         version: 0.148.0

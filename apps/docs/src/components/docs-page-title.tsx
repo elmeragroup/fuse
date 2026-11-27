@@ -5,7 +5,7 @@ import { tv } from "tailwind-variants";
 import { OVERVIEW_SECTION_ID } from "../lib/anchors";
 
 const docsPageTitle = tv({
-  base: "text-3xl font-semibold tracking-tight m-0 mb-[0.6rem] font-heading",
+  base: "text-3xl font-semibold tracking-tight m-0 mb-[0.6rem] scroll-mt-[calc(var(--spacing-docs-header)_+_1rem)] font-heading",
 });
 
 type DocsPageTitleProps = ComponentProps<"h1">;

@@ -100,6 +100,26 @@ describe("docs catalog checks", () => {
       problems: ["/components/widget#extra links to /components/gizmo.md, which is no document"],
     },
     {
+      rule: "a relative link to no document",
+      catalog: withWidgetSection("See [Gizmo](./gizmo)."),
+      components: COMPONENTS,
+      problems: ["/components/widget#extra links to ./gizmo, which is no document"],
+    },
+    {
+      rule: "a reference-style link to no document",
+      catalog: withWidgetSection("See [Gizmo][gizmo].\n\n[gizmo]: /components/gizmo"),
+      components: COMPONENTS,
+      problems: ["/components/widget#extra links to /components/gizmo, which is no document"],
+    },
+    {
+      rule: "a `.md` link to a document without sections",
+      catalog: withWidgetSection("See [Theming](/handbook/theming.md)."),
+      components: COMPONENTS,
+      problems: [
+        "/components/widget#extra links to /handbook/theming.md, which is no markdown endpoint: /handbook/theming has no sections",
+      ],
+    },
+    {
       rule: "a link to no section of a document",
       catalog: withWidgetSection("See [the props](/components/widget#api-gizmo)."),
       components: COMPONENTS,
@@ -109,6 +129,21 @@ describe("docs catalog checks", () => {
     },
   ])("rejects $rule", ({ catalog, components, problems }) => {
     expect(catalogProblems(catalog, components)).toEqual(problems);
+  });
+
+  it.each([
+    { link: "a link inside inline code", markdown: "Write `[Gizmo](/components/gizmo)` as text." },
+    {
+      link: "a link inside a fenced block",
+      markdown: "```md\n[Gizmo](/components/gizmo)\n```",
+    },
+    {
+      link: "a link with a query and a fragment",
+      markdown: "See [the part](/components/widget.md?plain=1#api-widget) and [Usage](?tab=code#usage).",
+    },
+    { link: "a link to another origin", markdown: "See [Base UI](https://base-ui.com/react/overview)." },
+  ])("accepts $link", ({ markdown }) => {
+    expect(catalogProblems(withWidgetSection(markdown), COMPONENTS)).toEqual([]);
   });
 
   it("accepts a section of exactly 50,000 characters", () => {

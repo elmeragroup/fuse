@@ -24,6 +24,16 @@ export const generatedDir = path.join(docsRoot, "src/generated");
 /** Static markdown endpoints, served from `/components/<slug>.md`. */
 export const markdownOutDir = path.join(docsRoot, "public/components");
 
+/**
+ * The file a document's markdown endpoint is served from, `<href>.md` under `public`.
+ *
+ * @param href - The document's site-relative href, such as `/components/button`.
+ * @returns The absolute path of its `.md` file.
+ */
+export function markdownEndpointFile(href: string): string {
+  return path.join(docsRoot, "public", `${href}.md`);
+}
+
 /** The `(docs)` route group, where every nav destination must have a `page.tsx`. */
 export const docsRouteGroup = path.join(docsRoot, "src/app/(docs)");
 
