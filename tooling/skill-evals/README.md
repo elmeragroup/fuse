@@ -48,8 +48,8 @@ pnpm skill-evals --skip-agent                     # set up and check the untouch
 ## What it costs
 
 With `claude-sonnet-5-5` in November 2026, one agent run of these tasks cost between $0.05 and
-$0.22, and a full pass of five tasks and two arms cost $1.26 to $1.33. The report sums what every
-run cost, and `--max-budget-usd` caps each run.
+$0.24, and a full pass of five tasks and two arms cost $1.17 to $1.61. The report sums what every
+run cost, and `--max-budget-usd` caps each run. `--skip-agent` costs nothing.
 
 ## What a pass does
 
