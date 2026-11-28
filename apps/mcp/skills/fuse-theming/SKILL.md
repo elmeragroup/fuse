@@ -9,7 +9,7 @@ Every href below is a `read_doc` argument. Pass several in one call.
 
 ## Steps
 
-Do the steps the request needs: step 1 to keep the app's own tokens, steps 2 to 4 to set or change a document's theme or density, and steps 2 and 5 to re-theme part of a page.
+Do the steps the request needs. Step 1 keeps the app's own tokens. Step 2 resolves a theme from a brand, a segment or an identity. Step 3 chooses or changes a document's density. Step 4 sets up a document or changes its theme, and its check also closes a density change. Step 5 re-themes part of a page, after step 2 when the request does not give the part's theme in full.
 
 1. To keep the app's own tokens, read `/handbook/theming#own-tokens`. Done when the app sets every role token in the Tokens consumed section, such as `/components/button#tokens-consumed`, of each component it renders; a page without one reads none.
 2. Read `/handbook/theming#three-axes`, `/handbook/brands-and-segments#brands` and `/handbook/brands-and-segments#pinned-brands`. Map the request onto the three axes; the brands table gives a brand's code. Ask about any axis the user and the project leave open. With nobody to ask, choose it yourself and say in your answer which choice you made. Done when you have one identity, one brand code and one segment whose slug `/handbook/brands-and-segments#the-twenty-four` lists.

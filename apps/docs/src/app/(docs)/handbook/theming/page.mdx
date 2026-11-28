@@ -507,8 +507,8 @@ entry through transformIndexHtml with order set to post. The apps/static-theme f
 this adapter.
 
 Vite's React template sets `--border` and `--accent` on `:root` in `src/index.css`, and both are names
-of Fuse role tokens. When that stylesheet loads after `themes.css`, its `:root` rule beats a neutral
-theme, so delete those variables or rename them.
+of Fuse role tokens. When that stylesheet loads after `themes.css`, its `:root` rule overrides both
+tokens in the neutral light theme, so delete those variables or rename them.
 
 1. Import documentAttributes and colorSchemeScriptSource in vite.config.ts, and pass the page's
    density explicitly. Use the same document options as the React provider. Keep these calls out of
