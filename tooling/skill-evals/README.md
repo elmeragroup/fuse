@@ -87,20 +87,23 @@ run cost, and `--max-budget-usd` caps each run. `--skip-agent` costs nothing.
 
 ## What counts
 
-A cell ends in one of four states:
+Each cell has one outcome, the first of these that applies:
 
 - `not-started`: the install, the server, the agent's launch or the session's connection to the
   Fuse server failed.
 - `unfinished`: the agent ran but stopped at the budget or the timeout, exited with an error, or
   ended on a result that is not a success.
-- `finished`: `claude` exited 0 after a successful result.
-- `agent-skipped`: the pass ran with `--skip-agent`.
+- `set-apart`: the agent finished, but the with-skill agent did not receive the skill's text before
+  its first `Edit` or `Write` call, or a tool call names the checkout, the run's folder, another
+  cell's folder, or a `SKILL.md` outside a `skill://` read. A file tool's path inside the cell's own
+  folder never counts, whatever the file's name.
+- `counted`: everything else, including every cell of a `--skip-agent` pass.
 
-A cell is also set apart when the with-skill agent never received the skill's text, or when any
-agent's tool call names the checkout, the run's folder, another cell's folder, or a `SKILL.md`
-outside a `skill://` read. Only `finished` and `agent-skipped` cells that nothing set apart are
-samples. Every check ratio and mean counts samples alone, and the report lists the other cells with
-their reasons. A run stopped by the timeout reports no cost, so the pass's cost is then a subtotal.
+`cell.json` lists the reasons that set a cell apart whatever its outcome, so an unfinished run
+that also missed the skill shows both. Every check ratio and mean counts the `counted` cells alone,
+and the report lists the other cells with their reasons. The pass's cost is a subtotal while a run
+stopped by the timeout has no reported cost, or while a cell that began has no record, as after
+Ctrl-C.
 
 ## The checks
 
@@ -108,7 +111,8 @@ The runner decides these after the agent stops. Scripts are read with `oxc-parse
 without their comments, so a commented-out line never counts.
 
 - `pnpm exec tsc -b` exits 0.
-- `pnpm run build` exits 0. It runs on a clean `dist`.
+- `pnpm run build` exits 0. It runs on a clean `dist`. When the build fails, or the old `dist`
+  cannot be removed, every check that reads built files fails with that reason.
 - The built `index.html` has the task's theme and density attributes on its first `<html>` start
   tag outside a comment, each written once, so they hold before any script runs.
 - The build ships Fuse's CSS. The built page links a stylesheet that styles every `data-slot` the
@@ -116,10 +120,12 @@ without their comments, so a commented-out line never counts.
   entry reaches imports `@elmeragroup/fuse/css`, and a positive `@source` in such a sheet reaches
   the installed package. In an app without Tailwind, a module the entry reaches imports
   `@elmeragroup/fuse/styles.css`. Both reach `themes.css`.
-- Every `@elmeragroup/fuse` import resolves to a file, by Node's resolver from the app's folder.
-- Each of the task's source checks: an element of a component imported from `@elmeragroup/fuse`
-  renders, such a component carries a prop with a given value, or no stylesheet declares a given
-  custom property.
+- Every `@elmeragroup/fuse` import resolves to a file, by Node's resolver from the app's folder. A
+  Vite query such as `?url` is removed first.
+- Each of the task's source checks: the source holds an element of a component imported from
+  `@elmeragroup/fuse`, such an element carries a prop with a given value, or no stylesheet declares
+  a given custom property. These read the source, so they cannot show what the page renders: a
+  build may drop an element the source holds. #1189 checks the rendered page.
 
 It also records turns, tool calls by tool, the skill reads and whether each returned the skill's
 text, duration and cost from the CLI's stream, and the `@elmeragroup/fuse` version each app
@@ -137,8 +143,21 @@ The run's folder holds:
 - `<task>/<arm>-<n>/`, each cell's app without `node_modules`, its `cell.json`, the agent's
   `transcript.jsonl` and its stderr.
 
-One writer rewrites `report.md` and `results.json` after each cell, replacing each file whole, so
-a stopped pass keeps what it finished.
+One writer rewrites `report.md` and `results.json` when each cell begins and ends, replacing each
+file whole, so a stopped pass keeps what it finished.
+
+## What it leaves behind
+
+The runner stops the agent's and the server's process groups when a cell ends. A process the
+agent detached from its group, such as a preview server started with `nohup` or `setsid`, outlives
+the cell. Its working folder is the cell's deleted temporary folder, so find it by that folder's
+name:
+
+```sh
+lsof -d cwd | grep fuse-skill-eval-cell-
+```
+
+Stop each one by its PID.
 
 ## Add a task
 
