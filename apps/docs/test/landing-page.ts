@@ -13,7 +13,7 @@ type LandingOptions = {
   readonly shaders?: boolean;
   /** The context's reduced-motion preference. Only a test that checks motion allows it. */
   readonly reducedMotion?: "reduce" | "no-preference";
-  /** The context's colour-scheme preference, which the landing's theme follows. */
+  /** The context's color-scheme preference, which the landing's theme follows. */
   readonly colorScheme?: "light" | "dark";
   /** Runs before navigation, for routes, clocks, permissions and init scripts. */
   readonly prepare?: (page: Page) => Promise<void>;

@@ -115,10 +115,10 @@ describe("search on the generated catalog", () => {
     expect(hrefs("line chart step before", 1)).toEqual(["/components/line-chart#step-before"]);
   });
 
-  // ColorSchemeScript is documented in the colour-scheme section. The TanStack and Vite sections both
+  // ColorSchemeScript is documented in the color-scheme section. The TanStack and Vite sections both
   // call colorSchemeScriptSource, and the TanStack one comes first and shows the call in its code.
   it.each([
-    { query: "ColorSchemeScript", href: "/handbook/theming#colour-scheme" },
+    { query: "ColorSchemeScript", href: "/handbook/theming#color-scheme" },
     { query: "colorSchemeScriptSource", href: "/handbook/theming#tanstack-start" },
   ])("lands the export $query on the section that documents it", ({ query, href }) => {
     expect(hrefs(query, 1)).toEqual([href]);

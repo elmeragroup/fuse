@@ -43,6 +43,14 @@ import "@elmeragroup/fuse/styles.css";
 import "@elmeragroup/fuse/themes.css";
 ```
 
+<h3 id="tailwind-v4-build">Does the build compile Tailwind v4?</h3>
+
+A build compiles Tailwind v4 when it runs Tailwind's compiler over a stylesheet that imports
+`tailwindcss` or one of Tailwind's own sheets, such as `tailwindcss/utilities.css`. The compiler is the
+`@tailwindcss/vite` or `@tailwindcss/postcss` plugin in the build config, or the `@tailwindcss/cli`
+command in a script. Such a build takes Fuse's Tailwind source, and any other build takes the
+standalone stylesheet.
+
 <h2 id="temporal">Temporal for dates</h2>
 
 Fuse's Temporal date code reads `Temporal` from `globalThis` when it runs, and not every engine Fuse
