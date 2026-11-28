@@ -96,14 +96,14 @@
           "expect": "match"
         },
         {
-          "name": "A button takes the isPending prop",
-          "pattern": "\\bisPending=\\{",
+          "name": "The confirm control shows a pending state",
+          "pattern": "\\b(?:isPending|isPerformingAction)=\\{",
           "expect": "match"
         }
       ],
       "expectations": [
         "Each control's label and error message are wired through a field component or Field.Root.",
-        "The dialog's trigger or confirm control is a Fuse Button.",
+        "The control that opens the dialog is a Fuse Button.",
         "Every prop passed to a Fuse part appears on its docs page, or is a forwarded native attribute or event handler."
       ]
     },
