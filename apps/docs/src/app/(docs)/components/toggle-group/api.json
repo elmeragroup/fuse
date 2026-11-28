@@ -10,7 +10,7 @@
         "@base-ui/react",
         "@types/react"
       ],
-      "forwardedCount": 276,
+      "forwardedCount": 275,
       "props": [
         {
           "name": "className",
@@ -75,6 +75,19 @@
           "defaultValue": null,
           "description": "Callback fired when the pressed states of the toggle group changes.",
           "required": false
+        },
+        {
+          "name": "orientation",
+          "origin": "declared",
+          "type": "Orientation | undefined",
+          "shortType": null,
+          "defaultValue": "\"horizontal\"",
+          "description": "The direction the items run in. `horizontal` lays them out in a row, and `vertical` in a column that stretches every item to the group's width. Outside a `Toolbar.Root`, Left and Right move focus in a horizontal group, and Up and Down in a vertical one. Inside it, the toolbar's `orientation` decides the arrow keys.",
+          "required": false,
+          "values": [
+            "horizontal",
+            "vertical"
+          ]
         },
         {
           "name": "render",
