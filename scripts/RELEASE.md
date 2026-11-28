@@ -23,6 +23,9 @@ Publishing and version-PR creation are disabled until the repository variable
    `RELEASE_ENABLED=true`.
 5. Verify that the next push to `main` publishes a canary, sets the `canary` dist-tag
    and creates its GitHub release record. Verify `latest` after the first stable release.
+   Then set `INSTALL_COMMAND` in `apps/docs/src/lib/docs-model.ts` and the root README's
+   install line back to the bare package name. Until then both name `@canary`, because
+   `latest` still points at the first canary.
 
 Keep publishing enabled while a Version Packages PR is open. Merging that PR while
 publishing is disabled consumes the changesets without publishing the version.

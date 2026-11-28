@@ -102,8 +102,10 @@ const BASE_UI_PACKAGE_NAME = "@base-ui/react";
  * and by every failure that blames a stale or missing one. */
 export const API_REGEN_COMMAND = "pnpm --filter docs generate";
 
-/** The one install command the quick start and the landing page show. */
-export const INSTALL_COMMAND = "pnpm add @elmeragroup/fuse";
+/** The one install command the quick start and the landing page show. It names the `canary` tag
+ * because npm's `latest` tag stays on the first canary until the first stable release, when the
+ * command goes back to the bare package name (`scripts/RELEASE.md`). */
+export const INSTALL_COMMAND = "pnpm add @elmeragroup/fuse@canary";
 
 /** A CSS custom property the component's recipe reads. */
 export type TokenRef = {

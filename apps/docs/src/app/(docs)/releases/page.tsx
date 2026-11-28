@@ -13,52 +13,49 @@ export default function ReleasesPage(): ReactElement {
     <DocsPage href={HREF}>
       <h2 id="current-readiness">Current readiness</h2>
       <p>
-        Automated npm publishing and per-PR preview infrastructure are <strong>not active yet</strong>.
-        Publishing stays off until activation: npm needs a trusted-publisher entry for the{" "}
-        <code>merge.yml</code> workflow in the <code>npm</code> environment, and the repository needs the{" "}
-        <code>RELEASE_ENABLED</code> variable, alongside the pending org and repository setup (the{" "}
-        <code>@elmeragroup/fuse</code> name claim, the repository going public, and required org 2FA). Until
-        then nothing publishes and no release PR is opened. Per-PR installable package previews and docs
-        previews are planned, not available for every PR today; they wait on Vercel and pkg-pr-new.
+        Automated npm publishing is <strong>active</strong>. Merges to <code>main</code> that change the
+        package publish canaries, and the bot opens a Version Packages PR while changesets are pending. No
+        stable version has shipped yet. Per-PR installable package previews and docs previews are planned, not
+        available for every PR today; they wait on Vercel and pkg-pr-new.
       </p>
 
       <h2 id="release-flow">Release flow</h2>
       <p>
         Add a changeset with <code>pnpm changeset</code> for every PR that changes published behaviour,
         including API, styles, tokens, types, and shipped strings. Internal-only PRs use the{" "}
-        <code>no-changeset</code> label instead. Pending notes accumulate on <code>main</code>. Once
-        publishing is activated, every push publishes a canary and the bot opens or updates the Version
-        Packages PR by applying the pending notes (<code>pnpm release:version</code>,{" "}
-        <code>changeset version</code> plus a lockfile refresh); merging that PR publishes the stable line.
-        The changelog is generated and never hand-edited; the rest of the procedure lives in the{" "}
+        <code>no-changeset</code> label instead. Pending notes accumulate on <code>main</code>. A push that
+        changes the package publishes a canary, and the bot opens or updates the Version Packages PR by
+        applying the pending notes (<code>pnpm release:version</code>, <code>changeset version</code> plus a
+        lockfile refresh); merging that PR publishes the stable line. The changelog is generated and never
+        hand-edited; the rest of the procedure lives in the{" "}
         <Link href="https://github.com/elmeragroup/fuse/blob/main/scripts/RELEASE.md" rel="noreferrer">
           release runbook
         </Link>
         .
       </p>
       <p>
-        <strong>Publishing is a CI action, gated on activation.</strong> Once activated, every ordinary merge
-        publishes a canary, and stable releases ship by merging the Version Packages PR; a failed publication
-        is retried from its recorded archive. The pipeline authenticates to npm through trusted publishing
-        (OIDC), and its publish job holds no long-lived npm credential. Local publishing remains outside this
-        flow.
+        <strong>Publishing is a CI action.</strong> A merge that changes the package publishes a canary, and
+        stable releases ship by merging the Version Packages PR; a failed publication is retried from its
+        recorded archive. The pipeline authenticates to npm through trusted publishing (OIDC), and its publish
+        job holds no long-lived npm credential. Local publishing remains outside this flow.
       </p>
 
       <h2 id="channels">Channels</h2>
       <ul>
         <li>
           <strong>
-            <code>latest</code> (designed)
+            <code>canary</code>
           </strong>{" "}
-          — target dist-tag for stable releases from <code>main</code>. Not a live npm channel today.
+          — the live prerelease channel. A merge to <code>main</code> that changes the package publishes{" "}
+          <code>x.y.z-canary.N</code> under this tag. Install it with{" "}
+          <code>pnpm add @elmeragroup/fuse@canary</code>.
         </li>
         <li>
           <strong>
-            <code>canary</code> (designed)
+            <code>latest</code>
           </strong>{" "}
-          — target prerelease channel; each activated merge to <code>main</code> publishes{" "}
-          <code>x.y.z-canary.N</code>. Prerelease versions never move the <code>latest</code> tag. Not a live
-          npm channel today.
+          — the dist-tag for stable releases from <code>main</code>. Prerelease versions never move it, so
+          until the first stable release it names the first canary, <code>0.1.0-canary.1</code>.
         </li>
         <li>
           <strong>Per-PR previews (planned)</strong> — an installable build of each PR so a consuming app can
@@ -69,10 +66,8 @@ export default function ReleasesPage(): ReactElement {
 
       <h2 id="publish-gates">Publish gates</h2>
       <p>
-        Once activated, the release workflow packs the tarball once and publishes only when these gates pass
-        against those exact bytes. Nothing publishes today; see{" "}
-        <Link href="#current-readiness">Current readiness</Link>. Until activation these are intended publish
-        gates, not an active release workflow.
+        The release workflow packs the tarball once and publishes only when these gates pass against those
+        exact bytes.
       </p>
 
       <h3 id="active-gates">Active publish gates</h3>

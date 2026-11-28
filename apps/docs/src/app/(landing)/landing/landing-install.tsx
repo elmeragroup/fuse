@@ -22,7 +22,7 @@ const landingInstall = tv({
     title: "text-5xl sm:text-landing-h2 tracking-landing-hero font-semibold font-heading",
     lede: "text-base sm:text-lg leading-relaxed max-w-125 text-pretty text-muted-foreground",
     command:
-      "text-sm flex h-(--control-h-lg) w-full max-w-110 items-center gap-3 rounded-(--radius-button) border border-border bg-card pr-1.5 pl-4 font-mono text-card-foreground",
+      "text-xs sm:text-sm flex h-(--control-h-lg) w-full max-w-110 items-center gap-3 rounded-(--radius-button) border border-border bg-card pr-1.5 pl-4 font-mono text-card-foreground",
     commandText: "min-w-0 flex-1 truncate select-all",
     links: "flex flex-wrap gap-x-6 gap-y-2",
     stage: "relative h-90 lg:h-auto",
