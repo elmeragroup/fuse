@@ -96,8 +96,8 @@
           "expect": "match"
         },
         {
-          "name": "A button takes the pending prop",
-          "pattern": "\\bpending=\\{",
+          "name": "A button takes the isPending prop",
+          "pattern": "\\bisPending=\\{",
           "expect": "match"
         }
       ],
