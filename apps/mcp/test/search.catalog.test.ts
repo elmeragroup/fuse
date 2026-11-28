@@ -124,6 +124,20 @@ describe("search on the generated catalog", () => {
     expect(hrefs(query, 1)).toEqual([href]);
   });
 
+  it.each([
+    { query: "kanban board drag and drop", lacks: ["kanban", "board"] },
+    { query: "rich text editor", lacks: ["rich", "editor"] },
+  ])("names the words that $query's best hit lacks", ({ query, lacks }) => {
+    expect(search(index, query, 1)[0]?.missing).toEqual(lacks);
+  });
+
+  it.each(["button pending", "Chart.Line", "date picker", "set up", "how do I import a dialog"])(
+    "marks no word missing from the best hit for %s",
+    (query) => {
+      expect(search(index, query, 1)[0]?.missing).toEqual([]);
+    }
+  );
+
   it("answers applying a brand theme with the section on setting the document theme", () => {
     expect(hrefs("how do I apply a brand theme", 1)).toEqual(["/handbook/theming#document-theme"]);
   });

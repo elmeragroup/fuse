@@ -23,6 +23,12 @@ export type Hit = {
   readonly href: string;
   /** Text around the match that picked the section, at most {@link EXCERPT_LENGTH} characters. */
   readonly excerpt: string;
+  /**
+   * The query's words, as written, that neither the page's title, keywords and description nor the
+   * section holds. Empty when the hit matches the whole query. Stop words and the words that ask
+   * for the API never count.
+   */
+  readonly missing: readonly string[];
 };
 
 /** The most characters of an excerpt. */
@@ -306,6 +312,11 @@ type Query = {
   readonly wantsApi: boolean;
   /** The query's words as written, for excerpts. */
   readonly words: readonly string[];
+  /**
+   * The query's words as written, each with the terms it adds to the query. A phrase an alias
+   * rewrites is one entry, so `set up` stands for `install`, `quick` and `start`.
+   */
+  readonly written: readonly { readonly text: string; readonly terms: readonly string[] }[];
   /** The words written as identifiers, with a dot or an inner capital, such as `onValueChange`. */
   readonly identifiers: readonly {
     readonly lower: string;
@@ -583,11 +594,13 @@ function hitOf(candidate: PageCandidate, query: Query): Hit {
   const { entry, section, rest } = candidate;
   const { document } = entry;
   const matched = rest.length > 0 ? rest : query.terms;
+  const missing = missingWords(entry, section, query);
   if (section === undefined) {
     return {
       title: document.title,
       href: document.href,
       excerpt: excerptOf(document.description, query, matched),
+      missing,
     };
   }
   const fields = [section.prose, section.code];
@@ -599,7 +612,22 @@ function hitOf(candidate: PageCandidate, query: Query): Hit {
     title: section === entry.sections[0] ? document.title : `${document.title} › ${section.heading}`,
     href: `${document.href}#${section.id}`,
     excerpt: excerptOf(text, query, matched),
+    missing,
   };
+}
+
+/**
+ * The query's words as written that a hit lacks. A word counts as held when the page's fields or
+ * the section the hit shows hold each of its terms, its code included, because code admits a
+ * section and can hold the excerpt. The ranking never reads this list.
+ */
+function missingWords(
+  entry: IndexedDocument,
+  section: IndexedSection | undefined,
+  query: Query
+): readonly string[] {
+  const held = (term: string) => holds(entry, section, term) || section?.code.counts.has(term) === true;
+  return query.written.filter((word) => !word.terms.every(held)).map((word) => word.text);
 }
 
 /**
@@ -620,6 +648,32 @@ function withAliases(query: string): string {
   return ALIASES.reduce((text, [phrase, words]) => text.replace(phrase, words), query);
 }
 
+/**
+ * A query's words as written, each with the terms it adds. A phrase an alias rewrites is one
+ * entry with the terms of its rewrite. Stop words, API words and repeats drop out.
+ */
+function writtenWords(text: string): Query["written"] {
+  const phrases = ALIASES.flatMap(([phrase, words]) =>
+    [...text.matchAll(phrase)].map((match) => ({
+      start: match.index,
+      end: match.index + match[0].length,
+      text: match[0],
+      terms: terms(match[0].replace(phrase, words)),
+    }))
+  );
+  const inPhrase = (match: RegExpExecArray) =>
+    phrases.some((phrase) => match.index < phrase.end && match.index + match[0].length > phrase.start);
+  const words = [...text.matchAll(/\S+/gu)]
+    .filter((match) => !inPhrase(match))
+    .map((match) => ({ start: match.index, text: trimWord(match[0]), terms: terms(match[0]) }));
+  const byText = new Map<string, readonly string[]>();
+  for (const entry of [...phrases, ...words].toSorted((left, right) => left.start - right.start)) {
+    const kept = entry.terms.filter((term) => !API_WORDS.has(term));
+    if (kept.length > 0 && !byText.has(entry.text)) byText.set(entry.text, kept);
+  }
+  return [...byText].map(([written, wordTerms]) => ({ text: written, terms: wordTerms }));
+}
+
 /** A written word without the punctuation around it, such as `Select.Root` from `"Select.Root",`. */
 function trimWord(word: string): string {
   return word.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/gu, "");
@@ -637,6 +691,7 @@ function readQuery(text: string): Query {
       .split(/[^a-z]+/u)
       .some((word) => API_WORDS.has(stem(word))),
     words: written,
+    written: writtenWords(text),
     identifiers: written
       .filter((word) => /\.|[a-z0-9][A-Z]/u.test(word))
       .map((word) => {
@@ -645,6 +700,29 @@ function readQuery(text: string): Query {
         return { lower, terms: terms(word), whole };
       }),
   };
+}
+
+/**
+ * Whether some page holds every word of a query, in its title, keywords or description or in any
+ * of its sections. A hit names the words its own section lacks, and this tells whether a page
+ * holds them at all, so a page that spreads the words over two sections counts.
+ *
+ * @param index - The index from {@link buildIndex}.
+ * @param query - The query text.
+ * @returns True when a page holds each term of the query, and false for a query without terms.
+ */
+export function somePageHoldsAll(index: SearchIndex, query: string): boolean {
+  const { terms: wanted } = readQuery(query);
+  return (
+    wanted.length > 0 &&
+    index.documents.some((entry) =>
+      wanted.every(
+        (term) =>
+          holds(entry, undefined, term) ||
+          entry.sections.some((section) => holds(entry, section, term) || section.code.counts.has(term))
+      )
+    )
+  );
 }
 
 /**

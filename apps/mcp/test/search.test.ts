@@ -76,8 +76,18 @@ describe("search", () => {
         title: "Button › Disabled",
         href: "/components/button#disabled",
         excerpt: "A disabled button ignores presses.",
+        missing: [],
       },
     ]);
+  });
+
+  it.each([
+    { query: "Pending Buttons with themes", href: "/components/button#pending", missing: ["themes"] },
+    { query: "button getting started", href: "/components/button#overview", missing: ["getting started"] },
+    { query: "set up a kanban board", href: "/quick-start", missing: ["kanban", "board"] },
+  ])("names the words $missing, as written, that the hit for $query lacks", ({ query, href, missing }) => {
+    const hit = search(index, query, 8).find((candidate) => candidate.href === href);
+    expect(hit?.missing).toEqual(missing);
   });
 
   it("cuts an excerpt to 300 characters around the word that matched", () => {

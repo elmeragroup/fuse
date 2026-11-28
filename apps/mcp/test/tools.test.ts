@@ -285,6 +285,25 @@ describe("search_docs", () => {
     }).pipe(Effect.scoped)
   );
 
+  it.effect("opens with a line that no page matches, and names the words a hit lacks", () =>
+    Effect.gen(function* () {
+      const { blocks } = yield* call("search_docs", { query: "button kanban", limit: 1 });
+      assert.deepStrictEqual(blocks, [
+        'No page matches every word of "button kanban".\n\n1. Button\n   /components/button#overview\n   Missing: "kanban"\n   Triggers an action.',
+      ]);
+    }).pipe(Effect.scoped)
+  );
+
+  it.effect("names the words a hit lacks without the opening line when one page holds them all", () =>
+    Effect.gen(function* () {
+      // The Button page holds "spinner" in #pending and "ignores" in #disabled.
+      const { blocks } = yield* call("search_docs", { query: "spinner ignores", limit: 1 });
+      assert.deepStrictEqual(blocks, [
+        '1. Button › Disabled\n   /components/button#disabled\n   Missing: "spinner"\n   A disabled button ignores presses.',
+      ]);
+    }).pipe(Effect.scoped)
+  );
+
   it.effect("answers arguments outside the bounds with an error result", () =>
     Effect.gen(function* () {
       const results = [

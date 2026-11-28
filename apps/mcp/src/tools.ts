@@ -85,15 +85,28 @@ function handler<S extends Schema.Top & { readonly DecodingServices: never }>(
     );
 }
 
-/** The lines `search_docs` answers with. */
+/** The line under a hit's href that names the query words it lacks, or nothing for a full match. */
+function missingLine(hit: Search.Hit): string {
+  if (hit.missing.length === 0) return "";
+  return `\n   Missing: ${hit.missing.map((word) => `"${word}"`).join(", ")}`;
+}
+
+/**
+ * The lines `search_docs` answers with. When the best hit lacks a word and no page holds every
+ * word, the answer opens by saying so, because then the docs do not cover the query.
+ */
 function searchAnswer(index: Search.SearchIndex, query: string, limit: number): string {
   const hits = Search.search(index, query, limit);
   if (hits.length === 0) {
     return `Nothing matches "${query}". Try other words, or read /llms.txt for the list of every page.`;
   }
-  return hits
-    .map((hit, rank) => `${String(rank + 1)}. ${hit.title}\n   ${hit.href}\n   ${hit.excerpt}`)
+  const list = hits
+    .map(
+      (hit, rank) => `${String(rank + 1)}. ${hit.title}\n   ${hit.href}${missingLine(hit)}\n   ${hit.excerpt}`
+    )
     .join("\n\n");
+  const uncovered = (hits[0]?.missing.length ?? 0) > 0 && !Search.somePageHoldsAll(index, query);
+  return uncovered ? `No page matches every word of "${query}".\n\n${list}` : list;
 }
 
 /** Registers `search_docs` and `read_doc` on the server, over the decoded catalog. */
@@ -106,7 +119,7 @@ export const ToolsLive = Layer.effectDiscard(
         name: "search_docs",
         title: "Search the Fuse docs",
         description:
-          "Searches the Fuse docs, which hold a page per component with its API reference and examples, and the handbook. Each result is a page title, an href to the best-matching section, and an excerpt. Pass the href to read_doc.",
+          'Searches the Fuse docs, which hold a page per component with its API reference and examples, and the handbook. Each result is a page title, an href to the best-matching section, and an excerpt. A result that lacks some of the query\'s words has a Missing line that names them, and an answer that opens with "No page matches every word" found no page that holds them all, so the docs may not cover what you asked. Pass the href to read_doc.',
         inputSchema: inputSchemaOf(SearchDocsInput),
         annotations: READ_ONLY,
       }),
