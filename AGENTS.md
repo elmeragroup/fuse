@@ -55,8 +55,8 @@ a fact the docs own, it names the `read_doc` href with its section, such as `/qu
 or `/components/<name>#usage` for every component page; `test:catalog` checks each one against the
 generated catalog. Keep skill files static, with no generated text, version or date, because a
 client revokes its user's approval of a skill when one byte changes. The skill names are fixed.
-Before changing a skill, compare it with its no-skill baseline through `pnpm skill-evals`, which
-[its README](tooling/skill-evals/README.md) describes.
+Before changing a shipped skill, use the [skill evals](tooling/skill-evals/README.md) to compare each
+affected task with and without it.
 
 ## Documentation
 
