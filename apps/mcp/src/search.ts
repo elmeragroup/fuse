@@ -773,8 +773,8 @@ function readQuery(text: string): Query {
  * @param query - The query text.
  * @param limit - The most hits to return.
  * @returns Up to `limit` hits, best first, one per document, and whether any page holds every term
- *   of the query. Equal scores keep catalog order. No hits when the query has no terms or nothing
- *   matches.
+ *   the query's written words stand for. Equal scores keep catalog order. No hits when the query
+ *   has no terms or nothing matches.
  */
 export function search(index: SearchIndex, query: string, limit: number): Results {
   const parsed = readQuery(query);
