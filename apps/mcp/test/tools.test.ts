@@ -285,11 +285,11 @@ describe("search_docs", () => {
     }).pipe(Effect.scoped)
   );
 
-  it.effect("opens with a line that no page matches, and names the words a hit lacks", () =>
+  it.effect("opens with a line that no page holds every word, and names the words a hit lacks", () =>
     Effect.gen(function* () {
       const { blocks } = yield* call("search_docs", { query: "button kanban", limit: 1 });
       assert.deepStrictEqual(blocks, [
-        'No page matches every word of "button kanban".\n\n1. Button\n   /components/button#overview\n   Missing: "kanban"\n   Triggers an action.',
+        'No page holds every word of the query, and other words may find what it asks for.\n\n1. Button\n   /components/button#overview\n   Missing: "kanban"\n   Triggers an action.',
       ]);
     }).pipe(Effect.scoped)
   );
