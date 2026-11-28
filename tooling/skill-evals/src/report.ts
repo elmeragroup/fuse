@@ -1,21 +1,33 @@
 /**
- * The run's report: one markdown table per task with both arms side by side, and the run record
- * the JSON file holds.
+ * The run's report: one markdown section per task with both arms side by side, and the run record
+ * the JSON file holds. A cell is a sample only when it finished, or skipped the agent, and nothing
+ * set it apart; every ratio and mean counts samples alone, and the other cells are listed.
  */
 
 import type { CellResult } from "./cell.ts";
+import type { CheckResult } from "./checks.ts";
 import { ARMS } from "./task.ts";
 import type { Arm, Task } from "./task.ts";
+
+/** A hash of one input, so two reports can be compared. */
+export type InputDigest = { readonly name: string; readonly sha256: string };
 
 /** Where the run's inputs came from. */
 export type RunProvenance = {
   readonly model: string;
-  /** The checkout's commit at run time, which the catalog is assumed to come from. */
-  readonly commit: string;
-  /** Files that differ from that commit in the checkout the catalog was generated in. */
+  /** The checkout's commit at run time. */
+  readonly checkoutCommit: string;
+  /** Files that differ from that commit in the checkout at run time. */
   readonly uncommitted: readonly string[];
   /** The install command the catalog tells agents to run. */
   readonly installCommand: string | undefined;
+  /** What `claude --version` printed. */
+  readonly claudeVersion: string;
+  /**
+   * The pass's snapshot: the server bundle, the catalog, each skill file, the task file and each
+   * fixture's frozen lockfile.
+   */
+  readonly inputs: readonly InputDigest[];
   readonly startedAt: string;
 };
 
@@ -23,8 +35,13 @@ export type RunProvenance = {
 export type RunRecord = RunProvenance & {
   /** Every installed `@elmeragroup/fuse` version, over all cells. */
   readonly fuseVersions: readonly string[];
-  /** What every agent run cost together, in US dollars. */
-  readonly totalCostUsd: number;
+  /**
+   * What the agent runs cost together, in US dollars. A `subtotal` leaves out a run whose cost the
+   * CLI never reported, as after a timeout.
+   */
+  readonly cost: { readonly _tag: "total" | "subtotal"; readonly usd: number };
+  /** The checks on each task's untouched fixture, before any agent ran. */
+  readonly untouched: Readonly<Record<string, readonly CheckResult[]>>;
   readonly cells: readonly CellResult[];
 };
 
@@ -32,22 +49,39 @@ export type RunRecord = RunProvenance & {
  * Builds the run record from the cells finished so far.
  *
  * @param provenance - Where the inputs came from.
+ * @param untouched - The checks on each task's untouched fixture, by task id.
  * @param cells - The finished cells.
  * @returns The record.
  */
-export function runRecord(provenance: RunProvenance, cells: readonly CellResult[]): RunRecord {
+export function runRecord(
+  provenance: RunProvenance,
+  untouched: Readonly<Record<string, readonly CheckResult[]>>,
+  cells: readonly CellResult[]
+): RunRecord {
+  const costs = cells.flatMap((cell) => (cell.agent === undefined ? [] : [cell.agent.cost]));
   return {
     ...provenance,
     fuseVersions: [
       ...new Set(cells.flatMap((cell) => (cell.fuseVersion === undefined ? [] : [cell.fuseVersion]))),
     ].sort(),
-    totalCostUsd: cells.reduce((sum, cell) => sum + costOf(cell), 0),
+    cost: {
+      _tag: costs.some((cost) => cost._tag === "unknown") ? "subtotal" : "total",
+      usd: costs.reduce((sum, cost) => sum + (cost._tag === "known" ? cost.usd : 0), 0),
+    },
+    untouched,
     cells,
   };
 }
 
-function costOf(cell: CellResult): number {
-  return cell.agent?.ending._tag === "finished" ? cell.agent.ending.costUsd : 0;
+/**
+ * Whether a cell counts in its arm's ratios and means: its agent finished, or the run skipped the
+ * agent, and nothing set it apart.
+ */
+function isSample(cell: CellResult): boolean {
+  return (
+    (cell.status._tag === "finished" || cell.status._tag === "agent-skipped") &&
+    cell.sample._tag === "counted"
+  );
 }
 
 const ARM_HEADINGS = {
@@ -62,115 +96,149 @@ function mean(values: readonly number[]): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
-/** One task's table. */
-function taskSection(task: Task, cells: readonly CellResult[]): string {
-  const byArm = new Map(
-    ARMS.map((arm) => [arm, cells.filter((cell) => cell.task === task.id && cell.arm === arm)])
-  );
-  const arms = ARMS.filter((arm) => (byArm.get(arm) ?? []).length > 0);
-  if (arms.length === 0) return "";
-  const column = (arm: Arm) => byArm.get(arm) ?? [];
-  const row = (label: string, value: (cells: readonly CellResult[]) => string) =>
-    `| ${label} | ${arms.map((arm) => value(column(arm))).join(" | ")} |`;
+function firstLine(text: string): string {
+  const line = text.split("\n").find((item) => item.trim() !== "") ?? "";
+  return line.length > 200 ? `${line.slice(0, 200)}…` : line;
+}
 
-  const checkNames = [
-    ...new Set(
-      cells.filter((cell) => cell.task === task.id).flatMap((cell) => cell.checks.map((c) => c.name))
-    ),
+/** One task's section. */
+function taskSection(
+  task: Task,
+  cells: readonly CellResult[],
+  untouched: readonly CheckResult[] | undefined
+): string {
+  const taskCells = cells.filter((cell) => cell.task === task.id);
+  const arms = ARMS.filter((arm) => taskCells.some((cell) => cell.arm === arm));
+  if (arms.length === 0) return "";
+  const all = (arm: Arm) => taskCells.filter((cell) => cell.arm === arm);
+  const samples = (arm: Arm) => all(arm).filter(isSample);
+  const table = (rows: readonly string[]) => [
+    `| | ${arms.map((arm) => ARM_HEADINGS[arm]).join(" | ")} |`,
+    `|---|${arms.map(() => "---").join("|")}|`,
+    ...rows,
   ];
-  const agents = (group: readonly CellResult[]) =>
-    group.flatMap((cell) => (cell.agent === undefined ? [] : [cell.agent]));
-  const finished = (group: readonly CellResult[]) =>
-    agents(group).flatMap((agent) => (agent.ending._tag === "finished" ? [agent.ending] : []));
+  const row = (label: string, value: (arm: Arm) => string) => `| ${label} | ${arms.map(value).join(" | ")} |`;
+  const passedCount = (arm: Arm, name: string) =>
+    samples(arm).filter((cell) => cell.checks.some((check) => check.name === name && check.passed)).length;
+  const checkRow = (name: string) =>
+    row(name, (arm) => `${String(passedCount(arm, name))}/${String(samples(arm).length)}`);
+
+  const checkNames = [...new Set(taskCells.flatMap((cell) => cell.checks.map((check) => check.name)))];
+  const guards = checkNames.filter(
+    (name) => untouched?.some((check) => check.name === name && check.passed) === true
+  );
+  const own = checkNames.filter((name) => !guards.includes(name));
+
+  const agents = (arm: Arm) => samples(arm).flatMap((cell) => (cell.agent === undefined ? [] : [cell.agent]));
+  const endings = (arm: Arm) =>
+    agents(arm).flatMap((agent) => (agent.run.ending._tag === "result" ? [agent.run.ending] : []));
   const toolNames = [
-    ...new Set(
-      cells
-        .filter((cell) => cell.task === task.id)
-        .flatMap((cell) => Object.keys(cell.agent?.toolCalls ?? {}))
-    ),
+    ...new Set(taskCells.flatMap((cell) => Object.keys(cell.agent?.run.toolCalls ?? {}))),
   ].sort();
+  const statusCount = (arm: Arm) => {
+    const group = all(arm);
+    const count = (tag: CellResult["status"]["_tag"]) =>
+      group.filter((cell) => cell.status._tag === tag).length;
+    const setApart = group.filter((cell) => !isSample(cell) && cell.sample._tag === "set-apart").length;
+    return [
+      `${String(samples(arm).length)} of ${String(group.length)} counted`,
+      ...(count("unfinished") > 0 ? [`${String(count("unfinished"))} unfinished`] : []),
+      ...(count("not-started") > 0 ? [`${String(count("not-started"))} not started`] : []),
+      ...(setApart > 0 ? [`${String(setApart)} set apart`] : []),
+    ].join(", ");
+  };
 
   const lines = [
     `## ${task.id}`,
     "",
-    `Skill \`${task.skill}\`, fixture \`${task.fixture}\`. ${String(Math.max(...arms.map((arm) => column(arm).length)))} run(s) per arm; a check row counts the runs that passed it, and a number is the mean.`,
+    `Skill \`${task.skill}\`, fixture \`${task.fixture}\`. A check row counts the samples that passed it, and a number is the mean over samples. A sample is a run that finished and that nothing set apart.`,
     "",
-    `| | ${arms.map((arm) => ARM_HEADINGS[arm]).join(" | ")} |`,
-    `|---|${arms.map(() => "---").join("|")}|`,
-    row(
-      "Setup",
-      (group) =>
-        `${String(group.filter((cell) => cell.status._tag === "checked").length)}/${String(group.length)} ran`
-    ),
-    ...checkNames.map((name) =>
-      row(name, (group) => {
-        const ran = group.filter((cell) => cell.status._tag === "checked");
-        const passed = ran.filter((cell) => cell.checks.some((check) => check.name === name && check.passed));
-        return `${String(passed.length)}/${String(ran.length)}`;
-      })
-    ),
-    row("Turns", (group) => mean(finished(group).map((ending) => ending.turns))),
-    row("Tool calls", (group) =>
-      mean(
-        agents(group).map((agent) => Object.values(agent.toolCalls).reduce((sum, count) => sum + count, 0))
-      )
-    ),
-    ...toolNames.map((tool) =>
-      row(`&nbsp;&nbsp;${tool.replace(/^mcp__fuse__/u, "fuse ")}`, (group) =>
-        mean(agents(group).map((agent) => agent.toolCalls[tool] ?? 0))
-      )
-    ),
-    row("Duration (s)", (group) =>
-      mean(finished(group).map((ending) => Math.round(ending.durationMs / 1000)))
-    ),
-    row("Cost (USD)", (group) => {
-      const costs = finished(group).map((ending) => ending.costUsd);
-      return costs.length === 0
-        ? "–"
-        : `$${(costs.reduce((sum, cost) => sum + cost, 0) / costs.length).toFixed(2)}`;
-    }),
-    row(
-      "Ended",
-      (group) =>
-        agents(group)
-          .map((agent) => (agent.ending._tag === "finished" ? agent.ending.subtype : "cut off"))
-          .join(", ") || "–"
-    ),
-    row("Server's `skills/list`", (group) =>
-      [
-        ...new Set(
-          group.map((cell) => {
-            if (cell.server === undefined) return "–";
-            return cell.server.skills._tag === "listed"
-              ? `${String(cell.server.skills.uris.length)} skills`
-              : "method not found";
-          })
-        ),
-      ].join(", ")
-    ),
-    row("Skill reads", (group) => mean(agents(group).map((agent) => agent.skillReads.length))),
-    row("`@elmeragroup/fuse`", (group) =>
-      [...new Set(group.map((cell) => cell.fuseVersion ?? "none"))].join(", ")
-    ),
+    ...table([row("Runs", statusCount)]),
+    "",
+    "Holds before the agent runs, on the untouched fixture:",
+    "",
+    ...(guards.length === 0 ? ["None."] : table(guards.map(checkRow))),
+    "",
+    "The task's own checks:",
+    "",
+    ...table([
+      ...own.map(checkRow),
+      row("**Task checks passed**", (arm) => {
+        const passed = samples(arm).reduce(
+          (sum, cell) =>
+            sum +
+            own.filter((name) => cell.checks.some((check) => check.name === name && check.passed)).length,
+          0
+        );
+        return `${String(passed)}/${String(samples(arm).length * own.length)}`;
+      }),
+    ]),
+    "",
+    ...table([
+      row("Turns", (arm) => mean(endings(arm).map((ending) => ending.turns))),
+      row("Tool calls", (arm) =>
+        mean(
+          agents(arm).map((agent) =>
+            Object.values(agent.run.toolCalls).reduce((sum, count) => sum + count, 0)
+          )
+        )
+      ),
+      ...toolNames.map((tool) =>
+        row(`&nbsp;&nbsp;${tool.replace(/^mcp__fuse__/u, "fuse ")}`, (arm) =>
+          mean(agents(arm).map((agent) => agent.run.toolCalls[tool] ?? 0))
+        )
+      ),
+      row("Duration (s)", (arm) => mean(endings(arm).map((ending) => Math.round(ending.durationMs / 1000)))),
+      row("Cost (USD)", (arm) => {
+        const costs = endings(arm).map((ending) => ending.costUsd);
+        return costs.length === 0
+          ? "–"
+          : `$${(costs.reduce((sum, cost) => sum + cost, 0) / costs.length).toFixed(2)}`;
+      }),
+      row("Skill reads received", (arm) =>
+        mean(agents(arm).map((agent) => agent.run.skillReads.filter((read) => read.received).length))
+      ),
+      row("Server's skills", (arm) =>
+        [
+          ...new Set(
+            all(arm).map((cell) => {
+              if (cell.server === undefined) return "–";
+              return cell.server.skills._tag === "listed"
+                ? `${String(cell.server.skills.uris.length)} listed`
+                : "no Skills extension";
+            })
+          ),
+        ].join(", ")
+      ),
+      row("`@elmeragroup/fuse`", (arm) =>
+        [...new Set(all(arm).map((cell) => cell.fuseVersion ?? "none"))].join(", ")
+      ),
+    ]),
   ];
 
-  const failures = arms.flatMap((arm) =>
-    column(arm).flatMap((cell) => [
-      ...(cell.status._tag === "setup-failed"
-        ? [`- ${arm} #${String(cell.repeat)}: setup failed. ${firstLine(cell.status.message)}`]
-        : []),
-      ...cell.checks
-        .filter((check) => !check.passed)
-        .map((check) => `- ${arm} #${String(cell.repeat)}, ${check.name}: ${firstLine(check.detail)}`),
-    ])
+  const notes = arms.flatMap((arm) =>
+    all(arm).flatMap((cell) => {
+      const label = `${arm} #${String(cell.repeat)}`;
+      const status =
+        cell.status._tag === "not-started"
+          ? [`- ${label} did not start: ${firstLine(cell.status.message)}`]
+          : cell.status._tag === "unfinished"
+            ? [`- ${label} did not finish: ${cell.status.reason}`]
+            : [];
+      const apart =
+        cell.sample._tag === "set-apart"
+          ? [`- ${label} is set apart: ${cell.sample.reasons.join("; ")}`]
+          : [];
+      const failed = isSample(cell)
+        ? cell.checks
+            .filter((check) => !check.passed)
+            .map((check) => `- ${label}, ${check.name}: ${firstLine(check.detail)}`)
+        : [];
+      return [...status, ...apart, ...failed];
+    })
   );
-  if (failures.length > 0) lines.push("", "Failed checks:", "", ...failures);
+  if (notes.length > 0) lines.push("", "Cells outside the counts, and failed checks:", "", ...notes);
   return lines.join("\n");
-}
-
-function firstLine(text: string): string {
-  const line = text.split("\n").find((item) => item.trim() !== "") ?? "";
-  return line.length > 200 ? `${line.slice(0, 200)}…` : line;
 }
 
 /**
@@ -184,14 +252,22 @@ export function renderReport(record: RunRecord, tasks: readonly Task[]): string 
   return [
     "# Fuse skill evals",
     "",
-    `- Model: \`${record.model}\``,
+    `- Model: \`${record.model}\`, \`claude\` ${record.claudeVersion}`,
     `- \`@elmeragroup/fuse\` installed: ${record.fuseVersions.map((version) => `\`${version}\``).join(", ") || "none"}`,
-    `- Checkout at run time: \`${record.commit}\`${record.uncommitted.length === 0 ? "" : `, with uncommitted changes to ${record.uncommitted.map((file) => `\`${file}\``).join(", ")}`}`,
+    `- The checkout's commit at run time: \`${record.checkoutCommit}\`${record.uncommitted.length === 0 ? "" : `, with uncommitted changes to ${record.uncommitted.map((file) => `\`${file}\``).join(", ")}`}`,
     `- Install command in the catalog: ${record.installCommand === undefined ? "not found" : `\`${record.installCommand}\``}`,
-    `- Started ${record.startedAt}. Agent cost: $${record.totalCostUsd.toFixed(2)}`,
+    `- Started ${record.startedAt}. Agent cost${record.cost._tag === "subtotal" ? ", a subtotal without the runs whose cost is unknown" : ""}: $${record.cost.usd.toFixed(2)}`,
+    "",
+    "<details><summary>Inputs, by SHA-256</summary>",
+    "",
+    "| Input | SHA-256 |",
+    "|---|---|",
+    ...record.inputs.map((input) => `| \`${input.name}\` | \`${input.sha256.slice(0, 16)}\` |`),
+    "",
+    "</details>",
     "",
     ...tasks
-      .map((task) => taskSection(task, record.cells))
+      .map((task) => taskSection(task, record.cells, record.untouched[task.id]))
       .filter((section) => section !== "")
       .flatMap((section) => [section, ""]),
   ].join("\n");

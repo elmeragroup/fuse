@@ -3,16 +3,21 @@
  * stopped, with its whole process group, when the cell's scope closes.
  */
 
+import * as McpClient from "effect/ai/McpClient";
+import * as McpProtocol from "effect/ai/McpProtocol";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
+import * as FetchHttpClient from "effect/http/FetchHttpClient";
+import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as ChildProcess from "effect/process/ChildProcess";
 import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
+import { randomUUID } from "node:crypto";
 import { createServer } from "node:net";
 
-import { encodeJsonText } from "./json-text.ts";
+import type { Environment } from "./isolation.ts";
 
 /** The server did not start, or did not answer a listing. */
 export class FuseServerFailed extends Schema.TaggedError<FuseServerFailed>()("FuseServerFailed", {
@@ -27,14 +32,21 @@ export type FuseServerOptions = {
   readonly catalogFile: string;
   /** The folder of skill folders the server serves. An empty folder serves none. */
   readonly skillsDirectory: string;
-  /** The commit the server reports as its version. */
-  readonly commit: string;
+  /** The server's whole environment, beside the variables that configure it. */
+  readonly env: Environment;
 };
 
-/** What `skills/list` answers. */
+/** What the server offers for skills. */
 export type SkillListing =
-  | { readonly _tag: "listed"; readonly uris: readonly string[] }
-  | { readonly _tag: "method-not-found" };
+  | {
+      /** The server declares the Skills extension, and `skills/list` answered these URIs. */
+      readonly _tag: "listed";
+      readonly uris: readonly string[];
+    }
+  | {
+      /** The server declares no Skills extension, so no client can list a skill from it. */
+      readonly _tag: "no-extension";
+    };
 
 /** A running server, and what it lists. */
 export type RunningFuseServer = {
@@ -42,10 +54,7 @@ export type RunningFuseServer = {
   readonly url: URL;
   /** The server's process id, which owns its process group. */
   readonly pid: number;
-  /**
-   * What `skills/list` answers: the skill URIs, or `method-not-found` from a server that serves no
-   * skill and so offers no Skills extension.
-   */
+  /** The skills it lists, or that it offers no Skills extension. */
   readonly skills: SkillListing;
   /** The URIs `resources/list` answers. */
   readonly resources: readonly string[];
@@ -77,23 +86,29 @@ const freePort = Effect.callback<number, FuseServerFailed>((resume) => {
  * Starts a server and waits until it answers `GET /healthz`, then reads its skill and resource
  * listings. Closing the scope stops the server's process group.
  *
- * @param options - The bundle, the catalog, the skills folder and the commit.
+ * The free-port probe releases its port before the server binds it, so another process can take
+ * it in between. The server answers `/healthz` with its `FUSE_COMMIT`, so each start passes a new
+ * value there and accepts only that answer, which comes from its own child.
+ *
+ * @param options - The bundle, the catalog, the skills folder and the environment.
  * @returns The running server.
  */
 export const startFuseServer = Effect.fn("FuseServer.start")(function* (options: FuseServerOptions) {
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
   const port = yield* freePort;
+  const nonce = `skill-evals-${randomUUID()}`;
   const origin = new URL(`http://127.0.0.1:${String(port)}`);
   const handle = yield* spawner
     .spawn(
       ChildProcess.make(process.execPath, [options.bundle], {
         env: {
+          ...options.env,
           PORT: String(port),
           FUSE_CATALOG_FILE: options.catalogFile,
           FUSE_SKILLS_DIR: options.skillsDirectory,
-          FUSE_COMMIT: options.commit,
+          FUSE_COMMIT: nonce,
         },
-        extendEnv: true,
+        extendEnv: false,
         stdin: "ignore",
         forceKillAfter: Duration.seconds(3),
       })
@@ -122,7 +137,7 @@ export const startFuseServer = Effect.fn("FuseServer.start")(function* (options:
     Effect.catchTag("PlatformError", (cause) => Effect.fail(failed(cause.message)))
   );
   const last = { answer: "no answer" };
-  yield* Effect.raceFirst(pollHealth(new URL("/healthz", origin), last), exited).pipe(
+  yield* Effect.raceFirst(pollHealth(new URL("/healthz", origin), nonce, last), exited).pipe(
     Effect.timeoutOrElse({
       duration: READY_TIMEOUT,
       orElse: () =>
@@ -135,38 +150,55 @@ export const startFuseServer = Effect.fn("FuseServer.start")(function* (options:
   );
 
   const url = new URL("/mcp", origin);
-  const skills = yield* rpc(url, "skills/list").pipe(
-    Effect.flatMap((answer): Effect.Effect<SkillListing, FuseServerFailed> =>
-      isMethodNotFound(answer)
-        ? Effect.succeed({ _tag: "method-not-found" })
-        : decodeAnswer(answer, SkillsAnswer).pipe(
-            Effect.map(({ result }) => ({ _tag: "listed", uris: result.skills.map((entry) => entry.uri) }))
-          )
-    )
+  // The MCP client owns the protocol: the handshake, the Skills extension and the decoding.
+  const listings = yield* Effect.gen(function* () {
+    // @effect-diagnostics-next-line experimentalApiUsage:off -- the client the pinned Effect ships for MCP, as the brief for #1188 asks; the runner is a private tool that moves with Effect
+    const client = yield* McpClient.McpClient;
+    const declaresSkills = client.capabilities.extensions?.[SKILLS_EXTENSION] !== undefined;
+    const skills: SkillListing = declaresSkills
+      ? { _tag: "listed", uris: (yield* client.listSkills()).map((skill) => skill.uri) }
+      : { _tag: "no-extension" };
+    const resources = (yield* client.listResources()).map((resource) => resource.uri);
+    return { skills, resources };
+  }).pipe(
+    Effect.provide(
+      // @effect-diagnostics-next-line experimentalApiUsage:off -- the client the pinned Effect ships for MCP, as the brief for #1188 asks; the runner is a private tool that moves with Effect
+      McpClient.layerHttp({
+        name: "skill-evals",
+        version: "0.0.0",
+        timeout: Duration.seconds(10),
+        url,
+        protocol: McpProtocol.v2026_07_28,
+        extensions: { skills: true },
+      }).pipe(Layer.provide(FetchHttpClient.layer))
+    ),
+    Effect.mapError((cause) => failed(`Listing the server's skills and resources failed: ${cause.message}`))
   );
-  const resources = yield* rpc(url, "resources/list").pipe(
-    Effect.flatMap((answer) => decodeAnswer(answer, ResourcesAnswer)),
-    Effect.map(({ result }) => result.resources.map((entry) => entry.uri))
-  );
-  return { url, pid: handle.pid, skills, resources } satisfies RunningFuseServer;
+  return { url, pid: handle.pid, ...listings } satisfies RunningFuseServer;
 });
+
+/** The capability key under which a server declares the Skills extension. */
+const SKILLS_EXTENSION = "io.modelcontextprotocol/skills";
 
 /** How long one health request may take. */
 const HEALTH_REQUEST_TIMEOUT = Duration.seconds(2);
 
 /**
- * Polls the health route until it answers 200, keeping the last answer for a timeout's message.
- * Each request has its own timeout, because a request that reaches the server as it binds its
- * port can stay unanswered.
+ * Polls the health route until it answers 200 with `nonce`, keeping the last answer for a timeout's
+ * message. Each request has its own timeout, because a request that reaches the server as it binds
+ * its port can stay unanswered.
  */
-const pollHealth = Effect.fn("FuseServer.pollHealth")(function* (url: URL, last: { answer: string }) {
+const pollHealth = Effect.fn("FuseServer.pollHealth")(function* (
+  url: URL,
+  nonce: string,
+  last: { answer: string }
+) {
   for (;;) {
     const status = yield* Effect.tryPromise({
       try: async (signal) => {
-        // @effect-diagnostics-next-line globalFetchInEffect:off -- the runner wires no HttpClient, and this readiness poll needs only a status
+        // @effect-diagnostics-next-line globalFetchInEffect:off -- a readiness poll needs only a status and a short body, and each request needs its own abort
         const response = await fetch(url, { signal });
-        await response.arrayBuffer();
-        return response.status;
+        return { status: response.status, body: await response.text() };
       },
       // fetch puts the network error, such as ECONNREFUSED, in its cause.
       catch: (cause) =>
@@ -180,80 +212,13 @@ const pollHealth = Effect.fn("FuseServer.pollHealth")(function* (url: URL, last:
       }),
       Effect.result
     );
-    if (status._tag === "Success" && status.success === 200) return;
-    last.answer = status._tag === "Success" ? `status ${String(status.success)}` : status.failure;
+    if (status._tag === "Success" && status.success.status === 200 && status.success.body === nonce) return;
+    last.answer =
+      status._tag === "Failure"
+        ? status.failure
+        : status.success.status === 200
+          ? "another process answered on the port"
+          : `status ${String(status.success.status)}`;
     yield* Effect.sleep(Duration.millis(200));
   }
-});
-
-const Entries = Schema.Array(Schema.Struct({ uri: Schema.String }));
-const SkillsAnswer = Schema.Struct({ result: Schema.Struct({ skills: Entries }) });
-const ResourcesAnswer = Schema.Struct({ result: Schema.Struct({ resources: Entries }) });
-
-const MethodNotFound = Schema.Struct({ error: Schema.Struct({ code: Schema.Literal(-32601) }) });
-const decodeMethodNotFound = Schema.decodeUnknownOption(MethodNotFound);
-
-/** One JSON-RPC answer: its HTTP status and its body. */
-type RpcAnswer = { readonly method: string; readonly status: number; readonly json: unknown };
-
-/** Whether an answer is JSON-RPC's "Method not found". */
-function isMethodNotFound(answer: RpcAnswer): boolean {
-  return decodeMethodNotFound(answer.json)._tag === "Some";
-}
-
-/** Decodes a 200 answer with `schema`, failing on any other status or shape. */
-function decodeAnswer<A, I>(
-  answer: RpcAnswer,
-  schema: Schema.Codec<A, I>
-): Effect.Effect<A, FuseServerFailed> {
-  if (answer.status !== 200) {
-    return Effect.fail(
-      new FuseServerFailed({ message: `${answer.method} answered status ${String(answer.status)}` })
-    );
-  }
-  return Schema.decodeUnknownEffect(schema)(answer.json).pipe(
-    Effect.mapError(
-      (cause) =>
-        new FuseServerFailed({ message: `${answer.method} answered an unexpected shape: ${cause.message}` })
-    )
-  );
-}
-
-/** One stateless 2026-07-28 JSON-RPC request, as `apps/mcp`'s HTTP suite sends it. */
-const rpc = Effect.fn("FuseServer.rpc")(function* (url: URL, method: string) {
-  const body = yield* encodeJsonText({
-    jsonrpc: "2.0",
-    id: 1,
-    method,
-    params: {
-      _meta: {
-        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
-        "io.modelcontextprotocol/clientCapabilities": {},
-        "io.modelcontextprotocol/clientInfo": { name: "skill-evals", version: "0.0.0" },
-      },
-    },
-  }).pipe(Effect.mapError((cause) => new FuseServerFailed({ message: cause.message })));
-  return yield* Effect.tryPromise({
-    try: async (signal): Promise<RpcAnswer> => {
-      // @effect-diagnostics-next-line globalFetchInEffect:off -- one JSON-RPC request needs no HttpClient
-      const response = await fetch(url, {
-        method: "POST",
-        signal,
-        headers: {
-          "content-type": "application/json",
-          accept: "application/json, text/event-stream",
-          "mcp-protocol-version": "2026-07-28",
-          "mcp-method": method,
-        },
-        body,
-      });
-      return { method, status: response.status, json: await response.json() };
-    },
-    catch: (cause) => new FuseServerFailed({ message: `${method} failed: ${String(cause)}` }),
-  }).pipe(
-    Effect.timeoutOrElse({
-      duration: Duration.seconds(10),
-      orElse: () => Effect.fail(new FuseServerFailed({ message: `${method} got no answer within 10s` })),
-    })
-  );
 });

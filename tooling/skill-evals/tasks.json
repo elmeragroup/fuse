@@ -15,19 +15,19 @@
       "stylesheet": "tailwind",
       "sourceChecks": [
         {
-          "name": "A ThemeProvider wraps the app",
-          "pattern": "<ThemeProvider\\b",
-          "expect": "match"
+          "name": "A Fuse ThemeProvider renders",
+          "kind": "renders",
+          "components": ["ThemeProvider"]
         },
         {
-          "name": "The app renders a Fuse Button",
-          "pattern": "<Button\\b",
-          "expect": "match"
+          "name": "A Fuse Button renders",
+          "kind": "renders",
+          "components": ["Button"]
         },
         {
-          "name": "No template variable shares a Fuse role token's name",
-          "pattern": "(?:^|[\\s;{])--(?:border|accent)\\s*:",
-          "expect": "no-match"
+          "name": "No stylesheet declares --border or --accent",
+          "kind": "no-custom-property",
+          "properties": ["--border", "--accent"]
         }
       ],
       "expectations": [
@@ -51,19 +51,19 @@
       "stylesheet": "standalone",
       "sourceChecks": [
         {
-          "name": "A ThemeProvider wraps the app",
-          "pattern": "<ThemeProvider\\b",
-          "expect": "match"
+          "name": "A Fuse ThemeProvider renders",
+          "kind": "renders",
+          "components": ["ThemeProvider"]
         },
         {
-          "name": "The app renders a Fuse Button",
-          "pattern": "<Button\\b",
-          "expect": "match"
+          "name": "A Fuse Button renders",
+          "kind": "renders",
+          "components": ["Button"]
         },
         {
-          "name": "No template variable shares a Fuse role token's name",
-          "pattern": "(?:^|[\\s;{])--(?:border|accent)\\s*:",
-          "expect": "no-match"
+          "name": "No stylesheet declares --border or --accent",
+          "kind": "no-custom-property",
+          "properties": ["--border", "--accent"]
         }
       ],
       "expectations": [
@@ -86,19 +86,21 @@
       "stylesheet": "tailwind",
       "sourceChecks": [
         {
-          "name": "The controls use Fuse field components",
-          "pattern": "@elmeragroup/fuse/(?:field|form|text-field|textarea-field|select-field)[\"']",
-          "expect": "match"
+          "name": "A Fuse Field, TextField, TextareaField or SelectField renders",
+          "kind": "renders",
+          "components": ["Field.Root", "TextField", "TextareaField", "SelectField"]
         },
         {
-          "name": "The confirmation is a Fuse dialog",
-          "pattern": "@elmeragroup/fuse/(?:alert-)?dialog[\"']",
-          "expect": "match"
+          "name": "A Fuse Dialog or AlertDialog renders",
+          "kind": "renders",
+          "components": ["Dialog.Root", "AlertDialog.Root"]
         },
         {
-          "name": "The confirm control shows a pending state",
-          "pattern": "\\b(?:isPending|isPerformingAction)=\\{",
-          "expect": "match"
+          "name": "A Fuse element carries isPending or isPerformingAction, not false",
+          "kind": "prop",
+          "components": "any",
+          "props": ["isPending", "isPerformingAction"],
+          "value": "not-false"
         }
       ],
       "expectations": [
@@ -122,14 +124,18 @@
       "stylesheet": "tailwind",
       "sourceChecks": [
         {
-          "name": "The picker is a Fuse ToggleGroup",
-          "pattern": "@elmeragroup/fuse/toggle-group[\"']",
-          "expect": "match"
+          "name": "A Fuse ToggleGroup renders",
+          "kind": "renders",
+          "components": ["ToggleGroup.Root"]
         },
         {
-          "name": "The toggle group is vertical",
-          "pattern": "orientation=(?:\"vertical\"|\\{\\s*[\"']vertical[\"']\\s*\\})",
-          "expect": "match"
+          "name": "The ToggleGroup's orientation is vertical",
+          "kind": "prop",
+          "components": ["ToggleGroup.Root"],
+          "props": ["orientation"],
+          "value": {
+            "equals": "vertical"
+          }
         }
       ],
       "expectations": [
@@ -152,9 +158,9 @@
       "stylesheet": "tailwind",
       "sourceChecks": [
         {
-          "name": "A ThemeScope re-themes part of the page",
-          "pattern": "<ThemeScope\\b",
-          "expect": "match"
+          "name": "A Fuse ThemeScope renders",
+          "kind": "renders",
+          "components": ["ThemeScope"]
         }
       ],
       "expectations": [

@@ -16,6 +16,9 @@ export type SkillName = typeof SkillName.Type;
 /** The fixture app a task starts from, a folder under `fixtures/`. */
 const FixtureName = Schema.Literals(["vite-plain", "vite-tailwind", "vite-tailwind-fuse"]);
 
+/** The fixture app a task starts from, a folder under `fixtures/`. */
+export type FixtureName = typeof FixtureName.Type;
+
 /** The theme and density the built `<html>` start tag must carry. */
 const ExpectedDocument = Schema.Struct({
   identity: Schema.Literals(["branded", "neutral"]),
@@ -33,17 +36,46 @@ const StylesheetMode = Schema.Literals(["tailwind", "standalone"]);
 /** How the app must load Fuse's CSS. */
 export type StylesheetMode = typeof StylesheetMode.Type;
 
-/** A regular expression that one of the app's `src` files must match, or that none may match. */
-const SourceCheck = Schema.Struct({
-  /** What the check shows when it passes, as the report names it. */
-  name: Schema.NonEmptyString,
-  /** The pattern, as `new RegExp` reads it with the `u` flag. */
-  pattern: Schema.NonEmptyString,
-  /** `match` passes when a file matches; `no-match` passes when none does. */
-  expect: Schema.Literals(["match", "no-match"]),
-});
+/** A component as Fuse exports it, such as `ThemeProvider` or `ToggleGroup.Root`. */
+const ComponentPath = Schema.NonEmptyString.check(
+  Schema.isPattern(/^[A-Z][A-Za-z0-9]*(?:\.[A-Z][A-Za-z0-9]*)*$/u)
+);
 
-/** A regular expression that one of the app's `src` files must match, or that none may match. */
+/** A component as Fuse exports it, such as `ThemeProvider` or `ToggleGroup.Root`. */
+export type ComponentPath = typeof ComponentPath.Type;
+
+/** What the report calls a source check: the fact it establishes when it passes. */
+const CheckName = Schema.NonEmptyString;
+
+/**
+ * A fact about the app's `src` files that the runner decides from their syntax. Each element check
+ * counts only a JSX element whose tag names an import from `@elmeragroup/fuse`.
+ */
+const SourceCheck = Schema.Union([
+  Schema.Struct({
+    name: CheckName,
+    /** An element of one of these components renders. */
+    kind: Schema.Literal("renders"),
+    components: Schema.NonEmptyArray(ComponentPath),
+  }),
+  Schema.Struct({
+    name: CheckName,
+    /** One of these props sits on an element of one of these components, or of any Fuse component. */
+    kind: Schema.Literal("prop"),
+    components: Schema.Union([Schema.Literal("any"), Schema.NonEmptyArray(ComponentPath)]),
+    props: Schema.NonEmptyArray(Schema.NonEmptyString),
+    /** The prop's value: this string, or anything but a literal `false`. */
+    value: Schema.Union([Schema.Literal("not-false"), Schema.Struct({ equals: Schema.String })]),
+  }),
+  Schema.Struct({
+    name: CheckName,
+    /** No stylesheet under `src` declares one of these custom properties outside a comment. */
+    kind: Schema.Literal("no-custom-property"),
+    properties: Schema.NonEmptyArray(Schema.String.check(Schema.isPattern(/^--[\w-]+$/u))),
+  }),
+]);
+
+/** A fact about the app's `src` files that the runner decides from their syntax. */
 export type SourceCheck = typeof SourceCheck.Type;
 
 /** The id a task goes by on the command line and in the report. */
@@ -82,7 +114,7 @@ export class TaskFileInvalid extends Schema.TaggedError<TaskFileInvalid>()("Task
  *
  * @param path - The task file, such as `tasks.json`.
  * @returns The tasks in file order, or `TaskFileInvalid` when the file is unreadable, a task breaks
- *   the schema, two tasks share an id or a source check pattern is not a regular expression.
+ *   the schema or two tasks share an id.
  */
 export const loadTasks = Effect.fn("task.loadTasks")(function* (path: string) {
   const fs = yield* FileSystem.FileSystem;
@@ -96,36 +128,9 @@ export const loadTasks = Effect.fn("task.loadTasks")(function* (path: string) {
   for (const task of tasks) {
     if (seen.has(task.id)) return yield* invalid(`two tasks have the id ${task.id}`);
     seen.add(task.id);
-    for (const check of task.sourceChecks) {
-      const compiled = compilePattern(check.pattern);
-      if (compiled._tag === "invalid") {
-        return yield* invalid(
-          `${task.id}'s check "${check.name}" has an invalid pattern: ${compiled.reason}`
-        );
-      }
-    }
   }
   return tasks;
 });
-
-/** The outcome of compiling a source check's pattern. */
-type CompiledPattern =
-  | { readonly _tag: "compiled"; readonly regex: RegExp }
-  | { readonly _tag: "invalid"; readonly reason: string };
-
-/**
- * Compiles a source check's pattern with the `u` flag.
- *
- * @param pattern - The pattern from the task file.
- * @returns The regular expression, or why it does not compile.
- */
-export function compilePattern(pattern: string): CompiledPattern {
-  try {
-    return { _tag: "compiled", regex: new RegExp(pattern, "u") };
-  } catch (cause) {
-    return { _tag: "invalid", reason: cause instanceof Error ? cause.message : String(cause) };
-  }
-}
 
 /** One arm of a task: the agent reads the skill first, or the server serves no skill at all. */
 export type Arm = "with-skill" | "baseline";

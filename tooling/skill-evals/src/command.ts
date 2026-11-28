@@ -5,11 +5,12 @@
 
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
-import * as Fiber from "effect/Fiber";
 import * as ChildProcess from "effect/process/ChildProcess";
 import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
+
+import type { Environment } from "./isolation.ts";
 
 /** The program could not be started. */
 export class CommandUnstartable extends Schema.TaggedError<CommandUnstartable>()("CommandUnstartable", {
@@ -36,17 +37,21 @@ export type CommandSpec = {
   readonly executable: string;
   readonly args: readonly string[];
   readonly cwd: string;
-  /** Variables added to the inherited environment. */
-  readonly env?: Readonly<Record<string, string>>;
-  /** How long it may run before the runner stops its process group. */
+  /** The program's whole environment. It inherits nothing else. */
+  readonly env: Environment;
+  /**
+   * How long the program may take to exit and close its output. A background process it started
+   * that keeps stdout open counts against the same deadline.
+   */
   readonly timeout: Duration.Duration;
 };
 
 /**
- * Runs a program until it exits or its timeout passes. Either way its whole process group stops
- * before this returns, so a server the program started in the background does not outlive it.
+ * Runs a program until it exits and its output closes, or its timeout passes. Either way its
+ * whole process group stops before this returns, so a server the program started in the
+ * background does not outlive it.
  *
- * @param spec - The program, its arguments, its folder and its timeout.
+ * @param spec - The program, its arguments, its folder, its environment and its timeout.
  * @returns How it ended and what it printed, or `CommandUnstartable` when it could not start.
  */
 export const runCommand = Effect.fn("command.run")(function* (spec: CommandSpec) {
@@ -59,7 +64,7 @@ export const runCommand = Effect.fn("command.run")(function* (spec: CommandSpec)
           ChildProcess.make(spec.executable, [...spec.args], {
             cwd: spec.cwd,
             env: { ...spec.env },
-            extendEnv: true,
+            extendEnv: false,
             stdin: "ignore",
             forceKillAfter: Duration.seconds(5),
           })
@@ -73,21 +78,25 @@ export const runCommand = Effect.fn("command.run")(function* (spec: CommandSpec)
           Stream.runForEach((chunk) => Effect.sync(() => into.push(chunk))),
           Effect.ignore
         );
-      const drained = yield* Effect.all([drain(handle.stdout, stdout), drain(handle.stderr, stderr)], {
+      const drained = Effect.all([drain(handle.stdout, stdout), drain(handle.stderr, stderr)], {
         concurrency: 2,
         discard: true,
-      }).pipe(Effect.forkScoped);
-      const outcome = yield* handle.exitCode.pipe(
+      });
+      const exited = handle.exitCode.pipe(
         Effect.map((exitCode): CommandOutcome => ({ _tag: "exited", exitCode })),
         Effect.catchTag("PlatformError", () =>
           Effect.succeed<CommandOutcome>({ _tag: "exited", exitCode: -1 })
-        ),
+        )
+      );
+      // The exit and the drain share one deadline. On a timeout the scope's finalizer stops the
+      // process group, which also closes a pipe a grandchild held open.
+      const outcome = yield* Effect.all([exited, drained], { concurrency: 2 }).pipe(
+        Effect.map(([exit]) => exit),
         Effect.timeoutOrElse({
           duration: spec.timeout,
           orElse: () => Effect.succeed<CommandOutcome>({ _tag: "timed-out", after: spec.timeout }),
         })
       );
-      if (outcome._tag === "exited") yield* Fiber.join(drained);
       return { outcome, stdout: stdout.join(""), stderr: stderr.join("") } satisfies CommandRun;
     })
   );

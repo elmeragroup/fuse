@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@effect/platform-node": "catalog:",
-    "effect": "catalog:"
+    "effect": "catalog:",
+    "oxc-parser": "catalog:"
   },
   "devDependencies": {
     "@elmeragroup/typescript-config": "workspace:*",

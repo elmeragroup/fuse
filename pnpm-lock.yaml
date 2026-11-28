@@ -994,6 +994,9 @@ importers:
       effect:
         specifier: 'catalog:'
         version: 4.1.4
+      oxc-parser:
+        specifier: 'catalog:'
+        version: 0.148.0
     devDependencies:
       '@elmeragroup/typescript-config':
         specifier: workspace:*
