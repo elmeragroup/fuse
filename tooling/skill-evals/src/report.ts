@@ -4,7 +4,7 @@
  * other cells are listed with their outcome.
  */
 
-import type { CellResult } from "./cell.ts";
+import type { CellKey, CellResult } from "./cell.ts";
 import type { CheckResult } from "./checks.ts";
 import { ARMS } from "./task.ts";
 import type { Arm, Task } from "./task.ts";
@@ -42,6 +42,10 @@ export type RunRecord = RunProvenance & {
   readonly cost: { readonly _tag: "total" | "subtotal"; readonly usd: number };
   /** The checks on each task's untouched fixture, before any agent ran. */
   readonly untouched: Readonly<Record<string, readonly CheckResult[]>>;
+  /** How many cells the pass runs. The pass is complete when every one has a record. */
+  readonly plannedCells: number;
+  /** How many cells have a record so far, the length of `cells`. */
+  readonly recordedCells: number;
   readonly cells: readonly CellResult[];
 };
 
@@ -53,13 +57,15 @@ export type RunRecord = RunProvenance & {
  * @param cells - The finished cells.
  * @param unrecorded - How many cells that may have run an agent began and have no record: still
  *   running, or their record failed to write.
+ * @param planned - How many cells the pass runs.
  * @returns The record.
  */
 export function runRecord(
   provenance: RunProvenance,
   untouched: Readonly<Record<string, readonly CheckResult[]>>,
   cells: readonly CellResult[],
-  unrecorded: number
+  unrecorded: number,
+  planned: number
 ): RunRecord {
   const costs = cells.flatMap((cell) => (cell.agent === undefined ? [] : [cell.agent.cost]));
   return {
@@ -72,6 +78,8 @@ export function runRecord(
       usd: costs.reduce((sum, cost) => sum + (cost._tag === "known" ? cost.usd : 0), 0),
     },
     untouched,
+    plannedCells: planned,
+    recordedCells: cells.length,
     cells,
   };
 }
@@ -105,15 +113,17 @@ function firstLine(text: string): string {
   return line.length > 200 ? `${line.slice(0, 200)}…` : line;
 }
 
-/** One task's section. */
+/** One task's section, with a column for each arm the plan holds. */
 function taskSection(
   task: Task,
+  plan: readonly CellKey[],
   cells: readonly CellResult[],
   untouched: readonly CheckResult[] | undefined
 ): string {
   const taskCells = cells.filter((cell) => cell.task === task.id);
-  const arms = ARMS.filter((arm) => taskCells.some((cell) => cell.arm === arm));
-  if (arms.length === 0) return "";
+  if (taskCells.length === 0) return "";
+  const planned = (arm: Arm) => plan.filter((key) => key.task.id === task.id && key.arm === arm).length;
+  const arms = ARMS.filter((arm) => planned(arm) > 0);
   const all = (arm: Arm) => taskCells.filter((cell) => cell.arm === arm);
   const samples = (arm: Arm) => all(arm).filter(isSample);
   const table = (rows: readonly string[]) => [
@@ -145,7 +155,7 @@ function taskSection(
       const count = group.filter((cell) => cell.outcome._tag === tag).length;
       return tag === "counted" || count > 0 ? [`${String(count)} ${label}`] : [];
     });
-    return `${counts.join(", ")} (of ${String(group.length)})`;
+    return `${counts.join(", ")} (of ${String(planned(arm))})`;
   };
 
   const lines = [
@@ -244,10 +254,11 @@ function taskSection(
  * The markdown report.
  *
  * @param record - The run.
- * @param tasks - The tasks the run covered, in report order.
+ * @param plan - Every cell the pass runs, in report order.
  * @returns The report text.
  */
-export function renderReport(record: RunRecord, tasks: readonly Task[]): string {
+export function renderReport(record: RunRecord, plan: readonly CellKey[]): string {
+  const tasks = [...new Set(plan.map((key) => key.task))];
   return [
     "# Fuse skill evals",
     "",
@@ -255,6 +266,7 @@ export function renderReport(record: RunRecord, tasks: readonly Task[]): string 
     `- \`@elmeragroup/fuse\` installed: ${record.fuseVersions.map((version) => `\`${version}\``).join(", ") || "none"}`,
     `- The checkout's commit at run time: \`${record.checkoutCommit}\`${record.uncommitted.length === 0 ? "" : `, with uncommitted changes to ${record.uncommitted.map((file) => `\`${file}\``).join(", ")}`}`,
     `- Install command in the catalog: ${record.installCommand === undefined ? "not found" : `\`${record.installCommand}\``}`,
+    `- ${String(record.recordedCells)} of ${String(record.plannedCells)} cells recorded. The pass is ${record.recordedCells === record.plannedCells ? "complete" : "not finished"}.`,
     `- Started ${record.startedAt}. Agent cost${record.cost._tag === "subtotal" ? ", a subtotal without the runs whose cost is unknown or not yet recorded" : ""}: $${record.cost.usd.toFixed(2)}`,
     "",
     "<details><summary>Inputs, by SHA-256</summary>",
@@ -266,7 +278,7 @@ export function renderReport(record: RunRecord, tasks: readonly Task[]): string 
     "</details>",
     "",
     ...tasks
-      .map((task) => taskSection(task, record.cells, record.untouched[task.id]))
+      .map((task) => taskSection(task, plan, record.cells, record.untouched[task.id]))
       .filter((section) => section !== "")
       .flatMap((section) => [section, ""]),
   ].join("\n");

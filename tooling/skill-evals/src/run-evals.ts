@@ -240,11 +240,12 @@ export const runEvals = Effect.fn("runEvals")(function* (options: EvalOptions, r
           provenance,
           untouched,
           yield* Ref.get(finished),
-          options.agent === "run" ? yield* Ref.get(pending) : 0
+          options.agent === "run" ? yield* Ref.get(pending) : 0,
+          keys.length
         );
         const json = yield* encodeJsonText(record);
         yield* replace(path.join(outDirectory, "results.json"), `${json}\n`);
-        yield* replace(path.join(outDirectory, "report.md"), renderReport(record, tasks));
+        yield* replace(path.join(outDirectory, "report.md"), renderReport(record, keys));
       })
     )
     .pipe(
