@@ -11,7 +11,7 @@ import { catalog } from "./fixtures.ts";
 
 const index = buildIndex(catalog.documents);
 
-const hrefs = (query: string, limit = 8) => search(index, query, limit).map((hit) => hit.href);
+const hrefs = (query: string, limit = 8) => search(index, query, limit).hits.map((hit) => hit.href);
 
 /** A page with one section per markdown body, each under a heading of its own. */
 function page(href: string, ...bodies: readonly string[]): CatalogDocument {
@@ -67,17 +67,59 @@ describe("search", () => {
       sections: [{ id: "overview", depth: 2, markdown: "# Twin\n\nSame text." }],
     });
     const twins = buildIndex([twin("/b"), twin("/a")]);
-    expect(search(twins, "twin", 2).map((hit) => hit.href)).toEqual(["/b#overview", "/a#overview"]);
+    expect(search(twins, "twin", 2).hits.map((hit) => hit.href)).toEqual(["/b#overview", "/a#overview"]);
   });
 
   it("shows a title with the section heading and an excerpt around the match", () => {
-    expect(search(index, "button disabled", 1)).toEqual([
+    expect(search(index, "button disabled", 1).hits).toEqual([
       {
         title: "Button › Disabled",
         href: "/components/button#disabled",
         excerpt: "A disabled button ignores presses.",
+        missing: [],
       },
     ]);
+  });
+
+  it.each([
+    { query: "Pending Buttons with themes", href: "/components/button#pending", missing: ["themes"] },
+    { query: "button getting started", href: "/components/button#overview", missing: ["getting started"] },
+    { query: "set up a kanban board", href: "/quick-start", missing: ["kanban", "board"] },
+    { query: "set up/kanban", href: "/quick-start", missing: ["kanban"] },
+    { query: "button café?", href: "/components/button#overview", missing: ["café"] },
+    {
+      query: "button GETTING STARTED getting started",
+      href: "/components/button#overview",
+      missing: ["GETTING STARTED"],
+    },
+  ])("names the words $missing, as written, that the hit for $query lacks", ({ query, href, missing }) => {
+    const hit = search(index, query, 8).hits.find((candidate) => candidate.href === href);
+    expect(hit?.missing).toEqual(missing);
+  });
+
+  it("counts a part name among a page's keywords as held", () => {
+    const gauge: CatalogDocument = {
+      href: "/gauge",
+      title: "Gauge",
+      group: "Components",
+      description: "",
+      keywords: ["Gauge.Needle"],
+      sections: [{ id: "overview", depth: 2, markdown: "# Gauge\n\nShows a dial." }],
+    };
+    expect(search(buildIndex([gauge]), "Gauge.Needle dial", 1).hits).toMatchObject([
+      { href: "/gauge#overview", missing: [] },
+    ]);
+  });
+
+  it("tells whether a page beyond the limit holds every word", () => {
+    // Needle ranks first on its title, and only Sewing holds "thread".
+    const needle: CatalogDocument = { ...page("/needle", "Sharp."), title: "Needle" };
+    const sewing = page("/sewing", "A needle pulls the thread.");
+    const { hits, anyPageHoldsAll } = search(buildIndex([needle, sewing]), "needle thread", 1);
+    expect({ hits: hits.map((hit) => [hit.href, hit.missing]), anyPageHoldsAll }).toEqual({
+      hits: [["/needle#part-1", ["thread"]]],
+      anyPageHoldsAll: true,
+    });
   });
 
   it("cuts an excerpt to 300 characters around the word that matched", () => {
@@ -95,7 +137,7 @@ describe("search", () => {
         },
       ],
     };
-    const [hit] = search(buildIndex([long]), "needle", 1);
+    const [hit] = search(buildIndex([long]), "needle", 1).hits;
     const excerpt = hit?.excerpt ?? "";
     expect(excerpt.length).toBeLessThanOrEqual(300);
     expect(excerpt).toContain("needle");
@@ -104,7 +146,7 @@ describe("search", () => {
   it("keeps the match in the excerpt when it ends a long token with no space", () => {
     // A path of 102 characters, which the excerpt cannot open at a space before the match.
     const path = page("/path", `Starts here. ${"segment/".repeat(12)}needle ends.`);
-    expect(search(buildIndex([path]), "needle", 1).map((hit) => hit.excerpt)).toEqual([
+    expect(search(buildIndex([path]), "needle", 1).hits.map((hit) => hit.excerpt)).toEqual([
       `…${"segment/".repeat(10)}needle ends.`,
     ]);
   });
@@ -123,7 +165,7 @@ describe("search", () => {
     const markdown = `Shows a call.\n\n${open}\nneedle(); needle(); needle();\n${close}`;
     const code = page("/code", markdown.replaceAll("\n", newline));
     const prose = page("/prose", "Pass a needle to sew with, among other things a seam can hold.");
-    expect(search(buildIndex([code, prose]), "needle", 2).map((hit) => hit.href)).toEqual([
+    expect(search(buildIndex([code, prose]), "needle", 2).hits.map((hit) => hit.href)).toEqual([
       "/prose#part-1",
       "/code#part-1",
     ]);
@@ -131,7 +173,9 @@ describe("search", () => {
 
   it("cuts the excerpt from the code when only the code holds the query", () => {
     const code = page("/code", "Shows a call.\n\n```tsx\nthreadNeedle();\n```");
-    expect(search(buildIndex([code]), "needle", 1).map((hit) => hit.excerpt)).toEqual(["threadNeedle();"]);
+    expect(search(buildIndex([code]), "needle", 1).hits.map((hit) => hit.excerpt)).toEqual([
+      "threadNeedle();",
+    ]);
   });
 
   it.each([
@@ -151,7 +195,9 @@ describe("search", () => {
       longer,
       "`onOpenChange` runs when a press or a key asks the menu to open or close, before any animation starts."
     );
-    expect(search(buildIndex([menu]), "onOpenChange", 1).map((hit) => hit.href)).toEqual(["/menu#part-2"]);
+    expect(search(buildIndex([menu]), "onOpenChange", 1).hits.map((hit) => hit.href)).toEqual([
+      "/menu#part-2",
+    ]);
   });
 
   it("centers an identifier's excerpt on the identifier whole, not on a longer one before it", () => {
@@ -159,7 +205,7 @@ describe("search", () => {
       "/dialog",
       `Starts with \`onOpenChangeComplete\`. ${"filler ".repeat(80)}The exact prop is \`onOpenChange\`.`
     );
-    expect(search(buildIndex([dialog]), "onOpenChange", 1)[0]?.excerpt).toContain(
+    expect(search(buildIndex([dialog]), "onOpenChange", 1).hits[0]?.excerpt).toContain(
       "The exact prop is `onOpenChange`."
     );
   });
@@ -169,7 +215,7 @@ describe("search", () => {
       "/dialog",
       `Set \`defaultOpen\` to start open. ${"filler ".repeat(80)}Then \`onOpenChange\` runs.`
     );
-    expect(search(buildIndex([dialog]), "onOpen", 1)[0]?.excerpt).toContain("Then `onOpenChange` runs.");
+    expect(search(buildIndex([dialog]), "onOpen", 1).hits[0]?.excerpt).toContain("Then `onOpenChange` runs.");
   });
 
   it.each([
@@ -184,7 +230,7 @@ describe("search", () => {
       keywords: [],
       sections: [{ id: "needle", depth: 2, markdown: `## Needle\n\n${body}` }],
     };
-    expect(search(buildIndex([headed]), "needle", 1).map((hit) => hit.excerpt)).toEqual([excerpt]);
+    expect(search(buildIndex([headed]), "needle", 1).hits.map((hit) => hit.excerpt)).toEqual([excerpt]);
   });
 
   it.each([
@@ -192,7 +238,7 @@ describe("search", () => {
     { query: "boxes", text: "Draws a box." },
     { query: "selected", text: "Selecting a row." },
   ])("finds $query in $text through the shared stem", ({ query, text }) => {
-    expect(search(buildIndex([page("/stem", text)]), query, 1).map((hit) => hit.href)).toEqual([
+    expect(search(buildIndex([page("/stem", text)]), query, 1).hits.map((hit) => hit.href)).toEqual([
       "/stem#part-1",
     ]);
   });

@@ -85,15 +85,26 @@ function handler<S extends Schema.Top & { readonly DecodingServices: never }>(
     );
 }
 
+/** The line under a hit's href that names the query words it lacks, or nothing for a full match. */
+function missingLine(hit: Search.Hit): string {
+  if (hit.missing.length === 0) return "";
+  return `\n   Missing: ${hit.missing.map((word) => JSON.stringify(word)).join(", ")}`;
+}
+
 /** The lines `search_docs` answers with. */
 function searchAnswer(index: Search.SearchIndex, query: string, limit: number): string {
-  const hits = Search.search(index, query, limit);
+  const { hits, anyPageHoldsAll } = Search.search(index, query, limit);
   if (hits.length === 0) {
     return `Nothing matches "${query}". Try other words, or read /llms.txt for the list of every page.`;
   }
-  return hits
-    .map((hit, rank) => `${String(rank + 1)}. ${hit.title}\n   ${hit.href}\n   ${hit.excerpt}`)
+  const list = hits
+    .map(
+      (hit, rank) => `${String(rank + 1)}. ${hit.title}\n   ${hit.href}${missingLine(hit)}\n   ${hit.excerpt}`
+    )
     .join("\n\n");
+  return anyPageHoldsAll
+    ? list
+    : `No page holds every word of the query, and other words may find what it asks for.\n\n${list}`;
 }
 
 /** Registers `search_docs` and `read_doc` on the server, over the decoded catalog. */
@@ -106,7 +117,7 @@ export const ToolsLive = Layer.effectDiscard(
         name: "search_docs",
         title: "Search the Fuse docs",
         description:
-          "Searches the Fuse docs, which hold a page per component with its API reference and examples, and the handbook. Each result is a page title, an href to the best-matching section, and an excerpt. Pass the href to read_doc.",
+          "Searches the Fuse docs, which hold a page per component with its API reference and examples, and the handbook. Each result is a page title, an href to the best-matching section, and an excerpt. A result matches on the page's title, keywords and description and on the section's text and example code. A Missing line names the query words a result lacks. Pass the href to read_doc.",
         inputSchema: inputSchemaOf(SearchDocsInput),
         annotations: READ_ONLY,
       }),

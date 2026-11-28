@@ -18,7 +18,7 @@ const catalogFile = join(import.meta.dirname, "..", "..", "docs", "src", "genera
 const catalog = Schema.decodeSync(Schema.fromJsonString(Catalog))(readFileSync(catalogFile, "utf8"));
 const index = buildIndex(catalog.documents);
 
-const hrefs = (query: string, limit = 8) => search(index, query, limit).map((hit) => hit.href);
+const hrefs = (query: string, limit = 8) => search(index, query, limit).hits.map((hit) => hit.href);
 
 /** The page of an href, without its section fragment. */
 const pageOf = (href: string) => href.split("#", 1)[0];
@@ -40,7 +40,7 @@ describe("search on the generated catalog", () => {
   });
 
   it("shows the prop a query names in the excerpt", () => {
-    const [hit] = search(index, "select onValueChange", 1);
+    const [hit] = search(index, "select onValueChange", 1).hits;
     expect(hit?.href).toMatch(/^\/components\/select#/u);
     expect(hit?.excerpt).toContain("onValueChange");
   });
@@ -123,6 +123,20 @@ describe("search on the generated catalog", () => {
   ])("lands the export $query on the section that documents it", ({ query, href }) => {
     expect(hrefs(query, 1)).toEqual([href]);
   });
+
+  it.each([
+    { query: "kanban board drag and drop", lacks: ["kanban", "board"] },
+    { query: "rich text editor", lacks: ["rich", "editor"] },
+  ])("names the words that $query's best hit lacks", ({ query, lacks }) => {
+    expect(search(index, query, 1).hits[0]?.missing).toEqual(lacks);
+  });
+
+  it.each(["button pending", "Chart.Line", "date picker", "how do I import a dialog"])(
+    "marks no word missing from the best hit for %s",
+    (query) => {
+      expect(search(index, query, 1).hits[0]?.missing).toEqual([]);
+    }
+  );
 
   it("answers applying a brand theme with the section on setting the document theme", () => {
     expect(hrefs("how do I apply a brand theme", 1)).toEqual(["/handbook/theming#document-theme"]);
