@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 
+import { TOKENS_SECTION_ID } from "../lib/anchors";
 import { requireComponent } from "../lib/component-page";
-import { TOKENS_SECTION_ID } from "../lib/nav";
 import { DocsSectionHeading } from "./docs-section-heading";
 import { TokenSwatchList } from "./token-swatch-list";
 

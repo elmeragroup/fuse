@@ -387,6 +387,9 @@ importers:
       '@elmeragroup/color':
         specifier: workspace:*
         version: link:../../packages/color
+      '@elmeragroup/docs-catalog':
+        specifier: workspace:*
+        version: link:../../packages/docs-catalog
       '@elmeragroup/internal':
         specifier: 'catalog:'
         version: 0.2.0-canary.23
@@ -402,6 +405,9 @@ importers:
       '@tailwindcss/typography':
         specifier: 'catalog:'
         version: 0.5.20(tailwindcss@4.3.3)
+      '@types/mdast':
+        specifier: 'catalog:'
+        version: 4.0.4
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
@@ -411,6 +417,12 @@ importers:
       '@types/react-dom':
         specifier: 'catalog:'
         version: 19.3.0(@types/react@19.3.0)
+      effect:
+        specifier: 'catalog:'
+        version: 4.1.4
+      mdast-util-from-markdown:
+        specifier: 'catalog:'
+        version: 2.0.3(supports-color@8.1.1)
       oxc-parser:
         specifier: 'catalog:'
         version: 0.148.0
@@ -502,6 +514,22 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 5.0.0(@types/node@26.6.6)(@vitest/browser-playwright@5.0.0)(@vitest/ui@5.0.0)(vite@8.3.0(@types/node@26.6.6)(jiti@2.7.0)(yaml@2.9.1))
+
+  packages/docs-catalog:
+    dependencies:
+      effect:
+        specifier: 'catalog:'
+        version: 4.1.4
+    devDependencies:
+      '@elmeragroup/typescript-config':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      tsrs:
+        specifier: 'catalog:'
+        version: 0.25.0-ts7.1.0-beta
+      typescript:
+        specifier: 'catalog:'
+        version: 7.1.0-beta
 
   packages/fuse:
     dependencies:

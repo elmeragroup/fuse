@@ -1,0 +1,26 @@
+{
+  "name": "@elmeragroup/docs-catalog",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The schema of the docs catalog, which the docs generation pass writes and the Fuse MCP server reads.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/catalog.ts",
+      "import": "./src/catalog.ts"
+    }
+  },
+  "scripts": {
+    "type-check": "tsrs --noEmit"
+  },
+  "dependencies": {
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@elmeragroup/typescript-config": "workspace:*",
+    "tsrs": "catalog:",
+    "typescript": "catalog:"
+  }
+}

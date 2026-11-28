@@ -10,10 +10,13 @@
       // any of the plugin's sources must invalidate this task even though nothing in apps/docs
       // moved. The whole source tree, not the scanner's imports listed by hand, so a new import
       // cannot fall out of the list.
+      // The catalog schema has no build task for `^build` to key on, and this task writes
+      // src/generated/catalog.json through it, so its source is an input too.
       "inputs": [
         "$TURBO_DEFAULT$",
         "../../tooling/oxlint-plugin-fuse/src/**/*.ts",
-        "!../../tooling/oxlint-plugin-fuse/src/**/*.test.ts"
+        "!../../tooling/oxlint-plugin-fuse/src/**/*.test.ts",
+        "../../packages/docs-catalog/src/**/*.ts"
       ],
       // The committed per-component api.json, and each extra entry's <entry>.api.json beside it,
       // are outputs too. They are tracked, unlike everything else here, but this task is what

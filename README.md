@@ -88,6 +88,7 @@ Package-scoped scripts worth knowing:
 | `apps/static-theme`            | `static-theme`                      | Vite host proving standalone-CSS mode and first-paint theme attributes                   |
 | `packages/fuse-figma`          | `@elmeragroup/fuse-figma`           | Private CLI that syncs the design tokens into a Figma file's variables                   |
 | `packages/color`               | `@elmeragroup/color`                | Private color parsing, conversion, mixing and WCAG contrast, shared by every workspace   |
+| `packages/docs-catalog`        | `@elmeragroup/docs-catalog`         | Private schema of the docs catalog that the docs generation pass writes                  |
 | `tooling/typescript`           | `@elmeragroup/typescript-config`    | Shared tsconfig bases                                                                    |
 | `tooling/pr-shots`             | `@elmeragroup/pr-shots`             | Private CLI behind `pnpm shots`: before and after docs screenshots for PRs               |
 | `tooling/release-announcement` | `@elmeragroup/release-announcement` | Private steps of Publish Release that announce each published release in Slack           |

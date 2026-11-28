@@ -6,10 +6,13 @@
  * markdown endpoint for what it embeds — never a second copy of any of them.
  */
 
+import * as Schema from "effect/Schema";
 import { readdirSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+
+import { Catalog } from "@elmeragroup/docs-catalog";
 
 import { resolveComponentPaths } from "../scripts/lib/components.ts";
 import { SERVER_DEMOS } from "../scripts/lib/docs-inspection.ts";
@@ -21,6 +24,7 @@ import { COMPONENT_OUTLINES } from "../src/generated/component-outlines";
 import { COMPONENT_PAGES } from "../src/generated/component-pages";
 import type { ComponentApiArtifact } from "../src/lib/docs-model";
 import { ALIAS_PAGES, COMPONENT_INVENTORY } from "./component-inventory";
+import { fetchText } from "./docs-server";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const docsRoot = join(here, "..");
@@ -314,5 +318,24 @@ describe("generated markdown endpoints", () => {
     expect(markdown).toContain("#### Base UI primitive props");
     expect(markdown).toContain("| `focusableWhenDisabled` | `boolean \\| undefined` | `false`");
     expect(markdown).not.toContain("| `onClick` |");
+  });
+});
+
+describe("docs catalog", () => {
+  it("splits a page at ids its built HTML renders, and joins into its markdown endpoint", async () => {
+    // Unit under test: the button document in the generated catalog.json, decoded with the schema
+    // from @elmeragroup/docs-catalog. Oracles: the ids in the page's built HTML, and the emitted
+    // `.md` endpoint, which is the sections one blank line apart with one closing newline.
+    const catalog = Schema.decodeSync(Schema.fromJsonString(Catalog))(
+      readFileSync(join(docsRoot, "src/generated/catalog.json"), "utf8")
+    );
+    const button = catalog.documents.find((document) => document.href === "/components/button");
+    const html = await fetchText("/components/button");
+    const ids = new Set([...html.matchAll(/\sid="([^"]+)"/gu)].map((match) => match[1]));
+
+    expect(button?.sections.map((section) => section.id).filter((id) => !ids.has(id))).toEqual([]);
+    expect(`${button?.sections.map((section) => section.markdown).join("\n\n") ?? ""}\n`).toBe(
+      endpoint("button")
+    );
   });
 });

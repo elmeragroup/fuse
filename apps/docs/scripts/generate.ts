@@ -21,6 +21,8 @@
  *   • `/components/<slug>.md` — the markdown endpoint each page links to;
  *   • `llms.txt`, the site-root AI index;
  *   • the ⌘K search index;
+ *   • `catalog.json`, the docs catalog: every page the search index lists, each component page as
+ *     the sections its markdown endpoint joins, and the `llms.txt` text;
  *   • and it verifies that every authored nav destination is a real route.
  *
  * Nothing is copied or compiled here: a demo is one file, imported by the page and read
@@ -29,9 +31,12 @@
  * build.
  */
 
+import * as Result from "effect/Result";
+import * as Schema from "effect/Schema";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import { Catalog } from "@elmeragroup/docs-catalog";
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ResolvedThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/internal";
@@ -46,12 +51,15 @@ import type {
   DocsComponent,
   DocsDemo,
   PageSection,
+  SearchEntry,
   ThemeCatalog,
   TocItem,
 } from "../src/lib/docs-model.ts";
 import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
+import { componentHref } from "../src/lib/pages.ts";
 import { studioGeneratedFiles } from "../src/studio/registration.ts";
 import { generateDocsApiArtifacts } from "./lib/api-artifact.ts";
+import { buildCatalog, catalogProblems } from "./lib/catalog.ts";
 import { resolveComponentPaths, SHARED_ENTRY_PAGES } from "./lib/components.ts";
 import type { ApiEntryPaths } from "./lib/components.ts";
 import { buildDensityCatalog, renderDensityCatalog } from "./lib/density-catalog.ts";
@@ -63,26 +71,27 @@ import {
 } from "./lib/docs-inspection.ts";
 import type { ComponentInspection, DocsApiComponent } from "./lib/docs-inspection.ts";
 import { identityComparedParts } from "./lib/element-type-comparisons.ts";
-import { ProblemLog } from "./lib/errors.ts";
+import { DocsGenerationError, ProblemLog } from "./lib/errors.ts";
 import { functionReferences } from "./lib/function-reference.ts";
 import { openFuseProgram } from "./lib/fuse-program.ts";
 import type { FuseProgram } from "./lib/fuse-program.ts";
 import { renderLandingFacts } from "./lib/landing-facts.ts";
 import { LIVE_CODE_IDENTITY_PARTS } from "./lib/live-code-schemas.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
-import { renderComponentMarkdown } from "./lib/markdown.ts";
+import { componentSections, joinSections } from "./lib/markdown.ts";
 import { renderOgCardColors } from "./lib/og-card-colors.ts";
 import { buildPaletteCatalog, renderPaletteCatalog } from "./lib/palette-catalog.ts";
 import { partIdentities } from "./lib/part-identity.ts";
 import {
   generatedDir,
   llmsTxtFile,
+  markdownEndpointFile,
   markdownOutDir,
   REPO_BLOB_BASE,
   repoRelative,
   fuseSrc,
 } from "./lib/paths.ts";
-import { renderSearchIndex } from "./lib/search.ts";
+import { buildSearchIndex, renderSearchIndex } from "./lib/search.ts";
 import { collectRecipeSources } from "./lib/sources.ts";
 import { renderFigmaThemeCatalog } from "./lib/theme-catalog-figma.ts";
 import { buildThemeCatalog, renderThemeCatalog } from "./lib/theme-catalog.ts";
@@ -431,10 +440,18 @@ export const API_EXTRA_ENTRIES: Readonly<Partial<Record<string, readonly ApiEntr
   );
 }
 
-function emitMarkdownEndpoints(components: readonly DocsComponent[]): void {
-  for (const component of components) {
-    writeFile(path.join(markdownOutDir, `${component.slug}.md`), renderComponentMarkdown(component));
+/** The markdown endpoint of each document that has sections, its sections joined. */
+function emitMarkdownEndpoints(catalog: Catalog): void {
+  for (const document of catalog.documents) {
+    if (document.sections.length > 0) {
+      writeFile(markdownEndpointFile(document.href), joinSections(document.sections));
+    }
   }
+}
+
+/** The docs catalog, already encoded as JSON through the schema's own codec. */
+function emitCatalog(json: string): void {
+  writeFile(path.join(generatedDir, "catalog.json"), json);
 }
 
 /** The theme tokens the Tokens page lists, read from the library's own `@theme` block. */
@@ -516,13 +533,13 @@ function emitLiveCodeIdentityParts(parts: readonly string[]): void {
 }
 
 /** The ⌘K palette index. */
-function emitSearchIndex(components: readonly DocsComponent[]): void {
-  writeFile(path.join(generatedDir, "search-index.ts"), `${BANNER}${renderSearchIndex(components)}`);
+function emitSearchIndex(entries: readonly SearchEntry[]): void {
+  writeFile(path.join(generatedDir, "search-index.ts"), `${BANNER}${renderSearchIndex(entries)}`);
 }
 
 /** The site-root AI index. */
-function emitLlmsTxt(components: readonly DocsComponent[]): void {
-  writeFile(llmsTxtFile, renderLlmsTxt(components));
+function emitLlmsTxt(index: string): void {
+  writeFile(llmsTxtFile, index);
 }
 
 /**
@@ -573,6 +590,27 @@ async function main(): Promise<void> {
     const component = buildComponent(inspection, demos, api.parts, api.functions, colors);
     return linkSharedParts(component, shared);
   });
+  // The markdown endpoints, the search index, `llms.txt` and the catalog all come from the
+  // checked catalog, so it is checked and encoded before any of them is written.
+  const entries = buildSearchIndex(components);
+  const docsCatalog = buildCatalog({
+    entries,
+    sections: new Map(
+      components.map((component) => [componentHref(component.slug), componentSections(component)])
+    ),
+    index: renderLlmsTxt(components),
+  });
+  for (const problem of catalogProblems(
+    docsCatalog,
+    components.map((component) => componentHref(component.slug))
+  )) {
+    problems.add(problem);
+  }
+  problems.throwIfFailed();
+  const encoded = Schema.encodeResult(Schema.fromJsonString(Catalog))(docsCatalog);
+  if (Result.isFailure(encoded)) {
+    throw new DocsGenerationError([`the docs catalog does not encode: ${encoded.failure.message}`]);
+  }
 
   emitComponentPages(components);
   emitComponentOutlines(components);
@@ -587,9 +625,10 @@ async function main(): Promise<void> {
   emitDensityCatalog(catalog);
   emitPaletteCatalog(catalog);
   await emitStudio(catalog, inspections, components);
-  emitMarkdownEndpoints(components);
-  emitSearchIndex(components);
-  emitLlmsTxt(components);
+  emitMarkdownEndpoints(docsCatalog);
+  emitSearchIndex(entries);
+  emitLlmsTxt(docsCatalog.index);
+  emitCatalog(encoded.success);
   pruneStale(generatedDir);
   pruneStale(markdownOutDir);
   process.stdout.write(
