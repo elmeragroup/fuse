@@ -367,6 +367,8 @@ export default defineConfig({
     "**/.next/**",
     "apps/docs/src/generated/**",
     "plop-templates/**",
+    // The skill evals copy these apps out of the repo and install them there.
+    "tooling/skill-evals/fixtures/**",
     "**/.artifacts/**",
     "**/.cache/**",
     "**/node_modules/**",

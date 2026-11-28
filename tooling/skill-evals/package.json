@@ -1,0 +1,24 @@
+{
+  "name": "@elmeragroup/skill-evals",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Runs each Fuse MCP skill task with the skill and without it, by hand, and compares the results.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsrs --noEmit"
+  },
+  "dependencies": {
+    "@effect/platform-node": "catalog:",
+    "effect": "catalog:",
+    "oxc-parser": "catalog:"
+  },
+  "devDependencies": {
+    "@elmeragroup/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "tsrs": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

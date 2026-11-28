@@ -1,0 +1,11 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    // The unit suites cover the checks and the stream summary over text, so they do not wait for
+    // the Fuse build that the root `test` task depends on. No turbo task runs an agent: the runner
+    // is the root `skill-evals` script, run by hand.
+    "test": {
+      "dependsOn": []
+    }
+  }
+}

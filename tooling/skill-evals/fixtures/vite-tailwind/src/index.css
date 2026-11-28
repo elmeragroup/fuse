@@ -1,0 +1,23 @@
+/* Tailwind v4 without preflight: the theme and the utilities, each in its layer. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+:root {
+  --border: #e5e4e7;
+  --accent: #aa3bff;
+  color-scheme: light dark;
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+  }
+}

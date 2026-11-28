@@ -1,0 +1,26 @@
+/* Tailwind v4 without preflight: the theme and the utilities, each in its layer. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@import "@elmeragroup/fuse/css";
+@import "@elmeragroup/fuse/themes.css";
+@source "../node_modules/@elmeragroup/fuse";
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+  }
+}
