@@ -46,6 +46,16 @@ dependencies, as `publish-release.yml`'s `notify` job does for `tooling/release-
 Write the MCP server in `apps/mcp` as idiomatic Effect under the same skill. It ships as one
 bundled file beside `catalog.json` and `skills/`, so it reads nothing else at runtime.
 
+## Shipped skills
+
+The MCP server serves each folder of `apps/mcp/skills/` as `skill://<folder>/SKILL.md`. Write each
+skill under the `writing-for-agents` skill and the `unslop` rules, for a reader whose only tools are
+`search_docs` and `read_doc`. A skill holds the ordered steps and the rules the docs cannot teach. For
+a fact the docs own, it names the `read_doc` href with its section, such as `/quick-start#install`,
+or `/components/<name>#usage` for every component page; `test:catalog` checks each one against the
+generated catalog. Keep skill files static, with no generated text, version or date, because a
+client revokes its user's approval of a skill when one byte changes. The skill names are fixed.
+
 ## Documentation
 
 Update public JSDoc, consumer examples and behavior tests when usage changes.
