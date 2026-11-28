@@ -36,8 +36,9 @@ export type Results = {
   /** Up to the limit's hits, best first. */
   readonly hits: readonly Hit[];
   /**
-   * Whether some page, among the hits or not, holds every term of the query in its title, keywords
-   * or description or in any of its sections. When none does, every hit has a `missing` word.
+   * Whether some page, among the hits or not, holds every term of the query's written words in its
+   * title, keywords or description or in any of its sections. When none does, every hit has a
+   * `missing` word.
    */
   readonly anyPageHoldsAll: boolean;
 };
@@ -340,7 +341,7 @@ type Query = {
   /** The query's words as written, for excerpts. */
   readonly words: readonly string[];
   /**
-   * The query's words as written, each with the terms it adds to the query. A phrase an alias
+   * The query's words as written, each with the terms of {@link terms} it adds. A phrase an alias
    * rewrites is one entry, so `set up` stands for `install`, `quick` and `start`.
    */
   readonly written: readonly WrittenWord[];
@@ -676,14 +677,25 @@ const ALIASES: readonly (readonly [RegExp, string])[] = [
   [/\bapply(?:ing)? (?:an? |the )?((?:brand(?:ed)? |neutral )?)them(?:e|ing)\b/giu, "set $1document theme"],
 ];
 
+/** Rewrites a query's phrases into the words the docs use for them. */
+function withAliases(query: string): string {
+  return ALIASES.reduce((text, [phrase, words]) => text.replace(phrase, words), query);
+}
+
+/** A written word without the punctuation around it, such as `Select.Root` from `"Select.Root",`. */
+function trimWord(word: string): string {
+  return word.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/gu, "");
+}
+
+/** A written word without the punctuation around it, in any script, such as `café` from `café?`. */
+function labelOf(word: string): string {
+  return word.replace(/^[^\p{L}\p{M}\p{N}]+|[^\p{L}\p{M}\p{N}]+$/gu, "");
+}
+
 /** A stretch of a query as written: a phrase an alias rewrites, or the text between two. */
 type Stretch = { readonly text: string; readonly terms: readonly string[]; readonly alias: boolean };
 
-/**
- * Reads a query into the phrases an alias rewrites and the text between them, in order. Each
- * stretch has the terms it adds, a phrase those of its rewrite. An alias matches at word edges, so
- * the terms of the stretches in order are those of the rewritten query.
- */
+/** Reads a query into the phrases an alias rewrites and the text between them, in order. */
 function stretchesOf(text: string): readonly Stretch[] {
   const phrases = ALIASES.flatMap(([phrase, words]) =>
     [...text.matchAll(phrase)].map((match) => ({
@@ -706,48 +718,45 @@ function stretchesOf(text: string): readonly Stretch[] {
 }
 
 /**
- * A query's words as written, each with the terms it adds. A phrase an alias rewrites is one word.
- * The terms leave out the API words, a word without terms drops out, and of the words that add the
- * same terms, the first written stays.
+ * A query's words as written, each with the terms it adds, for the `missing` list alone. A phrase
+ * an alias rewrites is one word. This is a second reading of the query: the ranking reads it
+ * through {@link withAliases} and {@link trimWord}, pinned to that behavior until #1183 settles
+ * any change to the ranking. A word keeps only the terms the ranking searched for, so `missing`
+ * never names a word for a term nothing looked up. A word left with no terms drops out, and of
+ * the words that add the same terms, the first written stays.
  */
-function writtenWords(stretches: readonly Stretch[]): readonly WrittenWord[] {
-  const words = stretches.flatMap((stretch) =>
+function writtenWords(text: string, searched: ReadonlySet<string>): readonly WrittenWord[] {
+  const words = stretchesOf(text).flatMap((stretch) =>
     stretch.alias
       ? [{ text: stretch.text, terms: stretch.terms }]
-      : stretch.text.split(/\s+/u).map((chunk) => ({ text: trimWord(chunk), terms: terms(chunk) }))
+      : stretch.text.split(/\s+/u).map((chunk) => ({ text: labelOf(chunk), terms: terms(chunk) }))
   );
   const byTerms = new Map<string, WrittenWord>();
   for (const word of words) {
-    const kept = [...new Set(word.terms.filter((term) => !API_WORDS.has(term)))];
+    const kept = [...new Set(word.terms.filter((term) => searched.has(term)))];
     const key = kept.toSorted().join(" ");
-    if (kept.length > 0 && !byTerms.has(key)) byTerms.set(key, { text: word.text, terms: kept });
+    if (word.text.length > 0 && kept.length > 0 && !byTerms.has(key)) {
+      byTerms.set(key, { text: word.text, terms: kept });
+    }
   }
   return [...byTerms.values()];
 }
 
-/**
- * A written word without the punctuation around it, such as `Select.Root` from `"Select.Root",`
- * or `café` from `café?`.
- */
-function trimWord(word: string): string {
-  return word.replace(/^[^\p{L}\p{M}\p{N}]+|[^\p{L}\p{M}\p{N}]+$/gu, "");
-}
-
 /** Reads a query's terms, its API words and its words as written. */
 function readQuery(text: string): Query {
-  const stretches = stretchesOf(text);
-  const words = [...new Set(stretches.flatMap((stretch) => stretch.text.split(/\s+/u).map(trimWord)))].filter(
+  const written = [...new Set(text.split(/\s+/u).map(trimWord))].filter(
     (word) => word.length > 0 && terms(word).some((term) => !API_WORDS.has(term))
   );
+  const queryTerms = [...new Set(terms(withAliases(text)))].filter((term) => !API_WORDS.has(term));
   return {
-    terms: [...new Set(stretches.flatMap((stretch) => stretch.terms))].filter((term) => !API_WORDS.has(term)),
+    terms: queryTerms,
     wantsApi: text
       .toLowerCase()
       .split(/[^a-z]+/u)
       .some((word) => API_WORDS.has(stem(word))),
-    words,
-    written: writtenWords(stretches),
-    identifiers: words
+    words: written,
+    written: writtenWords(text, new Set(queryTerms)),
+    identifiers: written
       .filter((word) => /\.|[a-z0-9][A-Z]/u.test(word))
       .map((word) => {
         const lower = word.toLowerCase();
@@ -771,11 +780,12 @@ export function search(index: SearchIndex, query: string, limit: number): Result
   const parsed = readQuery(query);
   if (parsed.terms.length === 0) return { hits: [], anyPageHoldsAll: false };
   const ranked: PageCandidate[] = [];
+  const named = [...new Set(parsed.written.flatMap((word) => word.terms))];
   let anyPageHoldsAll = false;
   for (const entry of index.documents) {
     const candidate = rankPage(index, entry, parsed);
     if (candidate !== undefined) ranked.push(candidate);
-    anyPageHoldsAll ||= parsed.terms.every((term) => entry.allTerms.has(term));
+    anyPageHoldsAll ||= named.every((term) => entry.allTerms.has(term));
   }
   // Excerpts are built for the returned hits alone.
   const hits = ranked
