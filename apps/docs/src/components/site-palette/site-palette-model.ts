@@ -104,7 +104,7 @@ export type SettingsPage = {
 };
 
 /**
- * The options of a colour-scheme settings page, one per scheme, with `current` marked.
+ * The options of a color-scheme settings page, one per scheme, with `current` marked.
  *
  * @param current - The scheme in force.
  * @param apply - Puts a scheme in force.

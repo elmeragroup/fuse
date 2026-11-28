@@ -312,7 +312,7 @@ pages.
 <h2 id="theme-scope">Scoped re-theming</h2>
 
 `ThemeScope` re-themes a subtree. It is never a document writer: it does not stamp `<html>`, does not
-fork colour-scheme state, and has no density prop.
+fork color-scheme state, and has no density prop.
 
 {/* prettier-ignore */}
 ```tsx
@@ -332,9 +332,9 @@ page theme. The [Theme matrix](/handbook/theme-matrix) demonstrates this twenty-
 
 `useTheme()` returns the nearest theme plus its slug, and throws outside a provider or scope.
 
-<h2 id="colour-scheme">Colour scheme</h2>
+<h2 id="color-scheme">Color scheme</h2>
 
-Light and dark are separate from the three theme axes. Colour-scheme state lives on the document
+Light and dark are separate from the three theme axes. Color-scheme state lives on the document
 writer; scopes do not fork it. Emit `ColorSchemeScript` in `<head>` ahead of anything paintable so the
 stored preference applies before first paint, and leave the provider's `injectColorSchemeScript` at its
 default, `false`, so the bootstrap is emitted exactly once.
@@ -357,12 +357,12 @@ html, body {
 
 Import `themes.css` alongside your chosen CSS mode. The token-backed canvas prevents a default browser
 background flash. Put `suppressHydrationWarning` on the React-owned html element when the bootstrap
-changes data-theme before hydration. If you omit colour-scheme support, omit the script, warning and
-provider colour-scheme options together.
+changes data-theme before hydration. If you omit color-scheme support, omit the script, warning and
+provider color-scheme options together.
 
 Pass a nonce to the bootstrap for nonce-based CSP. Keep the generated bootstrap in a server or
 build-time module rather than copying its IIFE into application source. The library uses local
-storage, not cookies, and CSS owns native colour-scheme. Hash-based CSP is unsupported. React-created
+storage, not cookies, and CSS owns native color-scheme. Hash-based CSP is unsupported. React-created
 script nodes do not provide first paint.
 
 A route that must first-paint in a forced scheme needs a document adapter that knows the force while
@@ -384,7 +384,7 @@ both.
 <h2 id="next-pages">Next Pages</h2>
 
 The document owns html attributes and the classic script; the app owns the provider. Share theme and
-colour-scheme options through an app-owned module. Put the script in Head or before Main. A route force
+color-scheme options through an app-owned module. Put the script in Head or before Main. A route force
 must be known to the document and the app provider.
 
 {/* prettier-ignore */}
@@ -506,6 +506,10 @@ Stamp brand and density into index.html at build time. Inject a raw classic scri
 entry through transformIndexHtml with order set to post. The apps/static-theme fixture demonstrates
 this adapter.
 
+Vite's React template sets `--border` and `--accent` on `:root` in `src/index.css`, and both are names
+of Fuse role tokens. That later `:root` rule beats a neutral theme, so delete those variables or
+rename them.
+
 1. Import documentAttributes and colorSchemeScriptSource in vite.config.ts, and pass the page's
    density explicitly. Use the same document options as the React provider. Keep these calls out of
    the client graph.
@@ -567,7 +571,7 @@ and the chrome you are reading consumes that theme's light and dark tokens. The 
 menu writes docs-local preview state from its labelled radio groups (Appearance, Identity, Brand,
 Segment). Identity, Brand and Segment feed demo stages and theme scopes only, so every demo can be
 viewed in all twenty-four permutations while the page keeps its Elmera identity. Appearance changes the
-whole document through the library's colour-scheme API, offers light, dark and system, and remembers
+whole document through the library's color-scheme API, offers light, dark and system, and remembers
 your choice; the matrix mirrors the same three-way control.
 
 </DocsPage>
