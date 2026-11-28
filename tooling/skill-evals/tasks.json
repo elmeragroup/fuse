@@ -1,0 +1,167 @@
+{
+  "tasks": [
+    {
+      "id": "setup-tailwind",
+      "skill": "fuse-setup",
+      "handsOverTo": ["fuse-theming"],
+      "fixture": "vite-tailwind",
+      "prompt": "This is an existing Vite + React + TypeScript app. Add the Fuse design system (@elmeragroup/fuse) to it, themed for Fjordkraft's private customers with the branded look and comfortable density.",
+      "document": {
+        "identity": "branded",
+        "brand": "fkas",
+        "segment": "private",
+        "density": "comfortable"
+      },
+      "stylesheet": "tailwind",
+      "sourceChecks": [
+        {
+          "name": "A ThemeProvider wraps the app",
+          "pattern": "<ThemeProvider\\b",
+          "expect": "match"
+        },
+        {
+          "name": "The app renders a Fuse Button",
+          "pattern": "<Button\\b",
+          "expect": "match"
+        },
+        {
+          "name": "No template variable shares a Fuse role token's name",
+          "pattern": "(?:^|[\\s;{])--(?:border|accent)\\s*:",
+          "expect": "no-match"
+        }
+      ],
+      "expectations": [
+        "The agent names the build's Tailwind v4 compiler, the @tailwindcss/vite plugin, and the split sheets in src/index.css.",
+        "The Fuse imports come after the Tailwind imports, and no preflight is added.",
+        "The color scheme bootstrap script comes before the module entry in the built index.html."
+      ]
+    },
+    {
+      "id": "setup-plain",
+      "skill": "fuse-setup",
+      "handsOverTo": ["fuse-theming"],
+      "fixture": "vite-plain",
+      "prompt": "This is a new Vite + React + TypeScript app. Add the Fuse design system (@elmeragroup/fuse) to it, themed for Fjordkraft's private customers with the branded look and comfortable density.",
+      "document": {
+        "identity": "branded",
+        "brand": "fkas",
+        "segment": "private",
+        "density": "comfortable"
+      },
+      "stylesheet": "standalone",
+      "sourceChecks": [
+        {
+          "name": "A ThemeProvider wraps the app",
+          "pattern": "<ThemeProvider\\b",
+          "expect": "match"
+        },
+        {
+          "name": "The app renders a Fuse Button",
+          "pattern": "<Button\\b",
+          "expect": "match"
+        },
+        {
+          "name": "No template variable shares a Fuse role token's name",
+          "pattern": "(?:^|[\\s;{])--(?:border|accent)\\s*:",
+          "expect": "no-match"
+        }
+      ],
+      "expectations": [
+        "The agent says the build compiles no Tailwind and does not add Tailwind.",
+        "The color scheme bootstrap script comes before the module entry in the built index.html."
+      ]
+    },
+    {
+      "id": "build-ui-form",
+      "skill": "fuse-build-ui",
+      "handsOverTo": [],
+      "fixture": "vite-tailwind-fuse",
+      "prompt": "This Vite + React + TypeScript app already has the Fuse design system (@elmeragroup/fuse) installed and themed.\n\nBuild a 'Contact us' screen in src/App.tsx: a form with a name field, an email field, a topic picker with the options Billing, Moving and Other, a multi-line message field, and a submit button. Each control needs a visible label and shows a validation error when it is empty. Pressing submit opens a confirmation dialog first. While the form submits, the confirm button shows a pending state.",
+      "document": {
+        "identity": "branded",
+        "brand": "fkas",
+        "segment": "private",
+        "density": "comfortable"
+      },
+      "stylesheet": "tailwind",
+      "sourceChecks": [
+        {
+          "name": "The controls use Fuse field components",
+          "pattern": "@elmeragroup/fuse/(?:field|form|text-field|textarea-field|select-field)[\"']",
+          "expect": "match"
+        },
+        {
+          "name": "The confirmation is a Fuse dialog",
+          "pattern": "@elmeragroup/fuse/(?:alert-)?dialog[\"']",
+          "expect": "match"
+        },
+        {
+          "name": "A button takes the pending prop",
+          "pattern": "\\bpending=\\{",
+          "expect": "match"
+        }
+      ],
+      "expectations": [
+        "Each control's label and error message are wired through a field component or Field.Root.",
+        "The dialog's trigger or confirm control is a Fuse Button.",
+        "Every prop passed to a Fuse part appears on its docs page, or is a forwarded native attribute or event handler."
+      ]
+    },
+    {
+      "id": "build-ui-toggle-group",
+      "skill": "fuse-build-ui",
+      "handsOverTo": [],
+      "fixture": "vite-tailwind-fuse",
+      "prompt": "This Vite + React + TypeScript app already has the Fuse design system (@elmeragroup/fuse) installed and themed.\n\nBuild a 'Notification settings' screen in src/App.tsx: a vertical toggle group to pick one channel out of Email, SMS and Push, and a save button. Lay the screen out as a centred column with space between the parts.",
+      "document": {
+        "identity": "branded",
+        "brand": "fkas",
+        "segment": "private",
+        "density": "comfortable"
+      },
+      "stylesheet": "tailwind",
+      "sourceChecks": [
+        {
+          "name": "The picker is a Fuse ToggleGroup",
+          "pattern": "@elmeragroup/fuse/toggle-group[\"']",
+          "expect": "match"
+        },
+        {
+          "name": "The toggle group is vertical",
+          "pattern": "orientation=(?:\"vertical\"|\\{\\s*[\"']vertical[\"']\\s*\\})",
+          "expect": "match"
+        }
+      ],
+      "expectations": [
+        "The layout uses utility classes, since the build compiles Tailwind v4.",
+        "The toggle group allows one pressed item at a time."
+      ]
+    },
+    {
+      "id": "theming-scope",
+      "skill": "fuse-theming",
+      "handsOverTo": [],
+      "fixture": "vite-tailwind-fuse",
+      "prompt": "This Vite + React + TypeScript app already has the Fuse design system (@elmeragroup/fuse) installed and themed for Fjordkraft private customers with the branded look.\n\nChange it to the neutral look for Trøndelag Kraft's business customers at dense density. Then add a promotion card at the bottom of the page that keeps the Fjordkraft private branded look, while the rest of the page stays on the new theme.",
+      "document": {
+        "identity": "neutral",
+        "brand": "tkas",
+        "segment": "company",
+        "density": "dense"
+      },
+      "stylesheet": "tailwind",
+      "sourceChecks": [
+        {
+          "name": "A ThemeScope re-themes part of the page",
+          "pattern": "<ThemeScope\\b",
+          "expect": "match"
+        }
+      ],
+      "expectations": [
+        "The ThemeScope's theme is branded, fkas, private.",
+        "The ThemeProvider and the <html> attributes read the new theme from one module.",
+        "The promotion card keeps the document's dense density."
+      ]
+    }
+  ]
+}
