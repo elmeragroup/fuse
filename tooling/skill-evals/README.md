@@ -16,12 +16,12 @@ run to run.
 - The server bundle and the docs catalog it reads:
 
   ```sh
-  pnpm --filter docs generate
+  pnpm exec turbo run generate --filter=docs
   pnpm --filter mcp build
   ```
 
-  The runs read the catalog as it is, so generate it from the commit you want to measure. The
-  report names that commit and any file changed since it.
+  The runner reads the catalog as it finds it. The report names the checkout's commit at run time
+  and every file changed since it, so generate the catalog from that checkout.
 
 ## Run it
 

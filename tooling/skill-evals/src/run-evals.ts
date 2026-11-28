@@ -85,7 +85,7 @@ export const runEvals = Effect.fn("runEvals")(function* (options: EvalOptions, r
   const catalogFile = path.join(repoRoot, "apps/docs/src/generated/catalog.json");
   for (const [file, how] of [
     [serverBundle, "pnpm --filter mcp build"],
-    [catalogFile, "pnpm --filter docs generate"],
+    [catalogFile, "pnpm exec turbo run generate --filter=docs"],
   ] as const) {
     if (!(yield* fs.exists(file).pipe(Effect.orElseSucceed(() => false)))) {
       return yield* unstartable(`${file} is missing. Run \`${how}\` first.`);

@@ -10,7 +10,7 @@ import type { Arm, Task } from "./task.ts";
 /** Where the run's inputs came from. */
 export type RunProvenance = {
   readonly model: string;
-  /** The commit the catalog was generated from. */
+  /** The checkout's commit at run time, which the catalog is assumed to come from. */
   readonly commit: string;
   /** Files that differ from that commit in the checkout the catalog was generated in. */
   readonly uncommitted: readonly string[];
@@ -186,7 +186,7 @@ export function renderReport(record: RunRecord, tasks: readonly Task[]): string 
     "",
     `- Model: \`${record.model}\``,
     `- \`@elmeragroup/fuse\` installed: ${record.fuseVersions.map((version) => `\`${version}\``).join(", ") || "none"}`,
-    `- Catalog generated from \`${record.commit}\`${record.uncommitted.length === 0 ? "" : `, with uncommitted changes to ${record.uncommitted.map((file) => `\`${file}\``).join(", ")}`}`,
+    `- Checkout at run time: \`${record.commit}\`${record.uncommitted.length === 0 ? "" : `, with uncommitted changes to ${record.uncommitted.map((file) => `\`${file}\``).join(", ")}`}`,
     `- Install command in the catalog: ${record.installCommand === undefined ? "not found" : `\`${record.installCommand}\``}`,
     `- Started ${record.startedAt}. Agent cost: $${record.totalCostUsd.toFixed(2)}`,
     "",

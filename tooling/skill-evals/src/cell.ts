@@ -37,7 +37,7 @@ export type RunSettings = {
   readonly catalogFile: string;
   /** The skills folder the with-skill arm's server serves, `apps/mcp/skills`. */
   readonly skillsDirectory: string;
-  /** The commit the catalog was generated from, which the server reports. */
+  /** The checkout's commit at run time, which the server reports as its version. */
   readonly commit: string;
   /** The run's output folder, outside the repository. */
   readonly outDirectory: string;
