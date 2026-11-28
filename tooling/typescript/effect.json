@@ -19,8 +19,11 @@
         // plugin's per-node helpers use Effect.fnUntraced, which opens no span.
         "effectFn": ["span", "untraced"],
         // The unstable modules Fuse's scripts and tooling build on: the CLI, HTTP, child-process, file-system and
-        // terminal services, the platform layers that provide them, the test kit, and Stream's byte limit.
+        // terminal services, the platform layers that provide them, the test kit, and Stream's byte limit. The MCP
+        // server (apps/mcp) adds the AI modules, whose MCP server it runs, and ByteSize, which sizes its body limit.
         "allowedUnstableApis": [
+          "effect/ai",
+          "effect/ByteSize",
           "effect/cli",
           "effect/http",
           "effect/process",

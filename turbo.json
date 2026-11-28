@@ -87,6 +87,9 @@
     "test:packed-consumer": {
       "dependsOn": ["pack"]
     },
+    // The MCP server's check of its skills against the generated docs catalog. apps/mcp/turbo.json
+    // declares its dependency on docs#generate.
+    "test:catalog": {},
     "test:types": {
       "dependsOn": ["build"]
     },
@@ -134,6 +137,7 @@
         "//#type-check:scripts",
         "type-check",
         "test",
+        "test:catalog",
         "test:browser",
         "test:types",
         "build",

@@ -390,6 +390,9 @@ export default defineConfig({
   overrides: [
     {
       files: ["apps/**/*.{ts,tsx}", "packages/fuse/**/*.{ts,tsx}"],
+      // The MCP server renders no React. Its Effect code calls `HttpRouter.use` and the like, which
+      // the hook rules would read as React hooks.
+      excludeFiles: ["apps/mcp/**"],
       globals: {
         React: "writable",
       },

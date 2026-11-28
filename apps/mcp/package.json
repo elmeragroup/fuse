@@ -1,0 +1,30 @@
+{
+  "name": "mcp",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The Fuse MCP server: the Fuse docs as tools and the Fuse usage skills, over Streamable HTTP.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "tsdown",
+    "dev": "FUSE_CATALOG_FILE=../docs/src/generated/catalog.json node src/main.ts",
+    "start": "FUSE_CATALOG_FILE=${FUSE_CATALOG_FILE:-../docs/src/generated/catalog.json} node dist/main.mjs",
+    "test": "vitest run --project unit",
+    "test:catalog": "vitest run --project catalog",
+    "type-check": "tsrs --noEmit"
+  },
+  "dependencies": {
+    "@effect/platform-node": "catalog:",
+    "@elmeragroup/docs-catalog": "workspace:*",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/vitest": "catalog:",
+    "@elmeragroup/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "tsdown": "catalog:",
+    "tsrs": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

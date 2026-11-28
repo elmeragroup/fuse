@@ -1,0 +1,33 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    // The unit suites read a fixture catalog under test/, and fixture skills or the skills/ source
+    // folder, so they wait neither for the Fuse build that the root `test` task depends on nor for
+    // the docs catalog.
+    "test": {
+      "dependsOn": []
+    },
+    // Runs the suites that read the catalog docs#generate writes: every read_doc href the shipped
+    // skills name must exist in it, and the search pins must rank their pages.
+    "test:catalog": {
+      "dependsOn": ["docs#generate"]
+    },
+    // The server has no browser, e2e or packed-consumer suite. Without these the root edges would
+    // build it in the browser job for tasks that run nothing.
+    "test:browser": {
+      "dependsOn": []
+    },
+    "test:e2e": {
+      "dependsOn": []
+    },
+    "test:packed-consumer": {
+      "dependsOn": []
+    },
+    // The server reads the docs catalog that `docs#generate` writes.
+    "dev": {
+      "dependsOn": ["docs#generate"],
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

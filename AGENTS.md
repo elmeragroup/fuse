@@ -43,6 +43,8 @@ Review changes to independent RSC expectations in `apps/docs/test/fixtures/`.
 Write every Node script, in `scripts/` and `tooling/`, as idiomatic Effect under the
 `coding-standards` skill. A CI job that runs one installs only that script's runtime
 dependencies, as `publish-release.yml`'s `notify` job does for `tooling/release-announcement`.
+Write the MCP server in `apps/mcp` as idiomatic Effect under the same skill. It ships as one
+bundled file beside `catalog.json` and `skills/`, so it reads nothing else at runtime.
 
 ## Documentation
 
