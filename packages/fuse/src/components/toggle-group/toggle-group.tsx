@@ -27,8 +27,15 @@ const ToggleGroupContext = createContext<ToggleGroupContextValue>({});
 
 export type ToggleGroupRootProps = Omit<
   ComponentProps<typeof ToggleGroupPrimitive>,
-  "className" | "style"
+  "className" | "style" | "orientation"
 > & {
+  /**
+   * The direction the items run in. `horizontal` lays them out in a row, and `vertical` in a
+   * column that stretches every item to the group's width. Outside a `Toolbar.Root`, Left and
+   * Right move focus in a horizontal group, and Up and Down in a vertical one. Inside it, the
+   * toolbar's `orientation` decides the arrow keys.
+   */
+  orientation?: ComponentProps<typeof ToggleGroupPrimitive>["orientation"];
   /** Extra classes for the group, merged last. */
   className?: string;
   /** Inline styles, merged after the `--gap` custom property the group sets from `spacing`. */
