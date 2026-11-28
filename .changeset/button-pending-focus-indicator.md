@@ -1,5 +1,0 @@
----
-"@elmeragroup/fuse": minor
----
-
-`Button` `isPending` keeps the button in the focus order and stamps `aria-busy`, so a keyboard user who activated an async action is still on the button when the result arrives; before, the native `disabled` attribute dropped focus to the document. Activation stays blocked. Pass `focusableWhenDisabled={false}` for the old native `disabled` behaviour. While pending, Button shows a spinning `SpinnerGap` in the leading icon position and hides its own leading and bare SVG children so the spinner takes their place (a trailing `data-icon="inline-end"` icon stays), so a call site only passes `isPending`; remove hand-placed pending spinners. The new `pendingIndicator` prop replaces the spinner with your own node, or with `null` renders no indicator and hides nothing, for brand buttons that centre their own spinner over unchanged content. `ConfirmButton` inherits all of it. Announce progress through the label or a `role="status"` region, since `aria-busy` alone says nothing.
