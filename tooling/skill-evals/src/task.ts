@@ -54,8 +54,8 @@ const CheckName = Schema.NonEmptyString;
 const SourceCheck = Schema.Union([
   Schema.Struct({
     name: CheckName,
-    /** An element of one of these components renders. */
-    kind: Schema.Literal("renders"),
+    /** The source holds a JSX element of one of these components. Whether it renders is not read. */
+    kind: Schema.Literal("uses"),
     components: Schema.NonEmptyArray(ComponentPath),
   }),
   Schema.Struct({

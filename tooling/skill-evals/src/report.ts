@@ -1,7 +1,7 @@
 /**
  * The run's report: one markdown section per task with both arms side by side, and the run record
- * the JSON file holds. A cell is a sample only when it finished, or skipped the agent, and nothing
- * set it apart; every ratio and mean counts samples alone, and the other cells are listed.
+ * the JSON file holds. Every ratio and mean counts the cells whose outcome is `counted`, and the
+ * other cells are listed with their outcome.
  */
 
 import type { CellResult } from "./cell.ts";
@@ -37,7 +37,7 @@ export type RunRecord = RunProvenance & {
   readonly fuseVersions: readonly string[];
   /**
    * What the agent runs cost together, in US dollars. A `subtotal` leaves out a run whose cost the
-   * CLI never reported, as after a timeout.
+   * CLI never reported, as after a timeout, and every cell that began but has no record yet.
    */
   readonly cost: { readonly _tag: "total" | "subtotal"; readonly usd: number };
   /** The checks on each task's untouched fixture, before any agent ran. */
@@ -51,12 +51,15 @@ export type RunRecord = RunProvenance & {
  * @param provenance - Where the inputs came from.
  * @param untouched - The checks on each task's untouched fixture, by task id.
  * @param cells - The finished cells.
+ * @param unrecorded - How many cells that may have run an agent began and have no record: still
+ *   running, or their record failed to write.
  * @returns The record.
  */
 export function runRecord(
   provenance: RunProvenance,
   untouched: Readonly<Record<string, readonly CheckResult[]>>,
-  cells: readonly CellResult[]
+  cells: readonly CellResult[],
+  unrecorded: number
 ): RunRecord {
   const costs = cells.flatMap((cell) => (cell.agent === undefined ? [] : [cell.agent.cost]));
   return {
@@ -65,7 +68,7 @@ export function runRecord(
       ...new Set(cells.flatMap((cell) => (cell.fuseVersion === undefined ? [] : [cell.fuseVersion]))),
     ].sort(),
     cost: {
-      _tag: costs.some((cost) => cost._tag === "unknown") ? "subtotal" : "total",
+      _tag: unrecorded > 0 || costs.some((cost) => cost._tag === "unknown") ? "subtotal" : "total",
       usd: costs.reduce((sum, cost) => sum + (cost._tag === "known" ? cost.usd : 0), 0),
     },
     untouched,
@@ -73,16 +76,17 @@ export function runRecord(
   };
 }
 
-/**
- * Whether a cell counts in its arm's ratios and means: its agent finished, or the run skipped the
- * agent, and nothing set it apart.
- */
 function isSample(cell: CellResult): boolean {
-  return (
-    (cell.status._tag === "finished" || cell.status._tag === "agent-skipped") &&
-    cell.sample._tag === "counted"
-  );
+  return cell.outcome._tag === "counted";
 }
+
+/** Each outcome as the report counts it. */
+const OUTCOME_LABELS = {
+  counted: "counted",
+  "set-apart": "set apart",
+  unfinished: "unfinished",
+  "not-started": "not started",
+} as const satisfies Record<CellResult["outcome"]["_tag"], string>;
 
 const ARM_HEADINGS = {
   "with-skill": "With the skill",
@@ -137,21 +141,17 @@ function taskSection(
   ].sort();
   const statusCount = (arm: Arm) => {
     const group = all(arm);
-    const count = (tag: CellResult["status"]["_tag"]) =>
-      group.filter((cell) => cell.status._tag === tag).length;
-    const setApart = group.filter((cell) => !isSample(cell) && cell.sample._tag === "set-apart").length;
-    return [
-      `${String(samples(arm).length)} of ${String(group.length)} counted`,
-      ...(count("unfinished") > 0 ? [`${String(count("unfinished"))} unfinished`] : []),
-      ...(count("not-started") > 0 ? [`${String(count("not-started"))} not started`] : []),
-      ...(setApart > 0 ? [`${String(setApart)} set apart`] : []),
-    ].join(", ");
+    const counts = Object.entries(OUTCOME_LABELS).flatMap(([tag, label]) => {
+      const count = group.filter((cell) => cell.outcome._tag === tag).length;
+      return tag === "counted" || count > 0 ? [`${String(count)} ${label}`] : [];
+    });
+    return `${counts.join(", ")} (of ${String(group.length)})`;
   };
 
   const lines = [
     `## ${task.id}`,
     "",
-    `Skill \`${task.skill}\`, fixture \`${task.fixture}\`. A check row counts the samples that passed it, and a number is the mean over samples. A sample is a run that finished and that nothing set apart.`,
+    `Skill \`${task.skill}\`, fixture \`${task.fixture}\`. A check row counts the counted cells that passed it, and a number is the mean over counted cells.`,
     "",
     ...table([row("Runs", statusCount)]),
     "",
@@ -219,22 +219,21 @@ function taskSection(
   const notes = arms.flatMap((arm) =>
     all(arm).flatMap((cell) => {
       const label = `${arm} #${String(cell.repeat)}`;
-      const status =
-        cell.status._tag === "not-started"
-          ? [`- ${label} did not start: ${firstLine(cell.status.message)}`]
-          : cell.status._tag === "unfinished"
-            ? [`- ${label} did not finish: ${cell.status.reason}`]
-            : [];
-      const apart =
-        cell.sample._tag === "set-apart"
-          ? [`- ${label} is set apart: ${cell.sample.reasons.join("; ")}`]
-          : [];
+      const outcome =
+        cell.outcome._tag === "not-started"
+          ? [`- ${label} did not start: ${firstLine(cell.outcome.reason)}`]
+          : cell.outcome._tag === "unfinished"
+            ? [`- ${label} did not finish: ${cell.outcome.reason}`]
+            : cell.outcome._tag === "set-apart"
+              ? [`- ${label} is set apart`]
+              : [];
+      const reasons = cell.setApartReasons.map((reason) => `  - ${reason}`);
       const failed = isSample(cell)
         ? cell.checks
             .filter((check) => !check.passed)
             .map((check) => `- ${label}, ${check.name}: ${firstLine(check.detail)}`)
         : [];
-      return [...status, ...apart, ...failed];
+      return [...outcome, ...reasons, ...failed];
     })
   );
   if (notes.length > 0) lines.push("", "Cells outside the counts, and failed checks:", "", ...notes);
@@ -256,7 +255,7 @@ export function renderReport(record: RunRecord, tasks: readonly Task[]): string 
     `- \`@elmeragroup/fuse\` installed: ${record.fuseVersions.map((version) => `\`${version}\``).join(", ") || "none"}`,
     `- The checkout's commit at run time: \`${record.checkoutCommit}\`${record.uncommitted.length === 0 ? "" : `, with uncommitted changes to ${record.uncommitted.map((file) => `\`${file}\``).join(", ")}`}`,
     `- Install command in the catalog: ${record.installCommand === undefined ? "not found" : `\`${record.installCommand}\``}`,
-    `- Started ${record.startedAt}. Agent cost${record.cost._tag === "subtotal" ? ", a subtotal without the runs whose cost is unknown" : ""}: $${record.cost.usd.toFixed(2)}`,
+    `- Started ${record.startedAt}. Agent cost${record.cost._tag === "subtotal" ? ", a subtotal without the runs whose cost is unknown or not yet recorded" : ""}: $${record.cost.usd.toFixed(2)}`,
     "",
     "<details><summary>Inputs, by SHA-256</summary>",
     "",

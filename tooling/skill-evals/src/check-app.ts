@@ -18,9 +18,11 @@ import {
   dataSlotNames,
   fuseImports,
   linkedStylesheets,
+  sourceDirectives,
 } from "./checks.ts";
 import type { CheckResult, Resolution, SourceDirective, SourceFile } from "./checks.ts";
 import { outputTail, runCommand, succeeded } from "./command.ts";
+import { isInside } from "./isolation.ts";
 import type { Environment } from "./isolation.ts";
 import type { Task } from "./task.ts";
 
@@ -130,13 +132,23 @@ export const checkApp = Effect.fn("checkApp")(function* (appDirectory: string, t
       )
     );
   const typeCheck = yield* command("Type-check passes", ["exec", "tsc", "-b"]);
-  // A build the agent left behind must not count.
-  yield* fs.remove(path.join(appDirectory, "dist"), { recursive: true, force: true }).pipe(Effect.ignore);
-  const build = yield* command("Build passes", ["run", "build"]);
   const distDirectory = path.join(appDirectory, "dist");
-  const html = Option.getOrUndefined(
-    yield* fs.readFileString(path.join(distDirectory, "index.html")).pipe(Effect.option)
-  );
+  // A build the agent left behind must not count, so the old output goes first and a failed
+  // build reads nothing.
+  const cleaned = yield* fs.remove(distDirectory, { recursive: true, force: true }).pipe(Effect.result);
+  const build =
+    cleaned._tag === "Failure"
+      ? {
+          name: "Build passes",
+          passed: false,
+          detail: `the old dist could not be removed: ${cleaned.failure.message}`,
+        }
+      : yield* command("Build passes", ["run", "build"]);
+  const html = build.passed
+    ? Option.getOrUndefined(
+        yield* fs.readFileString(path.join(distDirectory, "index.html")).pipe(Effect.option)
+      )
+    : undefined;
   const shipped =
     html === undefined
       ? undefined
@@ -149,6 +161,17 @@ export const checkApp = Effect.fn("checkApp")(function* (appDirectory: string, t
             ),
           { concurrency: 1 }
         );
+  const fromBuild = (check: CheckResult): CheckResult =>
+    build.passed
+      ? check
+      : {
+          ...check,
+          passed: false,
+          detail:
+            cleaned._tag === "Failure"
+              ? "the old dist could not be removed"
+              : "the build failed, so its output is not read",
+        };
 
   const packageDirectory = path.join(appDirectory, "node_modules/@elmeragroup/fuse");
   const version = yield* fs.readFileString(path.join(packageDirectory, "package.json")).pipe(
@@ -163,20 +186,16 @@ export const checkApp = Effect.fn("checkApp")(function* (appDirectory: string, t
 
   const sources = yield* readSources(appDirectory);
   const reachingDirectives = new Set<string>();
-  for (const file of sources) {
-    // Every @source in every stylesheet is resolved here; the check keeps the ones a reached sheet holds.
-    for (const match of file.text.matchAll(/@source\s+(?:not\s+)?["'](?<path>[^"']+)["']/gu)) {
-      const source = match.groups?.path;
-      if (source === undefined || packageRealPath === undefined) continue;
-      const target = yield* fs
-        .realPath(path.resolve(appDirectory, path.dirname(file.path), source))
-        .pipe(Effect.option);
-      if (
-        Option.isSome(target) &&
-        (target.value === packageRealPath || target.value.startsWith(`${packageRealPath}${path.sep}`))
-      ) {
-        reachingDirectives.add(directiveKey({ file: file.path, path: source }));
-      }
+  // Every positive @source in every stylesheet is resolved here; the check keeps the ones a reached
+  // sheet holds. A glob is resolved from its folder before the first segment with a pattern.
+  const everyFile = new Set(sources.map((file) => file.path));
+  for (const directive of sourceDirectives(sources, everyFile)) {
+    if (packageRealPath === undefined) break;
+    const target = yield* fs
+      .realPath(path.resolve(appDirectory, path.dirname(directive.file), globRoot(directive.path)))
+      .pipe(Effect.option);
+    if (Option.isSome(target) && isInside(packageRealPath, target.value)) {
+      reachingDirectives.add(directiveKey(directive));
     }
   }
   const resolutions = yield* resolveImports(appDirectory, fuseImports(sources), env);
@@ -184,21 +203,30 @@ export const checkApp = Effect.fn("checkApp")(function* (appDirectory: string, t
   const checks: CheckResult[] = [
     typeCheck,
     build,
-    checkDocument(html, task.document),
-    checkStylesheetMode(
-      {
-        sources,
-        shipped,
-        fuseSlots,
-        reachesPackage: (directive) => reachingDirectives.has(directiveKey(directive)),
-      },
-      task.stylesheet
+    fromBuild(checkDocument(html, task.document)),
+    fromBuild(
+      checkStylesheetMode(
+        {
+          sources,
+          shipped,
+          fuseSlots,
+          reachesPackage: (directive) => reachingDirectives.has(directiveKey(directive)),
+        },
+        task.stylesheet
+      )
     ),
     checkFuseImports(sources, resolutions),
     ...task.sourceChecks.map((check) => checkSource(srcFiles, check)),
   ];
   return { fuseVersion: Option.getOrUndefined(version), checks };
 });
+
+/** The folder a glob starts from: its segments before the first one with a pattern character. */
+function globRoot(source: string): string {
+  const segments = source.split("/");
+  const first = segments.findIndex((segment) => /[*?[\]{}]/u.test(segment));
+  return first === -1 ? source : segments.slice(0, first).join("/") || ".";
+}
 
 function directiveKey(directive: SourceDirective): string {
   return `${directive.file}\n${directive.path}`;

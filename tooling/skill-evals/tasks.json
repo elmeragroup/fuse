@@ -15,17 +15,17 @@
       "stylesheet": "tailwind",
       "sourceChecks": [
         {
-          "name": "A Fuse ThemeProvider renders",
-          "kind": "renders",
+          "name": "The source uses a Fuse `ThemeProvider`",
+          "kind": "uses",
           "components": ["ThemeProvider"]
         },
         {
-          "name": "A Fuse Button renders",
-          "kind": "renders",
+          "name": "The source uses a Fuse `Button`",
+          "kind": "uses",
           "components": ["Button"]
         },
         {
-          "name": "No stylesheet declares --border or --accent",
+          "name": "No source stylesheet declares `--border` or `--accent`",
           "kind": "no-custom-property",
           "properties": ["--border", "--accent"]
         }
@@ -51,17 +51,17 @@
       "stylesheet": "standalone",
       "sourceChecks": [
         {
-          "name": "A Fuse ThemeProvider renders",
-          "kind": "renders",
+          "name": "The source uses a Fuse `ThemeProvider`",
+          "kind": "uses",
           "components": ["ThemeProvider"]
         },
         {
-          "name": "A Fuse Button renders",
-          "kind": "renders",
+          "name": "The source uses a Fuse `Button`",
+          "kind": "uses",
           "components": ["Button"]
         },
         {
-          "name": "No stylesheet declares --border or --accent",
+          "name": "No source stylesheet declares `--border` or `--accent`",
           "kind": "no-custom-property",
           "properties": ["--border", "--accent"]
         }
@@ -86,17 +86,17 @@
       "stylesheet": "tailwind",
       "sourceChecks": [
         {
-          "name": "A Fuse Field, TextField, TextareaField or SelectField renders",
-          "kind": "renders",
+          "name": "The source uses a Fuse `Field`, `TextField`, `TextareaField` or `SelectField`",
+          "kind": "uses",
           "components": ["Field.Root", "TextField", "TextareaField", "SelectField"]
         },
         {
-          "name": "A Fuse Dialog or AlertDialog renders",
-          "kind": "renders",
+          "name": "The source uses a Fuse `Dialog` or `AlertDialog`",
+          "kind": "uses",
           "components": ["Dialog.Root", "AlertDialog.Root"]
         },
         {
-          "name": "A Fuse element carries isPending or isPerformingAction, not false",
+          "name": "In the source, a Fuse element sets `isPending` or `isPerformingAction`, not to `false`",
           "kind": "prop",
           "components": "any",
           "props": ["isPending", "isPerformingAction"],
@@ -124,12 +124,12 @@
       "stylesheet": "tailwind",
       "sourceChecks": [
         {
-          "name": "A Fuse ToggleGroup renders",
-          "kind": "renders",
+          "name": "The source uses a Fuse `ToggleGroup`",
+          "kind": "uses",
           "components": ["ToggleGroup.Root"]
         },
         {
-          "name": "The ToggleGroup's orientation is vertical",
+          "name": "In the source, the Fuse `ToggleGroup` sets `orientation` to `vertical`",
           "kind": "prop",
           "components": ["ToggleGroup.Root"],
           "props": ["orientation"],
@@ -158,8 +158,8 @@
       "stylesheet": "tailwind",
       "sourceChecks": [
         {
-          "name": "A Fuse ThemeScope renders",
-          "kind": "renders",
+          "name": "The source uses a Fuse `ThemeScope`",
+          "kind": "uses",
           "components": ["ThemeScope"]
         }
       ],

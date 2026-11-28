@@ -27,6 +27,8 @@ import type { RunProvenance } from "./report.ts";
 import { ARMS, loadTasks } from "./task.ts";
 import type { Arm, Task } from "./task.ts";
 
+const OUTCOME_VERBS = { "not-started": "did not start", unfinished: "did not finish" } as const;
+
 /** What the command line asks for. */
 export type EvalOptions = {
   /** The task ids to run, or every task when empty. */
@@ -224,6 +226,9 @@ export const runEvals = Effect.fn("runEvals")(function* (options: EvalOptions, r
   // One writer: each write takes the newest snapshot under the lock and replaces each file by
   // rename, so an older snapshot never lands after a newer one.
   const finished = yield* Ref.make<readonly CellResult[]>([]);
+  // Cells begun and not yet in `finished`. The report is written when a cell begins as well as when
+  // it ends, so a pass stopped mid-cell leaves a cost marked as a subtotal.
+  const pending = yield* Ref.make(0);
   const unrecorded = yield* Ref.make<readonly string[]>([]);
   const lock = yield* Semaphore.make(1);
   const replace = (file: string, text: string) =>
@@ -231,7 +236,12 @@ export const runEvals = Effect.fn("runEvals")(function* (options: EvalOptions, r
   const write = lock
     .withPermits(1)(
       Effect.gen(function* () {
-        const record = runRecord(provenance, untouched, yield* Ref.get(finished));
+        const record = runRecord(
+          provenance,
+          untouched,
+          yield* Ref.get(finished),
+          options.agent === "run" ? yield* Ref.get(pending) : 0
+        );
         const json = yield* encodeJsonText(record);
         yield* replace(path.join(outDirectory, "results.json"), `${json}\n`);
         yield* replace(path.join(outDirectory, "report.md"), renderReport(record, tasks));
@@ -242,6 +252,9 @@ export const runEvals = Effect.fn("runEvals")(function* (options: EvalOptions, r
         (cause) => new ReportWriteFailed({ message: `Writing the report failed: ${cause.message}` })
       )
     );
+  const checkpoint = write.pipe(
+    Effect.catch((cause) => Console.error(`${cause.message}. The next write retries.`))
+  );
 
   yield* Effect.forEach(
     keys,
@@ -249,6 +262,8 @@ export const runEvals = Effect.fn("runEvals")(function* (options: EvalOptions, r
       Effect.gen(function* () {
         const label = `${key.task.id} ${key.arm} #${String(key.repeat)}`;
         yield* Console.log(`▶ ${label}`);
+        yield* Ref.update(pending, (count) => count + 1);
+        yield* checkpoint;
         const result = yield* runCell(settings, key).pipe(Effect.result);
         if (result._tag === "Failure") {
           yield* Console.error(`✗ ${label}: ${result.failure.message}`);
@@ -257,18 +272,15 @@ export const runEvals = Effect.fn("runEvals")(function* (options: EvalOptions, r
         }
         const cell = result.success;
         yield* Ref.update(finished, (cells) => [...cells, cell]);
-        yield* write.pipe(
-          Effect.catch((cause) => Console.error(`${cause.message}. The next write retries.`))
-        );
+        yield* Ref.update(pending, (count) => count - 1);
+        yield* checkpoint;
         const passed = cell.checks.filter((check) => check.passed).length;
         const cost = cell.agent?.cost._tag === "known" ? ` $${cell.agent.cost.usd.toFixed(2)}` : "";
         const state =
-          cell.status._tag === "not-started"
-            ? `did not start: ${cell.status.message.split("\n")[0] ?? ""}`
-            : `${cell.status._tag}${cell.sample._tag === "set-apart" ? ", set apart" : ""}, ${String(passed)}/${String(cell.checks.length)} checks${cost}`;
-        yield* Console.log(
-          `${cell.status._tag === "finished" || cell.status._tag === "agent-skipped" ? "✓" : "✗"} ${label}: ${state}`
-        );
+          cell.outcome._tag === "not-started" || cell.outcome._tag === "unfinished"
+            ? `${OUTCOME_VERBS[cell.outcome._tag]}: ${cell.outcome.reason.split("\n")[0] ?? ""}`
+            : `${cell.outcome._tag}, ${String(passed)}/${String(cell.checks.length)} checks${cost}`;
+        yield* Console.log(`${cell.outcome._tag === "counted" ? "✓" : "✗"} ${label}: ${state}`);
       }),
     { concurrency: options.concurrency, discard: true }
   );

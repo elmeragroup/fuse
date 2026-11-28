@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { checkDocument, checkFuseImports, checkSource, checkStylesheetMode } from "../src/checks.ts";
-import type { Resolution, SourceFile, StylesheetEvidence } from "../src/checks.ts";
+import type { Resolution, SourceDirective, SourceFile, StylesheetEvidence } from "../src/checks.ts";
 import type { SourceCheck } from "../src/task.ts";
 
 // Unit under test: the checks the runner decides from an app's files. Oracles: the attributes
@@ -58,6 +58,7 @@ describe("checkFuseImports", () => {
   const RESOLUTIONS = new Map<string, Resolution>([
     ["@elmeragroup/fuse/button", resolved("button.js")],
     ["@elmeragroup/fuse/css", resolved("styles/fuse.css")],
+    ["@elmeragroup/fuse/flags/NO.svg", resolved("flags/NO.svg")],
     ["@elmeragroup/fuse/flags/nonexistent.svg", { _tag: "unresolved", reason: "ERR_MODULE_NOT_FOUND" }],
   ]);
   const app = (script: string, css = ""): SourceFile[] => [
@@ -70,6 +71,16 @@ describe("checkFuseImports", () => {
       case: "a script import and a CSS @import that resolve",
       sources: app(`import { Button } from "@elmeragroup/fuse/button";`, `@import "@elmeragroup/fuse/css";`),
       passed: true,
+    },
+    {
+      case: "a Vite asset import, resolved without its ?url",
+      sources: app(`import flag from "@elmeragroup/fuse/flags/NO.svg?url";`),
+      passed: true,
+    },
+    {
+      case: "a Vite asset import of a flag that does not exist",
+      sources: app(`import flag from "@elmeragroup/fuse/flags/nonexistent.svg?url";`),
+      passed: false,
     },
     {
       case: "an import that resolves to no file",
@@ -125,6 +136,15 @@ describe("checkStylesheetMode", () => {
     {
       case: "a Tailwind app whose entry reaches the source with a positive @source",
       input: evidence(tailwindApp(TAILWIND_CSS)),
+      expected: "tailwind",
+      passed: true,
+    },
+    {
+      case: "a Tailwind app whose positive @source is a glob, whose /**/ is no comment",
+      input: {
+        ...evidence(tailwindApp(TAILWIND_CSS.replace(PACKAGE_SOURCE, `${PACKAGE_SOURCE}/**/*.js`))),
+        reachesPackage: (directive: SourceDirective) => directive.path === `${PACKAGE_SOURCE}/**/*.js`,
+      },
       expected: "tailwind",
       passed: true,
     },
@@ -216,7 +236,7 @@ describe("checkSource", () => {
     props: ["isPending", "isPerformingAction"],
     value: "not-false",
   };
-  const PROVIDER: SourceCheck = { name: "provider", kind: "renders", components: ["ThemeProvider"] };
+  const PROVIDER: SourceCheck = { name: "provider", kind: "uses", components: ["ThemeProvider"] };
   const TOGGLE_IMPORT = `import { ToggleGroup } from "@elmeragroup/fuse/toggle-group";\n`;
   const app = (text: string): SourceFile[] => [{ path: "src/App.tsx", text }];
 
@@ -281,6 +301,12 @@ describe("checkSource", () => {
       text: `import { AlertDialog } from "@elmeragroup/fuse/alert-dialog";\n<AlertDialog.Content isPerformingAction={false} />`,
       passed: false,
     },
+    ...["(false)", "false as boolean", "false satisfies boolean", "(false as boolean)"].map((value) => ({
+      case: `a pending prop set to ${value}`,
+      check: PENDING,
+      text: `import { Button } from "@elmeragroup/fuse";\n<Button isPending={${value}} />`,
+      passed: false,
+    })),
   ])("$case", ({ check, text, passed }) => {
     expect(checkSource(app(text), check).passed).toBe(passed);
   });

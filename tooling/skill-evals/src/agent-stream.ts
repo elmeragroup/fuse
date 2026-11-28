@@ -7,8 +7,10 @@ import * as Duration from "effect/Duration";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Schema from "effect/Schema";
+import path from "node:path";
 
 import type { CommandOutcome } from "./command.ts";
+import { isInside } from "./isolation.ts";
 
 /** The session setup line, the first the CLI prints. */
 const InitLine = Schema.Struct({
@@ -106,8 +108,18 @@ export type StreamEnding =
       readonly _tag: "no-result";
     };
 
-/** One attempt to read a skill, and whether the agent got the skill's text back. */
-export type SkillRead = { readonly uri: string; readonly received: boolean };
+/**
+ * One attempt to read a skill: whether the agent got the skill's text back, and whether that
+ * result came before the agent's first `Edit` or `Write` call.
+ */
+export type SkillRead = {
+  readonly uri: string;
+  readonly received: boolean;
+  readonly beforeFirstEdit: boolean;
+};
+
+/** The built-in tools that change a file. An edit through the shell is not counted. */
+const FILE_EDIT_TOOLS = new Set(["Edit", "Write", "NotebookEdit"]);
 
 /** What one headless agent run did, from its stream. */
 export type AgentRun = {
@@ -166,8 +178,9 @@ function readStream(lines: readonly string[]) {
   let init: typeof InitLine.Type | undefined;
   let result: typeof ResultLine.Type | undefined;
   const calls = new Map<string, typeof ToolUse.Type>();
-  const results = new Map<string, typeof ToolResult.Type>();
-  for (const line of lines) {
+  const results = new Map<string, { readonly result: typeof ToolResult.Type; readonly line: number }>();
+  let firstEditLine = Number.POSITIVE_INFINITY;
+  for (const [index, line] of lines.entries()) {
     const json = decodeJson(line);
     if (Option.isNone(json)) continue;
     const value = json.value;
@@ -177,18 +190,22 @@ function readStream(lines: readonly string[]) {
     if (Option.isSome(assistant)) {
       for (const block of assistant.value.message.content) {
         const call = decodeToolUse(block);
-        if (Option.isSome(call)) calls.set(call.value.id, call.value);
+        if (Option.isNone(call)) continue;
+        calls.set(call.value.id, call.value);
+        if (FILE_EDIT_TOOLS.has(call.value.name)) firstEditLine = Math.min(firstEditLine, index);
       }
     }
     const user = decodeUser(value);
     if (Option.isSome(user) && !Predicate.isString(user.value.message.content)) {
       for (const block of user.value.message.content) {
         const toolResult = decodeToolResult(block);
-        if (Option.isSome(toolResult)) results.set(toolResult.value.tool_use_id, toolResult.value);
+        if (Option.isSome(toolResult)) {
+          results.set(toolResult.value.tool_use_id, { result: toolResult.value, line: index });
+        }
       }
     }
   }
-  return { init, result, calls, results };
+  return { init, result, calls, results, firstEditLine };
 }
 
 /**
@@ -197,11 +214,12 @@ function readStream(lines: readonly string[]) {
  *
  * @param lines - The lines the CLI printed on stdout.
  * @param skills - The text the server serves for each skill URI, which a read must return to count
- *   as received.
+ *   as received. A read counts as before the first edit when its result line comes before the
+ *   line of the first `Edit` or `Write` call.
  * @returns What the run did.
  */
 export function summarizeStream(lines: readonly string[], skills: ReadonlyMap<string, string>): AgentRun {
-  const { init, result, calls, results } = readStream(lines);
+  const { init, result, calls, results, firstEditLine } = readStream(lines);
   const toolCalls: Record<string, number> = {};
   for (const name of [...calls.values()]
     .map((call) => call.name)
@@ -215,10 +233,14 @@ export function summarizeStream(lines: readonly string[], skills: ReadonlyMap<st
     mcpServers: Object.fromEntries((init?.mcp_servers ?? []).map((server) => [server.name, server.status])),
     toolCalls,
     skillReads: [...calls.values()].flatMap((call) =>
-      skillUris(call).map((uri) => ({
-        uri,
-        received: carriesSkill(results.get(call.id), uri, skills.get(uri)),
-      }))
+      skillUris(call).map((uri) => {
+        const answer = results.get(call.id);
+        return {
+          uri,
+          received: carriesSkill(answer?.result, uri, skills.get(uri)),
+          beforeFirstEdit: answer !== undefined && answer.line < firstEditLine,
+        };
+      })
     ),
     ending:
       result === undefined
@@ -239,25 +261,41 @@ export function summarizeStream(lines: readonly string[], skills: ReadonlyMap<st
 export type ForbiddenPath = { readonly label: string; readonly path: string };
 
 const SKILL_URI = /skill:\/\/[^\s"'`]*?SKILL\.md/gu;
+/** The inputs of the file tools that hold one path. */
+const PATH_INPUTS = ["file_path", "notebook_path", "path"];
+
+/** The cell's own folder, which the agent may name. */
+export type OwnFolder = {
+  /** The cell's folder, as written and canonical. */
+  readonly folders: readonly string[];
+  /** The agent's working directory, which a relative path is read from. */
+  readonly cwd: string;
+};
 
 /**
  * The tool calls that reached outside the agent's own app: an input that names a forbidden path,
- * or that names a `SKILL.md` other than through a `skill://` URI.
+ * or that names a `SKILL.md` other than through a `skill://` URI. A file tool's path is resolved
+ * from the agent's working directory, and one inside the cell's folder never counts, whatever its
+ * name. Other inputs, such as a shell command, are read as text with the cell's folder removed.
  *
  * @param lines - The lines the CLI printed on stdout.
  * @param forbidden - The checkout, the run's folder, the other cells' folders and the like.
- * @param own - The cell's own folder, as written and canonical, which the agent may name and which
- *   a forbidden prefix may match.
+ * @param own - The cell's folder and the agent's working directory.
  * @returns One line per offending call, empty when the agent stayed in its folder.
  */
 export function auditStream(
   lines: readonly string[],
   forbidden: readonly ForbiddenPath[],
-  own: readonly string[]
+  own: OwnFolder
 ): readonly string[] {
   const { calls } = readStream(lines);
   return [...calls.values()].flatMap((call) => {
-    const input = own.reduce((text, folder) => text.replaceAll(folder, ""), JSON.stringify(call.input));
+    const texts = Object.entries(call.input).map(([key, value]) => {
+      if (!PATH_INPUTS.includes(key) || !Predicate.isString(value)) return JSON.stringify(value);
+      const resolved = path.resolve(own.cwd, value);
+      return own.folders.some((folder) => isInside(folder, resolved)) ? "" : resolved;
+    });
+    const input = own.folders.reduce((text, folder) => text.replaceAll(folder, ""), texts.join("\n"));
     const named = [
       ...new Set(forbidden.filter((entry) => input.includes(entry.path)).map((entry) => entry.label)),
     ];
@@ -266,7 +304,7 @@ export function auditStream(
   });
 }
 
-/** How an agent run went, which decides whether its cell is a sample. */
+/** How an agent run went, which decides whether its cell can be counted. */
 export type AgentVerdict =
   | {
       /** The session never had the Fuse server, so the run measured nothing. */

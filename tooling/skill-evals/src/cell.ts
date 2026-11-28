@@ -68,16 +68,16 @@ export type RunSettings = {
 /** Which cell. */
 export type CellKey = { readonly task: Task; readonly arm: Arm; readonly repeat: number };
 
-/** How far a cell got. */
-export type CellStatus =
+/**
+ * What a cell counts as. Each cell has exactly one, taken in this order: it did not start, its
+ * agent did not finish, something set it apart, or it is counted. A run that skips the agent
+ * counts its untouched fixture.
+ */
+export type CellOutcome =
   | {
-      /** The cell could not start: the install, the server, the agent's launch or its Fuse connection failed. */
+      /** The install, the server, the agent's launch or its Fuse connection failed. */
       readonly _tag: "not-started";
-      readonly message: string;
-    }
-  | {
-      /** The run skipped the agent, so the checks read the untouched fixture. */
-      readonly _tag: "agent-skipped";
+      readonly reason: string;
     }
   | {
       /** The agent ran but did not finish: a budget stop, a timeout or an error exit. */
@@ -85,18 +85,10 @@ export type CellStatus =
       readonly reason: string;
     }
   | {
-      /** The agent finished. */
-      readonly _tag: "finished";
-    };
-
-/** Whether a cell that ran is a sample of its arm. */
-export type CellSample =
-  | { readonly _tag: "counted" }
-  | {
-      /** The cell left the comparison: its agent never received the skill, or reached outside its app. */
+      /** The agent finished, and a reason in `setApartReasons` takes it out of the comparison. */
       readonly _tag: "set-apart";
-      readonly reasons: readonly string[];
-    };
+    }
+  | { readonly _tag: "counted" };
 
 /** What one agent run cost. */
 export type AgentCost =
@@ -120,8 +112,12 @@ export type CellResult = {
   readonly task: string;
   readonly arm: Arm;
   readonly repeat: number;
-  readonly status: CellStatus;
-  readonly sample: CellSample;
+  readonly outcome: CellOutcome;
+  /**
+   * What would set the cell apart: a with-skill agent that did not receive the skill before its
+   * first edit, and each tool call that reached outside the app. Listed whatever the outcome.
+   */
+  readonly setApartReasons: readonly string[];
   /** The app as the run left it, without `node_modules`, in the run's folder. */
   readonly appDirectory: string;
   readonly prompt: string;
@@ -292,11 +288,15 @@ export const runCell = Effect.fn("cell.run")(function* (settings: RunSettings, k
           .pipe(Effect.mapError(recordFailed));
         const lines = agentRun.stdout.split("\n");
         const run = summarizeStream(lines, settings.inputs.skills);
-        const audit = auditStream(
-          lines,
-          [...settings.forbidden, { label: "another cell's folder", path: TEMPORARY_PREFIX }],
-          [rootReal, root]
-        );
+        // Another cell's folder is a sibling of this one, under the same temporary folder.
+        const otherCells = [rootReal, root].map((folder) => ({
+          label: "another cell's folder",
+          path: path.join(path.dirname(folder), TEMPORARY_PREFIX),
+        }));
+        const audit = auditStream(lines, [...settings.forbidden, ...otherCells], {
+          folders: [rootReal, root],
+          cwd: path.join(rootReal, "app"),
+        });
         const agent: AgentRecord = {
           process: agentRun.outcome,
           run,
@@ -314,8 +314,8 @@ export const runCell = Effect.fn("cell.run")(function* (settings: RunSettings, k
           task: task.id,
           arm,
           repeat,
-          status: { _tag: "not-started", message: outcome.failure.message },
-          sample: { _tag: "counted" },
+          outcome: { _tag: "not-started", reason: outcome.failure.message },
+          setApartReasons: [],
           appDirectory: path.join(recordDirectory, "app"),
           prompt,
           server: undefined,
@@ -326,24 +326,26 @@ export const runCell = Effect.fn("cell.run")(function* (settings: RunSettings, k
       }
       const { server, agent } = outcome.success;
       const verdict = agent === undefined ? undefined : classifyAgent(agent.process, agent.run);
-      const status: CellStatus =
-        verdict === undefined
-          ? { _tag: "agent-skipped" }
-          : verdict._tag === "not-started"
-            ? { _tag: "not-started", message: verdict.reason }
-            : verdict._tag === "unfinished"
-              ? { _tag: "unfinished", reason: verdict.reason }
-              : { _tag: "finished" };
-      const reasons = [
+      const skillUri = `skill://${task.skill}/SKILL.md`;
+      const reads = agent?.run.skillReads.filter((read) => read.received && read.uri === skillUri) ?? [];
+      const setApartReasons = [
         ...(agent?.audit ?? []),
-        ...(arm === "with-skill" &&
-        agent !== undefined &&
-        !agent.run.skillReads.some((read) => read.received && read.uri === `skill://${task.skill}/SKILL.md`)
-          ? [`the agent never received skill://${task.skill}/SKILL.md`]
+        ...(arm === "with-skill" && agent !== undefined && !reads.some((read) => read.beforeFirstEdit)
+          ? [
+              reads.length === 0
+                ? `the agent never received ${skillUri}`
+                : `the agent received ${skillUri} only after its first file edit`,
+            ]
           : []),
       ];
+      const cellOutcome: CellOutcome =
+        verdict === undefined || verdict._tag === "finished"
+          ? { _tag: setApartReasons.length === 0 ? "counted" : "set-apart" }
+          : verdict._tag === "not-started"
+            ? { _tag: "not-started", reason: verdict.reason }
+            : { _tag: "unfinished", reason: verdict.reason };
       const checked =
-        status._tag === "not-started"
+        cellOutcome._tag === "not-started"
           ? { fuseVersion: undefined, checks: [] }
           : yield* checkApp(appDirectory, task, settings.environment);
       yield* copyApp(appDirectory, path.join(recordDirectory, "app")).pipe(Effect.mapError(recordFailed));
@@ -351,8 +353,8 @@ export const runCell = Effect.fn("cell.run")(function* (settings: RunSettings, k
         task: task.id,
         arm,
         repeat,
-        status,
-        sample: reasons.length === 0 ? { _tag: "counted" } : { _tag: "set-apart", reasons },
+        outcome: cellOutcome,
+        setApartReasons,
         appDirectory: path.join(recordDirectory, "app"),
         prompt,
         server,

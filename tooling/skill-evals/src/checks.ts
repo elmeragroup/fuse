@@ -7,7 +7,7 @@
 
 import * as Predicate from "effect/Predicate";
 import { parseSync, Visitor } from "oxc-parser";
-import type { JSXAttribute, JSXElementName, JSXOpeningElement, ParseResult } from "oxc-parser";
+import type { Expression, JSXAttribute, JSXElementName, JSXOpeningElement, ParseResult } from "oxc-parser";
 
 import type { ComponentPath, ExpectedDocument, SourceCheck, StylesheetMode } from "./task.ts";
 
@@ -41,11 +41,12 @@ function isStylesheet(path: string): boolean {
 }
 
 const HTML_COMMENT = /<!--[\s\S]*?(?:-->|$)/gu;
-const CSS_COMMENT = /\/\*[\s\S]*?(?:\*\/|$)/gu;
+/** A quoted string, kept as it is, or a comment, removed. */
+const CSS_STRING_OR_COMMENT = /(?<string>"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|\/\*[\s\S]*?(?:\*\/|$)/gu;
 
-/** A stylesheet's text with its comments removed. */
+/** A stylesheet's text with its comments removed. A `/*` inside a quoted path, as in a glob, stays. */
 function cssWithoutComments(text: string): string {
-  return text.replace(CSS_COMMENT, " ");
+  return text.replace(CSS_STRING_OR_COMMENT, (match, string: string | undefined) => string ?? " ");
 }
 
 const HTML_START_TAG = /<html\b(?<attributes>[^>]*)>/iu;
@@ -151,13 +152,22 @@ export function moduleImports(file: SourceFile): readonly string[] {
 }
 
 /**
- * Every `@elmeragroup/fuse` specifier the app's scripts and stylesheets import.
+ * Every `@elmeragroup/fuse` specifier the app's scripts and stylesheets import, without a Vite
+ * query such as `?url`, which names how Vite loads the file and is no part of its path.
  *
  * @param sources - The app's files.
  * @returns Each specifier once, in file order.
  */
 export function fuseImports(sources: readonly SourceFile[]): readonly string[] {
-  return [...new Set(sources.flatMap((file) => moduleImports(file).filter(isFuseSpecifier)))];
+  return [
+    ...new Set(
+      sources.flatMap((file) =>
+        moduleImports(file)
+          .filter(isFuseSpecifier)
+          .map((specifier) => specifier.replace(/\?.*$/su, ""))
+      )
+    ),
+  ];
 }
 
 /** How Node resolved a specifier from the app's folder. */
@@ -424,13 +434,28 @@ function tagSegments(name: JSXElementName): readonly string[] | undefined {
   }
 }
 
+/** An expression without the parentheses and TypeScript assertions around it, which keep its value. */
+function unwrapped(expression: Expression): Expression {
+  switch (expression.type) {
+    case "ParenthesizedExpression":
+    case "TSAsExpression":
+    case "TSSatisfiesExpression":
+    case "TSNonNullExpression":
+    case "TSTypeAssertion":
+      return unwrapped(expression.expression);
+    default:
+      return expression;
+  }
+}
+
 function attributeValue(attribute: JSXAttribute): AttributeValue {
   const value = attribute.value;
   if (value === null) return { _tag: "boolean", value: true };
   if (value.type === "Literal" && Predicate.isString(value.value))
     return { _tag: "string", value: value.value };
   if (value.type === "JSXExpressionContainer") {
-    const expression = value.expression;
+    const expression =
+      value.expression.type === "JSXEmptyExpression" ? value.expression : unwrapped(value.expression);
     if (expression.type === "Literal") {
       if (Predicate.isString(expression.value)) return { _tag: "string", value: expression.value };
       if (Predicate.isBoolean(expression.value)) return { _tag: "boolean", value: expression.value };
@@ -488,7 +513,7 @@ const CUSTOM_PROPERTY_DECLARATION = /(?:^|[\s;{])(?<property>--[\w-]+)\s*:/gu;
  */
 export function checkSource(sources: readonly SourceFile[], check: SourceCheck): CheckResult {
   switch (check.kind) {
-    case "renders": {
+    case "uses": {
       const hit = fuseElements(sources).find((element) => matchesComponent(element, check.components));
       return hit === undefined
         ? { name: check.name, passed: false, detail: `no Fuse ${check.components.join(" or ")} element` }
