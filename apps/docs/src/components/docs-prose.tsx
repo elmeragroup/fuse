@@ -25,5 +25,6 @@ type DocsProseProps = ComponentProps<"div"> & {
  * `prose-docs` maps typography roles to the library's colors and fonts.
  */
 export function DocsProse({ className, context = "page", ...props }: DocsProseProps): ReactElement {
-  return <div className={docsProse({ context, className })} {...props} />;
+  // The context is an attribute too, so MDX inline code can keep the prose code style on a page.
+  return <div data-prose={context} className={docsProse({ context, className })} {...props} />;
 }

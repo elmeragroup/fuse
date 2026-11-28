@@ -1,0 +1,56 @@
+import { DocsPage, pageMetadata } from "../../../../components/docs-page";
+import { BrandTable, LegalThemeCount, ThemeSlugList } from "../../../../components/page-data";
+
+export const metadata = pageMetadata("/handbook/brands-and-segments");
+
+<DocsPage href="/handbook/brands-and-segments">
+
+<h2 id="brands">Brands</h2>
+
+Seven brand codes, each four characters, fixed. The code is what appears in types, attributes, slugs
+and every line of code; the display name is what a customer sees. The two differ deliberately for
+`fkse`, which renders under the trade name Telinet while keeping its code everywhere.
+
+<BrandTable labelledBy="brands" />
+
+Steddi and Trumf are outside this theme set. `elma` is corporate Elmera and is not pinned.
+
+<h2 id="segments">Segments</h2>
+
+`private` is the consumer-facing segment and `company` the business-facing one. At v1 the two
+segments differ in exactly one place in the stylesheet — a single delta rule for branded `fkas` — so
+a segment is a small, honest override rather than a second palette.
+
+<h2 id="pinned-brands">Pinned brands</h2>
+
+Two brands exist for one segment only: `fkab` is pinned to `company` and `fkse` is pinned to
+`private`. The five other brands span both. Two identities × that pin table gives
+**<LegalThemeCount /> legal themes** — twelve neutral and twelve branded.
+
+<h2 id="illegal-permutations">The four illegal permutations</h2>
+
+These do not exist, and three independent tiers keep it that way:
+
+- `neutral-fkab-private`
+- `branded-fkab-private`
+- `neutral-fkse-company`
+- `branded-fkse-company`
+
+1. **Compile time** — the `ThemeInput` union makes them unrepresentable in typed code.
+2. **Runtime** — the provider validates and refuses to write an illegal combination, and
+   `parseThemeSlug` returns `null` for one rather than coercing it.
+3. **UI** — a picker disables the illegal segment option for a pinned brand, so it can never be
+   expressed. The picker in this site's header does exactly that; select `fkab` and watch `private`
+   go away.
+
+CSS stays best-effort by design: the stylesheet neither forbids nor special-cases an illegal attribute
+combination. Enforcement is the provider's job, not the cascade's.
+
+<h2 id="the-twenty-four">The twenty-four slugs</h2>
+
+Each theme has a canonical slug, `identity-brand-segment`. The [Theme matrix](/handbook/theme-matrix)
+renders all of them side by side.
+
+<ThemeSlugList />
+
+</DocsPage>

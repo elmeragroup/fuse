@@ -43,6 +43,11 @@ const theming: CatalogDocument = {
 
 const valid: Catalog = { documents: [widget, theming], index: "# Fuse\n" };
 const COMPONENTS = ["/components/widget"];
+const SITE_FILES: ReadonlySet<string> = new Set(["/llms.txt"]);
+/** The one prop row the widget's API reference renders. */
+const PROP_ANCHORS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ["/components/widget", new Set(["api-widget-isPending"])],
+]);
 
 /** The valid catalog with the widget's sections replaced. */
 function withWidgetSections(sections: readonly CatalogSection[]): Catalog {
@@ -56,7 +61,7 @@ function withWidgetSection(markdown: string): Catalog {
 
 describe("docs catalog checks", () => {
   it("accepts a catalog whose links resolve to a page, its `.md` endpoint or a section", () => {
-    expect(catalogProblems(valid, COMPONENTS)).toEqual([]);
+    expect(catalogProblems(valid, COMPONENTS, SITE_FILES, PROP_ANCHORS)).toEqual([]);
   });
 
   it.each([
@@ -112,6 +117,12 @@ describe("docs catalog checks", () => {
       problems: ["/components/widget#extra links to /components/gizmo, which is no document"],
     },
     {
+      rule: "a link to a path that is neither a document nor a site file",
+      catalog: withWidgetSection("Read [the full index](/llms-full.txt)."),
+      components: COMPONENTS,
+      problems: ["/components/widget#extra links to /llms-full.txt, which is no document"],
+    },
+    {
       rule: "a `.md` link to a document without sections",
       catalog: withWidgetSection("See [Theming](/handbook/theming.md)."),
       components: COMPONENTS,
@@ -127,8 +138,24 @@ describe("docs catalog checks", () => {
         "/components/widget#extra links to /components/widget#api-gizmo, which names no section of /components/widget",
       ],
     },
+    {
+      rule: "a link to a misspelled prop of a part the document has",
+      catalog: withWidgetSection("See [the prop](/components/widget#api-widget-isPendng)."),
+      components: COMPONENTS,
+      problems: [
+        "/components/widget#extra links to /components/widget#api-widget-isPendng, which names no section of /components/widget",
+      ],
+    },
+    {
+      rule: "a link to a prop anchor of no part of a document",
+      catalog: withWidgetSection("See [the prop](/components/widget#api-gizmo-isPending)."),
+      components: COMPONENTS,
+      problems: [
+        "/components/widget#extra links to /components/widget#api-gizmo-isPending, which names no section of /components/widget",
+      ],
+    },
   ])("rejects $rule", ({ catalog, components, problems }) => {
-    expect(catalogProblems(catalog, components)).toEqual(problems);
+    expect(catalogProblems(catalog, components, SITE_FILES, PROP_ANCHORS)).toEqual(problems);
   });
 
   it.each([
@@ -142,11 +169,22 @@ describe("docs catalog checks", () => {
       markdown: "See [the part](/components/widget.md?plain=1#api-widget) and [Usage](?tab=code#usage).",
     },
     { link: "a link to another origin", markdown: "See [Base UI](https://base-ui.com/react/overview)." },
+    { link: "a link to a site file under public", markdown: "Read [the index](/llms.txt)." },
+    {
+      link: "a link to a prop row of a part the document has, which the API reference anchors",
+      markdown: "Set [isPending](/components/widget#api-widget-isPending) while it saves.",
+    },
+    {
+      link: "a fragment on a document with no sections to check it against",
+      markdown: "See [what Fuse applies](/handbook/theming#what-fuse-applies).",
+    },
   ])("accepts $link", ({ markdown }) => {
-    expect(catalogProblems(withWidgetSection(markdown), COMPONENTS)).toEqual([]);
+    expect(catalogProblems(withWidgetSection(markdown), COMPONENTS, SITE_FILES, PROP_ANCHORS)).toEqual([]);
   });
 
   it("accepts a section of exactly 50,000 characters", () => {
-    expect(catalogProblems(withWidgetSection("x".repeat(50_000)), COMPONENTS)).toEqual([]);
+    expect(
+      catalogProblems(withWidgetSection("x".repeat(50_000)), COMPONENTS, SITE_FILES, PROP_ANCHORS)
+    ).toEqual([]);
   });
 });

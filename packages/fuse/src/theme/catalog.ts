@@ -5,7 +5,8 @@
  * values into their own format and never parse CSS themselves. It also carries the part density
  * table, which the docs coverage test reads without resolving every theme. It carries the theme
  * axes and the brand table, so a design tool can lay out identity, brand and segment as separate
- * choices. It carries the legal radius steps and the radius rungs too, so the docs studio reads
+ * choices, and the legal themes with their slugs, so the docs pipeline can print the brands
+ * handbook tables. It carries the legal radius steps and the radius rungs too, so the docs studio reads
  * them instead of restating them. The text-grade pairs name the role pairs the contrast gate holds
  * at 4.5:1 everywhere, and the role text pairs name those it holds in some schemes or identities,
  * so the docs palettes page grades the same pairs. The ramp scales, steps and seed steps let a
@@ -45,10 +46,12 @@ export type { RadiusRungName } from "./corners/radius-scale";
 export {
   BRAND_CODES,
   BRANDS,
+  LEGAL_THEMES,
   THEME_AXES,
   THEME_IDENTITIES,
   THEME_SEGMENTS,
   themeAxisAttributes,
   themeAxisSelector,
+  themeSlug,
 } from "./theme-input";
 export type { BrandCode, ThemeAxes, ThemeAxis, ThemeIdentity, ThemeSegment, ThemeSlug } from "./theme-input";

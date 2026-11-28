@@ -19,6 +19,8 @@
  *   • the three dark-scheme colors the Open Graph card paints;
  *   • the theme studio's modules (`src/studio/registration.ts`);
  *   • `/components/<slug>.md` — the markdown endpoint each page links to;
+ *   • `<href>.md`, the markdown endpoint of each authored page written as `page.mdx`, which
+ *     `prose-page.ts` reads;
  *   • `llms.txt`, the site-root AI index;
  *   • the ⌘K search index;
  *   • `catalog.json`, the docs catalog: every page the search index lists, each component page as
@@ -37,6 +39,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, wri
 import path from "node:path";
 
 import { Catalog } from "@elmeragroup/docs-catalog";
+import type { CatalogSection } from "@elmeragroup/docs-catalog";
 import { resolveThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ResolvedThemeCatalog } from "@elmeragroup/fuse/theme-catalog";
 import type { ApiArtifactDiagnostic, GeneratedApiComponent } from "@elmeragroup/internal";
@@ -55,8 +58,9 @@ import type {
   ThemeCatalog,
   TocItem,
 } from "../src/lib/docs-model.ts";
-import { API_REGEN_COMMAND } from "../src/lib/docs-model.ts";
-import { componentHref } from "../src/lib/pages.ts";
+import { API_REGEN_COMMAND, normalizeDemoSource } from "../src/lib/docs-model.ts";
+import { docsRouteFile } from "../src/lib/docs-route-files.ts";
+import { componentHref, STATIC_PAGES } from "../src/lib/pages.ts";
 import { studioGeneratedFiles } from "../src/studio/registration.ts";
 import { generateDocsApiArtifacts } from "./lib/api-artifact.ts";
 import { buildCatalog, catalogProblems } from "./lib/catalog.ts";
@@ -78,19 +82,25 @@ import type { FuseProgram } from "./lib/fuse-program.ts";
 import { renderLandingFacts } from "./lib/landing-facts.ts";
 import { LIVE_CODE_IDENTITY_PARTS } from "./lib/live-code-schemas.ts";
 import { renderLlmsTxt } from "./lib/llms.ts";
-import { componentSections, joinSections } from "./lib/markdown.ts";
+import { markdownTwinFiles, pruneUnwrittenMarkdown } from "./lib/markdown-pruning.ts";
+import { componentPropAnchors, componentSections, joinSections } from "./lib/markdown.ts";
 import { renderOgCardColors } from "./lib/og-card-colors.ts";
+import { PAGE_DATA_MARKDOWN } from "./lib/page-data-markdown.ts";
 import { buildPaletteCatalog, renderPaletteCatalog } from "./lib/palette-catalog.ts";
 import { partIdentities } from "./lib/part-identity.ts";
 import {
+  catalogFile,
   generatedDir,
   llmsTxtFile,
   markdownEndpointFile,
-  markdownOutDir,
+  publicDir,
   REPO_BLOB_BASE,
   repoRelative,
   fuseSrc,
 } from "./lib/paths.ts";
+import { proseSections } from "./lib/prose-page.ts";
+import type { ProseDemo, ProseDemoLocation } from "./lib/prose-page.ts";
+import { proseRouteFile } from "./lib/routes.ts";
 import { buildSearchIndex, renderSearchIndex } from "./lib/search.ts";
 import { collectRecipeSources } from "./lib/sources.ts";
 import { renderFigmaThemeCatalog } from "./lib/theme-catalog-figma.ts";
@@ -440,6 +450,21 @@ export const API_EXTRA_ENTRIES: Readonly<Partial<Record<string, readonly ApiEntr
   );
 }
 
+/**
+ * The site path of every file served from `public/` that a page may link to: `llms.txt`, which
+ * this run writes, and each file already there. Markdown is left out, because generation owns it
+ * and only the twin of a document with sections may be linked.
+ */
+function publicSiteFiles(): ReadonlySet<string> {
+  const sitePath = (file: string) => `/${path.relative(publicDir, file).split(path.sep).join("/")}`;
+  const files = new Set([sitePath(llmsTxtFile)]);
+  for (const entry of readdirSync(publicDir, { recursive: true, withFileTypes: true })) {
+    if (entry.isFile() && !entry.name.endsWith(".md"))
+      files.add(sitePath(path.join(entry.parentPath, entry.name)));
+  }
+  return files;
+}
+
 /** The markdown endpoint of each document that has sections, its sections joined. */
 function emitMarkdownEndpoints(catalog: Catalog): void {
   for (const document of catalog.documents) {
@@ -449,9 +474,41 @@ function emitMarkdownEndpoints(catalog: Catalog): void {
   }
 }
 
+/** Reads one demo a prose page renders, as the demo frame reads it, or `null` when it is missing. */
+function readProseDemo({ section, slug, file }: ProseDemoLocation): ProseDemo | null {
+  const location = docsRouteFile(section, slug, "demos", file);
+  if (!existsSync(location.absolute)) return null;
+  return {
+    sourcePath: location.repoPath,
+    source: normalizeDemoSource(readFileSync(location.absolute, "utf8")),
+  };
+}
+
+/**
+ * The sections of each authored page written as `page.mdx`, keyed by href. A page that breaks the
+ * prose page shape adds its problem and has no sections.
+ */
+function proseDocuments(problems: ProblemLog): ReadonlyMap<string, readonly CatalogSection[]> {
+  const documents = new Map<string, readonly CatalogSection[]>();
+  for (const page of STATIC_PAGES) {
+    const file = proseRouteFile(page.href);
+    if (!existsSync(file)) continue;
+    const sections = proseSections({
+      source: readFileSync(file, "utf8"),
+      page,
+      label: repoRelative(file),
+      readDemo: readProseDemo,
+      dataElements: PAGE_DATA_MARKDOWN,
+    });
+    if (Result.isFailure(sections)) problems.add(sections.failure.message);
+    else documents.set(page.href, sections.success);
+  }
+  return documents;
+}
+
 /** The docs catalog, already encoded as JSON through the schema's own codec. */
 function emitCatalog(json: string): void {
-  writeFile(path.join(generatedDir, "catalog.json"), json);
+  writeFile(catalogFile, json);
 }
 
 /** The theme tokens the Tokens page lists, read from the library's own `@theme` block. */
@@ -593,16 +650,24 @@ async function main(): Promise<void> {
   // The markdown endpoints, the search index, `llms.txt` and the catalog all come from the
   // checked catalog, so it is checked and encoded before any of them is written.
   const entries = buildSearchIndex(components);
+  const prose = proseDocuments(problems);
   const docsCatalog = buildCatalog({
     entries,
-    sections: new Map(
-      components.map((component) => [componentHref(component.slug), componentSections(component)])
-    ),
-    index: renderLlmsTxt(components),
+    sections: new Map([
+      ...components.map(
+        (component) => [componentHref(component.slug), componentSections(component)] as const
+      ),
+      ...prose,
+    ]),
+    index: renderLlmsTxt(components, new Set(prose.keys())),
   });
   for (const problem of catalogProblems(
     docsCatalog,
-    components.map((component) => componentHref(component.slug))
+    components.map((component) => componentHref(component.slug)),
+    publicSiteFiles(),
+    new Map(
+      components.map((component) => [componentHref(component.slug), componentPropAnchors(component)] as const)
+    )
   )) {
     problems.add(problem);
   }
@@ -630,7 +695,7 @@ async function main(): Promise<void> {
   emitLlmsTxt(docsCatalog.index);
   emitCatalog(encoded.success);
   pruneStale(generatedDir);
-  pruneStale(markdownOutDir);
+  pruneUnwrittenMarkdown(publicDir, markdownTwinFiles(docsCatalog));
   process.stdout.write(
     `docs: generated ${String(components.length)} component pages, ${String(
       components.reduce((total, component) => total + component.demos.length, 0)

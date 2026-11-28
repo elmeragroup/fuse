@@ -21,6 +21,12 @@ export const fuseTsconfig = path.join(fuseRoot, "tsconfig.json");
 /** Everything the generator writes under `src`. */
 export const generatedDir = path.join(docsRoot, "src/generated");
 
+/** The docs catalog, which the generator writes and `reconcile-markdown.ts` reads. */
+export const catalogFile = path.join(generatedDir, "catalog.json");
+
+/** The folder Next serves at the site root. */
+export const publicDir = path.join(docsRoot, "public");
+
 /** Static markdown endpoints, served from `/components/<slug>.md`. */
 export const markdownOutDir = path.join(docsRoot, "public/components");
 
@@ -31,7 +37,7 @@ export const markdownOutDir = path.join(docsRoot, "public/components");
  * @returns The absolute path of its `.md` file.
  */
 export function markdownEndpointFile(href: string): string {
-  return path.join(docsRoot, "public", `${href}.md`);
+  return path.join(publicDir, `${href}.md`);
 }
 
 /** The `(docs)` route group, where every nav destination must have a `page.tsx`. */

@@ -13,6 +13,7 @@ import type { CatalogSection } from "@elmeragroup/docs-catalog";
 import {
   API_SECTION_ID,
   apiPartAnchor,
+  apiPropAnchor,
   OVERVIEW_SECTION_ID,
   TOKENS_SECTION_ID,
 } from "../../src/lib/anchors.ts";
@@ -34,6 +35,18 @@ export function finishMarkdown(lines: readonly string[]): string {
 
 function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|").replace(/\n+/g, " ");
+}
+
+/**
+ * A markdown table, its cells escaped so a pipe or a line break cannot end a cell early.
+ *
+ * @param header - The column names.
+ * @param rows - One array of markdown cells per row, in column order.
+ * @returns The table's lines joined, without a closing newline.
+ */
+export function markdownTable(header: readonly string[], rows: readonly (readonly string[])[]): string {
+  const line = (cells: readonly string[]) => `| ${cells.map(escapeCell).join(" | ")} |`;
+  return [line(header), line(header.map(() => "---")), ...rows.map(line)].join("\n");
 }
 
 /**
@@ -117,8 +130,13 @@ function renderFunction(part: DocsApiPart, reference: ApiFunction): string {
  * One catalog section from its lines. Blank runs collapse as {@link finishMarkdown} collapses
  * them, and the blank lines at either edge go, because {@link joinSections} puts one blank line
  * between sections.
+ *
+ * @param id - The anchor the site gives the section's heading.
+ * @param depth - 2 for the lead section and a second-level heading, 3 for a heading under one.
+ * @param lines - The heading and the text up to the next section.
+ * @returns The section.
  */
-function catalogSection(
+export function catalogSection(
   id: string,
   depth: CatalogSection["depth"],
   lines: readonly string[]
@@ -156,16 +174,45 @@ function apiReferenceSections(component: DocsComponent): CatalogSection[] {
   ];
 }
 
-/** One demo as a markdown section at the page's heading level: its title, file and whole source. */
-function renderDemo(demo: DocsComponent["demos"][number], depth: number): string[] {
+/**
+ * The anchor id of every prop row the page's API reference renders: one per own prop of each part
+ * that is neither a function nor another page's part, as {@link apiReferenceSections} prints them.
+ *
+ * @param component - The component page.
+ * @returns The row ids, empty on an alias page.
+ */
+export function componentPropAnchors(component: DocsComponent): ReadonlySet<string> {
+  if (component.alias !== undefined) return new Set();
+  return new Set(
+    component.parts
+      .filter((part) => part.sameAs === undefined && part.function === undefined)
+      .flatMap((part) => part.props.map((prop) => apiPropAnchor(part.name, prop.name)))
+  );
+}
+
+/**
+ * One demo as a markdown section at the page's heading level: its title, file and whole source.
+ * The source's fence is one backtick longer than the longest backtick run in it, and at least
+ * three, so no line of the source can close it.
+ *
+ * @param demo - The demo's title, repo-relative file and source.
+ * @param depth - The level of the demo's heading on the page.
+ * @returns The section's lines.
+ */
+export function renderDemo(
+  demo: Pick<DocsComponent["demos"][number], "title" | "sourcePath" | "source">,
+  depth: number
+): string[] {
+  const longest = Math.max(0, ...(demo.source.match(/`+/gu) ?? []).map((run) => run.length));
+  const fence = "`".repeat(Math.max(3, longest + 1));
   return [
     `${"#".repeat(depth)} ${demo.title}`,
     "",
     `Source: \`${demo.sourcePath}\``,
     "",
-    "```tsx",
+    `${fence}tsx`,
     demo.source,
-    "```",
+    fence,
   ];
 }
 

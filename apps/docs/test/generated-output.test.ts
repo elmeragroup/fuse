@@ -322,20 +322,25 @@ describe("generated markdown endpoints", () => {
 });
 
 describe("docs catalog", () => {
-  it("splits a page at ids its built HTML renders, and joins into its markdown endpoint", async () => {
-    // Unit under test: the button document in the generated catalog.json, decoded with the schema
-    // from @elmeragroup/docs-catalog. Oracles: the ids in the page's built HTML, and the emitted
-    // `.md` endpoint, which is the sections one blank line apart with one closing newline.
-    const catalog = Schema.decodeSync(Schema.fromJsonString(Catalog))(
-      readFileSync(join(docsRoot, "src/generated/catalog.json"), "utf8")
-    );
-    const button = catalog.documents.find((document) => document.href === "/components/button");
-    const html = await fetchText("/components/button");
-    const ids = new Set([...html.matchAll(/\sid="([^"]+)"/gu)].map((match) => match[1]));
+  it.each(["/components/button", "/handbook/theming"])(
+    "splits %s at ids its built HTML renders, and joins into its markdown endpoint",
+    async (href) => {
+      // Unit under test: the page's document in the generated catalog.json, decoded with the schema
+      // from @elmeragroup/docs-catalog. Oracles: the ids in the page's built HTML, and the emitted
+      // `.md` endpoint, which is the sections one blank line apart with one closing newline. The
+      // theming page is a prose page, with third-level headings and a demo among its sections.
+      const catalog = Schema.decodeSync(Schema.fromJsonString(Catalog))(
+        readFileSync(join(docsRoot, "src/generated/catalog.json"), "utf8")
+      );
+      const document = catalog.documents.find((candidate) => candidate.href === href);
+      const html = await fetchText(href);
+      const ids = new Set([...html.matchAll(/\sid="([^"]+)"/gu)].map((match) => match[1]));
 
-    expect(button?.sections.map((section) => section.id).filter((id) => !ids.has(id))).toEqual([]);
-    expect(`${button?.sections.map((section) => section.markdown).join("\n\n") ?? ""}\n`).toBe(
-      endpoint("button")
-    );
-  });
+      expect(document?.sections.length).toBeGreaterThan(1);
+      expect(document?.sections.map((section) => section.id).filter((id) => !ids.has(id))).toEqual([]);
+      expect(`${document?.sections.map((section) => section.markdown).join("\n\n") ?? ""}\n`).toBe(
+        readFileSync(join(docsRoot, "public", `${href}.md`), "utf8")
+      );
+    }
+  );
 });

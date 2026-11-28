@@ -13,6 +13,7 @@
  * and the generator stays free of the bundler's MDX plumbing.
  */
 
+import * as Result from "effect/Result";
 import { readFileSync } from "node:fs";
 
 import type { PageSection } from "../../src/lib/docs-model.ts";
@@ -85,7 +86,7 @@ const HEADING = /^(#{2,4})\s+(.+?)\s*#*\s*$/;
 const DEMO_TAG = /<Demo\s([^>]*?)\/?>/g;
 const DEFAULT_DEMO_TAG = /<DefaultDemo\s([^>]*?)\/?>/g;
 const ATTRIBUTE = /([A-Za-z][\w-]*)="([^"]*)"/g;
-const LEVEL_ATTRIBUTE = /\blevel=\{(\d+)\}/;
+const LEVEL_ATTRIBUTE = /(?<![\w-])level=\{(\d+)\}/;
 const FENCED_BLOCK = /^\s*(?:```|~~~)[^\n]*\n([\s\S]*?)^\s*(?:```|~~~)\s*$/gmu;
 const DEMO_ATTRIBUTES = ["slug", "id", "title", "file"] as const;
 
@@ -127,30 +128,59 @@ function readAttributes(tag: string): ReadonlyMap<string, string> {
   return attributes;
 }
 
-/** A demo's heading level, which must be `level={3}`, an example under `## Examples`. */
-function readDepth(tag: string, file: string): 3 {
-  const level = LEVEL_ATTRIBUTE.exec(tag)?.[1];
-  if (level === "3") return 3;
-  throw new Error(`${file}: a <Demo> must be a level={3} example, not level ${level ?? "unset"}`);
-}
+/** What one `<Demo>` element declares, read off its attributes. */
+export type DemoDeclaration = {
+  /** The slug of the page the demo belongs to. */
+  readonly slug: string;
+  /** The demo's anchor id. */
+  readonly id: string;
+  /** The demo's heading. */
+  readonly title: string;
+  /** The demo's file name inside the page's `demos/` directory. */
+  readonly file: string;
+};
 
-/** One demo the page renders, read off its own `<Demo …>` element. */
-function readDemo(tag: string, slug: string, file: string): PageDemo {
-  const attributes = readAttributes(tag);
-  for (const required of DEMO_ATTRIBUTES) {
-    if ((attributes.get(required) ?? "") === "") {
-      throw new Error(`${file}: a <Demo> element is missing its "${required}" attribute`);
-    }
-  }
-  if (attributes.get("slug") !== slug) {
-    throw new Error(`${file}: a <Demo> names slug "${attributes.get("slug") ?? ""}" on the "${slug}" page`);
-  }
-  return {
+/**
+ * Reads what a `<Demo>` element declares. Component pages and prose pages both declare a demo's
+ * slug, id, title and file on the element, and each page shape then checks the slug against its
+ * own rules. The level stays out: `DemoFrame` reads only a number, so each page shape reads the
+ * `level={…}` expression itself.
+ *
+ * @param attributes - The element's string attributes.
+ * @returns The declaration, or the reason the element breaks the rule.
+ */
+export function readDemoDeclaration(
+  attributes: ReadonlyMap<string, string>
+): Result.Result<DemoDeclaration, string> {
+  const missing = DEMO_ATTRIBUTES.find((name) => (attributes.get(name) ?? "") === "");
+  if (missing !== undefined) return Result.fail(`a <Demo> element is missing its "${missing}" attribute`);
+  return Result.succeed({
+    slug: attributes.get("slug") ?? "",
     id: attributes.get("id") ?? "",
     title: attributes.get("title") ?? "",
     file: attributes.get("file") ?? "",
-    depth: readDepth(tag, file),
-  };
+  });
+}
+
+/**
+ * One demo the page renders, read off its own `<Demo …>` element. It must name `level={3}`, the one
+ * form `DemoFrame` renders as an `<h3>`, so a string `level="3"` fails as a missing level does.
+ */
+function readDemo(tag: string, slug: string, file: string): PageDemo {
+  const attributes = readAttributes(tag);
+  const level = attributes.has("level")
+    ? `level="${attributes.get("level") ?? ""}"`
+    : (LEVEL_ATTRIBUTE.exec(tag)?.[0] ?? "level unset");
+  const declaration = readDemoDeclaration(attributes);
+  if (Result.isFailure(declaration)) throw new Error(`${file}: ${declaration.failure}`);
+  const { id, title, file: demoFile } = declaration.success;
+  if (declaration.success.slug !== slug) {
+    throw new Error(`${file}: a <Demo> names slug "${declaration.success.slug}" on the "${slug}" page`);
+  }
+  if (level !== "level={3}") {
+    throw new Error(`${file}: a <Demo> must be a level={3} example, not ${level}`);
+  }
+  return { id, title, file: demoFile, depth: 3 };
 }
 
 /** One structural item of the page: a heading or a demo, with the body offset it starts at. */

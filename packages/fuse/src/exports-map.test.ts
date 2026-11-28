@@ -482,11 +482,13 @@ describe("exports map", () => {
       "PART_DENSITY",
       "BRAND_CODES",
       "BRANDS",
+      "LEGAL_THEMES",
       "THEME_AXES",
       "THEME_IDENTITIES",
       "THEME_SEGMENTS",
       "themeAxisAttributes",
       "themeAxisSelector",
+      "themeSlug",
     ]);
   });
 

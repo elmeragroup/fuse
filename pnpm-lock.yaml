@@ -153,6 +153,9 @@ catalogs:
     fast-check:
       specifier: 4.10.2
       version: 4.10.2
+    jsonc-parser:
+      specifier: 3.3.1
+      version: 3.3.1
     libphonenumber-js:
       specifier: 1.13.13
       version: 1.13.13
@@ -162,15 +165,27 @@ catalogs:
     mdast-util-from-markdown:
       specifier: 2.0.3
       version: 2.0.3
+    mdast-util-gfm:
+      specifier: 3.1.0
+      version: 3.1.0
     mdast-util-gfm-strikethrough:
       specifier: 2.0.0
       version: 2.0.0
+    mdast-util-mdx:
+      specifier: 3.0.0
+      version: 3.0.0
     mdn-data:
       specifier: 2.27.1
       version: 2.27.1
+    micromark-extension-gfm:
+      specifier: 3.0.0
+      version: 3.0.0
     micromark-extension-gfm-strikethrough:
       specifier: 2.1.0
       version: 2.1.0
+    micromark-extension-mdxjs:
+      specifier: 3.0.0
+      version: 3.0.0
     next:
       specifier: 16.4.5
       version: 16.4.5
@@ -411,6 +426,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
+      '@types/picomatch':
+        specifier: 'catalog:'
+        version: 4.0.3
       '@types/react':
         specifier: 'catalog:'
         version: 19.3.0
@@ -420,15 +438,33 @@ importers:
       effect:
         specifier: 'catalog:'
         version: 4.1.4
+      jsonc-parser:
+        specifier: 'catalog:'
+        version: 3.3.1
       mdast-util-from-markdown:
         specifier: 'catalog:'
         version: 2.0.3(supports-color@8.1.1)
+      mdast-util-gfm:
+        specifier: 'catalog:'
+        version: 3.1.0(supports-color@8.1.1)
+      mdast-util-mdx:
+        specifier: 'catalog:'
+        version: 3.0.0(supports-color@8.1.1)
+      micromark-extension-gfm:
+        specifier: 'catalog:'
+        version: 3.0.0
+      micromark-extension-mdxjs:
+        specifier: 'catalog:'
+        version: 3.0.0
       oxc-parser:
         specifier: 'catalog:'
         version: 0.148.0
       oxc-transform:
         specifier: 'catalog:'
         version: 0.148.0
+      picomatch:
+        specifier: 'catalog:'
+        version: 4.0.7
       playwright:
         specifier: 'catalog:'
         version: 1.63.0
