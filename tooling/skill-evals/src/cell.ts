@@ -158,10 +158,13 @@ const BUILT_IN_TOOLS = [
 ];
 const FUSE_TOOLS = ["mcp__fuse__search_docs", "mcp__fuse__read_doc"];
 /**
- * Claude Code refuses a read outside the working directory, by the file tools and by the shell,
- * when this setting is on. Both arms run with it.
+ * Claude Code's file tools refuse a read outside the working directory with this setting on. Both
+ * arms run with it. Its sibling `blockReadsOutsideWorkingDirectories` also covers the shell, but
+ * it refuses heredocs, `$?` and chained commands it cannot analyze, which changed how every agent
+ * worked; the cell's own folder, the scrubbed environment and the audit cover the shell instead.
  */
-const SESSION_SETTINGS = `{"permissions":{"blockReadsOutsideWorkingDirectories":true}}`;
+const SESSION_SETTINGS = `{"permissions":{"blockFileToolReadsOutsideWorkingDirectories":true}}`;
+
 /** The prefix of every temporary folder a pass makes, which the audit looks for. */
 export const TEMPORARY_PREFIX = "fuse-skill-eval-";
 

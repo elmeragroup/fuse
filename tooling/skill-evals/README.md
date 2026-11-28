@@ -74,9 +74,10 @@ run cost, and `--max-budget-usd` caps each run.
    and a cell whose server serves the wrong skills does not start.
 3. Runs `claude -p` in the app with file edits, a shell and the server's tools, with no web tools,
    no subagents, `--strict-mcp-config`, no user settings and
-   `permissions.blockReadsOutsideWorkingDirectories`, which refuses a read outside the app by the
-   file tools and by the shell. The agent's environment has no variable that names the checkout or
-   the run's folder. Both arms send the task's prompt and the same rules. The with-skill arm also
+   `permissions.blockFileToolReadsOutsideWorkingDirectories`, which makes the file tools refuse a
+   read outside the app. The agent's environment has no variable that names the checkout or the
+   run's folder. The sibling setting that also covers the shell refuses heredocs and chained
+   commands it cannot analyze, so the audit below covers the shell instead. Both arms send the task's prompt and the same rules. The with-skill arm also
    tells the agent to read `skill://<name>/SKILL.md` first, because a headless run loads no
    skills. The CLI leaves the MCP resource tools out of a session whose servers serve no
    resources, so the baseline's session lacks them.

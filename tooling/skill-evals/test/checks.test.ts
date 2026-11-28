@@ -43,8 +43,8 @@ describe("checkDocument", () => {
       passed: false,
     },
     {
-      case: "a brand written twice, the browser's first value wrong",
-      html: `<html data-theme-brand="tkas" ${STAMPED}>`,
+      case: "a brand written twice, the browser's first value right and the last wrong",
+      html: `<html ${STAMPED} data-theme-brand="tkas">`,
       passed: false,
     },
     { case: "no built index.html", html: undefined, passed: false },
