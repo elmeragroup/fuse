@@ -9,7 +9,7 @@ Start with [AGENTS.md](AGENTS.md) for contribution conventions and [CONTEXT.md](
 ## Install
 
 ```sh
-pnpm add @elmeragroup/fuse
+pnpm add @elmeragroup/fuse@canary
 ```
 
 Then follow the [package README](packages/fuse/README.md) to wire up the CSS and theme attributes.

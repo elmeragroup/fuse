@@ -5,33 +5,21 @@ import { fetchText } from "./docs-server";
 const OLD_RELEASE_CLAIMS = ["Merging that PR publishes", "every PR gets an installable build"] as const;
 
 describe("release readiness copy", () => {
-  it("marks automated publishing and previews as pending target state, without the old unconditional claims", async () => {
+  it("describes canary publishing as live and previews as planned, without the old unconditional claims", async () => {
     const html = await fetchText("/releases");
-    expect(html, "releases must say automated publish/preview infrastructure is not active yet").toContain(
-      "not active yet"
+    expect(html, "releases must say automated publishing is active").toContain(
+      "Automated npm publishing is <strong>active</strong>"
     );
-    expect(html, "releases must name pending org/repository setup rather than implying it is done").toContain(
-      "pending org and repository setup"
+    expect(html, "releases must say no stable version has shipped").toContain(
+      "No stable version has shipped yet"
     );
-    expect(html, "releases must describe the release flow as gated on activation").toContain(
-      "gated on activation"
-    );
-    expect(html, "releases must name the activation switch").toContain("RELEASE_ENABLED");
     expect(html, "releases must explain how pending notes are applied").toContain("pnpm release:version");
-    expect(html, "releases must say activated ordinary merges publish canaries").toContain(
-      "every ordinary merge publishes a canary"
+    expect(html, "releases must name the canary install command").toContain(
+      "pnpm add @elmeragroup/fuse@canary"
     );
-    expect(html, "releases must scope the stable publish to activation").toContain(
-      "Once publishing is activated"
+    expect(html, "releases must say latest names the first canary until the first stable release").toContain(
+      "until the first stable release it names the first canary"
     );
-    expect(
-      html,
-      "releases must label latest as a designed/target dist-tag, not a live npm channel"
-    ).toContain("latest</code> (designed)");
-    expect(
-      html,
-      "releases must label canary as a designed/target dist-tag, not a live npm channel"
-    ).toContain("canary</code> (designed)");
     expect(html, "releases must label per-PR previews as planned, not available today").toContain(
       "Per-PR previews (planned)"
     );
@@ -45,10 +33,6 @@ describe("release readiness copy", () => {
     expect(html, "releases must not describe an npm token as a pipeline credential").not.toContain(
       "npm token"
     );
-    expect(
-      html,
-      "releases must frame packed-consumer checks as intended gates, not an active release workflow"
-    ).toContain("intended publish gates, not an active release workflow");
     expect(html, "releases must list the packed Next fixture as an active gate").toContain(
       "A packed Next App Router app renders server namespace parts, hydrates a client island and styles package classes through Tailwind source scanning."
     );

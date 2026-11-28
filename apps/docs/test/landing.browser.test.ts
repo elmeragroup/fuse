@@ -377,7 +377,7 @@ describe("landing page", () => {
     await page.clock.runFor(1600);
     await page.getByRole("button", { name: "Copy", exact: true }).waitFor();
     expect(await page.evaluate(async () => navigator.clipboard.readText())).toBe(
-      "pnpm add @elmeragroup/fuse"
+      "pnpm add @elmeragroup/fuse@canary"
     );
     await page.context().close();
   });
